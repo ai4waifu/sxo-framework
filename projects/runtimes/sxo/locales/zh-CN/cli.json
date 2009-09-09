@@ -1,0 +1,7 @@
+{
+    "cli.intro": "sxo — SXO 符号引擎的工具链 CLI（不是计算器）",
+    "cli.cmd.version": "打印 CLI 与引擎版本",
+    "cli.cmd.doctor": "检查 Node 与原生引擎是否可加载",
+    "cli.opt.json": "向 stdout 输出一份 JSON 文档",
+    "diag.native_unavailable": "原生引擎不可用：{detail}"
+}

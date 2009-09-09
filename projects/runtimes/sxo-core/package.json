@@ -1,0 +1,34 @@
+{
+    "name": "@sxo/core",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "SXO simple-math symbolic API (no Mathematica / Wolfram)",
+    "license": "Apache-2.0",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test": "node ./tests/integration.mjs"
+    },
+    "optionalDependencies": {
+        "@sxo/sxo-win32-x64": "workspace:*",
+        "@sxo/sxo-linux-x64": "workspace:*",
+        "@sxo/sxo-darwin-arm64": "workspace:*",
+        "@sxo/sxo-darwin-x64": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3"
+    }
+}

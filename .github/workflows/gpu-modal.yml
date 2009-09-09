@@ -1,0 +1,81 @@
+# GPU verify on Modal (CPU build → T4 sandbox)
+#
+# Cost model: compile on GitHub-hosted CPU; Modal T4 only runs prebuilt verifies.
+# Trigger: workflow_dispatch, or PR labeled `gpu-tests`.
+#
+# Secrets (repo): MODAL_TOKEN_ID, MODAL_TOKEN_SECRET
+# Optional vars: DXO_MODAL_GPU (default T4), DXO_MODAL_APP (default dxo-gpu-ci)
+
+name: GPU Modal
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+concurrency:
+  group: gpu-modal-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux-artifact:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gpu-tests'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install JS workspace
+        run: pnpm install --no-frozen-lockfile
+      # GPU bundle only needs @dxo/core + linux .node — skip full build:ts (lite wasm, etc.).
+      - name: Build @dxo/core TypeScript
+        run: pnpm --filter @dxo/core run build
+      - name: Build native (linux-x64)
+        run: pnpm run build:native
+      - name: Pack GPU verify bundle
+        run: node scripts/ci/pack-gpu-artifact.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dxo-gpu-verify
+          path: artifacts/dxo-gpu-verify.tgz
+          if-no-files-found: error
+          retention-days: 3
+
+  modal-t4-verify:
+    needs: build-linux-artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      DXO_MODAL_GPU: ${{ vars.DXO_MODAL_GPU || 'T4' }}
+      DXO_MODAL_APP: ${{ vars.DXO_MODAL_APP || 'dxo-gpu-ci' }}
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Require Modal secrets
+        run: |
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "Missing MODAL_TOKEN_ID / MODAL_TOKEN_SECRET repo secrets."
+            exit 1
+          fi
+      # Pack a real npm package (modal dep) into artifacts/ — never npm install at monorepo root.
+      - name: Pack Modal GPU runner
+        run: node scripts/ci/pack-modal-runner.mjs
+      - uses: actions/download-artifact@v8
+        with:
+          name: dxo-gpu-verify
+          path: artifacts
+      - name: Run verifies on Modal T4
+        run: node artifacts/dxo-modal-runner/run.mjs --artifact artifacts/dxo-gpu-verify.tgz

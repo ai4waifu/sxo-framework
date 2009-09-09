@@ -1,0 +1,40 @@
+{
+    "name": "@sxo/sxo",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "SXO CLI (i18n via @vmz/commander + @vmz/diagnostic)",
+    "license": "Apache-2.0",
+    "bin": {
+        "sxo": "./bin/sxo.mjs"
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "bin",
+        "locales",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+        "@sxo/core": "workspace:*",
+        "@vmz/commander": "0.1.26",
+        "@vmz/diagnostic": "0.1.26"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3"
+    }
+}

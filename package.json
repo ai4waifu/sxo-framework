@@ -1,11 +1,22 @@
 {
+    "name": "sxo-framework",
     "private": true,
+    "type": "module",
+    "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "doc": "cargo doc --no-deps --all-features",
-        "test": "cargo test --release",
-        "fmt": "cargo fmt --all",
-        "p": "git push && git push --tags --prune",
-        "reset": "git reset Head~ --soft",
-        "u": "cargo upgrade --workspace"
+        "build:ts": "pnpm --filter @sxo/core --filter @sxo/mathematica --filter @sxo/matlab --filter @sxo/simple-math --filter @sxo/lite --filter @sxo/sxo run build",
+        "build:native": "node scripts/build/napi.mjs --release",
+        "build:lite-wasm": "node scripts/build/lite-wasm.mjs",
+        "build": "pnpm run build:lite-wasm && pnpm run build:ts && pnpm run build:native",
+        "test": "pnpm run build && cargo test --release && pnpm run test:js",
+        "test:js": "pnpm --filter @sxo/core --filter @sxo/simple-math --filter @sxo/mathematica --filter @sxo/matlab run test",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write .",
+        "fmt": "biome format --write . && cargo fmt --all",
+        "fmt:check": "biome format . && cargo fmt --all -- --check"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.7",
+        "typescript": "^5.8.3"
     }
 }

@@ -1,0 +1,49 @@
+{
+    "brand": {
+        "primary": "#0D9488",
+        "energy": "#0F172A"
+    },
+    "scale": {
+        "50": "#f0fdfa",
+        "100": "#ccfbf1",
+        "200": "#99f6e4",
+        "300": "#5eead4",
+        "400": "#2dd4bf",
+        "500": "#14b8a6",
+        "600": "#0D9488",
+        "700": "#0f766e",
+        "800": "#115e59",
+        "900": "#134e4a",
+        "950": "#042f2e"
+    },
+    "surface": {
+        "paper": "#ffffff",
+        "mist": "#f8fafc",
+        "page": "#f1f5f9",
+        "ink": "#0F172A",
+        "graphite": "#475569"
+    },
+    "text": {
+        "ink": "#0F172A",
+        "steel": "#475569",
+        "on-brand": "#f0fdfa",
+        "on-ink": "#f8fafc"
+    },
+    "line": {
+        "default": "#e2e8f0",
+        "subtle": "#f1f5f9",
+        "strong": "#0f766e"
+    },
+    "status": {
+        "success": "#059669",
+        "warning": "#d97706",
+        "error": "#dc2626",
+        "analysis": "#0D9488",
+        "runtime": "#0f766e"
+    },
+    "font": {
+        "sans": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
+        "mono": "\"IBM Plex Mono\", ui-monospace, Consolas, monospace",
+        "display": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif"
+    }
+}

@@ -1,0 +1,27 @@
+[package]
+name = "sxo-lite-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "WASM ABI bridge (non-route; depends on sxo-engine)"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "sxo_lite"
+
+[lints]
+workspace = true
+
+[dependencies]
+sxo-engine = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

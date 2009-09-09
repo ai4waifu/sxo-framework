@@ -1,0 +1,261 @@
+<template>
+  <div class="dxo-play">
+    <header class="dxo-site-header">
+      <Link class="dxo-site-header__brand" href="/"><strong>DXO</strong></Link>
+      <nav class="dxo-site-header__nav" aria-label="Primary">
+        <Link href="/">Home</Link>
+        <Link href="/lite">@dxo/lite</Link>
+        <Link href="/playground">Playground</Link>
+      </nav>
+    </header>
+    <main>
+      <h1>@dxo/lite playground</h1>
+      <p class="dxo-play__lede">
+        Interactive browser demo via createRuntime. Kernels come from @dxo/lite-unknown-wasm32 when /dxo_lite_bg.wasm is
+        staged under public/ (CF copies public/** into the CDN root).
+      </p>
+
+      <Card title="Runtime" :description="status">
+        <dl class="dxo-play__probe">
+          <div><dt>lite</dt><dd>{{ liteVersion }}</dd></div>
+          <div><dt>backend</dt><dd>{{ backend }}</dd></div>
+          <div><dt>wasm</dt><dd>{{ wasmVersion }}</dd></div>
+          <div><dt>interimHostF32</dt><dd>{{ wasmInterim }}</dd></div>
+          <div><dt>webgpu probe</dt><dd>{{ webgpu }}</dd></div>
+        </dl>
+      </Card>
+
+      <Card title="2×2 f32 ops" description="Row-major matrices · four numbers each.">
+        <label class="dxo-play__field">
+          <span>A</span>
+          <input type="text" :value="aText" @input="onA" spellcheck="false" autocomplete="off" />
+        </label>
+        <label class="dxo-play__field">
+          <span>B</span>
+          <input type="text" :value="bText" @input="onB" spellcheck="false" autocomplete="off" />
+        </label>
+        <div class="dxo-play__actions">
+          <Button type="button" variant="primary" @click="() => this.runMatmul()">matmul</Button>
+          <Button type="button" variant="secondary" @click="() => this.runAdd()">add</Button>
+          <Button type="button" variant="ghost" @click="() => this.loadIdentity()">A·I demo</Button>
+          <Button type="button" variant="ghost" @click="() => this.loadOnes()">ones</Button>
+        </div>
+        <CodeBlock
+          :code="result"
+          caption="output"
+          copy-label="Copy"
+          @copy="() => this.copyResult()"
+        />
+      </Card>
+    </main>
+  </div>
+</template>
+
+<style>
+  .dxo-site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--vmz-line-default, #e2e8f0);
+  }
+  .dxo-site-header__brand {
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--vmz-text-ink, #0f172a);
+  }
+  .dxo-site-header__nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .dxo-play {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0 1.25rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .dxo-play h1 {
+    margin: 0;
+  }
+  .dxo-play__lede {
+    margin: 0;
+    color: var(--vmz-text-steel, #475569);
+    line-height: 1.55;
+  }
+  .dxo-play__probe {
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .dxo-play__probe div {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: 0.5rem;
+    font-family: var(--vmz-font-mono, ui-monospace, monospace);
+    font-size: 0.85rem;
+  }
+  .dxo-play__probe dt {
+    color: var(--vmz-text-steel, #475569);
+  }
+  .dxo-play__probe dd {
+    margin: 0;
+  }
+  .dxo-play__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+  }
+  .dxo-play__field input {
+    font-family: var(--vmz-font-mono, ui-monospace, monospace);
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--vmz-line-default, #e2e8f0);
+    border-radius: var(--vmz-radius-md, 6px);
+    background: var(--vmz-surface-paper, #fff);
+  }
+  .dxo-play__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+  }
+</style>
+
+<script client>
+import { openHomepageRuntime, version } from '../lib/lite-probe.ts';
+
+function parseNums(text) {
+    return text
+        .trim()
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map((s) => Number(s));
+}
+
+function formatMatrix(out) {
+    return `[${out[0]}, ${out[1]}]\n[${out[2]}, ${out[3]}]`;
+}
+
+export default class PlaygroundPage {
+    status = 'booting…';
+    liteVersion = '';
+    backend = '';
+    wasmVersion = '';
+    wasmInterim = '';
+    webgpu = '';
+    aText = '1, 2, 3, 4';
+    bText = '1, 0, 0, 1';
+    result = 'Run matmul or add after the runtime is ready.';
+    #rt = null;
+
+    onA(e) {
+        this.aText = e.target?.value ?? this.aText;
+    }
+
+    onB(e) {
+        this.bText = e.target?.value ?? this.bText;
+    }
+
+    async onMount() {
+        try {
+            this.#rt = await openHomepageRuntime();
+            this.liteVersion = version();
+            this.backend = this.#rt.capabilities.backend;
+            this.webgpu = String(this.#rt.capabilities.webgpu);
+            const wasm = this.#rt.capabilities.wasm;
+            this.wasmVersion = wasm?.version ?? '(not loaded — stage public/dxo_lite_bg.wasm)';
+            this.wasmInterim = String(wasm?.interimHostF32 ?? false);
+            this.status = wasm ? 'ready · WASM f32 kernels' : 'ready · JS host kernels (WASM missing)';
+            this.result = 'Runtime ready. Click matmul or add.';
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+            this.result = 'createRuntime failed — check console / wasm staging.';
+        }
+    }
+
+    onDestroy() {
+        this.#rt?.destroy();
+        this.#rt = null;
+    }
+
+    loadIdentity() {
+        this.aText = '1, 2, 3, 4';
+        this.bText = '1, 0, 0, 1';
+        this.result = '';
+    }
+
+    loadOnes() {
+        this.aText = '1, 1, 1, 1';
+        this.bText = '1, 1, 1, 1';
+        this.result = '';
+    }
+
+    #parsePair() {
+        const aData = parseNums(this.aText);
+        const bData = parseNums(this.bText);
+        if (
+            aData.length !== 4 ||
+            bData.length !== 4 ||
+            aData.some((n) => Number.isNaN(n)) ||
+            bData.some((n) => Number.isNaN(n))
+        ) {
+            return null;
+        }
+        return { aData, bData };
+    }
+
+    async runMatmul() {
+        if (!this.#rt) return;
+        const pair = this.#parsePair();
+        if (!pair) {
+            this.result = 'need 4 finite numbers for each of A and B (2×2)';
+            return;
+        }
+        try {
+            const a = this.#rt.tensor(pair.aData, [2, 2]);
+            const b = this.#rt.tensor(pair.bData, [2, 2]);
+            const c = a.matmul(b);
+            await c.ready();
+            const out = await c.toArray();
+            this.result = `matmul  [2,2] × [2,2] → [2,2]\n${formatMatrix(out)}`;
+        } catch (err) {
+            this.result = err instanceof Error ? err.message : String(err);
+        }
+    }
+
+    async runAdd() {
+        if (!this.#rt) return;
+        const pair = this.#parsePair();
+        if (!pair) {
+            this.result = 'need 4 finite numbers for each of A and B';
+            return;
+        }
+        try {
+            const a = this.#rt.tensor(pair.aData, [2, 2]);
+            const b = this.#rt.tensor(pair.bData, [2, 2]);
+            const c = a.add(b);
+            const out = await c.toArray();
+            this.result = `add  [2,2] + [2,2] → [2,2]\n${formatMatrix(out)}`;
+        } catch (err) {
+            this.result = err instanceof Error ? err.message : String(err);
+        }
+    }
+
+    async copyResult() {
+        const text = String(this.result || '');
+        if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            /* ignore */
+        }
+    }
+}
+</script>

@@ -1,0 +1,24 @@
+{
+    "name": "@dxo/homepage",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "DXO marketing homepage - VMZ frontend with pinned @dxo/lite (CF Pages cannot build Rust/wasm)",
+    "scripts": {
+        "check": "vmz check .",
+        "predev": "node ../../scripts/build/stage-homepage-wasm.mjs",
+        "prebuild": "node ../../scripts/build/stage-homepage-wasm.mjs",
+        "build": "vmz build --release --profile static .",
+        "dev": "vmz dev .",
+        "preview": "vmz serve --profile static .",
+        "test:lite": "node ./tests/lite-probe.mjs"
+    },
+    "dependencies": {
+        "@dxo/lite": "0.0.10",
+        "@vmz/core": "0.1.17",
+        "@vmz/ui": "0.1.17"
+    },
+    "devDependencies": {
+        "@vmz/vmz": "0.1.17"
+    }
+}
