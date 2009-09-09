@@ -1,0 +1,18 @@
+{
+    "name": "@sxo/sxo-linux-x64",
+    "version": "0.1.0",
+    "private": true,
+    "description": "SXO native N-API addon (linux-x64)",
+    "license": "Apache-2.0",
+    "os": [
+        "linux"
+    ],
+    "cpu": [
+        "x64"
+    ],
+    "main": "sxo.linux-x64-gnu.node",
+    "files": [
+        "sxo.linux-x64-gnu.node",
+        "README.md"
+    ]
+}

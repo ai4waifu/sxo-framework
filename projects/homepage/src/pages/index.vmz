@@ -1,0 +1,159 @@
+<template>
+  <div class="dxo-home">
+    <header class="dxo-site-header">
+      <Link class="dxo-site-header__brand" href="/"><strong>DXO</strong></Link>
+      <nav class="dxo-site-header__nav" aria-label="Primary">
+        <Link href="/lite">@dxo/lite</Link>
+        <Link href="/playground">Playground</Link>
+      </nav>
+    </header>
+    <main>
+      <section class="dxo-home__hero" aria-labelledby="dxo-hero-title">
+        <Badge tone="brand">Deep Learning for the JavaScript Era</Badge>
+        <h1 id="dxo-hero-title">TypeScript-first training on Node.js</h1>
+        <p class="dxo-home__lede">
+          Rust core engine, napi-rs bindings, and define-by-run dynamic graphs — without leaving the npm ecosystem.
+        </p>
+        <div class="dxo-home__actions">
+          <Link href="/playground"><Button type="button" variant="primary">Open playground</Button></Link>
+          <Link href="/lite"><Button type="button" variant="secondary">@dxo/lite probe</Button></Link>
+        </div>
+      </section>
+
+      <section class="dxo-home__grid" aria-label="Quick start">
+        <Card title="Install" description="Pinned registry package for browser / CF Pages.">
+          <CodeBlock
+            :code="installSample"
+            caption="shell"
+            copy-label="Copy"
+            @copy="() => this.copyInstall()"
+          />
+        </Card>
+        <Card title="@dxo/lite runtime probe" description="createRuntime · CPU fallback · optional WASM.">
+          <dl class="dxo-home__probe">
+            <div><dt>version</dt><dd>{{ liteVersion }}</dd></div>
+            <div><dt>backend</dt><dd>{{ liteBackend }}</dd></div>
+            <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
+            <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
+            <div><dt>matmul</dt><dd>{{ liteMatmul }}</dd></div>
+          </dl>
+          <Callout tone="info">
+            Async createRuntime probes WebGPU only; host f32 until DXO GPU WASM. Never WebGL.
+          </Callout>
+        </Card>
+      </section>
+    </main>
+  </div>
+</template>
+
+<style>
+  .dxo-site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--vmz-line-default, #e2e8f0);
+  }
+  .dxo-site-header__brand {
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--vmz-text-ink, #0f172a);
+  }
+  .dxo-site-header__nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .dxo-home {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.25rem 3rem;
+  }
+  .dxo-home__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1.5rem 0 2rem;
+  }
+  .dxo-home__hero h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.15;
+    color: var(--vmz-text-ink, #0f172a);
+  }
+  .dxo-home__lede {
+    margin: 0;
+    max-width: 40rem;
+    color: var(--vmz-text-steel, #475569);
+    line-height: 1.55;
+  }
+  .dxo-home__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+  .dxo-home__grid {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .dxo-home__probe {
+    margin: 0 0 0.75rem;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .dxo-home__probe div {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 0.5rem;
+    font-family: var(--vmz-font-mono, ui-monospace, monospace);
+    font-size: 0.85rem;
+  }
+  .dxo-home__probe dt {
+    color: var(--vmz-text-steel, #475569);
+  }
+  .dxo-home__probe dd {
+    margin: 0;
+  }
+  @media (min-width: 720px) {
+    .dxo-home__grid {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+  }
+</style>
+
+<script client>
+import { probeLite } from '../lib/lite-probe.ts';
+
+export default class IndexPage {
+    installSample = 'pnpm add @dxo/lite@0.0.10';
+    liteVersion = '…';
+    liteBackend = '…';
+    liteWasm = '…';
+    liteTensorClass = '…';
+    liteMatmul = '…';
+
+    async onMount() {
+        const probe = await probeLite();
+        this.liteVersion = probe.version;
+        this.liteBackend = probe.backend;
+        this.liteWasm = probe.wasmVersion;
+        this.liteTensorClass = probe.tensorClass;
+        this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
+    }
+
+    async copyInstall() {
+        const text = String(this.installSample || '');
+        if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            /* ignore */
+        }
+    }
+}
+</script>

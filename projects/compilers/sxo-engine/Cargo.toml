@@ -1,0 +1,25 @@
+[package]
+name = "sxo-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "SXO bridge: oak parse, frontend forms, lowering to Euler kernel IR"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+euler = { workspace = true }
+euler-ir = { workspace = true }
+sxo-types = { workspace = true }
+oak-core = { workspace = true }
+oak-wolfram = { workspace = true }
+oak-matlab = { workspace = true }
+num-bigint = { workspace = true }
+num-rational = { workspace = true }
+num-traits = { workspace = true }
+num-integer = { workspace = true }

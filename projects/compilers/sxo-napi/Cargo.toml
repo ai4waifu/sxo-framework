@@ -1,0 +1,25 @@
+[package]
+name = "sxo-napi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "N-API bridge: Node.js ↔ SXO SxoEngine"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+name = "sxo_napi"
+
+[lints]
+workspace = true
+
+[dependencies]
+sxo-engine = { workspace = true }
+napi.workspace = true
+napi-derive.workspace = true
+
+[build-dependencies]
+napi-build = "2"

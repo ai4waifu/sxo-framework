@@ -1,0 +1,16 @@
+[package]
+name = "sxo-types"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "SXO product types (Dialect, SxoError) + euler-types wire re-exports"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+euler-types = { workspace = true }

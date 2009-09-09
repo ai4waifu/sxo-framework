@@ -1,0 +1,136 @@
+<template>
+  <div class="dxo-lite-page">
+    <header class="dxo-site-header">
+      <Link class="dxo-site-header__brand" href="/"><strong>DXO</strong></Link>
+      <nav class="dxo-site-header__nav" aria-label="Primary">
+        <Link href="/">Home</Link>
+        <Link href="/lite">@dxo/lite</Link>
+        <Link href="/playground">Playground</Link>
+      </nav>
+    </header>
+    <main>
+      <h1>@dxo/lite test surface</h1>
+      <p class="dxo-lite-page__lede">
+        Async runtime facade; host f32 until the DXO GPU WASM facade is linked. TS never retains GPUDevice. WebGL is not a
+        tensor backend.
+      </p>
+
+      <Card title="Probe results" description="Live createRuntime capabilities.">
+        <dl class="dxo-lite-page__probe">
+          <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
+          <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
+          <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
+          <div><dt>webgpu</dt><dd>{{ liteWebgpu }}</dd></div>
+          <div><dt>gpuBackendReady</dt><dd>{{ liteGpuReady }}</dd></div>
+          <div><dt>webglTensorBackend</dt><dd>{{ liteWebgl }}</dd></div>
+          <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
+          <div><dt>matmul identity</dt><dd>{{ liteMatmul }}</dd></div>
+        </dl>
+      </Card>
+
+      <Card title="Node self-test" description="CI / local verify without a browser.">
+        <CodeBlock
+          :code="selfTestSample"
+          caption="shell"
+          copy-label="Copy"
+          @copy="() => this.copySelfTest()"
+        />
+      </Card>
+    </main>
+  </div>
+</template>
+
+<style>
+  .dxo-site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--vmz-line-default, #e2e8f0);
+  }
+  .dxo-site-header__brand {
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--vmz-text-ink, #0f172a);
+  }
+  .dxo-site-header__nav {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .dxo-lite-page {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 0 1.25rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .dxo-lite-page h1 {
+    margin: 0;
+  }
+  .dxo-lite-page__lede {
+    margin: 0;
+    color: var(--vmz-text-steel, #475569);
+    line-height: 1.55;
+  }
+  .dxo-lite-page__probe {
+    margin: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .dxo-lite-page__probe div {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: 0.5rem;
+    font-family: var(--vmz-font-mono, ui-monospace, monospace);
+    font-size: 0.85rem;
+  }
+  .dxo-lite-page__probe dt {
+    color: var(--vmz-text-steel, #475569);
+  }
+  .dxo-lite-page__probe dd {
+    margin: 0;
+  }
+</style>
+
+<script client>
+import { probeLite } from '../lib/lite-probe.ts';
+
+export default class LiteTestPage {
+    selfTestSample = 'pnpm --filter @dxo/homepage test:lite\npnpm verify -- lite-webgpu-smoke';
+    liteVersion = '';
+    liteBackend = '';
+    liteWasm = '';
+    liteWebgpu = '';
+    liteGpuReady = '';
+    liteWebgl = '';
+    liteTensorClass = '';
+    liteMatmul = '';
+
+    async onMount() {
+        const probe = await probeLite();
+        this.liteVersion = probe.version;
+        this.liteBackend = probe.backend;
+        this.liteWasm = probe.wasmVersion;
+        this.liteWebgpu = String(probe.webgpu);
+        this.liteGpuReady = String(probe.gpuBackendReady);
+        this.liteWebgl = String(probe.webglTensorBackend);
+        this.liteTensorClass = probe.tensorClass;
+        this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
+    }
+
+    async copySelfTest() {
+        const text = String(this.selfTestSample || '');
+        if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            /* ignore */
+        }
+    }
+}
+</script>

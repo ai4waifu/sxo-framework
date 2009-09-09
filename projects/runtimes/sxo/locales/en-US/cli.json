@@ -1,0 +1,7 @@
+{
+    "cli.intro": "sxo — toolchain CLI for the SXO symbolic engine (not a calculator)",
+    "cli.cmd.version": "Print CLI and engine versions",
+    "cli.cmd.doctor": "Check Node + native engine load",
+    "cli.opt.json": "Emit one JSON document on stdout",
+    "diag.native_unavailable": "Native engine unavailable: {detail}"
+}

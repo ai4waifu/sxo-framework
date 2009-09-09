@@ -1,14 +1,45 @@
-[workspace]
+﻿[workspace]
 resolver = "2"
-members = ["projects/*"]
-default-members = [
-    "projects/game-extension",
+members = [
+    "projects/compilers/sxo-types",
+    "projects/compilers/sxo-engine",
+    "projects/compilers/sxo-napi",
+    "projects/compilers/sxo-lite-wasm",
 ]
-exclude = [
-    "projects/game-client",
-    "projects/.DS_Store",
-]
+default-members = ["projects/compilers/sxo-engine"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["SXO Contributors"]
+repository = "https://github.com/ai4waifu/sxo-framework"
+rust-version = "1.89"
+
+[workspace.dependencies]
+sxo-types = { path = "projects/compilers/sxo-types" }
+sxo-engine = { path = "projects/compilers/sxo-engine" }
+napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
+napi-derive = "3.6.3"
+wasm-bindgen = "0.2"
+oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
+oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
+oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
+euler = { git = "https://github.com/ai4waifu/euler.rs.git", branch = "dev", package = "euler" }
+euler-types = { git = "https://github.com/ai4waifu/euler.rs.git", branch = "dev", package = "euler-types" }
+euler-ir = { git = "https://github.com/ai4waifu/euler.rs.git", branch = "dev", package = "euler-ir" }
+euler-rewriter = { git = "https://github.com/ai4waifu/euler.rs.git", branch = "dev", package = "euler-rewriter" }
+num-bigint = { version = "0.4", default-features = false, features = ["std"] }
+num-rational = { version = "0.4", default-features = false, features = ["std", "num-bigint"] }
+num-traits = "0.2"
+num-integer = "0.1"
 
 [profile.release]
 lto = true
+codegen-units = 1
 panic = "abort"
+
+[workspace.lints.rust]
+missing_docs = "deny"
+missing_debug_implementations = "warn"
+unsafe_code = "warn"
