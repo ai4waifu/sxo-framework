@@ -1,6 +1,6 @@
 # SXO
 
-TypeScript-first symbolic computation (CAS): Rust `SxoEngine` · Node NAPI + WASM lite.
+TypeScript-first symbolic computation (CAS): Rust `SxoFrontend` · Node NAPI + WASM lite.
 
 ## Install (workspace)
 

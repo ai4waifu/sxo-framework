@@ -68,7 +68,7 @@ export class Expression {
         return this;
     }
     /**
-     * Simplify via `SxoEngine`.
+     * Simplify via `SxoFrontend`.
      * @returns {Expression}
      */
     simplify() {

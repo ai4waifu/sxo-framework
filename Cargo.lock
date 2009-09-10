@@ -3,6 +3,54 @@
 version = 4
 
 [[package]]
+name = "athena"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+dependencies = [
+ "athena-engine",
+]
+
+[[package]]
+name = "athena-engine"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+dependencies = [
+ "athena-ir",
+ "athena-rewriter",
+ "athena-types",
+ "num-bigint",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
+name = "athena-ir"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+dependencies = [
+ "athena-types",
+]
+
+[[package]]
+name = "athena-rewriter"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+dependencies = [
+ "athena-ir",
+ "athena-types",
+]
+
+[[package]]
+name = "athena-types"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+dependencies = [
+ "num-bigint",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -60,46 +108,6 @@ name = "ctor"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d"
-
-[[package]]
-name = "euler"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/euler.rs.git?branch=dev#ad1d29b2d30d2443b33ffef12b31ed9a8c1aa829"
-dependencies = [
- "euler-ir",
- "euler-rewriter",
- "euler-types",
- "num-bigint",
- "num-rational",
- "num-traits",
-]
-
-[[package]]
-name = "euler-ir"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/euler.rs.git?branch=dev#ad1d29b2d30d2443b33ffef12b31ed9a8c1aa829"
-dependencies = [
- "euler-types",
-]
-
-[[package]]
-name = "euler-rewriter"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/euler.rs.git?branch=dev#ad1d29b2d30d2443b33ffef12b31ed9a8c1aa829"
-dependencies = [
- "euler-ir",
- "euler-types",
-]
-
-[[package]]
-name = "euler-types"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/euler.rs.git?branch=dev#ad1d29b2d30d2443b33ffef12b31ed9a8c1aa829"
-dependencies = [
- "num-bigint",
- "num-rational",
- "num-traits",
-]
 
 [[package]]
 name = "futures"
@@ -479,11 +487,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
-name = "sxo-engine"
+name = "sxo-dialects"
 version = "0.1.0"
 dependencies = [
- "euler",
- "euler-ir",
+ "athena",
  "num-bigint",
  "num-integer",
  "num-rational",
@@ -499,7 +506,7 @@ name = "sxo-lite-wasm"
 version = "0.1.0"
 dependencies = [
  "getrandom",
- "sxo-engine",
+ "sxo-dialects",
  "wasm-bindgen",
 ]
 
@@ -510,14 +517,14 @@ dependencies = [
  "napi",
  "napi-build",
  "napi-derive",
- "sxo-engine",
+ "sxo-dialects",
 ]
 
 [[package]]
 name = "sxo-types"
 version = "0.1.0"
 dependencies = [
- "euler-types",
+ "athena-types",
 ]
 
 [[package]]

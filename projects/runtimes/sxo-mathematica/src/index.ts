@@ -75,7 +75,7 @@ export type MathematicaOptions = {
 /**
  * Mathematica / Wolfram **frontend** — the public entry of `@sxo/mathematica`.
  *
- * Feed Wolfram text (or expressions); the sole CAS kernel is Rust `SxoEngine`
+ * Feed Wolfram text (or expressions); the sole CAS kernel is Rust `SxoFrontend`
  * (engine IR `Term`). This package must **not** be described as the kernel.
  *
  * @example

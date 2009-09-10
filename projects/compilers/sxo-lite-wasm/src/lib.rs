@@ -1,8 +1,8 @@
-//! WASM bindings for SXO (`SxoEngine` + engine [`Term`]).
+//! WASM bindings for SXO (`SxoFrontend` + engine [`Term`]).
 
 #![deny(missing_docs)]
 
-use sxo_engine::{Dialect, SxoEngine, SxoError, Term, VERSION as CORE_VERSION};
+use sxo_dialects::{Dialect, SxoError, SxoFrontend, Term, VERSION as CORE_VERSION};
 use wasm_bindgen::prelude::*;
 
 fn dialect_from_str(s: Option<String>) -> Result<Dialect, JsValue> {
@@ -19,7 +19,7 @@ fn map_err(err: SxoError) -> JsValue {
     JsValue::from_str(&err.message)
 }
 
-fn parse_to_term(eng: &SxoEngine, input: &str, dialect: Dialect) -> Result<(Term, Dialect), JsValue> {
+fn parse_to_term(eng: &SxoFrontend, input: &str, dialect: Dialect) -> Result<(Term, Dialect), JsValue> {
     let resolved = match eng.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
@@ -56,33 +56,33 @@ impl Expression {
     #[wasm_bindgen(constructor)]
     pub fn new(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
         let d = dialect_from_str(dialect)?;
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         let (term, resolved) = parse_to_term(&eng, input, d)?;
         Ok(Self { inner: term, dialect: resolved })
     }
 
     /// Differentiate with respect to `var`.
     pub fn d(&self, var: &str) -> Expression {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Expression { inner: eng.differentiate_term(&self.inner, var), dialect: self.dialect }
     }
 
-    /// Simplify via `SxoEngine`.
+    /// Simplify via `SxoFrontend`.
     pub fn simplify(&self) -> Expression {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Expression { inner: eng.simplify_term(&eng.evaluate(&self.inner)), dialect: self.dialect }
     }
 
     /// Evaluate (canonical rewrite) this expression.
     pub fn evaluate(&self) -> Expression {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Expression { inner: eng.evaluate(&self.inner), dialect: self.dialect }
     }
 
     /// Render as string in the expression's dialect.
     #[wasm_bindgen(js_name = toString)]
     pub fn to_string_js(&self) -> String {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         match self.dialect {
             Dialect::Matlab => eng.render_as_matlab(&self.inner),
             _ => eng.render_as_wolfram(&self.inner),
@@ -92,14 +92,14 @@ impl Expression {
     /// Render as Mathematica / Wolfram text.
     #[wasm_bindgen(js_name = toWolfram)]
     pub fn to_wolfram(&self) -> String {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         eng.render_as_wolfram(&self.inner)
     }
 
     /// Render as MATLAB text.
     #[wasm_bindgen(js_name = toMatlab)]
     pub fn to_matlab(&self) -> String {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         eng.render_as_matlab(&self.inner)
     }
 
@@ -114,7 +114,7 @@ impl Expression {
 #[wasm_bindgen]
 pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoEngine::new();
+    let eng = SxoFrontend::new();
     let (term, resolved) = parse_to_term(&eng, input, d)?;
     Ok(Expression { inner: eng.differentiate_term(&term, var), dialect: resolved })
 }
@@ -123,7 +123,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
 #[wasm_bindgen]
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoEngine::new();
+    let eng = SxoFrontend::new();
     let (term, resolved) = parse_to_term(&eng, input, d)?;
     Ok(Expression { inner: eng.simplify_term(&eng.evaluate(&term)), dialect: resolved })
 }

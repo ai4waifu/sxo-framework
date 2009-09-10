@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "WASM ABI bridge (non-route; depends on sxo-engine)"
+description = "WASM ABI bridge (non-route; depends on sxo-dialects / SxoFrontend)"
 publish = false
 
 [lib]
@@ -17,7 +17,7 @@ name = "sxo_lite"
 workspace = true
 
 [dependencies]
-sxo-engine = { workspace = true }
+sxo-dialects = { workspace = true }
 wasm-bindgen = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

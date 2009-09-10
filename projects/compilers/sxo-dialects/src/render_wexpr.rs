@@ -1,8 +1,11 @@
 //! Render [`WExpr`] as Wolfram text.
 
-use crate::number_literal::render_number;
-use crate::term::Atom;
-use crate::wexpr::{WAtom, WExpr};
+use athena::Atom;
+
+use crate::{
+    number_literal::render_number,
+    wexpr::{WAtom, WExpr},
+};
 
 /// Render a Wolfram expression.
 pub fn render_wexpr(expr: &WExpr) -> String {

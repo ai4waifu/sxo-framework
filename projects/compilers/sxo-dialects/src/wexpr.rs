@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use euler::Number;
+use athena::Number;
 
 /// Atomic Wolfram-facing value.
 #[derive(Debug, Clone, PartialEq)]

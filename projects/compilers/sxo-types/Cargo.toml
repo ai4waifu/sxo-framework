@@ -6,11 +6,11 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "SXO product types (Dialect, SxoError) + euler-types wire re-exports"
+description = "SXO product types (Dialect, SxoError) + athena-types wire re-exports"
 publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
-euler-types = { workspace = true }
+athena-types = { workspace = true }

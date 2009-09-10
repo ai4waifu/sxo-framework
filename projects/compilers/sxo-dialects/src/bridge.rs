@@ -1,24 +1,25 @@
-//! Bridge legacy flat [`Expr`] ↔ engine [`Term`] (Simple Math off-route helpers).
+//! Bridge legacy flat [`Expr`] ↔ Athena [`Term`] (Simple Math off-route helpers).
 //!
 //! [`Expr::Num`] is a **legacy frontend** form; lowering to kernel uses explicit machine-real
 //! conversion only — not exact semantics.
 
 #![allow(dead_code)]
 
-use crate::{expr::Expr, term::Atom, term::Term};
-use euler::Number;
+use athena::{Atom, Number, Term};
 use sxo_types::SxoError;
+
+use crate::expr::Expr;
 
 /// Lower a shared-subset [`Term`] into flat [`Expr`] (lossy for exact numbers).
 pub fn term_to_expr(t: &Term) -> Result<Expr, SxoError> {
     match t {
-        Term::Atom(Atom::Number(n)) => Ok(Expr::num(
-            n.to_f64_lossy().ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?,
-        )),
+        Term::Atom(Atom::Number(n)) => {
+            Ok(Expr::num(n.to_f64_lossy().ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?))
+        }
         Term::Atom(Atom::Symbol(s)) => Ok(Expr::var(s.clone())),
         Term::Atom(Atom::String(_)) => Err(SxoError::new("bridge: strings not in Expr")),
         Term::List(_) => Err(SxoError::new("bridge: List not in Expr")),
-        Term::App { head, args } => {
+        Term::Application { head, arguments: args } => {
             let h = head.head_name().ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
             match h {
                 "Plus" if args.len() == 2 => Ok(Expr::add(term_to_expr(&args[0])?, term_to_expr(&args[1])?)),
@@ -55,7 +56,7 @@ pub fn term_to_expr(t: &Term) -> Result<Expr, SxoError> {
     }
 }
 
-/// Lift flat [`Expr`] into engine [`Term`] (numbers become machine reals).
+/// Lift flat [`Expr`] into Athena [`Term`] (numbers become machine reals).
 pub fn expr_to_term(e: &Expr) -> Term {
     match e {
         Expr::Num(n) => Term::number(Number::machine(*n)),

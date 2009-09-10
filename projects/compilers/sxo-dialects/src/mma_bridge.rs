@@ -1,9 +1,10 @@
 //! Convert between engine [`Term`] and Mathematica frontend [`WExpr`].
 
-use crate::term::{Atom, Term};
+use athena::{Atom, Term};
+
 use crate::wexpr::{WAtom, WExpr};
 
-/// Structural `WExpr` → engine `Term`.
+/// Structural `WExpr` ? engine `Term`.
 pub fn wexpr_to_term(w: &WExpr) -> Term {
     match w {
         WExpr::Atom(a) => Term::Atom(match a {
@@ -12,14 +13,13 @@ pub fn wexpr_to_term(w: &WExpr) -> Term {
             WAtom::Symbol(s) => Atom::Symbol(s.clone()),
         }),
         WExpr::List(items) => Term::List(items.iter().map(wexpr_to_term).collect()),
-        WExpr::Call { head, args } => Term::App {
-            head: Box::new(wexpr_to_term(head)),
-            args: args.iter().map(wexpr_to_term).collect(),
-        },
+        WExpr::Call { head, args } => {
+            Term::Application { head: Box::new(wexpr_to_term(head)), arguments: args.iter().map(wexpr_to_term).collect() }
+        }
     }
 }
 
-/// Engine `Term` → structural `WExpr`.
+/// Engine `Term` ? structural `WExpr`.
 pub fn term_to_wexpr(t: &Term) -> WExpr {
     match t {
         Term::Atom(a) => WExpr::Atom(match a {
@@ -28,9 +28,8 @@ pub fn term_to_wexpr(t: &Term) -> WExpr {
             Atom::Symbol(s) => WAtom::Symbol(s.clone()),
         }),
         Term::List(items) => WExpr::List(items.iter().map(term_to_wexpr).collect()),
-        Term::App { head, args } => WExpr::Call {
-            head: Box::new(term_to_wexpr(head)),
-            args: args.iter().map(term_to_wexpr).collect(),
-        },
+        Term::Application { head, arguments: args } => {
+            WExpr::Call { head: Box::new(term_to_wexpr(head)), args: args.iter().map(term_to_wexpr).collect() }
+        }
     }
 }

@@ -1,4 +1,4 @@
-//! Rule-based simplification (SxoEngine pipeline; no egg).
+//! Rule-based simplification (legacy flat `Expr` pipeline; no egg).
 
 use crate::expr::Expr;
 
