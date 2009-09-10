@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn lower_plus_app() {
-        let t = Term::app("Plus", vec![Term::int(1), Term::int(2)]);
+        let t = Term::apply("Plus", vec![Term::int(1), Term::int(2)]);
         let k = lower_to_kernel(&t).unwrap();
         assert!(matches!(k.arena.get(k.root), Some(TermKind::App { .. })));
     }

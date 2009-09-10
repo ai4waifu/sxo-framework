@@ -3,9 +3,89 @@
 version = 4
 
 [[package]]
+name = "apollo"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-backend-svg",
+ "apollo-data",
+ "apollo-grammar",
+ "apollo-layout",
+ "apollo-render",
+ "apollo-scene",
+ "apollo-types",
+]
+
+[[package]]
+name = "apollo-backend-svg"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-render",
+ "apollo-scene",
+ "apollo-types",
+]
+
+[[package]]
+name = "apollo-data"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-types",
+ "serde",
+]
+
+[[package]]
+name = "apollo-grammar"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-data",
+ "apollo-layout",
+ "apollo-scene",
+ "apollo-types",
+ "serde",
+]
+
+[[package]]
+name = "apollo-layout"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-data",
+ "apollo-types",
+]
+
+[[package]]
+name = "apollo-render"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-scene",
+ "apollo-types",
+]
+
+[[package]]
+name = "apollo-scene"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "apollo-types",
+ "serde",
+]
+
+[[package]]
+name = "apollo-types"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "athena"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-engine",
 ]
@@ -13,9 +93,10 @@ dependencies = [
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-ir",
+ "athena-numeric",
  "athena-rewriter",
  "athena-types",
  "num-bigint",
@@ -26,15 +107,27 @@ dependencies = [
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
+dependencies = [
+ "athena-numeric",
+ "athena-types",
+]
+
+[[package]]
+name = "athena-numeric"
+version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-types",
+ "num-bigint",
+ "num-rational",
+ "num-traits",
 ]
 
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-ir",
  "athena-types",
@@ -43,7 +136,7 @@ dependencies = [
 [[package]]
 name = "athena-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=302da263a6641e78abcd6f0be462ecc5a60505f2#302da263a6641e78abcd6f0be462ecc5a60505f2"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "num-bigint",
  "num-rational",
@@ -452,6 +545,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
 dependencies = [
  "serde_core",
+ "serde_derive",
 ]
 
 [[package]]
@@ -487,6 +581,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 
 [[package]]
+name = "sxo-adapter-apollo"
+version = "0.1.0"
+dependencies = [
+ "apollo",
+ "athena",
+]
+
+[[package]]
 name = "sxo-dialects"
 version = "0.1.0"
 dependencies = [
@@ -498,6 +600,7 @@ dependencies = [
  "oak-core",
  "oak-matlab",
  "oak-wolfram",
+ "sxo-adapter-apollo",
  "sxo-types",
 ]
 

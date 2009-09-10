@@ -13,7 +13,10 @@
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
         "fmt": "biome format --write . && cargo fmt --all",
-        "fmt:check": "biome format . && cargo fmt --all -- --check"
+        "fmt:check": "biome format . && cargo fmt --all -- --check",
+        "placeholder": "node scripts/ci/publish-placeholder.mjs",
+        "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
+        "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.7",

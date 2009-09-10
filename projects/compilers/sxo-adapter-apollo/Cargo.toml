@@ -1,0 +1,20 @@
+[package]
+name = "sxo-adapter-apollo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "SXO host adapter: Athena SampledCurve → Apollo PlotSpec / SVG"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+athena = { workspace = true }
+apollo = { workspace = true }
+
+[dev-dependencies]
+athena = { workspace = true }

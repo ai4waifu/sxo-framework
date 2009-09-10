@@ -19,7 +19,7 @@ impl SxoError {
 
     /// Map a kernel diagnostic into a product error (preserves stable code).
     pub fn from_diagnostic(d: Diagnostic) -> Self {
-        Self { message: d.detail, athena_code: Some(d.code.as_str().to_string()) }
+        Self { message: d.to_string(), athena_code: Some(d.code.as_str().to_string()) }
     }
 }
 

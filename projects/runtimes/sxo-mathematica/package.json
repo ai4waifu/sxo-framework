@@ -3,23 +3,39 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "SXO Mathematica / Wolfram dialect API (sole Wolfram entry)",
+    "description": "SXO Mathematica / Wolfram dialect API and wolframscript CLI",
     "license": "Apache-2.0",
+    "bin": {
+        "wolframscript": "./bin/wolframscript.mjs"
+    },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
+        },
+        "./cli": {
+            "types": "./dist/cli.d.ts",
+            "default": "./dist/cli.js"
         }
     },
     "files": [
         "dist",
+        "bin",
+        "locales",
         "README.md"
     ],
+    "engines": {
+        "node": ">=20"
+    },
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "test": "node ./tests/integration.mjs && node ./tests/numeric.mjs"
+        "test": "node ./tests/integration.mjs && node ./tests/numeric.mjs && node ./tests/cli.mjs"
+    },
+    "dependencies": {
+        "@vmz/commander": "0.1.26",
+        "@vmz/diagnostic": "0.1.26"
     },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",

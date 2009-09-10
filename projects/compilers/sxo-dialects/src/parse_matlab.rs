@@ -134,9 +134,9 @@ fn lower_prefix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -
         }
     }
     match (op, operand) {
-        (Some(MatlabTokenType::Minus), Some(e)) => Ok(Term::app("Times", vec![Term::int(-1), e])),
+        (Some(MatlabTokenType::Minus), Some(e)) => Ok(Term::apply("Times", vec![Term::int(-1), e])),
         (Some(MatlabTokenType::Plus), Some(e)) => Ok(e),
-        (Some(MatlabTokenType::Not), Some(e)) => Ok(Term::app("Not", vec![e])),
+        (Some(MatlabTokenType::Not), Some(e)) => Ok(Term::apply("Not", vec![e])),
         (Some(other), _) => Err(SxoError::new(format!("matlab(oak): unsupported prefix {other:?}"))),
         _ => Err(SxoError::new("matlab(oak): malformed PrefixExpr")),
     }
@@ -172,22 +172,22 @@ fn lower_binary(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -
         _ => return Err(SxoError::new("matlab(oak): malformed BinaryExpr")),
     };
     Ok(match op {
-        MatlabTokenType::Plus => Term::app("Plus", vec![l, r]),
-        MatlabTokenType::Minus => Term::app("Subtract", vec![l, r]),
-        MatlabTokenType::Times | MatlabTokenType::DotTimes => Term::app("Times", vec![l, r]),
-        MatlabTokenType::Divide | MatlabTokenType::DotDivide => Term::app("Divide", vec![l, r]),
-        MatlabTokenType::LeftDivide | MatlabTokenType::DotLeftDivide => Term::app("Divide", vec![r, l]),
-        MatlabTokenType::Power | MatlabTokenType::DotPower => Term::app("Power", vec![l, r]),
-        MatlabTokenType::Assign => Term::app("Set", vec![l, r]),
-        MatlabTokenType::Equal => Term::app("Equal", vec![l, r]),
-        MatlabTokenType::NotEqual => Term::app("Unequal", vec![l, r]),
-        MatlabTokenType::Less => Term::app("Less", vec![l, r]),
-        MatlabTokenType::Greater => Term::app("Greater", vec![l, r]),
-        MatlabTokenType::LessEqual => Term::app("LessEqual", vec![l, r]),
-        MatlabTokenType::GreaterEqual => Term::app("GreaterEqual", vec![l, r]),
-        MatlabTokenType::AndAnd | MatlabTokenType::And => Term::app("And", vec![l, r]),
-        MatlabTokenType::OrOr | MatlabTokenType::Or => Term::app("Or", vec![l, r]),
-        MatlabTokenType::Colon => Term::app("Span", vec![l, r]),
+        MatlabTokenType::Plus => Term::apply("Plus", vec![l, r]),
+        MatlabTokenType::Minus => Term::apply("Subtract", vec![l, r]),
+        MatlabTokenType::Times | MatlabTokenType::DotTimes => Term::apply("Times", vec![l, r]),
+        MatlabTokenType::Divide | MatlabTokenType::DotDivide => Term::apply("Divide", vec![l, r]),
+        MatlabTokenType::LeftDivide | MatlabTokenType::DotLeftDivide => Term::apply("Divide", vec![r, l]),
+        MatlabTokenType::Power | MatlabTokenType::DotPower => Term::apply("Power", vec![l, r]),
+        MatlabTokenType::Assign => Term::apply("Set", vec![l, r]),
+        MatlabTokenType::Equal => Term::apply("Equal", vec![l, r]),
+        MatlabTokenType::NotEqual => Term::apply("Unequal", vec![l, r]),
+        MatlabTokenType::Less => Term::apply("Less", vec![l, r]),
+        MatlabTokenType::Greater => Term::apply("Greater", vec![l, r]),
+        MatlabTokenType::LessEqual => Term::apply("LessEqual", vec![l, r]),
+        MatlabTokenType::GreaterEqual => Term::apply("GreaterEqual", vec![l, r]),
+        MatlabTokenType::AndAnd | MatlabTokenType::And => Term::apply("And", vec![l, r]),
+        MatlabTokenType::OrOr | MatlabTokenType::Or => Term::apply("Or", vec![l, r]),
+        MatlabTokenType::Colon => Term::apply("Span", vec![l, r]),
         other => {
             return Err(SxoError::new(format!("matlab(oak): unsupported binary {other:?}")));
         }
@@ -214,7 +214,7 @@ fn lower_postfix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) 
     }
     let expr = expr.ok_or_else(|| SxoError::new("matlab(oak): malformed PostfixExpr"))?;
     match op {
-        Some(MatlabTokenType::Transpose) | Some(MatlabTokenType::DotTranspose) => Ok(Term::app("Transpose", vec![expr])),
+        Some(MatlabTokenType::Transpose) | Some(MatlabTokenType::DotTranspose) => Ok(Term::apply("Transpose", vec![expr])),
         Some(other) => Err(SxoError::new(format!("matlab(oak): unsupported postfix {other:?}"))),
         None => Ok(expr),
     }
@@ -338,13 +338,13 @@ mod tests {
     #[test]
     fn parse_call_sin() {
         let t = parse_matlab("sin(x)").unwrap();
-        assert_eq!(t, Term::app("Sin", vec![Term::symbol("x")]));
+        assert_eq!(t, Term::apply("Sin", vec![Term::symbol("x")]));
     }
 
     #[test]
     fn parse_power() {
         let t = parse_matlab("x^3").unwrap();
-        assert_eq!(t, Term::app("Power", vec![Term::symbol("x"), Term::int(3)]));
+        assert_eq!(t, Term::apply("Power", vec![Term::symbol("x"), Term::int(3)]));
     }
 
     #[test]
@@ -356,7 +356,7 @@ mod tests {
     #[test]
     fn parse_pythagorean() {
         let t = parse_matlab("sin(x)^2 + cos(x)^2").unwrap();
-        assert_eq!(evaluate(&Term::app("Simplify", vec![t])), Term::int(1));
+        assert_eq!(evaluate(&Term::apply("Simplify", vec![t])), Term::int(1));
     }
 
     #[test]

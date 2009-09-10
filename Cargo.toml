@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "projects/compilers/sxo-types",
     "projects/compilers/sxo-dialects",
+    "projects/compilers/sxo-adapter-apollo",
     "projects/compilers/sxo-napi",
     "projects/compilers/sxo-lite-wasm",
 ]
@@ -19,15 +20,17 @@ rust-version = "1.89"
 [workspace.dependencies]
 sxo-types = { path = "projects/compilers/sxo-types" }
 sxo-dialects = { path = "projects/compilers/sxo-dialects" }
+sxo-adapter-apollo = { path = "projects/compilers/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
 oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
-athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "302da263a6641e78abcd6f0be462ecc5a60505f2", package = "athena" }
-athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "302da263a6641e78abcd6f0be462ecc5a60505f2", package = "athena-types" }
-athena-ir = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "302da263a6641e78abcd6f0be462ecc5a60505f2", package = "athena-ir" }
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "874193d6d6e0af4359f4bc53319ffd801ba02fd5", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "874193d6d6e0af4359f4bc53319ffd801ba02fd5", package = "athena-types" }
+athena-ir = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "874193d6d6e0af4359f4bc53319ffd801ba02fd5", package = "athena-ir" }
+apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 num-bigint = { version = "0.4", default-features = false, features = ["std"] }
 num-rational = { version = "0.4", default-features = false, features = ["std", "num-bigint"] }
 num-traits = "0.2"

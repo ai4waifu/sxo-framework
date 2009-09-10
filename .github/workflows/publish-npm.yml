@@ -1,6 +1,6 @@
 # Trusted Publisher contract (sole npm trusted workflow — keep this filename):
 #   file = publish-npm.yml
-#   repo = ai4waifu/dxo-framework
+#   repo = ai4waifu/sxo-framework
 #   env  = NPM_PUBLISH
 #
 # Triggers:
@@ -72,12 +72,12 @@ jobs:
           set -euo pipefail
           out="dist/${{ matrix.short }}"
           mkdir -p "$out"
-          src="projects/runtimes/dxo-${{ matrix.short }}"
-          named="dxo.${{ matrix.triple }}.node"
+          src="projects/runtimes/sxo-${{ matrix.short }}"
+          named="sxo.${{ matrix.triple }}.node"
           if [[ -f "$src/$named" ]]; then
             cp "$src/$named" "$out/$named"
-          elif [[ -f "$src/dxo.node" ]]; then
-            cp "$src/dxo.node" "$out/$named"
+          elif [[ -f "$src/sxo.node" ]]; then
+            cp "$src/sxo.node" "$out/$named"
           else
             echo "missing native binary under $src (want $named)" >&2
             ls -la "$src" || true
@@ -174,7 +174,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      # lib/ + dist/ for @dxo/lite-unknown-wasm32 before any @dxo/lite tsc / publish.
+      # lib/ + dist/ for @sxo/lite-unknown-wasm32 before any @sxo/lite tsc / publish.
       - name: Build lite WASM artifact
         run: pnpm run build:lite-wasm
 
@@ -216,6 +216,6 @@ jobs:
 
       - name: Publish real packages
         env:
-          DXO_NATIVE_ARTIFACTS: ${{ github.workspace }}/dist/native-flat
+          SXO_NATIVE_ARTIFACTS: ${{ github.workspace }}/dist/native-flat
           GITHUB_REF: refs/tags/v${{ steps.ver.outputs.version }}
         run: node scripts/ci/publish-npm.mjs --version=${{ steps.ver.outputs.version }}

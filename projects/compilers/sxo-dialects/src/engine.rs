@@ -2,7 +2,7 @@
 //!
 //! Math semantics live in **`athena::AthenaEngine`**; this type wires oak frontends.
 
-use athena::{AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, Term};
+use athena::{AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, DomainResult, Term};
 use sxo_types::{Dialect, SxoError, detect_dialect};
 
 use crate::{
@@ -71,24 +71,29 @@ impl SxoFrontend {
             order: athena::DerivativeOrder::First,
             assumptions: athena::AssumptionSet::empty(),
         })) {
-            Ok(r) => athena::calculus_result_bridge_term(&r),
-            Err(_) => self.math().differentiate_term(expr, var),
+            Ok(DomainResult::Calculus(r)) => athena::calculus_result_bridge_term(&r),
+            _ => self.math().differentiate_term(expr, var),
         }
     }
 
-    /// Domain dispatch through Athena (calculus returns conditioned results).
-    pub fn execute_domain(&self, request: DomainRequest) -> Result<CalculusResult<CalculusValue>, Diagnostic> {
+    /// Domain dispatch through Athena.
+    pub fn execute_domain(&self, request: DomainRequest) -> Result<DomainResult, Diagnostic> {
         self.math().execute_domain(request)
     }
 
     /// Convenience: indefinite integral via [`DomainRequest::Calculus`].
     pub fn integrate_term(&self, expr: &Term, var: &str) -> CalculusResult<CalculusValue> {
-        self.execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
-            expression: expr.clone(),
-            variable: var.to_string(),
-            assumptions: athena::AssumptionSet::empty(),
-        }))
-        .expect("calculus Integral dispatch is infallible")
+        match self
+            .execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
+                expression: expr.clone(),
+                variable: var.to_string(),
+                assumptions: athena::AssumptionSet::empty(),
+            }))
+            .expect("calculus Integral dispatch is infallible")
+        {
+            DomainResult::Calculus(c) => c,
+            other => panic!("expected Calculus domain result, got {other:?}"),
+        }
     }
 
     /// `Simplify` builtin on Athena [`Term`].
