@@ -1,7 +1,7 @@
 {
     "diag.native_unavailable": "原生引擎不可用：{detail}",
     "diag.file_not_found": "文件不存在：{detail}",
-    "diag.missing_code": "缺少表达式（wolframscript code <expr>�?,
+    "diag.missing_code": "缺少表达式（wolframscript code <expr>�?,
     "diag.missing_file": "缺少文件路径",
     "diag.eval_failed": "求值失败：{detail}",
     "diag.bad_argv": "参数错误：{detail}"

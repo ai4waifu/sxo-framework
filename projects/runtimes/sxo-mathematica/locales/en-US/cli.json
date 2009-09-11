@@ -1,10 +1,16 @@
 {
-    "cli.intro": "wolframscript â€?Mathematica Form CLI (WolframScript-shaped; local evaluate)",
+    "cli.intro": "wolframscript — Mathematica Form CLI (WolframScript-shaped; local evaluate)",
     "cli.cmd.version": "Print wolframscript and engine versions",
     "cli.cmd.code": "Evaluate Mathematica Form code and print the result",
     "cli.cmd.file": "Evaluate a .wl/.wls file and print the last result",
     "cli.cmd.script": "Run a script (shebang mode; silent unless Print / --print)",
     "cli.cmd.repl": "Interactive In[n]:= / Out[n]= session",
+    "cli.cmd.jupyter": "Jupyter kernelspec and kernel process",
+    "cli.cmd.jupyter.install": "Install the SXO Mathematica Jupyter kernelspec",
+    "cli.cmd.jupyter.uninstall": "Uninstall the SXO Mathematica Jupyter kernelspec",
+    "cli.cmd.jupyter.kernel": "Run the Jupyter kernel (connection file from Jupyter)",
     "cli.opt.print": "Print last result, or each result when mode is all",
-    "cli.opt.json": "Emit one JSON document on stdout"
+    "cli.opt.json": "Emit one JSON document on stdout",
+    "cli.opt.prefix": "Install under <dir>/share/jupyter/kernels (instead of user dir)",
+    "cli.opt.name": "Kernelspec directory id (default sxo-mathematica)"
 }

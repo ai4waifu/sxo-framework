@@ -4,5 +4,8 @@
     "diag.missing_code": "Missing code expression (wolframscript code <expr>)",
     "diag.missing_file": "Missing file path",
     "diag.eval_failed": "Evaluation failed: {detail}",
-    "diag.bad_argv": "Bad arguments: {detail}"
+    "diag.bad_argv": "Bad arguments: {detail}",
+    "diag.jupyter_install_failed": "Jupyter kernelspec install failed: {detail}",
+    "diag.jupyter_missing_connection": "Missing Jupyter connection file path",
+    "diag.jupyter_kernel_failed": "Jupyter kernel failed: {detail}"
 }

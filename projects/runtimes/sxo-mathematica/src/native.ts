@@ -20,6 +20,8 @@ export type NativeBinding = {
     expression(input: string, dialect?: string | null): NativeExpression;
     d(input: string, varName: string, dialect?: string | null): NativeExpression;
     simplify(input: string, dialect?: string | null): NativeExpression;
+    /** Block until Jupyter kernel shutdown (connection file path). */
+    runJupyterKernel(connectionFile: string): void;
 };
 
 function platformPackage(): { name: string; triple: string } {

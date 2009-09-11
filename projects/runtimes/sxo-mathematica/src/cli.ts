@@ -1,9 +1,9 @@
 /**
- * `wolframscript` ? Mathematica Form CLI for `@sxo/mathematica`.
+ * `wolframscript` — Mathematica Form CLI for `@sxo/mathematica`.
  *
  * Built with `@vmz/commander` (same stack as `@sxo/sxo`). Local evaluate only.
  * WolframScript-shaped aliases (`-code` / `-file`) are peeled into commander
- * subcommands before `parse` ? help/catalog/i18n stay on the commander tree.
+ * subcommands before `parse` — help/catalog/i18n stay on the commander tree.
  */
 
 import { createInterface } from 'node:readline';
@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { assertCatalogCoverage, createCli, loadCatalog, loadLocalesManifest, resolveLocale } from '@vmz/commander';
 import { formatDiagnostic, type LocaleCatalog } from '@vmz/diagnostic';
 import { Mathematica } from './index.js';
+import { installKernelspec, uninstallKernelspec } from './jupyter/install.js';
+import { loadNative } from './native.js';
 
 const LOCALES_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'locales');
 const ENV_KEYS = ['SXO_LOCALE', 'LOCALE', 'LANG', 'LC_ALL'];
@@ -124,7 +126,7 @@ function runFile(mma: Mathematica, file: string, print: PrintMode, scriptMode: b
 
 async function runRepl(mma: Mathematica): Promise<number> {
     const { version } = packageMeta();
-    process.stdout.write(`wolframscript ${version} (Mathematica Form ? local)\n`);
+    process.stdout.write(`wolframscript ${version} (Mathematica Form — local)\n`);
     process.stdout.write('Type expression, or quit / Exit[]\n\n');
 
     const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -164,7 +166,7 @@ async function runRepl(mma: Mathematica): Promise<number> {
 
 /**
  * Map wolframscript-shaped flags onto commander subcommands.
- * Does not implement a second CLI ??only peels aliases before `createCli().parse`.
+ * Does not implement a second CLI — only peels aliases before `createCli().parse`.
  */
 export function adaptArgv(argv: string[]): string[] {
     const head = argv.slice(0, 2);
@@ -230,9 +232,7 @@ function printModeOf(options: Record<string, string | boolean | string[]>): Prin
 }
 
 function buildCli() {
-    const cli = createCli('wolframscript')
-        .locales(resolveLocalesRoot(), { envKeys: ENV_KEYS })
-        .intro('cli.intro');
+    const cli = createCli('wolframscript').locales(resolveLocalesRoot(), { envKeys: ENV_KEYS }).intro('cli.intro');
 
     cli.command('version', 'cli.cmd.version').action((options) => {
         const pkg = packageMeta();
@@ -251,8 +251,7 @@ function buildCli() {
         return 0;
     });
 
-    cli
-        .command('code|c', 'cli.cmd.code')
+    cli.command('code|c', 'cli.cmd.code')
         .option('--json', 'cli.opt.json')
         .action((options) => {
             const expr = options._[0];
@@ -274,8 +273,7 @@ function buildCli() {
             }
         });
 
-    cli
-        .command('file|f', 'cli.cmd.file')
+    cli.command('file|f', 'cli.cmd.file')
         .option('--print [mode]', 'cli.opt.print')
         .option('--json', 'cli.opt.json')
         .action((options) => {
@@ -293,8 +291,7 @@ function buildCli() {
             }
         });
 
-    cli
-        .command('script', 'cli.cmd.script')
+    cli.command('script', 'cli.cmd.script')
         .option('--print [mode]', 'cli.opt.print')
         .passthrough()
         .action((options) => {
@@ -316,6 +313,67 @@ function buildCli() {
             return await runRepl(Mathematica.create());
         } catch (err) {
             writeDiag('diag.native_unavailable', err instanceof Error ? err.message : String(err));
+            return 1;
+        }
+    });
+
+    const jupyter = cli.command('jupyter', 'cli.cmd.jupyter');
+
+    jupyter
+        .command('install', 'cli.cmd.jupyter.install')
+        .option('--prefix <dir>', 'cli.opt.prefix')
+        .option('--name <id>', 'cli.opt.name')
+        .action((options) => {
+            try {
+                const dir = installKernelspec({
+                    prefix: typeof options.prefix === 'string' ? options.prefix : undefined,
+                    name: typeof options.name === 'string' ? options.name : undefined,
+                });
+                if (options.json === true) {
+                    console.log(JSON.stringify({ installed: dir }));
+                } else {
+                    console.log(`Installed Jupyter kernelspec at ${dir}`);
+                }
+                return 0;
+            } catch (err) {
+                writeDiag('diag.jupyter_install_failed', err instanceof Error ? err.message : String(err));
+                return 1;
+            }
+        });
+
+    jupyter
+        .command('uninstall', 'cli.cmd.jupyter.uninstall')
+        .option('--prefix <dir>', 'cli.opt.prefix')
+        .option('--name <id>', 'cli.opt.name')
+        .action((options) => {
+            try {
+                const removed = uninstallKernelspec({
+                    prefix: typeof options.prefix === 'string' ? options.prefix : undefined,
+                    name: typeof options.name === 'string' ? options.name : undefined,
+                });
+                if (options.json === true) {
+                    console.log(JSON.stringify({ removed }));
+                } else {
+                    console.log(removed ? 'Uninstalled Jupyter kernelspec' : 'Kernelspec not found');
+                }
+                return 0;
+            } catch (err) {
+                writeDiag('diag.jupyter_install_failed', err instanceof Error ? err.message : String(err));
+                return 1;
+            }
+        });
+
+    jupyter.command('kernel', 'cli.cmd.jupyter.kernel').action((options) => {
+        const file = options._[0];
+        if (!file) {
+            writeDiag('diag.jupyter_missing_connection');
+            return 2;
+        }
+        try {
+            loadNative().runJupyterKernel(file);
+            return 0;
+        } catch (err) {
+            writeDiag('diag.jupyter_kernel_failed', err instanceof Error ? err.message : String(err));
             return 1;
         }
     });
