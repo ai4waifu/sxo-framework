@@ -19,12 +19,13 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "test": "node ./tests/integration.mjs"
+        "test": "vitest run"
     },
     "dependencies": {
         "@sxo/core": "workspace:*"
     },
     "devDependencies": {
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.4"
     }
 }
