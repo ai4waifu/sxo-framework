@@ -1,3 +1,5 @@
+//! Integration tests for plot_1d.
+
 use athena::{SampleDomain, SamplingPolicy, Term};
 use sxo_adapter_apollo::plot_1d_svg;
 

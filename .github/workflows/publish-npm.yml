@@ -124,22 +124,21 @@ jobs:
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "resolved version=$v"
 
-      - name: Require green CI on tagged commit
-        if: github.event_name == 'push'
+      - name: Require green CI on publish commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           sha="${{ github.sha }}"
           repo="${{ github.repository }}"
-          # Tag push often races ordinary CI: do not read .[0] while status=in_progress
-          # (conclusion is empty → false "missing"). Wait for a completed CI run.
+          # Tag push / workflow_dispatch both require green CI on this SHA.
+          # Do not read .[0] while status=in_progress (conclusion empty → false "missing").
           for attempt in $(seq 1 90); do
             json="$(gh run list --repo "$repo" --commit "$sha" --workflow ci.yml --limit 5 --json conclusion,status,databaseId)"
             completed="$(echo "$json" | jq -r '[.[] | select(.status=="completed")] | .[0].conclusion // empty')"
             open="$(echo "$json" | jq -r '[.[] | select(.status!="completed")] | length')"
             if [[ "$completed" == "success" ]]; then
-              echo "CI success confirmed for tagged commit (attempt $attempt)"
+              echo "CI success confirmed for publish commit (attempt $attempt)"
               exit 0
             fi
             if [[ "$completed" == "failure" || "$completed" == "cancelled" || "$completed" == "timed_out" ]]; then

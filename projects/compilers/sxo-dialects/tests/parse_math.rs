@@ -1,3 +1,5 @@
+//! Integration tests for parse_math.
+
 use num_bigint::BigInt;
 use sxo_dialects::{Number, Term, WExpr, evaluate, parse_mathematica, render_wexpr, term_to_wexpr, wexpr_to_term};
 

@@ -1,3 +1,5 @@
+//! Integration tests for frontend.
+
 use num_bigint::BigInt;
 use sxo_dialects::{
     AssumptionSet, CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, DomainRequest, DomainResult, LimitApproach,

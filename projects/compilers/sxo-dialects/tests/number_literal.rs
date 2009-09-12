@@ -1,3 +1,5 @@
+//! Integration tests for number_literal.
+
 use sxo_dialects::{Number, parse_number_literal};
 
 #[test]

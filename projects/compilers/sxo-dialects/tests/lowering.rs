@@ -1,3 +1,5 @@
+//! Integration tests for lowering.
+
 use sxo_dialects::{Term, TermKind, lower_to_kernel};
 
 #[test]
