@@ -2,7 +2,7 @@
 
 use crate::expr::Expr;
 
-/// Render as simple-math DSL.
+/// Render as simple-math text.
 pub fn render_simple_math(expr: &Expr) -> String {
     render(expr, Style::SimpleMath)
 }

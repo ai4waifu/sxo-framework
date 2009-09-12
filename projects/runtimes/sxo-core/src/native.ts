@@ -8,7 +8,6 @@ export type NativeExpression = {
     d(varName: string): NativeExpression;
     simplify(): NativeExpression;
     toString(): string;
-    toDSL(): string;
     isEqual(other: NativeExpression): boolean;
 };
 

@@ -1,9 +1,8 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
 import {
     buildKernelSpec,
     DEFAULT_DISPLAY_NAME,
@@ -12,6 +11,7 @@ import {
     resolveKernelDir,
     uninstallKernelspec,
 } from '@sxo/mathematica/jupyter';
+import { describe, expect, it } from 'vitest';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const bin = path.join(root, 'bin', 'wolframscript.mjs');

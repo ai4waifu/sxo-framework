@@ -40,14 +40,3 @@ pub fn render_number(n: &Number) -> String {
 fn format_machine(n: f64) -> String {
     if n.fract() == 0.0 && n.abs() < 1e15 { format!("{}", n as i64) } else { format!("{n}") }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_integer_and_decimal() {
-        assert_eq!(parse_number_literal("42").unwrap(), Number::small_int(42));
-        assert!(parse_number_literal("1.5").unwrap().to_f64_lossy().unwrap() > 1.4);
-    }
-}

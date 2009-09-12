@@ -3,7 +3,7 @@
 /// Dialect selector for parse / render.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Dialect {
-    /// Simple-math / SM DSL (not on current delivery route).
+    /// Simple-math / SM (not on current delivery route).
     #[default]
     SimpleMath,
     /// Mathematica / Wolfram forms.

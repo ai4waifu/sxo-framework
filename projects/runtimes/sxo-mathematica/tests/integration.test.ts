@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { Mathematica, mathematica } from '@sxo/mathematica';
+import { describe, expect, it } from 'vitest';
 
 describe('@sxo/mathematica integration', () => {
     it('differentiates polynomials', () => {

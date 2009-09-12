@@ -1,10 +1,16 @@
 {
-    "cli.intro": "wolframscript �?Mathematica Form 命令行（对标 WolframScript；本地求值）",
-    "cli.cmd.version": "打印 wolframscript 与引擎版�?,
-    "cli.cmd.code": "求�?Mathematica Form 并打印结�?,
-    "cli.cmd.file": "执行 .wl/.wls 文件并打印最后结�?,
+    "cli.intro": "wolframscript -- Mathematica Form 命令行（对标 WolframScript；本地求值）",
+    "cli.cmd.version": "打印 wolframscript 与引擎版本",
+    "cli.cmd.code": "求值 Mathematica Form 并打印结果",
+    "cli.cmd.file": "执行 .wl/.wls 文件并打印最后结果",
     "cli.cmd.script": "脚本模式（默认不打印；Print / --print 才输出）",
-    "cli.cmd.repl": "交互�?In[n]:= / Out[n]=",
-    "cli.opt.print": "打印最后结果；mode=all 时打印每一行结�?,
-    "cli.opt.json": "�?stdout 输出一�?JSON 文档"
+    "cli.cmd.repl": "交互式 In[n]:= / Out[n]=",
+    "cli.cmd.jupyter": "Jupyter kernelspec 与内核进程",
+    "cli.cmd.jupyter.install": "安装 SXO Mathematica Jupyter kernelspec",
+    "cli.cmd.jupyter.uninstall": "卸载 SXO Mathematica Jupyter kernelspec",
+    "cli.cmd.jupyter.kernel": "运行 Jupyter 内核（由 Jupyter 传入 connection file）",
+    "cli.opt.print": "打印最后结果；mode=all 时打印每一行结果",
+    "cli.opt.json": "向 stdout 输出一份 JSON 文档",
+    "cli.opt.prefix": "安装到 <dir>/share/jupyter/kernels（而非用户目录）",
+    "cli.opt.name": "kernelspec 目录名（默认 sxo-mathematica）"
 }

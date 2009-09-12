@@ -26,10 +26,6 @@ export class Expression {
         return this.#inner.toString();
     }
 
-    toDSL(): string {
-        return this.#inner.toDSL();
-    }
-
     isEqual(other: Expression): boolean {
         return this.#inner.isEqual(other.#inner);
     }

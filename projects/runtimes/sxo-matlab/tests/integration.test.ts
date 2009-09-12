@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { Matlab, matlab } from '@sxo/matlab';
+import { describe, expect, it } from 'vitest';
 
 describe('@sxo/matlab integration', () => {
     it('differentiates polynomials', () => {

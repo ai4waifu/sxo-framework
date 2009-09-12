@@ -5,8 +5,8 @@ declare module '../lib/sxo_lite.js' {
         d(varName: string): Expression;
         simplify(): Expression;
         toString(): string;
-        toDSL(): string;
         toWolfram(): string;
+        toMatlab(): string;
         isEqual(other: Expression): boolean;
     }
     export function version(): string;
