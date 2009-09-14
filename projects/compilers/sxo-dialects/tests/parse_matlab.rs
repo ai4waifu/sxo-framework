@@ -51,10 +51,7 @@ fn parse_matrix_array() {
     let t = parse_matlab("[1, 2; 3, 4]").unwrap();
     assert_eq!(
         t,
-        Term::List(vec![
-            Term::List(vec![Term::int(1), Term::int(2)]),
-            Term::List(vec![Term::int(3), Term::int(4)]),
-        ])
+        Term::List(vec![Term::List(vec![Term::int(1), Term::int(2)]), Term::List(vec![Term::int(3), Term::int(4)]),])
     );
     assert_eq!(render_matlab(&t), "[1, 2; 3, 4]");
 }

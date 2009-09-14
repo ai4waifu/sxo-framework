@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 describe('@sxo/mathematica integration', () => {
     it('differentiates polynomials', () => {
-        const math = mathematica.d('x^3', 'x').toWolfram();
-        expect(math.includes('x') || math.includes('3')).toBe(true);
+        const math = mathematica.d('x^3', 'x');
+        expect(math.toWolfram()).toBe('3*x^2');
     });
 
     it('simplifies trig identity', () => {
@@ -14,6 +14,7 @@ describe('@sxo/mathematica integration', () => {
 
     it('evaluates factorial', () => {
         expect(mathematica.evaluate('5!').toWolfram()).toBe('120');
+        expect(mathematica.evaluate('50!').toWolfram()).toBe('30414093201713378043612608166064768844377641568960512000000000000');
     });
 
     it('evaluates equality', () => {
@@ -22,12 +23,12 @@ describe('@sxo/mathematica integration', () => {
 
     it('integrates polynomials', () => {
         const integral = mathematica.evaluate('Integrate[x^2, x]');
-        expect(integral.toWolfram()).toContain('x');
+        expect(integral.toWolfram()).toBe('1/3*x^3');
     });
 
     it('maps over lists', () => {
         const mapped = mathematica.evaluate('Map[Sin, {0, 1}]');
-        expect(mapped.toWolfram().startsWith('{')).toBe(true);
+        expect(mapped.toWolfram()).toBe('{0, 1}');
     });
 
     it('shares engine version across instances', () => {

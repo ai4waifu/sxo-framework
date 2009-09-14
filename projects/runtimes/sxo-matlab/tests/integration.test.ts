@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 describe('@sxo/matlab integration', () => {
     it('differentiates polynomials', () => {
-        const ml = matlab.d('x^3', 'x').toMatlab();
-        expect(ml.includes('x') || ml.includes('3')).toBe(true);
+        const ml = matlab.d('x^3', 'x');
+        expect(ml.toMatlab()).toBe('3*x^2');
     });
 
     it('simplifies trig identity', () => {
@@ -20,7 +20,7 @@ describe('@sxo/matlab integration', () => {
     });
 
     it('integrates polynomials', () => {
-        expect(matlab.evaluate('int(x^2, x)').toMatlab()).toContain('x');
+        expect(matlab.evaluate('int(x^2, x)').toMatlab()).toBe('1/3*x^3');
     });
 
     it('evaluates comparisons', () => {
