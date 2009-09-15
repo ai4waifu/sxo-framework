@@ -127,7 +127,6 @@ dependencies = [
 [[package]]
 name = "athena"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-engine",
 ]
@@ -135,21 +134,16 @@ dependencies = [
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-ir",
  "athena-numeric",
  "athena-rewriter",
  "athena-types",
- "num-bigint",
- "num-rational",
- "num-traits",
 ]
 
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-numeric",
  "athena-types",
@@ -158,18 +152,13 @@ dependencies = [
 [[package]]
 name = "athena-numeric"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-types",
- "num-bigint",
- "num-rational",
- "num-traits",
 ]
 
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
 dependencies = [
  "athena-ir",
  "athena-types",
@@ -178,12 +167,6 @@ dependencies = [
 [[package]]
 name = "athena-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=874193d6d6e0af4359f4bc53319ffd801ba02fd5#874193d6d6e0af4359f4bc53319ffd801ba02fd5"
-dependencies = [
- "num-bigint",
- "num-rational",
- "num-traits",
-]
 
 [[package]]
 name = "autocfg"
@@ -651,36 +634,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
-name = "num-bigint"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
-dependencies = [
- "num-integer",
- "num-traits",
-]
-
-[[package]]
-name = "num-integer"
-version = "0.1.47"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "num-rational"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
-dependencies = [
- "num-bigint",
- "num-integer",
- "num-traits",
-]
-
-[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1025,18 +978,39 @@ dependencies = [
 ]
 
 [[package]]
-name = "sxo-dialects"
+name = "sxo-dialect-mathematica"
 version = "0.1.0"
 dependencies = [
  "athena",
- "num-bigint",
- "num-integer",
- "num-rational",
- "num-traits",
+ "athena-ir",
+ "athena-types",
  "oak-core",
- "oak-matlab",
  "oak-wolfram",
  "sxo-adapter-apollo",
+ "sxo-types",
+]
+
+[[package]]
+name = "sxo-dialect-matlab"
+version = "0.1.0"
+dependencies = [
+ "athena",
+ "athena-ir",
+ "athena-types",
+ "oak-core",
+ "oak-matlab",
+ "sxo-adapter-apollo",
+ "sxo-dialect-mathematica",
+ "sxo-types",
+]
+
+[[package]]
+name = "sxo-dialect-simple-math"
+version = "0.1.0"
+dependencies = [
+ "athena",
+ "athena-ir",
+ "athena-types",
  "sxo-types",
 ]
 
@@ -1044,8 +1018,11 @@ dependencies = [
 name = "sxo-lite-wasm"
 version = "0.1.0"
 dependencies = [
+ "athena",
  "getrandom 0.4.3",
- "sxo-dialects",
+ "sxo-dialect-mathematica",
+ "sxo-dialect-matlab",
+ "sxo-types",
  "wasm-bindgen",
 ]
 
@@ -1053,6 +1030,7 @@ dependencies = [
 name = "sxo-napi"
 version = "0.1.0"
 dependencies = [
+ "athena",
  "bytes",
  "chrono",
  "futures-util",
@@ -1064,7 +1042,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "sxo-dialects",
+ "sxo-dialect-mathematica",
+ "sxo-dialect-matlab",
+ "sxo-types",
  "tokio",
  "uuid",
  "zeromq",
