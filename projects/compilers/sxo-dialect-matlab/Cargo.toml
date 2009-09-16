@@ -1,0 +1,26 @@
+[package]
+name = "sxo-dialect-matlab"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "MATLAB dialect: oak parse, lower, render (no WExpr)"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+athena = { workspace = true }
+athena-ir = { workspace = true }
+athena-types = { workspace = true }
+sxo-types = { workspace = true }
+sxo-adapter-apollo = { workspace = true }
+oak-core = { workspace = true }
+oak-matlab = { workspace = true }
+
+[dev-dependencies]
+athena = { workspace = true }
+sxo-dialect-mathematica = { workspace = true }
