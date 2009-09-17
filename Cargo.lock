@@ -1041,6 +1041,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sxo-dialect-simple-math"
+version = "0.1.0"
+dependencies = [
+ "athena",
+ "athena-ir",
+ "athena-types",
+ "sxo-types",
+]
+
+[[package]]
 name = "sxo-dialects"
 version = "0.1.0"
 dependencies = [
