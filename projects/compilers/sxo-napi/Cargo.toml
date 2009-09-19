@@ -6,18 +6,21 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "N-API bridge: Node.js ↔ SXO SxoFrontend"
+description = "N-API bridge: Node.js ↔ SXO Session"
 publish = false
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 name = "sxo_napi"
 
 [lints]
 workspace = true
 
 [dependencies]
-sxo-dialects = { workspace = true }
+athena = { workspace = true }
+sxo-types = { workspace = true }
+sxo-dialect-mathematica = { workspace = true }
+sxo-dialect-matlab = { workspace = true }
 napi.workspace = true
 napi-derive.workspace = true
 zeromq = { workspace = true }
@@ -34,3 +37,8 @@ chrono = { workspace = true }
 
 [build-dependencies]
 napi-build = "2"
+
+[dev-dependencies]
+athena = { workspace = true }
+sxo-dialect-mathematica = { workspace = true }
+sxo-types = { workspace = true }
