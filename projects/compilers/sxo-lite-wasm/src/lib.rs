@@ -1,9 +1,14 @@
-//! WASM bindings for SXO (`SxoFrontend` + engine [`Term`]).
+//! WASM bindings for SXO (`Session` + engine [`Term`]).
 
 #![deny(missing_docs)]
 
-use sxo_dialects::{Dialect, SxoError, SxoFrontend, Term, VERSION as CORE_VERSION};
+mod session;
+
+use session::Session;
+use sxo_types::{Dialect, SxoError, VERSION as CORE_VERSION};
 use wasm_bindgen::prelude::*;
+
+pub use athena::Term;
 
 fn dialect_from_str(s: Option<String>) -> Result<Dialect, JsValue> {
     match s.as_deref() {
@@ -19,17 +24,17 @@ fn map_err(err: SxoError) -> JsValue {
     JsValue::from_str(&err.message)
 }
 
-fn parse_to_term(eng: &SxoFrontend, input: &str, dialect: Dialect) -> Result<(Term, Dialect), JsValue> {
-    let resolved = match eng.resolve_dialect(input, dialect) {
+fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Term, Dialect), JsValue> {
+    let resolved = match session.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
     };
     let term = match resolved {
         Dialect::Mathematica => {
-            let w = eng.parse_mathematica(input).map_err(map_err)?;
-            eng.from_mathematica(&w)
+            let w = session.parse_mathematica(input).map_err(map_err)?;
+            session.from_mathematica(&w)
         }
-        Dialect::Matlab => eng.parse_matlab(input).map_err(map_err)?,
+        Dialect::Matlab => session.parse_matlab(input).map_err(map_err)?,
         Dialect::SimpleMath | Dialect::Auto => {
             return Err(JsValue::from_str("simple-math dialect is off the current delivery route"));
         }
@@ -44,6 +49,7 @@ pub fn version() -> String {
 }
 
 /// Opaque expression handle backed by engine [`Term`].
+#[derive(Debug)]
 #[wasm_bindgen]
 pub struct Expression {
     inner: Term,
@@ -56,51 +62,51 @@ impl Expression {
     #[wasm_bindgen(constructor)]
     pub fn new(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
         let d = dialect_from_str(dialect)?;
-        let eng = SxoFrontend::new();
-        let (term, resolved) = parse_to_term(&eng, input, d)?;
+        let session = Session::new();
+        let (term, resolved) = parse_to_term(&session, input, d)?;
         Ok(Self { inner: term, dialect: resolved })
     }
 
     /// Differentiate with respect to `var`.
     pub fn d(&self, var: &str) -> Expression {
-        let eng = SxoFrontend::new();
-        Expression { inner: eng.differentiate_term(&self.inner, var), dialect: self.dialect }
+        let session = Session::new();
+        Expression { inner: session.differentiate_term(&self.inner, var), dialect: self.dialect }
     }
 
-    /// Simplify via `SxoFrontend`.
+    /// Simplify via `Session`.
     pub fn simplify(&self) -> Expression {
-        let eng = SxoFrontend::new();
-        Expression { inner: eng.simplify_term(&eng.evaluate(&self.inner)), dialect: self.dialect }
+        let session = Session::new();
+        Expression { inner: session.simplify_term(&session.evaluate(&self.inner)), dialect: self.dialect }
     }
 
     /// Evaluate (canonical rewrite) this expression.
     pub fn evaluate(&self) -> Expression {
-        let eng = SxoFrontend::new();
-        Expression { inner: eng.evaluate(&self.inner), dialect: self.dialect }
+        let session = Session::new();
+        Expression { inner: session.evaluate(&self.inner), dialect: self.dialect }
     }
 
     /// Render as string in the expression's dialect.
     #[wasm_bindgen(js_name = toString)]
     pub fn to_string_js(&self) -> String {
-        let eng = SxoFrontend::new();
+        let session = Session::new();
         match self.dialect {
-            Dialect::Matlab => eng.render_as_matlab(&self.inner),
-            _ => eng.render_as_wolfram(&self.inner),
+            Dialect::Matlab => session.render_as_matlab(&self.inner),
+            _ => session.render_as_wolfram(&self.inner),
         }
     }
 
     /// Render as Mathematica / Wolfram text.
     #[wasm_bindgen(js_name = toWolfram)]
     pub fn to_wolfram(&self) -> String {
-        let eng = SxoFrontend::new();
-        eng.render_as_wolfram(&self.inner)
+        let session = Session::new();
+        session.render_as_wolfram(&self.inner)
     }
 
     /// Render as MATLAB text.
     #[wasm_bindgen(js_name = toMatlab)]
     pub fn to_matlab(&self) -> String {
-        let eng = SxoFrontend::new();
-        eng.render_as_matlab(&self.inner)
+        let session = Session::new();
+        session.render_as_matlab(&self.inner)
     }
 
     /// Structural equality.
@@ -114,18 +120,18 @@ impl Expression {
 #[wasm_bindgen]
 pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoFrontend::new();
-    let (term, resolved) = parse_to_term(&eng, input, d)?;
-    Ok(Expression { inner: eng.differentiate_term(&term, var), dialect: resolved })
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, input, d)?;
+    Ok(Expression { inner: session.differentiate_term(&term, var), dialect: resolved })
 }
 
 /// Top-level `simplify`.
 #[wasm_bindgen]
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoFrontend::new();
-    let (term, resolved) = parse_to_term(&eng, input, d)?;
-    Ok(Expression { inner: eng.simplify_term(&eng.evaluate(&term)), dialect: resolved })
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, input, d)?;
+    Ok(Expression { inner: session.simplify_term(&session.evaluate(&term)), dialect: resolved })
 }
 
 /// Top-level `expression` — parse only (no evaluate).
