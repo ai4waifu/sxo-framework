@@ -95,7 +95,7 @@ if (!existsSync(pkgJsonPath)) {
         `${JSON.stringify(
             {
                 name: `@sxo/sxo-${plat.short}`,
-                version: '0.1.0',
+                version: '0.0.2',
                 private: true,
                 description: `SXO native N-API addon (${plat.short})`,
                 license: 'Apache-2.0',

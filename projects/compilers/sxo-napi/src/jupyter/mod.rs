@@ -5,9 +5,9 @@
 mod connection;
 mod wire;
 
+use crate::session::Session;
 use connection::ConnectionFile;
 use serde_json::{Value, json};
-use crate::session::Session;
 use sxo_types::VERSION as CORE_VERSION;
 use wire::JupyterMessage;
 use zeromq::{PubSocket, RepSocket, RouterSocket, Socket, SocketRecv, SocketSend};
