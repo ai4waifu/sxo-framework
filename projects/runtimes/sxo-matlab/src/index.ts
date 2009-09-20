@@ -6,7 +6,7 @@ export type ExprInput = string | Expression;
 /**
  * Opaque expression produced by a {@link Matlab} frontend.
  *
- * Methods are thin conveniences; engine IR stays in Rust `SxoFrontend`.
+ * Methods are thin conveniences; engine IR stays in Rust Athena (`Term`).
  */
 export class Expression {
     readonly #inner: NativeExpression;
@@ -69,8 +69,8 @@ export type MatlabOptions = {
 /**
  * MATLAB **frontend** — the public entry of `@sxo/matlab`.
  *
- * Feed MATLAB text (or expressions); the sole CAS kernel is Rust `SxoFrontend`
- * (engine IR `Term`). Parsing goes through upstream `oak-matlab` (no handmade dialect parser).
+ * Feed MATLAB text (or expressions); evaluation goes through Athena (`Term` IR)
+ * via `sxo-dialect-matlab`. Parsing goes through upstream `oak-matlab` (no handmade dialect parser).
  */
 export class Matlab {
     readonly #autoSimplify: boolean;
