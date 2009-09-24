@@ -114,6 +114,17 @@ impl Expression {
     pub fn is_equal(&self, other: &Expression) -> bool {
         self.inner == other.inner
     }
+
+    /// Render 1-D plot as SVG when the term matches a known form.
+    #[wasm_bindgen(js_name = plotSvg)]
+    pub fn plot_svg(&self) -> Result<String, JsValue> {
+        let session = Session::new();
+        match session.try_plot_svg(&self.inner, self.dialect) {
+            Some(Ok(svg)) => Ok(svg),
+            Some(Err(e)) => Err(map_err(e)),
+            None => Err(JsValue::from_str("not a supported 1-D plot form")),
+        }
+    }
 }
 
 /// Top-level `d`.
@@ -138,4 +149,17 @@ pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
 #[wasm_bindgen]
 pub fn expression(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     Expression::new(input, dialect)
+}
+
+/// Top-level `plotSvg` — 1-D plot → SVG string.
+#[wasm_bindgen(js_name = plotSvg)]
+pub fn plot_svg(input: &str, dialect: Option<String>) -> Result<String, JsValue> {
+    let d = dialect_from_str(dialect)?;
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, input, d)?;
+    match session.try_plot_svg(&term, resolved) {
+        Some(Ok(svg)) => Ok(svg),
+        Some(Err(e)) => Err(map_err(e)),
+        None => Err(JsValue::from_str("not a supported 1-D plot form")),
+    }
 }

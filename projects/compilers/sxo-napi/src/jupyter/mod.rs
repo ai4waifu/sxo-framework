@@ -175,7 +175,7 @@ async fn handle_execute(
     }
 
     match evaluate_mathematica(eng, code) {
-        Ok(text) => {
+        Ok(EvalOut::Text(text)) => {
             if !silent {
                 publish(
                     iopub,
@@ -186,6 +186,40 @@ async fn handle_execute(
                         json!({
                             "execution_count": count,
                             "data": { "text/plain": text },
+                            "metadata": {},
+                        }),
+                    ),
+                )
+                .await?;
+            }
+            send_reply(
+                shell,
+                key,
+                &request.reply(
+                    "execute_reply",
+                    json!({
+                        "status": "ok",
+                        "execution_count": count,
+                        "user_expressions": {},
+                        "payload": [],
+                    }),
+                ),
+            )
+            .await?;
+        }
+        Ok(EvalOut::Svg { svg, plain }) => {
+            if !silent {
+                publish(
+                    iopub,
+                    key,
+                    &request.iopub(
+                        "display_data",
+                        "display_data",
+                        json!({
+                            "data": {
+                                "image/svg+xml": svg,
+                                "text/plain": plain,
+                            },
                             "metadata": {},
                         }),
                     ),
@@ -244,16 +278,26 @@ async fn handle_execute(
     Ok(())
 }
 
-fn evaluate_mathematica(eng: &Session, code: &str) -> Result<String, String> {
+enum EvalOut {
+    Text(String),
+    Svg { svg: String, plain: String },
+}
+
+fn evaluate_mathematica(eng: &Session, code: &str) -> Result<EvalOut, String> {
     let trimmed = code.trim();
     if trimmed.is_empty() {
-        return Ok(String::new());
+        return Ok(EvalOut::Text(String::new()));
     }
     let w = eng.parse_mathematica(trimmed).map_err(|e| e.message.clone())?;
     let term = eng.from_mathematica(&w);
+    if let Some(plot) = eng.try_plot_svg(&term, sxo_types::Dialect::Mathematica) {
+        let svg = plot.map_err(|e| e.message.clone())?;
+        let plain = eng.render_as_wolfram(&term);
+        return Ok(EvalOut::Svg { svg, plain });
+    }
     let evaluated = eng.evaluate(&term);
     let simplified = eng.simplify_term(&evaluated);
-    Ok(eng.render_as_wolfram(&simplified))
+    Ok(EvalOut::Text(eng.render_as_wolfram(&simplified)))
 }
 
 fn kernel_info_content() -> Value {

@@ -130,6 +130,17 @@ impl Expression {
         Ok(self.inner == other.inner)
     }
 
+    /// Render 1-D `Plot` / `plot` as SVG when the term matches a known form.
+    #[napi(js_name = "plotSvg")]
+    pub fn plot_svg(&self) -> Result<String> {
+        let session = Session::new();
+        match session.try_plot_svg(&self.inner, self.dialect) {
+            Some(Ok(svg)) => Ok(svg),
+            Some(Err(e)) => Err(map_err(e)),
+            None => Err(Error::from_reason("not a supported 1-D plot form")),
+        }
+    }
+
     /// Dialect tag used for default rendering.
     #[napi(getter)]
     pub fn dialect(&self) -> String {
@@ -159,6 +170,19 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
 #[napi]
 pub fn expression(input: String, dialect: Option<String>) -> Result<Expression> {
     Expression::parse(input, dialect)
+}
+
+/// Top-level `plotSvg(input, dialect?)` — 1-D plot → SVG string.
+#[napi(js_name = "plotSvg")]
+pub fn plot_svg(input: String, dialect: Option<String>) -> Result<String> {
+    let d = dialect_from_str(dialect)?;
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, &input, d)?;
+    match session.try_plot_svg(&term, resolved) {
+        Some(Ok(svg)) => Ok(svg),
+        Some(Err(e)) => Err(map_err(e)),
+        None => Err(Error::from_reason("not a supported 1-D plot form")),
+    }
 }
 
 /// Run a Jupyter kernel until shutdown (blocks the calling thread).

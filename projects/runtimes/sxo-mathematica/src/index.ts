@@ -154,7 +154,32 @@ export class Mathematica {
         }
         return Expression.fromNative(this, loadNative().simplify(expr, MATH_DIALECT));
     }
+
+    /**
+     * 1-D `Plot[f,{x,a,b}]` → SVG string (Athena sample + Apollo).
+     * Not pixel-identical to commercial frontends; should read as a line chart.
+     */
+    plot(input: ExprInput): string {
+        if (input instanceof Expression) {
+            return input.native.plotSvg();
+        }
+        return loadNative().plotSvg(input, MATH_DIALECT);
+    }
 }
+
+export {
+    featureMatrix,
+    listGaps,
+    toConsoleRows,
+    toMarkdownTable,
+} from './feature-matrix/index.js';
+export type {
+    CaseKind,
+    FeatureCase,
+    FeatureEffect,
+    FeatureEntry,
+    FeatureStatus,
+} from './feature-matrix/index.js';
 
 /** Shared default Mathematica frontend (stateless S0). */
 export const mathematica = Mathematica.create();
