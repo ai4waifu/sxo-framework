@@ -89,6 +89,7 @@ fn lower_node(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
         WolframElementType::BinaryExpr => lower_binary(node, src, start),
         WolframElementType::PostfixExpr => lower_postfix(node, src, start),
         WolframElementType::Call => lower_call(node, src, start),
+        WolframElementType::Part => lower_part(node, src, start),
         WolframElementType::Arguments => Err(SxoError::new("mathematica(oak): unexpected Arguments")),
         WolframElementType::Error => Err(SxoError::new("mathematica(oak): error node")),
     }
@@ -234,6 +235,74 @@ fn lower_postfix(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize)
     }
 }
 
+fn lower_part(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) -> Result<WExpr, SxoError> {
+    let mut offset = start;
+    let mut expr: Option<WExpr> = None;
+    let mut indices: Vec<WExpr> = Vec::new();
+
+    for child in node.children {
+        match child {
+            GreenTree::Leaf(leaf) => {
+                offset += leaf.length as usize;
+            }
+            GreenTree::Node(n) => {
+                match n.kind {
+                    WolframElementType::Arguments => {
+                        indices.extend(lower_arguments(n, src, offset)?);
+                    }
+                    _ if expr.is_none() => {
+                        expr = Some(lower_node(n, src, offset)?);
+                    }
+                    _ => {}
+                }
+                offset += n.byte_length as usize;
+            }
+        }
+    }
+
+    let expr = expr.ok_or_else(|| SxoError::new("mathematica(oak): Part missing expression"))?;
+    let mut args = vec![expr];
+    args.extend(indices);
+    Ok(WExpr::call("Part", args))
+}
+
+fn is_symbol_leaf(kind: WolframTokenType) -> bool {
+    matches!(
+        kind,
+        WolframTokenType::Identifier
+            | WolframTokenType::If
+            | WolframTokenType::Then
+            | WolframTokenType::Else
+            | WolframTokenType::While
+            | WolframTokenType::For
+            | WolframTokenType::Do
+            | WolframTokenType::Function
+            | WolframTokenType::Module
+            | WolframTokenType::Block
+            | WolframTokenType::With
+            | WolframTokenType::Table
+            | WolframTokenType::Map
+            | WolframTokenType::Apply
+            | WolframTokenType::Select
+            | WolframTokenType::Cases
+            | WolframTokenType::Rule
+            | WolframTokenType::RuleDelayed
+            | WolframTokenType::Set
+            | WolframTokenType::SetDelayed
+            | WolframTokenType::Unset
+            | WolframTokenType::Clear
+            | WolframTokenType::ClearAll
+            | WolframTokenType::Return
+            | WolframTokenType::Break
+            | WolframTokenType::Continue
+            | WolframTokenType::True
+            | WolframTokenType::False
+            | WolframTokenType::Null
+            | WolframTokenType::Export
+            | WolframTokenType::Import
+    )
+}
+
 fn lower_call(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) -> Result<WExpr, SxoError> {
     let mut offset = start;
     let mut head: Option<WExpr> = None;
@@ -242,7 +311,7 @@ fn lower_call(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
     for child in node.children {
         match child {
             GreenTree::Leaf(leaf) => {
-                if matches!(leaf.kind, WolframTokenType::Identifier) && head.is_none() {
+                if is_symbol_leaf(leaf.kind) && head.is_none() {
                     let name = slice(src, offset, leaf.length)?.trim().to_string();
                     head = Some(WExpr::symbol(name));
                 }

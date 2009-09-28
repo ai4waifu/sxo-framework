@@ -1,14 +1,14 @@
 //! Lower Mathematica Form ([`WExpr`]) to engine terms and back.
 
-use athena::{Atom, Term};
+use athena::{Atom, Term, clone_number};
 
 use crate::form::{WAtom, WExpr};
 
-/// Structural `WExpr` ? engine `Term`.
+/// Structural `WExpr` → engine `Term`.
 pub fn wexpr_to_term(w: &WExpr) -> Term {
     match w {
         WExpr::Atom(a) => Term::Atom(match a {
-            WAtom::Number(n) => Atom::Number(n.clone()),
+            WAtom::Number(n) => Atom::Number(clone_number(n)),
             WAtom::String(s) => Atom::String(s.clone()),
             WAtom::Symbol(s) => Atom::Symbol(s.clone()),
         }),
@@ -19,11 +19,11 @@ pub fn wexpr_to_term(w: &WExpr) -> Term {
     }
 }
 
-/// Engine `Term` ? structural `WExpr`.
+/// Engine `Term` → structural `WExpr`.
 pub fn term_to_wexpr(t: &Term) -> WExpr {
     match t {
         Term::Atom(a) => WExpr::Atom(match a {
-            Atom::Number(n) => WAtom::Number(n.clone()),
+            Atom::Number(n) => WAtom::Number(clone_number(n)),
             Atom::String(s) => WAtom::String(s.clone()),
             Atom::Symbol(s) => WAtom::Symbol(s.clone()),
         }),
