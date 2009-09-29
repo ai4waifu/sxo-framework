@@ -31,9 +31,9 @@ wasm-bindgen = "0.2"
 oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
-athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e017ea78371fe8dfbdffa95bdd5a5f6a6bc1eeb9", package = "athena" }
-athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e017ea78371fe8dfbdffa95bdd5a5f6a6bc1eeb9", package = "athena-types" }
-athena-ir = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e017ea78371fe8dfbdffa95bdd5a5f6a6bc1eeb9", package = "athena-ir" }
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "a0bcdbc297b920a79bc055fdad3076a4249897ae", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "a0bcdbc297b920a79bc055fdad3076a4249897ae", package = "athena-types" }
+athena-ir = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "a0bcdbc297b920a79bc055fdad3076a4249897ae", package = "athena-ir" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 num-bigint = { version = "0.4", default-features = false, features = ["std"] }
 num-rational = { version = "0.4", default-features = false, features = ["std", "num-bigint"] }
