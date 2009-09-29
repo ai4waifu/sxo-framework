@@ -76,6 +76,14 @@ fn try_infix(head: &Term, args: &[Term]) -> Option<String> {
         "Power" if args.len() == 2 => Some(format!("{}^{}", render_matlab(&args[0]), render_matlab(&args[1]))),
         "Subtract" if args.len() == 2 => Some(format!("{} - {}", render_matlab(&args[0]), render_matlab(&args[1]))),
         "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "Mldivide" if args.len() == 2 => Some(format!("{}\\{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "DotTimes" if args.len() == 2 => Some(format!("{}.*{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "DotDivide" if args.len() == 2 => Some(format!("{}./{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "DotPower" if args.len() == 2 => Some(format!("{}.^{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "Span" if args.len() == 2 => Some(format!("{}:{}", render_matlab(&args[0]), render_matlab(&args[1]))),
+        "Span" if args.len() == 3 => {
+            Some(format!("{}:{}:{}", render_matlab(&args[0]), render_matlab(&args[1]), render_matlab(&args[2])))
+        },
         _ => None,
     }
 }

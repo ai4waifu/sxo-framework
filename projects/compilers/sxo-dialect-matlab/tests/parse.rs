@@ -74,3 +74,56 @@ fn parse_comparison() {
     let t = parse_matlab("3 > 2").unwrap();
     assert_eq!(evaluate(&t), Term::int(1));
 }
+
+#[test]
+fn parse_if_else_end() {
+    let t = parse_matlab("if 1, 2, else, 3, end").unwrap();
+    assert_eq!(evaluate(&t), Term::int(2));
+}
+
+#[test]
+fn parse_while_false_skips_body() {
+    let t = parse_matlab("while 0, 1, end").unwrap();
+    assert_eq!(evaluate(&t), Term::symbol("Null"));
+}
+
+#[test]
+fn parse_for_span_last() {
+    let t = parse_matlab("for i=1:3, i, end").unwrap();
+    assert_eq!(evaluate(&t), Term::int(3));
+}
+
+#[test]
+fn parse_array_slice() {
+    let t = parse_matlab("[1, 2, 3](1:2)").unwrap();
+    assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(2)]));
+}
+
+#[test]
+fn parse_colon_step_flattens() {
+    let t = parse_matlab("1:2:10").unwrap();
+    assert_eq!(
+        evaluate(&t),
+        Term::List(vec![Term::int(1), Term::int(3), Term::int(5), Term::int(7), Term::int(9)])
+    );
+}
+
+#[test]
+fn parse_mldivide_keeps_head() {
+    use athena::{EvalKind, evaluate_outcome};
+    use athena_types::DiagnosticCode;
+
+    let t = parse_matlab("A\\b").unwrap();
+    assert_eq!(t.head_name(), Some("Mldivide"));
+    let o = evaluate_outcome(&t);
+    assert_eq!(o.kind, EvalKind::Unevaluated);
+    assert_eq!(o.diagnostics[0].code, DiagnosticCode::UnsupportedOperation);
+    assert!(render_matlab(&t).contains('\\'));
+}
+
+#[test]
+fn parse_dot_times_distinct_head() {
+    let t = parse_matlab("x .* y").unwrap();
+    assert_eq!(t, Term::apply("DotTimes", vec![Term::symbol("x"), Term::symbol("y")]));
+    assert!(render_matlab(&t).contains(".*"));
+}

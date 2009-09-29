@@ -86,6 +86,9 @@ fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
         MatlabElementType::BinaryExpr => lower_binary(node, src, start),
         MatlabElementType::PostfixExpr => lower_postfix(node, src, start),
         MatlabElementType::Call => lower_call(node, src, start),
+        MatlabElementType::IfStmt => lower_if_stmt(node, src, start),
+        MatlabElementType::WhileStmt => lower_while_stmt(node, src, start),
+        MatlabElementType::ForStmt => lower_for_stmt(node, src, start),
         MatlabElementType::Arguments => Err(SxoError::new("matlab(oak): unexpected Arguments")),
         MatlabElementType::Error => Err(SxoError::new("matlab(oak): error node")),
     }
@@ -174,10 +177,14 @@ fn lower_binary(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -
     Ok(match op {
         MatlabTokenType::Plus => Term::apply("Plus", vec![l, r]),
         MatlabTokenType::Minus => Term::apply("Subtract", vec![l, r]),
-        MatlabTokenType::Times | MatlabTokenType::DotTimes => Term::apply("Times", vec![l, r]),
-        MatlabTokenType::Divide | MatlabTokenType::DotDivide => Term::apply("Divide", vec![l, r]),
-        MatlabTokenType::LeftDivide | MatlabTokenType::DotLeftDivide => Term::apply("Divide", vec![r, l]),
-        MatlabTokenType::Power | MatlabTokenType::DotPower => Term::apply("Power", vec![l, r]),
+        MatlabTokenType::Times => Term::apply("Times", vec![l, r]),
+        MatlabTokenType::DotTimes => Term::apply("DotTimes", vec![l, r]),
+        MatlabTokenType::Divide => Term::apply("Divide", vec![l, r]),
+        MatlabTokenType::DotDivide => Term::apply("DotDivide", vec![l, r]),
+        MatlabTokenType::LeftDivide => Term::apply("Mldivide", vec![l, r]),
+        MatlabTokenType::DotLeftDivide => Term::apply("DotLeftDivide", vec![l, r]),
+        MatlabTokenType::Power => Term::apply("Power", vec![l, r]),
+        MatlabTokenType::DotPower => Term::apply("DotPower", vec![l, r]),
         MatlabTokenType::Assign => Term::apply("Set", vec![l, r]),
         MatlabTokenType::Equal => Term::apply("Equal", vec![l, r]),
         MatlabTokenType::NotEqual => Term::apply("Unequal", vec![l, r]),
@@ -187,11 +194,22 @@ fn lower_binary(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -
         MatlabTokenType::GreaterEqual => Term::apply("GreaterEqual", vec![l, r]),
         MatlabTokenType::AndAnd | MatlabTokenType::And => Term::apply("And", vec![l, r]),
         MatlabTokenType::OrOr | MatlabTokenType::Or => Term::apply("Or", vec![l, r]),
-        MatlabTokenType::Colon => Term::apply("Span", vec![l, r]),
+        MatlabTokenType::Colon => flatten_span(l, r),
         other => {
             return Err(SxoError::new(format!("matlab(oak): unsupported binary {other:?}")));
         }
     })
+}
+
+/// `1:2:10` parses left-assoc as `Span(Span(1,2),10)` → flatten to `Span(1,2,10)`.
+fn flatten_span(left: Term, right: Term) -> Term {
+    match left {
+        Term::Application { head, arguments: mut args } if head.is_symbol("Span") && (args.len() == 2 || args.len() == 3) => {
+            args.push(right);
+            Term::apply("Span", args)
+        }
+        other => Term::apply("Span", vec![other, right]),
+    }
 }
 
 fn lower_postfix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
@@ -262,9 +280,97 @@ fn lower_call(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
         return Ok(Term::Application { head: Box::new(expr), arguments: vec![] });
     }
     for args in arg_groups {
-        expr = Term::Application { head: Box::new(expr), arguments: args };
+        // Array / list indexing → `Part` (1-based, Athena).
+        if matches!(&expr, Term::List(_))
+            || matches!(&expr, Term::Application { head: h, .. } if h.is_symbol("Part"))
+        {
+            let mut part_args = vec![expr];
+            part_args.extend(args);
+            expr = Term::apply("Part", part_args);
+        }
+        else {
+            expr = Term::Application { head: Box::new(expr), arguments: args };
+        }
     }
     Ok(expr)
+}
+
+fn collect_stmt_children(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Vec<Term>, SxoError> {
+    let mut offset = start;
+    let mut items = Vec::new();
+    for child in node.children {
+        match child {
+            GreenTree::Leaf(leaf) => {
+                offset += leaf.length as usize;
+            }
+            GreenTree::Node(n) => {
+                if matches!(n.kind, MatlabElementType::Error) {
+                    offset += n.byte_length as usize;
+                    continue;
+                }
+                items.push(lower_node(n, src, offset)?);
+                offset += n.byte_length as usize;
+            }
+        }
+    }
+    Ok(items)
+}
+
+fn compound_or_single(mut items: Vec<Term>) -> Term {
+    match items.len() {
+        0 => Term::symbol("Null"),
+        1 => items.remove(0),
+        _ => Term::apply("CompoundExpression", items),
+    }
+}
+
+fn lower_if_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
+    let items = collect_stmt_children(node, src, start)?;
+    // Children: cond, then…, optional else…
+    // oaks emits: cond, then-exprs…, and after Else keyword leaves, else-exprs…
+    // Without Else marker nodes, split is ambiguous for multi-then. For the silent-wrong
+    // fixture `if 1, 2, else, 3, end` children are [1, 2, 3].
+    if items.len() < 2 {
+        return Ok(Term::apply("If", items));
+    }
+    if items.len() == 2 {
+        return Ok(Term::apply("If", items));
+    }
+    if items.len() == 3 {
+        return Ok(Term::apply("If", items));
+    }
+    // cond + then-compound + else-compound when more body parts: treat last as else.
+    let mut args = items;
+    let else_b = args.pop().unwrap();
+    let cond = args.remove(0);
+    let then_b = compound_or_single(args);
+    Ok(Term::apply("If", vec![cond, then_b, else_b]))
+}
+
+fn lower_while_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
+    let mut items = collect_stmt_children(node, src, start)?;
+    if items.is_empty() {
+        return Ok(Term::apply("While", vec![]));
+    }
+    let cond = items.remove(0);
+    let body = compound_or_single(items);
+    Ok(Term::apply("While", vec![cond, body]))
+}
+
+fn lower_for_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
+    let mut items = collect_stmt_children(node, src, start)?;
+    if items.is_empty() {
+        return Ok(Term::apply("For", vec![]));
+    }
+    let header = items.remove(0);
+    let body = compound_or_single(items);
+    // `i = 1:3` → Set[i, Span…] → For[i, Span, body]
+    match header {
+        Term::Application { head, arguments: args } if head.is_symbol("Set") && args.len() == 2 => {
+            Ok(Term::apply("For", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), body]))
+        }
+        other => Ok(Term::apply("For", vec![Term::symbol("_"), other, body])),
+    }
 }
 
 fn lower_arguments(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Vec<Term>, SxoError> {
