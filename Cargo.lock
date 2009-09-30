@@ -127,7 +127,7 @@ dependencies = [
 [[package]]
 name = "athena"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-engine",
 ]
@@ -135,7 +135,7 @@ dependencies = [
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-gc",
  "athena-graph",
@@ -149,7 +149,7 @@ dependencies = [
 [[package]]
 name = "athena-gc"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-types",
 ]
@@ -157,7 +157,7 @@ dependencies = [
 [[package]]
 name = "athena-graph"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-gc",
  "athena-ndarray",
@@ -166,7 +166,7 @@ dependencies = [
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-numeric",
  "athena-types",
@@ -175,7 +175,7 @@ dependencies = [
 [[package]]
 name = "athena-ndarray"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-gc",
 ]
@@ -183,7 +183,7 @@ dependencies = [
 [[package]]
 name = "athena-numeric"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-gc",
  "athena-types",
@@ -192,7 +192,7 @@ dependencies = [
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 dependencies = [
  "athena-ir",
  "athena-types",
@@ -201,7 +201,7 @@ dependencies = [
 [[package]]
 name = "athena-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=bfdc01018b245eaa93554856fdf25281332e8675#bfdc01018b245eaa93554856fdf25281332e8675"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=144d8a833f1a3256153108a6170069757cd2dd47#144d8a833f1a3256153108a6170069757cd2dd47"
 
 [[package]]
 name = "autocfg"
@@ -678,7 +678,7 @@ dependencies = [
 [[package]]
 name = "oak-core"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#b7ffbbfc7e9b99c78afc0fd806bad281eb1b9614"
+source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#5dc045a3a162d89aa1cd40546735b3fd765df149"
 dependencies = [
  "smallvec",
  "tracing",
@@ -689,7 +689,7 @@ dependencies = [
 [[package]]
 name = "oak-matlab"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#b7ffbbfc7e9b99c78afc0fd806bad281eb1b9614"
+source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#5dc045a3a162d89aa1cd40546735b3fd765df149"
 dependencies = [
  "oak-core",
  "tracing",
@@ -698,7 +698,7 @@ dependencies = [
 [[package]]
 name = "oak-wolfram"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#b7ffbbfc7e9b99c78afc0fd806bad281eb1b9614"
+source = "git+https://github.com/ygg-lang/oaks.git?branch=dev#5dc045a3a162d89aa1cd40546735b3fd765df149"
 dependencies = [
  "oak-core",
 ]
