@@ -10,6 +10,9 @@ pub fn wexpr_to_term(w: &WExpr) -> Term {
         WExpr::Atom(a) => Term::Atom(match a {
             WAtom::Number(n) => Atom::Number(clone_number(n)),
             WAtom::String(s) => Atom::String(s.clone()),
+            WAtom::Symbol(s) if s == "True" => Atom::Boolean(true),
+            WAtom::Symbol(s) if s == "False" => Atom::Boolean(false),
+            WAtom::Symbol(s) if s == "Null" => Atom::Null,
             WAtom::Symbol(s) => Atom::Symbol(s.clone()),
         }),
         WExpr::List(items) => Term::List(items.iter().map(wexpr_to_term).collect()),
@@ -25,6 +28,9 @@ pub fn term_to_wexpr(t: &Term) -> WExpr {
         Term::Atom(a) => WExpr::Atom(match a {
             Atom::Number(n) => WAtom::Number(clone_number(n)),
             Atom::String(s) => WAtom::String(s.clone()),
+            Atom::Boolean(true) => WAtom::Symbol("True".into()),
+            Atom::Boolean(false) => WAtom::Symbol("False".into()),
+            Atom::Null => WAtom::Symbol("Null".into()),
             Atom::Symbol(s) => WAtom::Symbol(s.clone()),
         }),
         Term::List(items) => WExpr::List(items.iter().map(term_to_wexpr).collect()),

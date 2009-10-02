@@ -25,6 +25,8 @@ fn lower_to_kernel(term: &Term) -> Result<(TermArena, athena::TermId), SxoError>
         match term {
             Term::Atom(Atom::Number(n)) => Ok(arena.push(TermKind::Atom(AtomKind::Number(clone_number(n))), span)),
             Term::Atom(Atom::String(s)) => Ok(arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)),
+            Term::Atom(Atom::Boolean(b)) => Ok(arena.push(TermKind::Atom(AtomKind::Boolean(*b)), span)),
+            Term::Atom(Atom::Null) => Ok(arena.push(TermKind::Atom(AtomKind::Null), span)),
             Term::Atom(Atom::Symbol(s)) => {
                 let sym = arena.symbols_mut().intern(s.clone());
                 Ok(arena.push(TermKind::Atom(AtomKind::Symbol(sym)), span))
