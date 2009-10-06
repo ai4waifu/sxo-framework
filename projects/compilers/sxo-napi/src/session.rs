@@ -1,24 +1,35 @@
 //! Host session: dialect parse/render wired to Athena evaluation.
 
+use std::cell::RefCell;
+
 use athena::{
-    AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, DomainResult, Term,
-    calculus_result_bridge_term, clone_term, try_calculus_request,
+    AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, DomainResult, Session as AthenaSession,
+    Term, calculus_result_bridge_term, clone_term, try_calculus_request,
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
 use sxo_types::{Dialect, SxoError, detect_dialect};
 
-/// SXO host session: dialect crates + Athena math.
-#[derive(Debug, Default, Clone)]
+/// SXO host session: dialect crates + Athena math with persistent Own `Set` defs.
+#[derive(Debug, Default)]
 pub struct Session {
     /// Preferred render dialect when callers do not override.
     pub default_dialect: Dialect,
+    /// Athena eval session (definitions persist across `evaluate` calls).
+    math_session: RefCell<AthenaSession>,
+}
+
+impl Clone for Session {
+    fn clone(&self) -> Self {
+        // Fresh Athena session: definitions are not shared across cloned host sessions.
+        Self { default_dialect: self.default_dialect, math_session: RefCell::new(AthenaSession::new()) }
+    }
 }
 
 impl Session {
     /// Create a session with `Auto` as the default dialect preference.
     pub fn new() -> Self {
-        Self { default_dialect: Dialect::Auto }
+        Self { default_dialect: Dialect::Auto, math_session: RefCell::new(AthenaSession::new()) }
     }
 
     /// Resolve `Auto` against `input`, otherwise return `dialect`.
@@ -29,13 +40,13 @@ impl Session {
         }
     }
 
-    fn math(&self) -> AthenaEngine {
+    fn math_engine(&self) -> AthenaEngine {
         AthenaEngine::new()
     }
 
     fn try_evaluate_calculus(&self, term: &Term) -> Option<Result<Term, Diagnostic>> {
         let request = try_calculus_request(term).map(DomainRequest::Calculus)?;
-        Some(self.math().execute_domain(request).and_then(|r| {
+        Some(self.math_engine().execute_domain(request).and_then(|r| {
             match r {
                 DomainResult::Calculus(c) => Ok(calculus_result_bridge_term(&c)),
                 other => Err(Diagnostic::new(athena::DiagnosticCode::TypeMismatch)
@@ -47,11 +58,18 @@ impl Session {
     }
 
     /// Evaluate a term, preferring calculus domain lowering.
+    ///
+    /// Own `Set` bindings persist on this host session until cleared.
     pub fn evaluate(&self, expr: &Term) -> Term {
         if let Some(Ok(term)) = self.try_evaluate_calculus(expr) {
             return term;
         }
-        self.math().evaluate_term(expr)
+        self.math_session.borrow_mut().evaluate(expr)
+    }
+
+    /// Clear Athena Own symbol definitions for this host session.
+    pub fn clear_definitions(&self) {
+        self.math_session.borrow_mut().clear_definitions();
     }
 
     /// Differentiate via Athena calculus domain dispatch.
@@ -63,18 +81,18 @@ impl Session {
             assumptions: athena::AssumptionSet::empty(),
         })) {
             Ok(DomainResult::Calculus(r)) => calculus_result_bridge_term(&r),
-            _ => self.math().differentiate_term(expr, var),
+            _ => self.math_engine().differentiate_term(expr, var),
         }
     }
 
     /// Domain dispatch through Athena.
     pub fn execute_domain(&self, request: DomainRequest) -> Result<DomainResult, Diagnostic> {
-        self.math().execute_domain(request)
+        self.math_engine().execute_domain(request)
     }
 
     /// `Simplify` builtin on a term.
     pub fn simplify_term(&self, expr: &Term) -> Term {
-        self.math().simplify_term(expr)
+        self.math_engine().simplify_term(expr)
     }
 
     /// Parse Wolfram text into MMA [`WExpr`] (no evaluate).

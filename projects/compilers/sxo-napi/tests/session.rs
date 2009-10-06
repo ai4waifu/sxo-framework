@@ -108,3 +108,23 @@ fn dialect_d_limit_series_lower_to_domain() {
     let d_s = session.render_as_wolfram(&d_out);
     assert!(d_s.contains('x'), "got {d_s}");
 }
+
+#[test]
+fn session_set_persists_across_mathematica_evaluates() {
+    let session = Session::new();
+    assert_eq!(session.evaluate_mathematica("x = 5").unwrap(), Term::int(5));
+    assert_eq!(session.evaluate_mathematica("x + 1").unwrap(), Term::int(6));
+    session.clear_definitions();
+    let cleared = session.evaluate_mathematica("x + 1").unwrap();
+    assert!(
+        matches!(&cleared, Term::Application { head, .. } if head.is_symbol("Plus")),
+        "expected free Plus after clear, got {cleared:?}"
+    );
+}
+
+#[test]
+fn session_set_persists_across_matlab_evaluates() {
+    let session = Session::new();
+    assert_eq!(session.evaluate_matlab("x = 5").unwrap(), Term::int(5));
+    assert_eq!(session.evaluate_matlab("x + 1").unwrap(), Term::int(6));
+}
