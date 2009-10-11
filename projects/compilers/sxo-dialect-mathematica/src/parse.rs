@@ -82,6 +82,17 @@ fn lower_node(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
         }
         WolframElementType::Symbol => {
             let name = slice(src, start, node.byte_length)?.trim().to_string();
+            // oaks finishes Slot tokens as Symbol nodes whose text is `#` / `#n`.
+            if name == "#" || name == "#1" {
+                return Ok(WExpr::call("Slot", vec![WExpr::int(1)]));
+            }
+            if let Some(rest) = name.strip_prefix('#') {
+                if !rest.is_empty() && rest.chars().all(|c| c.is_ascii_digit()) {
+                    if let Ok(n) = rest.parse::<i64>() {
+                        return Ok(WExpr::call("Slot", vec![WExpr::int(n)]));
+                    }
+                }
+            }
             Ok(WExpr::symbol(name))
         }
         WolframElementType::List => lower_list(node, src, start),
