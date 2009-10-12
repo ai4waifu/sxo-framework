@@ -247,12 +247,12 @@ export const featureMatrix = [
         category: 'list',
         status: 'partial',
         effect: 'pure',
-        notes: 'Map[Sin,{0,1}] works; pure-function Map broken',
+        notes: 'Map[Sin,…] and Map[#^2 &, …] work; deeper Function forms pending',
         cases: [
-            { id: 'map.sin', kind: 'eval', input: 'Map[Sin, {0, 1}]', expected: '{0, 1}' },
+            { id: 'map.sin', kind: 'eval', input: 'Map[Sin, {0, 1}]', expected: '{0, Sin[1]}' },
             {
                 id: 'map.slot',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'Map[#^2 &, {1, 2, 3}]',
                 expected: '{1, 4, 9}',
             },
@@ -316,18 +316,17 @@ export const featureMatrix = [
         category: 'function',
         status: 'partial',
         effect: 'pure',
-        notes: 'Slot/#& application broken or identity-like',
+        notes: 'Slot/#& and named Function[x,body] apply; multi-arg Function[{x,y},…] pending',
         cases: [
             {
                 id: 'function.slot',
-                kind: 'gap',
+                kind: 'eval',
                 input: '(#^2)&[4]',
                 expected: '16',
-                notes: 'currently returns 4',
             },
             {
                 id: 'function.named',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'Function[x, x^2][3]',
                 expected: '9',
             },

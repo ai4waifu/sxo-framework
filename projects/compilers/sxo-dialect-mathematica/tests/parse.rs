@@ -167,3 +167,27 @@ fn parse_with_module_block_local_bindings() {
         assert_eq!(e, Term::int(2), "{src}");
     }
 }
+
+#[test]
+fn parse_slot_lowers_to_slot_head() {
+    let w = parse_mathematica("#").unwrap();
+    assert_eq!(w, WExpr::call("Slot", vec![WExpr::int(1)]));
+}
+
+#[test]
+fn parse_pure_function_slot_application() {
+    let e = evaluate(&wexpr_to_term(&parse_mathematica("(#^2)&[4]").unwrap()));
+    assert_eq!(e, Term::int(16));
+}
+
+#[test]
+fn parse_named_function_application() {
+    let e = evaluate(&wexpr_to_term(&parse_mathematica("Function[x, x^2][3]").unwrap()));
+    assert_eq!(e, Term::int(9));
+}
+
+#[test]
+fn parse_map_pure_function() {
+    let e = evaluate(&wexpr_to_term(&parse_mathematica("Map[#^2 &, {1, 2, 3}]").unwrap()));
+    assert_eq!(e, Term::List(vec![Term::int(1), Term::int(4), Term::int(9)]));
+}
