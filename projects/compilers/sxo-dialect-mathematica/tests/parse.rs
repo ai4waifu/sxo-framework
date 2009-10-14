@@ -191,3 +191,32 @@ fn parse_map_pure_function() {
     let e = evaluate(&wexpr_to_term(&parse_mathematica("Map[#^2 &, {1, 2, 3}]").unwrap()));
     assert_eq!(e, Term::List(vec![Term::int(1), Term::int(4), Term::int(9)]));
 }
+
+#[test]
+fn parse_blank_and_typed_blank() {
+    assert_eq!(parse_mathematica("_").unwrap(), WExpr::call("Blank", vec![]));
+    assert_eq!(
+        parse_mathematica("_Integer").unwrap(),
+        WExpr::call("Blank", vec![WExpr::symbol("Integer")])
+    );
+    assert_eq!(
+        parse_mathematica("x_").unwrap(),
+        WExpr::call("Pattern", vec![WExpr::symbol("x"), WExpr::call("Blank", vec![])])
+    );
+}
+
+#[test]
+fn parse_match_q_and_cases() {
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("MatchQ[1, _Integer]").unwrap())),
+        Term::boolean(true)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("MatchQ[a, _Integer]").unwrap())),
+        Term::boolean(false)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Cases[{1, a, 2}, _Integer]").unwrap())),
+        Term::List(vec![Term::int(1), Term::int(2)])
+    );
+}

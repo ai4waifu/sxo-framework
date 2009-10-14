@@ -846,14 +846,19 @@ export const featureMatrix = [
         category: 'pattern',
         status: 'partial',
         effect: 'pure',
-        notes: 'Blank/_ stripped or broken: MatchQ[1,_Integer] → MatchQ[1, Integer]; Cases wrong',
+        notes: '`_`/`_Integer`/`x_` lower to Blank/Pattern; MatchQ/Cases basic; richer patterns pending',
         cases: [
             {
                 id: 'blank.matchq',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'MatchQ[1, _Integer]',
                 expected: 'True',
-                notes: 'pattern object must stay typed Blank',
+            },
+            {
+                id: 'blank.cases',
+                kind: 'eval',
+                input: 'Cases[{1, a, 2}, _Integer]',
+                expected: '{1, 2}',
             },
         ],
     },
