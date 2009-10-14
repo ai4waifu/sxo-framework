@@ -24,17 +24,16 @@ export const featureMatrix = [
     {
         name: 'times',
         category: 'arithmetic',
-        status: 'partial',
+        status: 'supported',
         effect: 'pure',
-        notes: '.* often lowers/renders as * without elementwise OperatorId',
+        notes: '.* lowers to DotTimes (distinct from Times); nested List elementwise; `2.*[` lexes as float×array',
         cases: [
-            { id: 'times.scalar', kind: 'eval', input: '2.*[1, 2]', expected: '2*[1, 2]' },
+            { id: 'times.scalar', kind: 'eval', input: '2 .* [1, 2]', expected: '[2, 4]' },
             {
                 id: 'times.vec',
-                kind: 'gap',
+                kind: 'eval',
                 input: '[1, 2].*[3, 4]',
                 expected: '[3, 8]',
-                notes: 'needs elementwise Times OperatorId + MatrixValue',
             },
         ],
     },
@@ -43,15 +42,14 @@ export const featureMatrix = [
         category: 'arithmetic',
         status: 'partial',
         effect: 'pure',
-        notes: 'scalar numeric ^ works; .^ OperatorId incomplete; SILENT WRONG: (x+1)^2 → 1+x^2; [1,2,3].^0 → 1 (expect [1,1,1])',
+        notes: '.^ → DotPower elementwise; plain ^ on List stays Power; binomial expand of (x+1)^2 still wrong',
         cases: [
             { id: 'power.basic', kind: 'eval', input: '2^3', expected: '8' },
             {
                 id: 'power.elementwise',
-                kind: 'gap',
+                kind: 'eval',
                 input: '[1, 2].^[2, 3]',
                 expected: '[1, 8]',
-                notes: 'currently renders as [1, 2]^[2, 3]',
             },
             {
                 id: 'power.binomsq',
@@ -62,10 +60,9 @@ export const featureMatrix = [
             },
             {
                 id: 'power.vec_pow0',
-                kind: 'gap',
+                kind: 'eval',
                 input: '[1, 2, 3].^0',
                 expected: '[1, 1, 1]',
-                notes: 'currently 1',
             },
         ],
     },
@@ -79,9 +76,13 @@ export const featureMatrix = [
     {
         name: 'rdivide',
         category: 'arithmetic',
-        status: 'partial',
+        status: 'supported',
         effect: 'pure',
-        cases: [{ id: 'rdivide.scalar', kind: 'eval', input: '1./2', expected: '0.5' }],
+        notes: './ → DotDivide',
+        cases: [
+            { id: 'rdivide.scalar', kind: 'eval', input: '1./2', expected: '0.5' },
+            { id: 'rdivide.vec', kind: 'eval', input: '[6, 8]./[2, 4]', expected: '[3, 2]' },
+        ],
     },
     {
         name: 'matrix',
