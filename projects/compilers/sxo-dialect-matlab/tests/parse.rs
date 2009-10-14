@@ -177,3 +177,41 @@ fn parse_mldivide_2x2_evaluates() {
         ])
     );
 }
+
+#[test]
+fn parse_matrix_constructors_and_size() {
+    assert_eq!(
+        evaluate(&parse_matlab("eye(2)").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(1), Term::int(0)]),
+            Term::List(vec![Term::int(0), Term::int(1)]),
+        ])
+    );
+    assert_eq!(render_matlab(&evaluate(&parse_matlab("eye(2)").unwrap())), "[1, 0; 0, 1]");
+
+    assert_eq!(
+        evaluate(&parse_matlab("zeros(2, 3)").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(0), Term::int(0), Term::int(0)]),
+            Term::List(vec![Term::int(0), Term::int(0), Term::int(0)]),
+        ])
+    );
+    assert_eq!(render_matlab(&evaluate(&parse_matlab("zeros(2, 3)").unwrap())), "[0, 0, 0; 0, 0, 0]");
+
+    assert_eq!(
+        evaluate(&parse_matlab("ones(2)").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(1), Term::int(1)]),
+            Term::List(vec![Term::int(1), Term::int(1)]),
+        ])
+    );
+    assert_eq!(render_matlab(&evaluate(&parse_matlab("ones(2)").unwrap())), "[1, 1; 1, 1]");
+
+    assert_eq!(
+        evaluate(&parse_matlab("size([1, 2; 3, 4])").unwrap()),
+        Term::List(vec![Term::int(2), Term::int(2)])
+    );
+    assert_eq!(render_matlab(&evaluate(&parse_matlab("size([1, 2; 3, 4])").unwrap())), "[2, 2]");
+
+    assert_eq!(evaluate(&parse_matlab("length([1, 2, 3])").unwrap()), Term::int(3));
+}
