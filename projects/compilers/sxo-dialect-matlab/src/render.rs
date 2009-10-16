@@ -65,6 +65,9 @@ fn head_matlab_name(head: &Term) -> Option<String> {
             "Eye" | "IdentityMatrix" => "eye",
             "Size" | "Dimensions" => "size",
             "Length" => "length",
+            "Det" => "det",
+            "Sum" => "sum",
+            "LinearSolve" => "linsolve",
             other => other,
         }
         .to_string(),

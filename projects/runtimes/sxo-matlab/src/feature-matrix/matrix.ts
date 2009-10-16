@@ -18,8 +18,16 @@ export const featureMatrix = [
         category: 'arithmetic',
         status: 'partial',
         effect: 'pure',
-        notes: 'scalar * works; matrix mtimes vs times OperatorId split incomplete',
-        cases: [{ id: 'mtimes.scalar', kind: 'eval', input: '2 * 3', expected: '6' }],
+        notes: 'scalar * and numeric nested-list matmul work; symbolic matrix * stays Times',
+        cases: [
+            { id: 'mtimes.scalar', kind: 'eval', input: '2 * 3', expected: '6' },
+            {
+                id: 'mtimes.2x2',
+                kind: 'eval',
+                input: '[1, 2; 3, 4]*[5, 6; 7, 8]',
+                expected: '[19, 22; 43, 50]',
+            },
+        ],
     },
     {
         name: 'times',
@@ -458,6 +466,21 @@ export const featureMatrix = [
         ],
     },
     {
+        name: 'linsolve',
+        category: 'solve',
+        status: 'supported',
+        effect: 'pure',
+        notes: 'linsolve → LinearSolve; same exact bridge as mldivide',
+        cases: [
+            {
+                id: 'linsolve.2x2',
+                kind: 'eval',
+                input: 'linsolve([1, 2; 3, 4], [5; 6])',
+                expected: '[-4; 9/2]',
+            },
+        ],
+    },
+    {
         name: 'roots',
         category: 'solve',
         status: 'unsupported',
@@ -467,9 +490,10 @@ export const featureMatrix = [
     {
         name: 'det',
         category: 'linear_algebra',
-        status: 'unsupported',
+        status: 'supported',
         effect: 'pure',
-        cases: [{ id: 'det.2x2', kind: 'gap', input: 'det([1, 2; 3, 4])', expected: '-2' }],
+        notes: 'det → Det via exact Bareiss / rational product',
+        cases: [{ id: 'det.2x2', kind: 'eval', input: 'det([1, 2; 3, 4])', expected: '-2' }],
     },
     {
         name: 'inv',
@@ -535,9 +559,13 @@ export const featureMatrix = [
     {
         name: 'sum',
         category: 'matrix',
-        status: 'unsupported',
+        status: 'supported',
         effect: 'pure',
-        cases: [{ id: 'sum.vec', kind: 'gap', input: 'sum([1, 2, 3])', expected: '6' }],
+        notes: 'vector → scalar; matrix → column sums; iterator Sum[body,{i,…}] still symbolic',
+        cases: [
+            { id: 'sum.vec', kind: 'eval', input: 'sum([1, 2, 3])', expected: '6' },
+            { id: 'sum.matrix', kind: 'eval', input: 'sum([1, 2; 3, 4])', expected: '[4, 6]' },
+        ],
     },
     {
         name: 'max',
