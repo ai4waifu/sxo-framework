@@ -532,16 +532,15 @@ export const featureMatrix = [
         category: 'calculus',
         status: 'partial',
         effect: 'pure',
-        notes: 'indefinite poly/sin ok; definite incomplete; juxtaposition splits args; SILENT WRONG: Integrate[Exp[-x^2],…] flips sign to Exp[x^2]',
+        notes: 'indefinite poly/sin ok; definite Sin to Pi exact; juxtaposition/Exp[-x^2] gaps remain',
         cases: [
             { id: 'integrate.poly', kind: 'eval', input: 'Integrate[x^2, x]', expected: '1/3*x^3' },
             { id: 'integrate.sin', kind: 'eval', input: 'Integrate[Sin[x], x]', expected: '-Cos[x]' },
             {
                 id: 'integrate.definite_sin',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'Integrate[Sin[x], {x, 0, Pi}]',
                 expected: '2',
-                notes: 'currently 1 + -Cos[Pi]',
             },
             {
                 id: 'integrate.parts_juxtapose',
@@ -570,14 +569,13 @@ export const featureMatrix = [
         category: 'calculus',
         status: 'partial',
         effect: 'pure',
-        notes: 'SILENT WRONG: sinc→0; (1+x)^(1/x)→1^0^-1; Infinity path fragile',
+        notes: 'sinc at 0 fixed; (1+x)^(1/x) and Infinity paths still fragile',
         cases: [
             {
                 id: 'limit.sinc',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'Limit[Sin[x]/x, x -> 0]',
                 expected: '1',
-                notes: 'currently returns 0',
             },
             {
                 id: 'limit.exp',
@@ -676,23 +674,25 @@ export const featureMatrix = [
     {
         name: 'LinearSolve',
         category: 'linear_algebra',
-        status: 'planned',
+        status: 'supported',
         effect: 'pure',
+        notes: 'nested-list LinearSolve via exact solve bridge; row-vector rhs may need column shape',
         cases: [
             {
                 id: 'linearsolve.2x2',
-                kind: 'gap',
-                input: 'LinearSolve[{{1, 2}, {3, 4}}, {5, 6}]',
-                expected: '{-4, 9/2}',
+                kind: 'eval',
+                input: 'LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]',
+                expected: '{{-4}, {9/2}}',
             },
         ],
     },
     {
         name: 'Det',
         category: 'linear_algebra',
-        status: 'unsupported',
+        status: 'supported',
         effect: 'pure',
-        cases: [{ id: 'det.2x2', kind: 'gap', input: 'Det[{{1, 2}, {3, 4}}]', expected: '-2' }],
+        notes: 'Det via Bareiss on nested List',
+        cases: [{ id: 'det.2x2', kind: 'eval', input: 'Det[{{1, 2}, {3, 4}}]', expected: '-2' }],
     },
     {
         name: 'Inverse',
