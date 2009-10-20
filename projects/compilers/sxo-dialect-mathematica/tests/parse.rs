@@ -289,3 +289,16 @@ fn parse_linear_solve_nested_lists() {
         Term::int(-2)
     );
 }
+
+#[test]
+fn parse_solve_quadratic_x2_eq_1() {
+    let e = evaluate(&wexpr_to_term(&parse_mathematica("Solve[x^2 == 1, x]").unwrap()));
+    assert_eq!(
+        e,
+        Term::List(vec![
+            Term::List(vec![Term::apply("Rule", vec![Term::symbol("x"), Term::int(-1)])]),
+            Term::List(vec![Term::apply("Rule", vec![Term::symbol("x"), Term::int(1)])]),
+        ])
+    );
+    assert_eq!(render(&term_to_wexpr(&e)), "{{x -> -1}, {x -> 1}}");
+}
