@@ -580,7 +580,7 @@ export const featureMatrix = [
         status: 'partial',
         effect: 'effectful',
         notes:
-            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no boxed frame, not MATLAB default blue. Negative a/b extract fails; 2-arg plot(f,[a,b]) gap',
+            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no boxed frame, not MATLAB default blue. Negative a/b via unary-minus fold; 2-arg plot(f,[a,b]) gap',
         cases: [
             {
                 id: 'plot.square',
@@ -596,10 +596,9 @@ export const featureMatrix = [
             },
             {
                 id: 'plot.neg_domain',
-                kind: 'gap',
+                kind: 'plot',
                 input: 'plot(x^2, x, -1, 1)',
                 expected: '<svg',
-                notes: 'negative domain bounds fail plot extract',
             },
             {
                 id: 'plot.range_vec',

@@ -1,7 +1,9 @@
 //! Integration tests for Mathematica parse.
 
 use athena::{Term, evaluate};
-use sxo_dialect_mathematica::{WAtom, WExpr, parse_mathematica, parse_number_literal, render, term_to_wexpr, wexpr_to_term};
+use sxo_dialect_mathematica::{
+    WAtom, WExpr, parse_mathematica, parse_number_literal, render, term_to_wexpr, try_plot_svg, wexpr_to_term,
+};
 
 #[test]
 fn parse_plus_times() {
@@ -301,4 +303,11 @@ fn parse_solve_quadratic_x2_eq_1() {
         ])
     );
     assert_eq!(render(&term_to_wexpr(&e)), "{{x -> -1}, {x -> 1}}");
+}
+
+#[test]
+fn parse_plot_negative_domain_renders_svg() {
+    let t = wexpr_to_term(&parse_mathematica("Plot[x^2, {x, -1, 1}]").unwrap());
+    let svg = try_plot_svg(&t).expect("extract").expect("render");
+    assert!(svg.contains("<svg"), "got {svg}");
 }

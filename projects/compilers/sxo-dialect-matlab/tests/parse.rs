@@ -2,7 +2,7 @@
 
 use athena::{Term, evaluate};
 use sxo_dialect_mathematica::{render, term_to_wexpr};
-use sxo_dialect_matlab::{parse_matlab, render_matlab};
+use sxo_dialect_matlab::{parse_matlab, render_matlab, try_plot_svg};
 
 #[test]
 fn parse_plus_times() {
@@ -271,4 +271,11 @@ fn parse_matrix_constructors_and_size() {
     assert_eq!(render_matlab(&evaluate(&parse_matlab("size([1, 2; 3, 4])").unwrap())), "[2, 2]");
 
     assert_eq!(evaluate(&parse_matlab("length([1, 2, 3])").unwrap()), Term::int(3));
+}
+
+#[test]
+fn parse_plot_negative_domain_renders_svg() {
+    let t = parse_matlab("plot(x^2, x, -1, 1)").unwrap();
+    let svg = try_plot_svg(&t).expect("extract").expect("render");
+    assert!(svg.contains("<svg"), "got {svg}");
 }
