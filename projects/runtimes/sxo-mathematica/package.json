@@ -3,7 +3,11 @@
     "version": "0.0.2",
     "private": true,
     "type": "module",
-    "description": "SXO Mathematica / Wolfram dialect API and wolframscript CLI",
+    "description": "Wolfram-oriented SXO frontend, wolframscript CLI, and Jupyter integration",
+    "repository": {"type": "git", "url": "https://github.com/vm-z/sxo-framework.git", "directory": "projects/runtimes/sxo-mathematica"},
+    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
+    "keywords": ["sxo", "wolfram", "mathematica", "wolfram-language", "jupyter", "symbolic-computation"],
     "license": "Apache-2.0",
     "bin": {
         "wolframscript": "./bin/wolframscript.mjs"

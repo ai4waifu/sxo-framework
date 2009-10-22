@@ -3,7 +3,11 @@
     "version": "0.0.2",
     "private": true,
     "type": "module",
-    "description": "SXO CLI (i18n via @vmz/commander + @vmz/diagnostic)",
+    "description": "Command-line interface for running SXO symbolic workflows in Node.js",
+    "repository": {"type": "git", "url": "https://github.com/vm-z/sxo-framework.git", "directory": "projects/runtimes/sxo"},
+    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
+    "keywords": ["sxo", "symbolic-computation", "computer-algebra", "cli", "nodejs"],
     "license": "Apache-2.0",
     "bin": {
         "sxo": "./bin/sxo.mjs"
