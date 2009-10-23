@@ -24,7 +24,7 @@ describe('@sxo/matlab integration', () => {
     });
 
     it('evaluates comparisons', () => {
-        expect(matlab.evaluate('3 > 2').toMatlab()).toBe('1');
+        expect(matlab.evaluate('3 > 2').toMatlab()).toBe('true');
     });
 
     it('shares engine version across instances', () => {
