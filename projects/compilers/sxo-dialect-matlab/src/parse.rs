@@ -1,12 +1,14 @@
-//! MATLAB dialect via **oaks** `oak-matlab` → engine term (not through Mathematica [`WExpr`]).
+//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → engine [`Term`].
+//!
+//! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → Term.
+//! Do not expand GreenTree / `MatlabTokenType` leaf walking here.
 
-use oak_core::{
-    Parser,
-    parser::ParseSession,
-    source::SourceText,
-    tree::{GreenNode, GreenTree},
+use oak_core::{Builder, source::SourceText};
+use oak_matlab::{
+    MatlabBuilder, MatlabLanguage,
+    ast::{BinaryExpr, Expression, MatlabRoot, Statement, UnaryExpr},
+    lexer::token_type::MatlabTokenType,
 };
-use oak_matlab::{MatlabLanguage, MatlabParser, lexer::token_type::MatlabTokenType, parser::element_type::MatlabElementType};
 
 use athena::{Atom, Term};
 use sxo_types::SxoError;
@@ -21,32 +23,18 @@ pub fn parse_matlab(input: &str) -> Result<Term, SxoError> {
     }
 
     let language = MatlabLanguage::default();
-    let parser = MatlabParser::new(&language);
+    let builder = MatlabBuilder::new(&language);
     let source = SourceText::new(trimmed);
-    let mut session = ParseSession::<MatlabLanguage>::default();
-    let output = parser.parse(&source, &[], &mut session);
-
+    let mut session = oak_core::ParseSession::<MatlabLanguage>::default();
+    let output = builder.build(&source, &[], &mut session);
     let root = output.result.map_err(|e| SxoError::new(format!("matlab(oak): {e:?}")))?;
-    lower_root(root, trimmed)
+    lower_root(&root)
 }
 
-fn lower_root(root: &GreenNode<'_, MatlabLanguage>, src: &str) -> Result<Term, SxoError> {
-    let mut offset = 0usize;
-    let mut items = Vec::new();
-    for child in root.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(node) => {
-                if matches!(node.kind, MatlabElementType::Error) {
-                    offset += node.byte_length as usize;
-                    continue;
-                }
-                items.push(lower_node(node, src, offset)?);
-                offset += node.byte_length as usize;
-            }
-        }
+fn lower_root(root: &MatlabRoot) -> Result<Term, SxoError> {
+    let mut items = Vec::with_capacity(root.items.len());
+    for stmt in &root.items {
+        items.push(lower_stmt(stmt)?);
     }
     match items.len() {
         0 => Err(SxoError::new("matlab(oak): empty root")),
@@ -55,20 +43,79 @@ fn lower_root(root: &GreenNode<'_, MatlabLanguage>, src: &str) -> Result<Term, S
     }
 }
 
-fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    match node.kind {
-        MatlabElementType::Root | MatlabElementType::Expression => {
-            let mut offset = start;
-            for child in node.children {
-                match child {
-                    GreenTree::Leaf(leaf) => offset += leaf.length as usize,
-                    GreenTree::Node(n) => return lower_node(n, src, offset),
-                }
+fn lower_stmt(stmt: &Statement) -> Result<Term, SxoError> {
+    match stmt {
+        Statement::Expr(expr) => lower_expr(expr),
+        Statement::If { condition, then_body, elseifs, else_body, .. } => {
+            // Flatten elseif into nested If for Athena.
+            let mut else_term = compound_stmts(else_body)?;
+            for (cond, body) in elseifs.iter().rev() {
+                let then_t = compound_stmts(body)?;
+                else_term = Term::apply("If", vec![lower_expr(cond)?, then_t, else_term]);
             }
-            Err(SxoError::new("matlab(oak): empty Expression"))
+            let then_t = compound_stmts(then_body)?;
+            if matches!(&else_term, Term::Atom(Atom::Null)) && elseifs.is_empty() {
+                Ok(Term::apply("If", vec![lower_expr(condition)?, then_t]))
+            }
+            else {
+                Ok(Term::apply("If", vec![lower_expr(condition)?, then_t, else_term]))
+            }
         }
-        MatlabElementType::Literal => {
-            let text = slice(src, start, node.byte_length)?.trim();
+        Statement::While { condition, body, .. } => {
+            Ok(Term::apply("While", vec![lower_expr(condition)?, compound_stmts(body)?]))
+        }
+        Statement::For { header, body, .. } => {
+            let header_t = lower_expr(header)?;
+            let body_t = compound_stmts(body)?;
+            match header_t {
+                Term::Application { head, arguments: args } if head.is_symbol("Set") && args.len() == 2 => {
+                    Ok(Term::apply("For", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), body_t]))
+                }
+                other => Ok(Term::apply("For", vec![Term::symbol("_"), other, body_t])),
+            }
+        }
+        Statement::Try { body, catch_body, .. } => {
+            // Athena `Try[body, catch]`. catch_name is ignored in this slice.
+            Ok(Term::apply("Try", vec![compound_stmts(body)?, compound_stmts(catch_body)?]))
+        }
+        Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
+    }
+}
+
+fn compound_stmts(stmts: &[Statement]) -> Result<Term, SxoError> {
+    let mut items = Vec::with_capacity(stmts.len());
+    for s in stmts {
+        items.push(lower_stmt(s)?);
+    }
+    Ok(compound_or_single(items))
+}
+
+fn compound_or_single(mut items: Vec<Term>) -> Term {
+    match items.len() {
+        0 => Term::null(),
+        1 => items.remove(0),
+        _ => Term::apply("CompoundExpression", items),
+    }
+}
+
+fn lower_expr(expr: &Expression) -> Result<Term, SxoError> {
+    match expr {
+        Expression::Symbol(id) => {
+            if id.name == "end" {
+                Ok(Term::symbol("End"))
+            }
+            else if id.name == "true" {
+                Ok(Term::boolean(true))
+            }
+            else if id.name == "false" {
+                Ok(Term::boolean(false))
+            }
+            else {
+                Ok(Term::symbol(&id.name))
+            }
+        }
+        Expression::Literal { value, .. } => {
+            let text = value.trim();
             if let Some(t) = term_from_number_literal(text) {
                 return Ok(t);
             }
@@ -78,116 +125,50 @@ fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
                 Ok(Term::Atom(Atom::String(text[1..text.len() - 1].to_string())))
             }
             else {
-                Err(SxoError::new(format!("matlab(oak): bad literal `{text}`")))
+                Ok(Term::symbol(text))
             }
         }
-        MatlabElementType::Symbol => {
-            let name = slice(src, start, node.byte_length)?.trim();
-            // Lone `:` in index position → All (MATLAB "whole dimension").
-            if name == ":" {
-                Ok(Term::symbol("All"))
-            }
-            else if name == "end" {
-                Ok(Term::symbol("End"))
+        Expression::Array { rows, .. } => {
+            if rows.len() == 1 {
+                Ok(Term::List(rows[0].iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?))
             }
             else {
-                Ok(Term::symbol(name))
+                let mut out = Vec::with_capacity(rows.len());
+                for row in rows {
+                    out.push(Term::List(row.iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?));
+                }
+                Ok(Term::List(out))
             }
         }
-        MatlabElementType::Array => lower_array(node, src, start),
-        MatlabElementType::PrefixExpr => lower_prefix(node, src, start),
-        MatlabElementType::BinaryExpr => lower_binary(node, src, start),
-        MatlabElementType::PostfixExpr => lower_postfix(node, src, start),
-        MatlabElementType::Call => lower_call(node, src, start),
-        MatlabElementType::IfStmt => lower_if_stmt(node, src, start),
-        MatlabElementType::WhileStmt => lower_while_stmt(node, src, start),
-        MatlabElementType::ForStmt => lower_for_stmt(node, src, start),
-        MatlabElementType::Arguments => Err(SxoError::new("matlab(oak): unexpected Arguments")),
-        MatlabElementType::Error => Err(SxoError::new("matlab(oak): error node")),
+        Expression::Call { head, arguments, .. } => {
+            let mut expr_t = lower_expr(head)?;
+            // Map bare symbol call heads (sin → Sin).
+            if let Term::Atom(Atom::Symbol(name)) = &expr_t {
+                expr_t = Term::symbol(map_matlab_head(name));
+            }
+            let args = arguments.iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?;
+            if matches!(&expr_t, Term::List(_))
+                || matches!(&expr_t, Term::Application { head: h, .. } if h.is_symbol("Part"))
+            {
+                let mut part_args = vec![expr_t];
+                part_args.extend(args);
+                Ok(Term::apply("Part", part_args))
+            }
+            else {
+                Ok(Term::Application { head: Box::new(expr_t), arguments: args })
+            }
+        }
+        Expression::Binary(bin) => lower_binary(bin),
+        Expression::Prefix(u) => lower_prefix(u),
+        Expression::Postfix(u) => lower_postfix(u),
+        Expression::Grouped { expression, .. } => lower_expr(expression),
     }
 }
 
-fn lower_array(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut offset = start;
-    let mut rows: Vec<Vec<Term>> = vec![vec![]];
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                if leaf.kind == MatlabTokenType::Semicolon {
-                    rows.push(vec![]);
-                }
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                if matches!(n.kind, MatlabElementType::Error) {
-                    offset += n.byte_length as usize;
-                    continue;
-                }
-                rows.last_mut().unwrap().push(lower_node(n, src, offset)?);
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    if rows.len() == 1 { Ok(Term::List(rows.remove(0))) } else { Ok(Term::List(rows.into_iter().map(Term::List).collect())) }
-}
-
-fn lower_prefix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut offset = start;
-    let mut op: Option<MatlabTokenType> = None;
-    let mut operand: Option<Term> = None;
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                if !is_trivia(leaf.kind) && op.is_none() {
-                    op = Some(leaf.kind);
-                }
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                operand = Some(lower_node(n, src, offset)?);
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    match (op, operand) {
-        (Some(MatlabTokenType::Minus), Some(e)) => Ok(Term::apply("Times", vec![Term::int(-1), e])),
-        (Some(MatlabTokenType::Plus), Some(e)) => Ok(e),
-        (Some(MatlabTokenType::Not), Some(e)) => Ok(Term::apply("Not", vec![e])),
-        (Some(other), _) => Err(SxoError::new(format!("matlab(oak): unsupported prefix {other:?}"))),
-        _ => Err(SxoError::new("matlab(oak): malformed PrefixExpr")),
-    }
-}
-
-fn lower_binary(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut offset = start;
-    let mut left: Option<Term> = None;
-    let mut op: Option<MatlabTokenType> = None;
-    let mut right: Option<Term> = None;
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                if !is_trivia(leaf.kind) && op.is_none() && left.is_some() {
-                    op = Some(leaf.kind);
-                }
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                let e = lower_node(n, src, offset)?;
-                if left.is_none() {
-                    left = Some(e);
-                }
-                else {
-                    right = Some(e);
-                }
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    let (l, op, r) = match (left, op, right) {
-        (Some(l), Some(op), Some(r)) => (l, op, r),
-        _ => return Err(SxoError::new("matlab(oak): malformed BinaryExpr")),
-    };
-    Ok(match op {
+fn lower_binary(bin: &BinaryExpr) -> Result<Term, SxoError> {
+    let l = lower_expr(&bin.lhs)?;
+    let r = lower_expr(&bin.rhs)?;
+    Ok(match bin.operator {
         MatlabTokenType::Plus => Term::apply("Plus", vec![l, r]),
         MatlabTokenType::Minus => Term::apply("Subtract", vec![l, r]),
         MatlabTokenType::Times => Term::apply("Times", vec![l, r]),
@@ -209,202 +190,37 @@ fn lower_binary(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -
         MatlabTokenType::OrOr | MatlabTokenType::Or => Term::apply("Or", vec![l, r]),
         MatlabTokenType::Colon => flatten_span(l, r),
         other => {
-            return Err(SxoError::new(format!("matlab(oak): unsupported binary {other:?}")));
+            return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));
         }
     })
 }
 
-/// `1:2:10` parses left-assoc as `Span(Span(1,2),10)` → flatten to `Span(1,2,10)`.
 fn flatten_span(left: Term, right: Term) -> Term {
+    // `1:2:10` parses as Colon(Colon(1,2), 10) → Span[1,2,10]
     match left {
-        Term::Application { head, arguments: mut args } if head.is_symbol("Span") && (args.len() == 2 || args.len() == 3) => {
-            args.push(right);
-            Term::apply("Span", args)
+        Term::Application { head, arguments: args } if head.is_symbol("Span") && args.len() == 2 => {
+            Term::apply("Span", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), right])
         }
         other => Term::apply("Span", vec![other, right]),
     }
 }
 
-fn lower_postfix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut offset = start;
-    let mut expr: Option<Term> = None;
-    let mut op: Option<MatlabTokenType> = None;
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                if !is_trivia(leaf.kind) && matches!(leaf.kind, MatlabTokenType::Transpose | MatlabTokenType::DotTranspose) {
-                    op = Some(leaf.kind);
-                }
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                expr = Some(lower_node(n, src, offset)?);
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    let expr = expr.ok_or_else(|| SxoError::new("matlab(oak): malformed PostfixExpr"))?;
-    match op {
-        Some(MatlabTokenType::Transpose) | Some(MatlabTokenType::DotTranspose) => Ok(Term::apply("Transpose", vec![expr])),
-        Some(other) => Err(SxoError::new(format!("matlab(oak): unsupported postfix {other:?}"))),
-        None => Ok(expr),
-    }
+fn lower_prefix(u: &UnaryExpr) -> Result<Term, SxoError> {
+    let e = lower_expr(&u.operand)?;
+    Ok(match u.operator {
+        MatlabTokenType::Minus => Term::apply("Times", vec![Term::int(-1), e]),
+        MatlabTokenType::Plus => e,
+        MatlabTokenType::Not => Term::apply("Not", vec![e]),
+        other => return Err(SxoError::new(format!("matlab(ast): unsupported prefix {other:?}"))),
+    })
 }
 
-fn lower_call(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut offset = start;
-    let mut head: Option<Term> = None;
-    let mut arg_groups: Vec<Vec<Term>> = Vec::new();
-
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                if matches!(leaf.kind, MatlabTokenType::Identifier) && head.is_none() {
-                    let name = slice(src, offset, leaf.length)?.trim().to_string();
-                    head = Some(Term::symbol(map_matlab_head(&name)));
-                }
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                match n.kind {
-                    MatlabElementType::Symbol if head.is_none() => {
-                        if let Term::Atom(Atom::Symbol(name)) = lower_node(n, src, offset)? {
-                            head = Some(Term::symbol(map_matlab_head(&name)));
-                        }
-                    }
-                    MatlabElementType::Arguments => {
-                        arg_groups.push(lower_arguments(n, src, offset)?);
-                    }
-                    MatlabElementType::Call if head.is_none() => {
-                        head = Some(lower_node(n, src, offset)?);
-                    }
-                    _ if head.is_none() => {
-                        head = Some(lower_node(n, src, offset)?);
-                    }
-                    _ => {}
-                }
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-
-    let mut expr = head.ok_or_else(|| SxoError::new("matlab(oak): call missing head"))?;
-    if arg_groups.is_empty() {
-        return Ok(Term::Application { head: Box::new(expr), arguments: vec![] });
-    }
-    for args in arg_groups {
-        // Array / list indexing → `Part` (1-based, Athena).
-        if matches!(&expr, Term::List(_))
-            || matches!(&expr, Term::Application { head: h, .. } if h.is_symbol("Part"))
-        {
-            let mut part_args = vec![expr];
-            part_args.extend(args);
-            expr = Term::apply("Part", part_args);
-        }
-        else {
-            expr = Term::Application { head: Box::new(expr), arguments: args };
-        }
-    }
-    Ok(expr)
-}
-
-fn collect_stmt_children(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Vec<Term>, SxoError> {
-    let mut offset = start;
-    let mut items = Vec::new();
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                if matches!(n.kind, MatlabElementType::Error) {
-                    offset += n.byte_length as usize;
-                    continue;
-                }
-                items.push(lower_node(n, src, offset)?);
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    Ok(items)
-}
-
-fn compound_or_single(mut items: Vec<Term>) -> Term {
-    match items.len() {
-        0 => Term::null(),
-        1 => items.remove(0),
-        _ => Term::apply("CompoundExpression", items),
-    }
-}
-
-fn lower_if_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let items = collect_stmt_children(node, src, start)?;
-    // Children: cond, then…, optional else…
-    // oaks emits: cond, then-exprs…, and after Else keyword leaves, else-exprs…
-    // Without Else marker nodes, split is ambiguous for multi-then. For the silent-wrong
-    // fixture `if 1, 2, else, 3, end` children are [1, 2, 3].
-    if items.len() < 2 {
-        return Ok(Term::apply("If", items));
-    }
-    if items.len() == 2 {
-        return Ok(Term::apply("If", items));
-    }
-    if items.len() == 3 {
-        return Ok(Term::apply("If", items));
-    }
-    // cond + then-compound + else-compound when more body parts: treat last as else.
-    let mut args = items;
-    let else_b = args.pop().unwrap();
-    let cond = args.remove(0);
-    let then_b = compound_or_single(args);
-    Ok(Term::apply("If", vec![cond, then_b, else_b]))
-}
-
-fn lower_while_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut items = collect_stmt_children(node, src, start)?;
-    if items.is_empty() {
-        return Ok(Term::apply("While", vec![]));
-    }
-    let cond = items.remove(0);
-    let body = compound_or_single(items);
-    Ok(Term::apply("While", vec![cond, body]))
-}
-
-fn lower_for_stmt(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
-    let mut items = collect_stmt_children(node, src, start)?;
-    if items.is_empty() {
-        return Ok(Term::apply("For", vec![]));
-    }
-    let header = items.remove(0);
-    let body = compound_or_single(items);
-    // `i = 1:3` → Set[i, Span…] → For[i, Span, body]
-    match header {
-        Term::Application { head, arguments: args } if head.is_symbol("Set") && args.len() == 2 => {
-            Ok(Term::apply("For", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), body]))
-        }
-        other => Ok(Term::apply("For", vec![Term::symbol("_"), other, body])),
-    }
-}
-
-fn lower_arguments(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Vec<Term>, SxoError> {
-    let mut offset = start;
-    let mut args = Vec::new();
-    for child in node.children {
-        match child {
-            GreenTree::Leaf(leaf) => {
-                offset += leaf.length as usize;
-            }
-            GreenTree::Node(n) => {
-                if matches!(n.kind, MatlabElementType::Error) {
-                    offset += n.byte_length as usize;
-                    continue;
-                }
-                args.push(lower_node(n, src, offset)?);
-                offset += n.byte_length as usize;
-            }
-        }
-    }
-    Ok(args)
+fn lower_postfix(u: &UnaryExpr) -> Result<Term, SxoError> {
+    let e = lower_expr(&u.operand)?;
+    Ok(match u.operator {
+        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => Term::apply("Transpose", vec![e]),
+        other => return Err(SxoError::new(format!("matlab(ast): unsupported postfix {other:?}"))),
+    })
 }
 
 /// Map common MATLAB function names to engine heads used by evaluate/render.
@@ -431,16 +247,4 @@ fn map_matlab_head(name: &str) -> String {
         "linsolve" => "LinearSolve".to_string(),
         other => other.to_string(),
     }
-}
-
-fn slice(src: &str, start: usize, len: u32) -> Result<&str, SxoError> {
-    let end = start + len as usize;
-    src.get(start..end).ok_or_else(|| SxoError::new(format!("matlab(oak): bad span {start}..{end}")))
-}
-
-fn is_trivia(kind: MatlabTokenType) -> bool {
-    matches!(
-        kind,
-        MatlabTokenType::Whitespace | MatlabTokenType::Newline | MatlabTokenType::Comment | MatlabTokenType::BlockComment
-    )
 }
