@@ -168,17 +168,16 @@ export const featureMatrix = [
     {
         name: 'for',
         category: 'control',
-        status: 'partial',
+        status: 'supported',
         effect: 'stateful',
-        notes: 'for i=1:n last value OK; compound accumulator still broken',
+        notes: 'for i=1:n last value and compound accumulator via shared Session bindings',
         cases: [
             { id: 'for.last', kind: 'eval', input: 'for i=1:3, i, end', expected: '3' },
             {
                 id: 'for.sum',
-                kind: 'gap',
+                kind: 'eval',
                 input: 's=0; for i=1:3, s=s+i; end; s',
                 expected: '6',
-                notes: 'currently 0',
             },
         ],
     },
@@ -766,23 +765,21 @@ export const featureMatrix = [
     {
         name: 'try_catch',
         category: 'control',
-        status: 'partial',
+        status: 'supported',
         effect: 'pure',
-        notes: 'try/catch currently collapses to End for both success and error paths',
+        notes: 'oak Statement::Try → Athena Try[body, catch]; success and error paths',
         cases: [
             {
                 id: 'try.catch',
-                kind: 'gap',
+                kind: 'eval',
                 input: "try, error('e'), catch, 1, end",
                 expected: '1',
-                notes: 'currently End',
             },
             {
                 id: 'try.no_error',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'try, 2, catch, 3, end',
                 expected: '2',
-                notes: 'currently End',
             },
         ],
     },
@@ -1979,9 +1976,9 @@ export const featureMatrix = [
         category: 'logic',
         status: 'partial',
         effect: 'pure',
-        notes: 'scalar 1&0 → 0 OK; vector [1,0]&[1,1] → [1,1] SILENT WRONG (expect [1,0])',
+        notes: 'scalar 1&0 → false OK; vector [1,0]&[1,1] → [1,1] SILENT WRONG (expect [1,0])',
         cases: [
-            { id: 'bitand.scalar', kind: 'eval', input: '1 & 0', expected: '0' },
+            { id: 'bitand.scalar', kind: 'eval', input: '1 & 0', expected: 'false' },
             {
                 id: 'bitand.vec',
                 kind: 'gap',
@@ -2128,14 +2125,13 @@ export const featureMatrix = [
         category: 'comparison',
         status: 'partial',
         effect: 'pure',
-        notes: '1<2<3 currently Less(true, 3)',
+        notes: 'scalar 1<2<3 via Athena compare chain; elementwise vector Less still open',
         cases: [
             {
                 id: 'ltchain.123',
-                kind: 'gap',
+                kind: 'eval',
                 input: '1 < 2 < 3',
                 expected: 'true',
-                notes: 'currently Less(true, 3)',
             },
             {
                 id: 'ltchain.vec',
