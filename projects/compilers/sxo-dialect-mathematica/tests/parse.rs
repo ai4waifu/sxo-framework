@@ -1,29 +1,102 @@
-//! Integration tests for Mathematica parse.
+//! Integration tests for Mathematica parse (session arena `TermId`).
 
-use athena::{Term, evaluate};
-use sxo_dialect_mathematica::{
-    WAtom, WExpr, parse_mathematica, parse_number_literal, render, term_to_wexpr, try_plot_svg, wexpr_to_term,
+use std::cell::RefCell;
+
+use athena::{
+    AtomKind, Session, TermId, TermKind, number_from_wire, push_app_named, push_bool, push_int, push_list, push_null,
+    push_symbol_name,
 };
+use athena_types::WireNumber;
+use sxo_dialect_mathematica::{
+    WAtom, WExpr, lower_wexpr, parse_mathematica, parse_number_literal, render, try_plot_svg, wexpr_from_session,
+};
+
+type Tid = TermId;
+
+struct H {
+    s: RefCell<Session>,
+}
+
+impl H {
+    fn new() -> Self {
+        Self { s: RefCell::new(Session::new()) }
+    }
+
+    fn parse_w(&self, input: &str) -> WExpr {
+        parse_mathematica(input).unwrap()
+    }
+
+    fn lower(&self, w: &WExpr) -> Tid {
+        lower_wexpr(&mut self.s.borrow_mut(), w)
+    }
+
+    fn eval(&self, input: &str) -> Tid {
+        let w = self.parse_w(input);
+        let id = self.lower(&w);
+        self.s.borrow_mut().evaluate(id).term
+    }
+
+    fn i(&self, n: i64) -> Tid {
+        push_int(&mut self.s.borrow_mut(), n)
+    }
+
+    fn sym(&self, name: &str) -> Tid {
+        push_symbol_name(&mut self.s.borrow_mut(), name)
+    }
+
+    fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
+        push_app_named(&mut self.s.borrow_mut(), head, args)
+    }
+
+    fn lst(&self, items: Vec<Tid>) -> Tid {
+        push_list(&mut self.s.borrow_mut(), items)
+    }
+
+    fn boolean(&self, b: bool) -> Tid {
+        push_bool(&mut self.s.borrow_mut(), b)
+    }
+
+    fn null(&self) -> Tid {
+        push_null(&mut self.s.borrow_mut())
+    }
+
+    fn rational(&self, n: i64, d: i64) -> Tid {
+        let wire = WireNumber::rational_i64(n, d).unwrap();
+        let num = number_from_wire(&wire).unwrap();
+        let span = athena::SourceSpan::default();
+        self.s.borrow_mut().arena.push(TermKind::Atom(AtomKind::Number(num)), span)
+    }
+
+    fn eq(&self, a: Tid, b: Tid) -> bool {
+        self.s.borrow().arena.structural_eq(a, b)
+    }
+
+    fn wolfram(&self, id: Tid) -> String {
+        let w = wexpr_from_session(&self.s.borrow(), id);
+        render(&w)
+    }
+
+    fn with_mut<R>(&self, f: impl FnOnce(&mut Session) -> R) -> R {
+        f(&mut self.s.borrow_mut())
+    }
+}
 
 #[test]
 fn parse_plus_times() {
-    let w = parse_mathematica("1 + 2 * 3").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::int(7));
+    let h = H::new();
+    assert!(h.eq(h.eval("1 + 2 * 3"), h.i(7)));
 }
 
 #[test]
 fn parse_list() {
-    let w = parse_mathematica("{1, 2 + 2}").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::List(vec![Term::int(1), Term::int(4)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("{1, 2 + 2}"), h.lst(vec![h.i(1), h.i(4)])));
 }
 
 #[test]
 fn parse_power_one() {
-    let w = parse_mathematica("Power[x, 1]").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::symbol("x"));
+    let h = H::new();
+    assert!(h.eq(h.eval("Power[x, 1]"), h.sym("x")));
 }
 
 #[test]
@@ -34,9 +107,9 @@ fn parse_sin() {
 
 #[test]
 fn parse_d() {
-    let w = parse_mathematica("D[x^3, x]").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    let s = render(&term_to_wexpr(&e));
+    let h = H::new();
+    let e = h.eval("D[x^3, x]");
+    let s = h.wolfram(e);
     assert!(s.contains('x'), "got {s}");
 }
 
@@ -48,21 +121,17 @@ fn parse_compound_expression() {
 
 #[test]
 fn parse_root_semicolon_returns_last() {
-    let w = parse_mathematica("1 + 2; 3 * 4").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::int(12));
+    let h = H::new();
+    assert!(h.eq(h.eval("1 + 2; 3 * 4"), h.i(12)));
 }
 
 #[test]
 fn parse_equal_and_factorial() {
     let w = parse_mathematica("2 == 2").unwrap();
     assert_eq!(w, WExpr::call("Equal", vec![WExpr::int(2), WExpr::int(2)]));
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::boolean(true));
-
-    let w = parse_mathematica("5!").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::int(120));
+    let h = H::new();
+    assert!(h.eq(h.eval("2 == 2"), h.boolean(true)));
+    assert!(h.eq(h.eval("5!"), h.i(120)));
 }
 
 #[test]
@@ -86,23 +155,24 @@ fn parse_if_call_shape() {
             ]
         )
     );
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::int(7));
+    let h = H::new();
+    assert!(h.eq(h.eval("If[1==1,7,8]"), h.i(7)));
 }
 
 #[test]
 fn parse_hold_keeps_args() {
     let w = parse_mathematica("Hold[1+1]").unwrap();
     assert_eq!(w, WExpr::call("Hold", vec![WExpr::call("Plus", vec![WExpr::int(1), WExpr::int(1)])]));
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::apply("Hold", vec![Term::apply("Plus", vec![Term::int(1), Term::int(1)])]));
+    let h = H::new();
+    let e = h.eval("Hold[1+1]");
+    assert!(h.eq(e, h.ap("Hold", vec![h.ap("Plus", vec![h.i(1), h.i(1)])])));
 }
 
 #[test]
 fn parse_hold_form_keeps_args() {
-    let w = parse_mathematica("HoldForm[1+1]").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::apply("HoldForm", vec![Term::apply("Plus", vec![Term::int(1), Term::int(1)])]));
+    let h = H::new();
+    let e = h.eval("HoldForm[1+1]");
+    assert!(h.eq(e, h.ap("HoldForm", vec![h.ap("Plus", vec![h.i(1), h.i(1)])])));
 }
 
 #[test]
@@ -121,15 +191,14 @@ fn parse_part_double_bracket() {
             vec![WExpr::List(vec![WExpr::int(1), WExpr::int(2), WExpr::int(3)]), WExpr::int(0)]
         )
     );
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::symbol("List"));
+    let h = H::new();
+    assert!(h.eq(h.eval("{1,2,3}[[0]]"), h.sym("List")));
 }
 
 #[test]
 fn parse_part_call_zero() {
-    let w = parse_mathematica("Part[{1,2,3},0]").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::symbol("List"));
+    let h = H::new();
+    assert!(h.eq(h.eval("Part[{1,2,3},0]"), h.sym("List")));
 }
 
 #[test]
@@ -137,36 +206,29 @@ fn parse_true_false_null_atoms() {
     assert_eq!(parse_mathematica("True").unwrap(), WExpr::symbol("True"));
     assert_eq!(parse_mathematica("False").unwrap(), WExpr::symbol("False"));
     assert_eq!(parse_mathematica("Null").unwrap(), WExpr::symbol("Null"));
-    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("True").unwrap())), Term::boolean(true));
-    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("False").unwrap())), Term::boolean(false));
-    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("Null").unwrap())), Term::null());
-    assert_eq!(render(&term_to_wexpr(&Term::boolean(true))), "True");
-    assert_eq!(render(&term_to_wexpr(&Term::null())), "Null");
+    let h = H::new();
+    assert!(h.eq(h.eval("True"), h.boolean(true)));
+    assert!(h.eq(h.eval("False"), h.boolean(false)));
+    assert!(h.eq(h.eval("Null"), h.null()));
+    assert_eq!(h.wolfram(h.boolean(true)), "True");
+    assert_eq!(h.wolfram(h.null()), "Null");
 }
 
 #[test]
 fn parse_and_or_not_bool_atoms() {
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("And[True, False]").unwrap())),
-        Term::boolean(false)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Or[False, True]").unwrap())),
-        Term::boolean(true)
-    );
-    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("Not[True]").unwrap())), Term::boolean(false));
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Which[False, 1, True, 2]").unwrap())),
-        Term::int(2)
-    );
-    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("1 == 1").unwrap())), Term::boolean(true));
+    let h = H::new();
+    assert!(h.eq(h.eval("And[True, False]"), h.boolean(false)));
+    assert!(h.eq(h.eval("Or[False, True]"), h.boolean(true)));
+    assert!(h.eq(h.eval("Not[True]"), h.boolean(false)));
+    assert!(h.eq(h.eval("Which[False, 1, True, 2]"), h.i(2)));
+    assert!(h.eq(h.eval("1 == 1"), h.boolean(true)));
 }
 
 #[test]
 fn parse_with_module_block_local_bindings() {
+    let h = H::new();
     for src in ["With[{x = 1}, x + 1]", "Module[{x = 1}, x + 1]", "Block[{x = 1}, x + 1]"] {
-        let e = evaluate(&wexpr_to_term(&parse_mathematica(src).unwrap()));
-        assert_eq!(e, Term::int(2), "{src}");
+        assert!(h.eq(h.eval(src), h.i(2)), "{src}");
     }
 }
 
@@ -178,20 +240,20 @@ fn parse_slot_lowers_to_slot_head() {
 
 #[test]
 fn parse_pure_function_slot_application() {
-    let e = evaluate(&wexpr_to_term(&parse_mathematica("(#^2)&[4]").unwrap()));
-    assert_eq!(e, Term::int(16));
+    let h = H::new();
+    assert!(h.eq(h.eval("(#^2)&[4]"), h.i(16)));
 }
 
 #[test]
 fn parse_named_function_application() {
-    let e = evaluate(&wexpr_to_term(&parse_mathematica("Function[x, x^2][3]").unwrap()));
-    assert_eq!(e, Term::int(9));
+    let h = H::new();
+    assert!(h.eq(h.eval("Function[x, x^2][3]"), h.i(9)));
 }
 
 #[test]
 fn parse_map_pure_function() {
-    let e = evaluate(&wexpr_to_term(&parse_mathematica("Map[#^2 &, {1, 2, 3}]").unwrap()));
-    assert_eq!(e, Term::List(vec![Term::int(1), Term::int(4), Term::int(9)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("Map[#^2 &, {1, 2, 3}]"), h.lst(vec![h.i(1), h.i(4), h.i(9)])));
 }
 
 #[test]
@@ -209,105 +271,62 @@ fn parse_blank_and_typed_blank() {
 
 #[test]
 fn parse_match_q_and_cases() {
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("MatchQ[1, _Integer]").unwrap())),
-        Term::boolean(true)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("MatchQ[a, _Integer]").unwrap())),
-        Term::boolean(false)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Cases[{1, a, 2}, _Integer]").unwrap())),
-        Term::List(vec![Term::int(1), Term::int(2)])
-    );
+    let h = H::new();
+    assert!(h.eq(h.eval("MatchQ[1, _Integer]"), h.boolean(true)));
+    assert!(h.eq(h.eval("MatchQ[a, _Integer]"), h.boolean(false)));
+    assert!(h.eq(h.eval("Cases[{1, a, 2}, _Integer]"), h.lst(vec![h.i(1), h.i(2)])));
 }
 
 #[test]
 fn parse_table_range_apply_list_primitives() {
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Table[i, {i, 3}]").unwrap())),
-        Term::List(vec![Term::int(1), Term::int(2), Term::int(3)])
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Range[3]").unwrap())),
-        Term::List(vec![Term::int(1), Term::int(2), Term::int(3)])
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Apply[Plus, {1, 2, 3}]").unwrap())),
-        Term::int(6)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Length[{1, 2, 3}]").unwrap())),
-        Term::int(3)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Join[{1}, {2}]").unwrap())),
-        Term::List(vec![Term::int(1), Term::int(2)])
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("First[{a, b}]").unwrap())),
-        Term::symbol("a")
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Sum[i, {i, 1, 10}]").unwrap())),
-        Term::int(55)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Product[i, {i, 1, 5}]").unwrap())),
-        Term::int(120)
-    );
+    let h = H::new();
+    assert!(h.eq(h.eval("Table[i, {i, 3}]"), h.lst(vec![h.i(1), h.i(2), h.i(3)])));
+    assert!(h.eq(h.eval("Range[3]"), h.lst(vec![h.i(1), h.i(2), h.i(3)])));
+    assert!(h.eq(h.eval("Apply[Plus, {1, 2, 3}]"), h.i(6)));
+    assert!(h.eq(h.eval("Length[{1, 2, 3}]"), h.i(3)));
+    assert!(h.eq(h.eval("Join[{1}, {2}]"), h.lst(vec![h.i(1), h.i(2)])));
+    assert!(h.eq(h.eval("First[{a, b}]"), h.sym("a")));
+    assert!(h.eq(h.eval("Sum[i, {i, 1, 10}]"), h.i(55)));
+    assert!(h.eq(h.eval("Product[i, {i, 1, 5}]"), h.i(120)));
 }
 
 #[test]
 fn parse_limit_sinc_and_definite_integrate_sin() {
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Limit[Sin[x]/x, x -> 0]").unwrap())),
-        Term::int(1)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Integrate[Sin[x], {x, 0, Pi}]").unwrap())),
-        Term::int(2)
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Cos[Pi]").unwrap())),
-        Term::int(-1)
-    );
+    let h = H::new();
+    assert!(h.eq(h.eval("Limit[Sin[x]/x, x -> 0]"), h.i(1)));
+    assert!(h.eq(h.eval("Integrate[Sin[x], {x, 0, Pi}]"), h.i(2)));
+    assert!(h.eq(h.eval("Cos[Pi]"), h.i(-1)));
 }
 
 #[test]
 fn parse_linear_solve_nested_lists() {
-    assert_eq!(
-        evaluate(&wexpr_to_term(
-            &parse_mathematica("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]").unwrap()
-        )),
-        Term::List(vec![
-            Term::List(vec![Term::int(-4)]),
-            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
-        ])
-    );
-    assert_eq!(
-        evaluate(&wexpr_to_term(&parse_mathematica("Det[{{1, 2}, {3, 4}}]").unwrap())),
-        Term::int(-2)
-    );
+    let h = H::new();
+    assert!(h.eq(
+        h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]"),
+        h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])
+    ));
+    assert!(h.eq(h.eval("Det[{{1, 2}, {3, 4}}]"), h.i(-2)));
 }
 
 #[test]
 fn parse_solve_quadratic_x2_eq_1() {
-    let e = evaluate(&wexpr_to_term(&parse_mathematica("Solve[x^2 == 1, x]").unwrap()));
-    assert_eq!(
+    let h = H::new();
+    let e = h.eval("Solve[x^2 == 1, x]");
+    assert!(h.eq(
         e,
-        Term::List(vec![
-            Term::List(vec![Term::apply("Rule", vec![Term::symbol("x"), Term::int(-1)])]),
-            Term::List(vec![Term::apply("Rule", vec![Term::symbol("x"), Term::int(1)])]),
+        h.lst(vec![
+            h.lst(vec![h.ap("Rule", vec![h.sym("x"), h.i(-1)])]),
+            h.lst(vec![h.ap("Rule", vec![h.sym("x"), h.i(1)])]),
         ])
-    );
-    assert_eq!(render(&term_to_wexpr(&e)), "{{x -> -1}, {x -> 1}}");
+    ));
+    assert_eq!(h.wolfram(e), "{{x -> -1}, {x -> 1}}");
 }
 
 #[test]
 fn parse_plot_negative_domain_renders_svg() {
-    let t = wexpr_to_term(&parse_mathematica("Plot[x^2, {x, -1, 1}]").unwrap());
-    let svg = try_plot_svg(&t).expect("extract").expect("render");
+    let h = H::new();
+    let w = h.parse_w("Plot[x^2, {x, -1, 1}]");
+    let t = h.lower(&w);
+    let svg = h.with_mut(|s| try_plot_svg(s, t)).expect("extract").expect("render");
     assert!(svg.contains("<svg"), "got {svg}");
 }

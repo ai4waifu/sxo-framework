@@ -1,104 +1,129 @@
-//! Render engine [`Term`] as MATLAB text (no `WExpr`).
+//! Render session arena [`TermId`] as MATLAB text (no `WExpr`).
 
-use athena::{Atom, Term};
+use athena::{AtomKind, Number, Session, TermId, TermKind, app_args, app_head_name, number_from_id, symbol_name};
 
 use crate::shared::render_number;
 
 /// Render engine IR as MATLAB-ish source.
-pub fn render_matlab(expr: &Term) -> String {
-    match expr {
-        Term::Atom(a) => match a {
-            Atom::Number(n) => render_number(n),
-            Atom::String(s) => format!("'{s}'"),
-            Atom::Symbol(s) => s.clone(),
-            Atom::Boolean(true) => "true".into(),
-            Atom::Boolean(false) => "false".into(),
-            Atom::Null => "[]".into(),
+pub fn render_matlab(session: &Session, id: TermId) -> String {
+    match session.arena.get(id) {
+        Some(TermKind::Atom(a)) => match a {
+            AtomKind::Number(n) => render_number(n),
+            AtomKind::String(s) => format!("'{s}'"),
+            AtomKind::Symbol(_) => symbol_name(session, id).unwrap_or_else(|| "?".into()),
+            AtomKind::Boolean(true) => "true".into(),
+            AtomKind::Boolean(false) => "false".into(),
+            AtomKind::Null => "[]".into(),
         },
-        Term::List(items) => {
-            if is_matrix_rows(items) {
+        Some(TermKind::List(items)) => {
+            let items = items.clone();
+            if is_matrix_rows(session, &items) {
                 let rows: Vec<String> = items
                     .iter()
-                    .map(|row| match row {
-                        Term::List(cols) => cols.iter().map(render_matlab).collect::<Vec<_>>().join(", "),
-                        other => render_matlab(other),
+                    .map(|row| match session.arena.get(*row) {
+                        Some(TermKind::List(cols)) => {
+                            cols.iter().map(|c| render_matlab(session, *c)).collect::<Vec<_>>().join(", ")
+                        }
+                        _ => render_matlab(session, *row),
                     })
                     .collect();
                 format!("[{}]", rows.join("; "))
             }
             else {
-                let inner = items.iter().map(render_matlab).collect::<Vec<_>>().join(", ");
+                let inner = items.iter().map(|i| render_matlab(session, *i)).collect::<Vec<_>>().join(", ");
                 format!("[{inner}]")
             }
         }
-        Term::Application { head, arguments: args } => {
-            if let Some(infix) = try_infix(head, args) {
+        Some(TermKind::App { .. }) => {
+            let args = app_args(session, id).unwrap_or_default();
+            if let Some(infix) = try_infix(session, id, &args) {
                 return infix;
             }
-            let h = match head_matlab_name(head) {
-                Some(n) => n,
-                None => render_matlab(head),
+            let h = match app_head_name(session, id) {
+                Some(n) => head_matlab_name(&n),
+                None => "?".into(),
             };
-            let inner = args.iter().map(render_matlab).collect::<Vec<_>>().join(", ");
+            let inner = args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(", ");
             format!("{h}({inner})")
         }
+        None => format!("TermId({})", id.0),
     }
 }
 
-fn head_matlab_name(head: &Term) -> Option<String> {
-    let name = head.head_name()?;
-    Some(
-        match name {
-            "Sin" => "sin",
-            "Cos" => "cos",
-            "Tan" => "tan",
-            "Exp" => "exp",
-            "Log" => "log",
-            "D" => "diff",
-            "Simplify" => "simplify",
-            "Integrate" => "int",
-            "Sqrt" => "sqrt",
-            "Abs" => "abs",
-            "Factorial" => "factorial",
-            "Zeros" => "zeros",
-            "Ones" => "ones",
-            "Eye" | "IdentityMatrix" => "eye",
-            "Size" | "Dimensions" => "size",
-            "Length" => "length",
-            "Det" => "det",
-            "Sum" => "sum",
-            "LinearSolve" => "linsolve",
-            other => other,
-        }
-        .to_string(),
-    )
+fn head_matlab_name(name: &str) -> String {
+    match name {
+        "Sin" => "sin",
+        "Cos" => "cos",
+        "Tan" => "tan",
+        "Exp" => "exp",
+        "Log" => "log",
+        "D" => "diff",
+        "Simplify" => "simplify",
+        "Integrate" => "int",
+        "Sqrt" => "sqrt",
+        "Abs" => "abs",
+        "Factorial" => "factorial",
+        "Zeros" => "zeros",
+        "Ones" => "ones",
+        "Eye" | "IdentityMatrix" => "eye",
+        "Size" | "Dimensions" => "size",
+        "Length" => "length",
+        "Det" => "det",
+        "Sum" => "sum",
+        "LinearSolve" => "linsolve",
+        other => other,
+    }
+    .to_string()
 }
 
-fn try_infix(head: &Term, args: &[Term]) -> Option<String> {
-    let name = head.head_name()?;
-    match name {
-        "Plus" if args.len() >= 2 => Some(args.iter().map(render_matlab).collect::<Vec<_>>().join(" + ")),
+fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
+    let name = app_head_name(session, id)?;
+    match name.as_str() {
+        "Plus" if args.len() >= 2 => Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(" + ")),
         "Times" if args.len() >= 2 => {
-            if args.len() == 2 && args[0].is_neg_one() {
-                return Some(format!("-{}", render_matlab(&args[1])));
+            if args.len() == 2 && is_neg_one(session, args[0]) {
+                return Some(format!("-{}", render_matlab(session, args[1])));
             }
-            Some(args.iter().map(render_matlab).collect::<Vec<_>>().join("*"))
+            Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("*"))
         }
-        "Power" if args.len() == 2 => Some(format!("{}^{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "Subtract" if args.len() == 2 => Some(format!("{} - {}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "Mldivide" if args.len() == 2 => Some(format!("{}\\{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "DotTimes" if args.len() == 2 => Some(format!("{}.*{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "DotDivide" if args.len() == 2 => Some(format!("{}./{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "DotPower" if args.len() == 2 => Some(format!("{}.^{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "Span" if args.len() == 2 => Some(format!("{}:{}", render_matlab(&args[0]), render_matlab(&args[1]))),
-        "Span" if args.len() == 3 => {
-            Some(format!("{}:{}:{}", render_matlab(&args[0]), render_matlab(&args[1]), render_matlab(&args[2])))
-        },
+        "Power" if args.len() == 2 => {
+            Some(format!("{}^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Subtract" if args.len() == 2 => {
+            Some(format!("{} - {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Divide" if args.len() == 2 => {
+            Some(format!("{}/{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Mldivide" if args.len() == 2 => {
+            Some(format!("{}\\{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "DotTimes" if args.len() == 2 => {
+            Some(format!("{}.*{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "DotDivide" if args.len() == 2 => {
+            Some(format!("{}./{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "DotPower" if args.len() == 2 => {
+            Some(format!("{}.^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Span" if args.len() == 2 => {
+            Some(format!("{}:{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Span" if args.len() == 3 => Some(format!(
+            "{}:{}:{}",
+            render_matlab(session, args[0]),
+            render_matlab(session, args[1]),
+            render_matlab(session, args[2])
+        )),
         _ => None,
     }
 }
 
-fn is_matrix_rows(items: &[Term]) -> bool {
-    items.len() > 1 && items.iter().all(|row| matches!(row, Term::List(_)))
+fn is_neg_one(session: &Session, id: TermId) -> bool {
+    matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
+}
+
+fn is_matrix_rows(session: &Session, items: &[TermId]) -> bool {
+    items.len() > 1 && items.iter().all(|row| matches!(session.arena.get(*row), Some(TermKind::List(_))))
 }

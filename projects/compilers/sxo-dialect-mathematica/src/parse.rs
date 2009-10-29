@@ -14,8 +14,7 @@ use sxo_types::SxoError;
 
 use crate::{
     form::{WAtom, WExpr},
-    lower::term_to_wexpr,
-    shared::term_from_number_literal,
+    shared::parse_number_literal,
 };
 
 /// Parse Mathematica / Wolfram text into a structural [`WExpr`] (no evaluate).
@@ -70,8 +69,8 @@ fn lower_node(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
         }
         WolframElementType::Literal => {
             let text = slice(src, start, node.byte_length)?.trim();
-            if let Some(t) = term_from_number_literal(text) {
-                return Ok(term_to_wexpr(&t));
+            if let Some(n) = parse_number_literal(text) {
+                return Ok(WExpr::number(n));
             }
             if text.starts_with('"') {
                 Ok(WExpr::Atom(WAtom::String(text.trim_matches('"').to_string())))

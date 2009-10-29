@@ -1,41 +1,76 @@
-//! Lower Mathematica Form ([`WExpr`]) to engine terms and back.
+//! Lower Mathematica Form ([`WExpr`]) into a session arena (`TermId`).
 
-use athena::{Atom, Term, clone_number};
+use athena::{
+    AtomKind, Session, TermId, TermKind, clone_number, push_app_named, push_bool, push_list,
+    push_null, push_symbol_name,
+};
 
 use crate::form::{WAtom, WExpr};
 
-/// Structural `WExpr` → engine `Term`.
-pub fn wexpr_to_term(w: &WExpr) -> Term {
+/// Structural `WExpr` → session arena `TermId`.
+pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
     match w {
-        WExpr::Atom(a) => Term::Atom(match a {
-            WAtom::Number(n) => Atom::Number(clone_number(n)),
-            WAtom::String(s) => Atom::String(s.clone()),
-            WAtom::Symbol(s) if s == "True" => Atom::Boolean(true),
-            WAtom::Symbol(s) if s == "False" => Atom::Boolean(false),
-            WAtom::Symbol(s) if s == "Null" => Atom::Null,
-            WAtom::Symbol(s) => Atom::Symbol(s.clone()),
-        }),
-        WExpr::List(items) => Term::List(items.iter().map(wexpr_to_term).collect()),
-        WExpr::Call { head, args } => {
-            Term::Application { head: Box::new(wexpr_to_term(head)), arguments: args.iter().map(wexpr_to_term).collect() }
+        WExpr::Atom(a) => match a {
+            WAtom::Number(n) => {
+                let span = athena::SourceSpan::default();
+                session.arena.push(TermKind::Atom(AtomKind::Number(clone_number(n))), span)
+            }
+            WAtom::String(s) => {
+                let span = athena::SourceSpan::default();
+                session.arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)
+            }
+            WAtom::Symbol(s) if s == "True" => push_bool(session, true),
+            WAtom::Symbol(s) if s == "False" => push_bool(session, false),
+            WAtom::Symbol(s) if s == "Null" => push_null(session),
+            WAtom::Symbol(s) => push_symbol_name(session, s),
+        },
+        WExpr::List(items) => {
+            let ids: Vec<TermId> = items.iter().map(|i| lower_wexpr(session, i)).collect();
+            push_list(session, ids)
         }
+        WExpr::Call { head, args } => match head.as_ref() {
+            WExpr::Atom(WAtom::Symbol(name)) => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                push_app_named(session, name, arg_ids)
+            }
+            other => {
+                // Non-symbol head → `Application[head, args…]` for Athena `EvalDynamic`.
+                let h = lower_wexpr(session, other);
+                let mut wrapped = vec![h];
+                wrapped.extend(args.iter().map(|a| lower_wexpr(session, a)));
+                push_app_named(session, "Application", wrapped)
+            }
+        },
     }
 }
 
-/// Engine `Term` → structural `WExpr`.
-pub fn term_to_wexpr(t: &Term) -> WExpr {
-    match t {
-        Term::Atom(a) => WExpr::Atom(match a {
-            Atom::Number(n) => WAtom::Number(clone_number(n)),
-            Atom::String(s) => WAtom::String(s.clone()),
-            Atom::Boolean(true) => WAtom::Symbol("True".into()),
-            Atom::Boolean(false) => WAtom::Symbol("False".into()),
-            Atom::Null => WAtom::Symbol("Null".into()),
-            Atom::Symbol(s) => WAtom::Symbol(s.clone()),
-        }),
-        Term::List(items) => WExpr::List(items.iter().map(term_to_wexpr).collect()),
-        Term::Application { head, arguments: args } => {
-            WExpr::Call { head: Box::new(term_to_wexpr(head)), args: args.iter().map(term_to_wexpr).collect() }
+/// Session arena `TermId` → structural `WExpr`.
+pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
+    match session.arena.get(id) {
+        Some(TermKind::Atom(AtomKind::Number(n))) => WExpr::Atom(WAtom::Number(clone_number(n))),
+        Some(TermKind::Atom(AtomKind::String(s))) => WExpr::Atom(WAtom::String(s.clone())),
+        Some(TermKind::Atom(AtomKind::Boolean(true))) => WExpr::Atom(WAtom::Symbol("True".into())),
+        Some(TermKind::Atom(AtomKind::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
+        Some(TermKind::Atom(AtomKind::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
+        Some(TermKind::Atom(AtomKind::Symbol(sym))) => {
+            let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
+            WExpr::Atom(WAtom::Symbol(name))
         }
+        Some(TermKind::List(items)) => {
+            WExpr::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
+        }
+        Some(TermKind::App { op, args }) => {
+            let head_name = session.operators.name(*op).unwrap_or("?").to_string();
+            if head_name == "Application" && !args.is_empty() {
+                let head = wexpr_from_session(session, args[0]);
+                let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
+                return WExpr::Call { head: Box::new(head), args: call_args };
+            }
+            WExpr::Call {
+                head: Box::new(WExpr::Atom(WAtom::Symbol(head_name))),
+                args: args.iter().map(|a| wexpr_from_session(session, *a)).collect(),
+            }
+        }
+        None => WExpr::Atom(WAtom::Symbol(format!("TermId({})", id.0))),
     }
 }

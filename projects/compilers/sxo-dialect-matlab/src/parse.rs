@@ -1,6 +1,6 @@
-//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → engine [`Term`].
+//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → session arena [`TermId`].
 //!
-//! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → Term.
+//! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → arena nodes.
 //! Do not expand GreenTree / `MatlabTokenType` leaf walking here.
 
 use oak_core::{Builder, source::SourceText};
@@ -10,13 +10,16 @@ use oak_matlab::{
     lexer::token_type::MatlabTokenType,
 };
 
-use athena::{Atom, Term};
+use athena::{
+    AtomKind, Session, SourceSpan, TermId, TermKind, app_args, app_head_name, clone_number, get_kind, push_app_named,
+    push_bool, push_int, push_list, push_null, push_symbol_name, symbol_name,
+};
 use sxo_types::SxoError;
 
-use crate::shared::term_from_number_literal;
+use crate::shared::parse_number_literal;
 
-/// Parse MATLAB text into engine [`Term`] (no evaluate).
-pub fn parse_matlab(input: &str) -> Result<Term, SxoError> {
+/// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
+pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return Err(SxoError::new("matlab: empty input"));
@@ -25,200 +28,236 @@ pub fn parse_matlab(input: &str) -> Result<Term, SxoError> {
     let language = MatlabLanguage::default();
     let builder = MatlabBuilder::new(&language);
     let source = SourceText::new(trimmed);
-    let mut session = oak_core::ParseSession::<MatlabLanguage>::default();
-    let output = builder.build(&source, &[], &mut session);
+    let mut oak_session = oak_core::ParseSession::<MatlabLanguage>::default();
+    let output = builder.build(&source, &[], &mut oak_session);
     let root = output.result.map_err(|e| SxoError::new(format!("matlab(oak): {e:?}")))?;
-    lower_root(&root)
+    lower_root(session, &root)
 }
 
-fn lower_root(root: &MatlabRoot) -> Result<Term, SxoError> {
+fn push_number(session: &mut Session, n: athena::Number) -> TermId {
+    session.arena.push(TermKind::Atom(AtomKind::Number(clone_number(&n))), SourceSpan::default())
+}
+
+fn push_string(session: &mut Session, s: String) -> TermId {
+    session.arena.push(TermKind::Atom(AtomKind::String(s)), SourceSpan::default())
+}
+
+fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<TermId, SxoError> {
     let mut items = Vec::with_capacity(root.items.len());
     for stmt in &root.items {
-        items.push(lower_stmt(stmt)?);
+        items.push(lower_stmt(session, stmt)?);
     }
     match items.len() {
         0 => Err(SxoError::new("matlab(oak): empty root")),
         1 => Ok(items.remove(0)),
-        _ => Ok(Term::apply("CompoundExpression", items)),
+        _ => Ok(push_app_named(session, "CompoundExpression", items)),
     }
 }
 
-fn lower_stmt(stmt: &Statement) -> Result<Term, SxoError> {
+fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoError> {
     match stmt {
-        Statement::Expr(expr) => lower_expr(expr),
+        Statement::Expr(expr) => lower_expr(session, expr),
         Statement::If { condition, then_body, elseifs, else_body, .. } => {
-            // Flatten elseif into nested If for Athena.
-            let mut else_term = compound_stmts(else_body)?;
+            let mut else_term = compound_stmts(session, else_body)?;
             for (cond, body) in elseifs.iter().rev() {
-                let then_t = compound_stmts(body)?;
-                else_term = Term::apply("If", vec![lower_expr(cond)?, then_t, else_term]);
+                let then_t = compound_stmts(session, body)?;
+                let cond_t = lower_expr(session, cond)?;
+                else_term = push_app_named(session, "If", vec![cond_t, then_t, else_term]);
             }
-            let then_t = compound_stmts(then_body)?;
-            if matches!(&else_term, Term::Atom(Atom::Null)) && elseifs.is_empty() {
-                Ok(Term::apply("If", vec![lower_expr(condition)?, then_t]))
+            let then_t = compound_stmts(session, then_body)?;
+            let cond_t = lower_expr(session, condition)?;
+            let else_is_null = matches!(get_kind(session, else_term), Some(TermKind::Atom(AtomKind::Null)));
+            if else_is_null && elseifs.is_empty() {
+                Ok(push_app_named(session, "If", vec![cond_t, then_t]))
             }
             else {
-                Ok(Term::apply("If", vec![lower_expr(condition)?, then_t, else_term]))
+                Ok(push_app_named(session, "If", vec![cond_t, then_t, else_term]))
             }
         }
         Statement::While { condition, body, .. } => {
-            Ok(Term::apply("While", vec![lower_expr(condition)?, compound_stmts(body)?]))
+            let cond_t = lower_expr(session, condition)?;
+            let body_t = compound_stmts(session, body)?;
+            Ok(push_app_named(session, "While", vec![cond_t, body_t]))
         }
         Statement::For { header, body, .. } => {
-            let header_t = lower_expr(header)?;
-            let body_t = compound_stmts(body)?;
-            match header_t {
-                Term::Application { head, arguments: args } if head.is_symbol("Set") && args.len() == 2 => {
-                    Ok(Term::apply("For", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), body_t]))
+            let header_t = lower_expr(session, header)?;
+            let body_t = compound_stmts(session, body)?;
+            if app_head_name(session, header_t).as_deref() == Some("Set") {
+                if let Some(args) = app_args(session, header_t) {
+                    if args.len() == 2 {
+                        return Ok(push_app_named(session, "For", vec![args[0], args[1], body_t]));
+                    }
                 }
-                other => Ok(Term::apply("For", vec![Term::symbol("_"), other, body_t])),
             }
+            let underscore = push_symbol_name(session, "_");
+            Ok(push_app_named(session, "For", vec![underscore, header_t, body_t]))
         }
         Statement::Try { body, catch_body, .. } => {
-            // Athena `Try[body, catch]`. catch_name is ignored in this slice.
-            Ok(Term::apply("Try", vec![compound_stmts(body)?, compound_stmts(catch_body)?]))
+            let body_t = compound_stmts(session, body)?;
+            let catch_t = compound_stmts(session, catch_body)?;
+            Ok(push_app_named(session, "Try", vec![body_t, catch_t]))
         }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
 }
 
-fn compound_stmts(stmts: &[Statement]) -> Result<Term, SxoError> {
+fn compound_stmts(session: &mut Session, stmts: &[Statement]) -> Result<TermId, SxoError> {
     let mut items = Vec::with_capacity(stmts.len());
     for s in stmts {
-        items.push(lower_stmt(s)?);
+        items.push(lower_stmt(session, s)?);
     }
-    Ok(compound_or_single(items))
+    Ok(compound_or_single(session, items))
 }
 
-fn compound_or_single(mut items: Vec<Term>) -> Term {
+fn compound_or_single(session: &mut Session, mut items: Vec<TermId>) -> TermId {
     match items.len() {
-        0 => Term::null(),
+        0 => push_null(session),
         1 => items.remove(0),
-        _ => Term::apply("CompoundExpression", items),
+        _ => push_app_named(session, "CompoundExpression", items),
     }
 }
 
-fn lower_expr(expr: &Expression) -> Result<Term, SxoError> {
+fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoError> {
     match expr {
         Expression::Symbol(id) => {
             if id.name == "end" {
-                Ok(Term::symbol("End"))
+                Ok(push_symbol_name(session, "End"))
             }
             else if id.name == "true" {
-                Ok(Term::boolean(true))
+                Ok(push_bool(session, true))
             }
             else if id.name == "false" {
-                Ok(Term::boolean(false))
+                Ok(push_bool(session, false))
             }
             else {
-                Ok(Term::symbol(&id.name))
+                Ok(push_symbol_name(session, &id.name))
             }
         }
         Expression::Literal { value, .. } => {
             let text = value.trim();
-            if let Some(t) = term_from_number_literal(text) {
-                return Ok(t);
+            if let Some(n) = parse_number_literal(text) {
+                return Ok(push_number(session, n));
             }
             if (text.starts_with('"') && text.ends_with('"'))
                 || (text.starts_with('\'') && text.ends_with('\'') && text.len() >= 2)
             {
-                Ok(Term::Atom(Atom::String(text[1..text.len() - 1].to_string())))
+                Ok(push_string(session, text[1..text.len() - 1].to_string()))
             }
             else {
-                Ok(Term::symbol(text))
+                Ok(push_symbol_name(session, text))
             }
         }
         Expression::Array { rows, .. } => {
             if rows.len() == 1 {
-                Ok(Term::List(rows[0].iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?))
+                let mut items = Vec::with_capacity(rows[0].len());
+                for cell in &rows[0] {
+                    items.push(lower_expr(session, cell)?);
+                }
+                Ok(push_list(session, items))
             }
             else {
                 let mut out = Vec::with_capacity(rows.len());
                 for row in rows {
-                    out.push(Term::List(row.iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?));
+                    let mut cols = Vec::with_capacity(row.len());
+                    for cell in row {
+                        cols.push(lower_expr(session, cell)?);
+                    }
+                    out.push(push_list(session, cols));
                 }
-                Ok(Term::List(out))
+                Ok(push_list(session, out))
             }
         }
         Expression::Call { head, arguments, .. } => {
-            let mut expr_t = lower_expr(head)?;
-            // Map bare symbol call heads (sin → Sin).
-            if let Term::Atom(Atom::Symbol(name)) = &expr_t {
-                expr_t = Term::symbol(map_matlab_head(name));
+            let mut expr_t = lower_expr(session, head)?;
+            if let Some(name) = symbol_name(session, expr_t) {
+                expr_t = push_symbol_name(session, &map_matlab_head(&name));
             }
-            let args = arguments.iter().map(lower_expr).collect::<Result<Vec<_>, _>>()?;
-            if matches!(&expr_t, Term::List(_))
-                || matches!(&expr_t, Term::Application { head: h, .. } if h.is_symbol("Part"))
-            {
+            let mut args = Vec::with_capacity(arguments.len());
+            for a in arguments {
+                args.push(lower_expr(session, a)?);
+            }
+            let is_part_base = matches!(get_kind(session, expr_t), Some(TermKind::List(_)))
+                || app_head_name(session, expr_t).as_deref() == Some("Part");
+            if is_part_base {
                 let mut part_args = vec![expr_t];
                 part_args.extend(args);
-                Ok(Term::apply("Part", part_args))
+                Ok(push_app_named(session, "Part", part_args))
+            }
+            else if let Some(head_name) = symbol_name(session, expr_t) {
+                Ok(push_app_named(session, &head_name, args))
             }
             else {
-                Ok(Term::Application { head: Box::new(expr_t), arguments: args })
+                // Non-symbol head → `Application[head, args…]` for Athena `EvalDynamic`.
+                let mut wrapped = vec![expr_t];
+                wrapped.extend(args);
+                Ok(push_app_named(session, "Application", wrapped))
             }
         }
-        Expression::Binary(bin) => lower_binary(bin),
-        Expression::Prefix(u) => lower_prefix(u),
-        Expression::Postfix(u) => lower_postfix(u),
-        Expression::Grouped { expression, .. } => lower_expr(expression),
+        Expression::Binary(bin) => lower_binary(session, bin),
+        Expression::Prefix(u) => lower_prefix(session, u),
+        Expression::Postfix(u) => lower_postfix(session, u),
+        Expression::Grouped { expression, .. } => lower_expr(session, expression),
     }
 }
 
-fn lower_binary(bin: &BinaryExpr) -> Result<Term, SxoError> {
-    let l = lower_expr(&bin.lhs)?;
-    let r = lower_expr(&bin.rhs)?;
+fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoError> {
+    let l = lower_expr(session, &bin.lhs)?;
+    let r = lower_expr(session, &bin.rhs)?;
     Ok(match bin.operator {
-        MatlabTokenType::Plus => Term::apply("Plus", vec![l, r]),
-        MatlabTokenType::Minus => Term::apply("Subtract", vec![l, r]),
-        MatlabTokenType::Times => Term::apply("Times", vec![l, r]),
-        MatlabTokenType::DotTimes => Term::apply("DotTimes", vec![l, r]),
-        MatlabTokenType::Divide => Term::apply("Divide", vec![l, r]),
-        MatlabTokenType::DotDivide => Term::apply("DotDivide", vec![l, r]),
-        MatlabTokenType::LeftDivide => Term::apply("Mldivide", vec![l, r]),
-        MatlabTokenType::DotLeftDivide => Term::apply("DotLeftDivide", vec![l, r]),
-        MatlabTokenType::Power => Term::apply("Power", vec![l, r]),
-        MatlabTokenType::DotPower => Term::apply("DotPower", vec![l, r]),
-        MatlabTokenType::Assign => Term::apply("Set", vec![l, r]),
-        MatlabTokenType::Equal => Term::apply("Equal", vec![l, r]),
-        MatlabTokenType::NotEqual => Term::apply("Unequal", vec![l, r]),
-        MatlabTokenType::Less => Term::apply("Less", vec![l, r]),
-        MatlabTokenType::Greater => Term::apply("Greater", vec![l, r]),
-        MatlabTokenType::LessEqual => Term::apply("LessEqual", vec![l, r]),
-        MatlabTokenType::GreaterEqual => Term::apply("GreaterEqual", vec![l, r]),
-        MatlabTokenType::AndAnd | MatlabTokenType::And => Term::apply("And", vec![l, r]),
-        MatlabTokenType::OrOr | MatlabTokenType::Or => Term::apply("Or", vec![l, r]),
-        MatlabTokenType::Colon => flatten_span(l, r),
+        MatlabTokenType::Plus => push_app_named(session, "Plus", vec![l, r]),
+        MatlabTokenType::Minus => push_app_named(session, "Subtract", vec![l, r]),
+        MatlabTokenType::Times => push_app_named(session, "Times", vec![l, r]),
+        MatlabTokenType::DotTimes => push_app_named(session, "DotTimes", vec![l, r]),
+        MatlabTokenType::Divide => push_app_named(session, "Divide", vec![l, r]),
+        MatlabTokenType::DotDivide => push_app_named(session, "DotDivide", vec![l, r]),
+        MatlabTokenType::LeftDivide => push_app_named(session, "Mldivide", vec![l, r]),
+        MatlabTokenType::DotLeftDivide => push_app_named(session, "DotLeftDivide", vec![l, r]),
+        MatlabTokenType::Power => push_app_named(session, "Power", vec![l, r]),
+        MatlabTokenType::DotPower => push_app_named(session, "DotPower", vec![l, r]),
+        MatlabTokenType::Assign => push_app_named(session, "Set", vec![l, r]),
+        MatlabTokenType::Equal => push_app_named(session, "Equal", vec![l, r]),
+        MatlabTokenType::NotEqual => push_app_named(session, "Unequal", vec![l, r]),
+        MatlabTokenType::Less => push_app_named(session, "Less", vec![l, r]),
+        MatlabTokenType::Greater => push_app_named(session, "Greater", vec![l, r]),
+        MatlabTokenType::LessEqual => push_app_named(session, "LessEqual", vec![l, r]),
+        MatlabTokenType::GreaterEqual => push_app_named(session, "GreaterEqual", vec![l, r]),
+        MatlabTokenType::AndAnd | MatlabTokenType::And => push_app_named(session, "And", vec![l, r]),
+        MatlabTokenType::OrOr | MatlabTokenType::Or => push_app_named(session, "Or", vec![l, r]),
+        MatlabTokenType::Colon => flatten_span(session, l, r),
         other => {
             return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));
         }
     })
 }
 
-fn flatten_span(left: Term, right: Term) -> Term {
-    // `1:2:10` parses as Colon(Colon(1,2), 10) → Span[1,2,10]
-    match left {
-        Term::Application { head, arguments: args } if head.is_symbol("Span") && args.len() == 2 => {
-            Term::apply("Span", vec![athena::clone_term(&args[0]), athena::clone_term(&args[1]), right])
+fn flatten_span(session: &mut Session, left: TermId, right: TermId) -> TermId {
+    if app_head_name(session, left).as_deref() == Some("Span") {
+        if let Some(args) = app_args(session, left) {
+            if args.len() == 2 {
+                return push_app_named(session, "Span", vec![args[0], args[1], right]);
+            }
         }
-        other => Term::apply("Span", vec![other, right]),
     }
+    push_app_named(session, "Span", vec![left, right])
 }
 
-fn lower_prefix(u: &UnaryExpr) -> Result<Term, SxoError> {
-    let e = lower_expr(&u.operand)?;
+fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
+    let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Minus => Term::apply("Times", vec![Term::int(-1), e]),
+        MatlabTokenType::Minus => {
+            let neg1 = push_int(session, -1);
+            push_app_named(session, "Times", vec![neg1, e])
+        }
         MatlabTokenType::Plus => e,
-        MatlabTokenType::Not => Term::apply("Not", vec![e]),
+        MatlabTokenType::Not => push_app_named(session, "Not", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported prefix {other:?}"))),
     })
 }
 
-fn lower_postfix(u: &UnaryExpr) -> Result<Term, SxoError> {
-    let e = lower_expr(&u.operand)?;
+fn lower_postfix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
+    let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => Term::apply("Transpose", vec![e]),
+        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => push_app_named(session, "Transpose", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported postfix {other:?}"))),
     })
 }
