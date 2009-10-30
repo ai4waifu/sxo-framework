@@ -1,145 +1,110 @@
 //! Host integration tests across dialect crates and Athena.
 
-use athena::{
-    Atom, AtomKind, CalculusRequest, DomainRequest, OperatorId, SourceSpan, Term, TermArena, TermKind, clone_number,
-    try_calculus_request,
-};
-use sxo_dialect_mathematica::{WExpr, parse_number_literal, term_to_wexpr, wexpr_to_term};
+use athena::{AtomKind, CalculusCtx, DomainRequest, TermKind, push_int, term_debug, try_calculus_request};
+use sxo_dialect_mathematica::{WExpr, parse_number_literal};
 use sxo_napi::session::Session;
-use sxo_types::SxoError;
-
-fn lower_to_kernel(term: &Term) -> Result<(TermArena, athena::TermId), SxoError> {
-    use std::collections::HashMap;
-
-    let mut arena = TermArena::new();
-    let mut ops: HashMap<String, OperatorId> = HashMap::new();
-    let mut next = 0u32;
-
-    fn lower(
-        arena: &mut TermArena,
-        ops: &mut HashMap<String, OperatorId>,
-        next: &mut u32,
-        term: &Term,
-        span: SourceSpan,
-    ) -> Result<athena::TermId, SxoError> {
-        match term {
-            Term::Atom(Atom::Number(n)) => Ok(arena.push(TermKind::Atom(AtomKind::Number(clone_number(n))), span)),
-            Term::Atom(Atom::String(s)) => Ok(arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)),
-            Term::Atom(Atom::Boolean(b)) => Ok(arena.push(TermKind::Atom(AtomKind::Boolean(*b)), span)),
-            Term::Atom(Atom::Null) => Ok(arena.push(TermKind::Atom(AtomKind::Null), span)),
-            Term::Atom(Atom::Symbol(s)) => {
-                let sym = arena.symbols_mut().intern(s.clone());
-                Ok(arena.push(TermKind::Atom(AtomKind::Symbol(sym)), span))
-            }
-            Term::List(items) => {
-                let mut ids = Vec::with_capacity(items.len());
-                for item in items {
-                    ids.push(lower(arena, ops, next, item, span)?);
-                }
-                Ok(arena.push(TermKind::List(ids), span))
-            }
-            Term::Application { head, arguments: args } => {
-                let head_name = head.head_name().ok_or_else(|| SxoError::new("lowering: application head must be a symbol"))?;
-                let op = if let Some(id) = ops.get(head_name) {
-                    *id
-                }
-                else {
-                    let id = OperatorId(*next);
-                    *next += 1;
-                    ops.insert(head_name.to_string(), id);
-                    id
-                };
-                let mut arg_ids = Vec::with_capacity(args.len());
-                for arg in args {
-                    arg_ids.push(lower(arena, ops, next, arg, span)?);
-                }
-                Ok(arena.push(TermKind::App { op, args: arg_ids }, span))
-            }
-        }
-    }
-
-    let root = lower(&mut arena, &mut ops, &mut next, term, SourceSpan::default())?;
-    arena.verify(root).map_err(SxoError::from_diagnostic)?;
-    Ok((arena, root))
-}
+use sxo_types::Dialect;
 
 #[test]
 fn math_evaluate_arith() {
     let session = Session::new();
     let e = session.evaluate_mathematica("1 + 2 * 3").unwrap();
-    assert_eq!(e, Term::int(7));
+    let seven = session.with_math_mut(|s| push_int(s, 7));
+    assert!(session.structural_eq(e, seven));
 }
 
 #[test]
-fn wexpr_is_not_term() {
+fn wexpr_roundtrip_via_session() {
+    let session = Session::new();
     let w = WExpr::call("Sin", vec![WExpr::symbol("x")]);
-    let t = wexpr_to_term(&w);
-    assert_eq!(t, Term::apply("Sin", vec![Term::symbol("x")]));
-    assert_eq!(term_to_wexpr(&t), w);
+    let t = session.lower_mathematica(&w);
+    assert_eq!(session.to_mathematica(t), w);
 }
 
 #[test]
 fn big_integer_arithmetic() {
     let session = Session::new();
     let e = session.evaluate_mathematica("99999999999999999999 + 1").unwrap();
-    let expected = Term::number(parse_number_literal("100000000000000000000").unwrap());
-    assert_eq!(e, expected);
+    let expected_n = parse_number_literal("100000000000000000000").unwrap();
+    let expected = session.with_math_mut(|s| {
+        s.arena
+            .push(TermKind::Atom(AtomKind::Number(athena::clone_number(&expected_n))), athena::SourceSpan::default())
+    });
+    assert!(session.structural_eq(e, expected));
 }
 
 #[test]
-fn bridge_lowers_to_kernel() {
+fn bridge_lowers_to_kernel_app() {
     let session = Session::new();
     let w = session.parse_mathematica("1 + 2").unwrap();
-    let t = session.from_mathematica(&w);
-    let (arena, root) = lower_to_kernel(&t).unwrap();
-    assert!(matches!(arena.get(root), Some(TermKind::App { .. })));
+    let t = session.lower_mathematica(&w);
+    session.with_math(|s| {
+        assert!(matches!(s.arena.get(t), Some(TermKind::App { .. })));
+    });
 }
 
 #[test]
 fn dialect_d_limit_series_lower_to_domain() {
     let session = Session::new();
-
-    let d_term = session.from_mathematica(&session.parse_mathematica("D[x^3, x]").unwrap());
-    assert!(matches!(
-        try_calculus_request(&d_term).map(DomainRequest::Calculus),
-        Some(DomainRequest::Calculus(CalculusRequest::Derivative { .. }))
-    ));
-    let d_out = session.evaluate(&d_term);
-    let d_s = session.render_as_wolfram(&d_out);
+    let d_term = session.lower_mathematica(&session.parse_mathematica("D[x^3, x]").unwrap());
+    let lowered = session.with_math_mut(|s| {
+        let mut cc = CalculusCtx::new(s);
+        try_calculus_request(&mut cc, d_term).map(DomainRequest::Calculus)
+    });
+    assert!(matches!(lowered, Some(DomainRequest::Calculus(athena::CalculusRequest::Derivative { .. }))));
+    let d_out = session.evaluate(d_term);
+    let d_s = session.render_as_wolfram(d_out);
     assert!(d_s.contains('x'), "got {d_s}");
 }
 
 #[test]
 fn session_set_persists_across_mathematica_evaluates() {
     let session = Session::new();
-    assert_eq!(session.evaluate_mathematica("x = 5").unwrap(), Term::int(5));
-    assert_eq!(session.evaluate_mathematica("x + 1").unwrap(), Term::int(6));
+    let five = session.with_math_mut(|s| push_int(s, 5));
+    let six = session.with_math_mut(|s| push_int(s, 6));
+    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap(), five));
+    assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap(), six));
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
-    assert!(
-        matches!(&cleared, Term::Application { head, .. } if head.is_symbol("Plus")),
-        "expected free Plus after clear, got {cleared:?}"
-    );
+    let text = session.with_math(|s| term_debug(s, cleared));
+    assert!(text.contains("Plus") || text.contains('+'), "expected free Plus after clear, got {text}");
 }
 
 #[test]
 fn session_set_persists_across_matlab_evaluates() {
     let session = Session::new();
-    assert_eq!(session.evaluate_matlab("x = 5").unwrap(), Term::int(5));
-    assert_eq!(session.evaluate_matlab("x + 1").unwrap(), Term::int(6));
+    let five = session.with_math_mut(|s| push_int(s, 5));
+    let six = session.with_math_mut(|s| push_int(s, 6));
+    assert!(session.structural_eq(session.evaluate_matlab("x = 5").unwrap(), five));
+    assert!(session.structural_eq(session.evaluate_matlab("x + 1").unwrap(), six));
 }
 
 #[test]
 fn session_setdelayed_evaluates_on_use() {
     let session = Session::new();
-    assert_eq!(session.evaluate_mathematica("a := 1 + 1").unwrap(), Term::null());
-    assert_eq!(session.evaluate_mathematica("a").unwrap(), Term::int(2));
+    let null = session.evaluate_mathematica("a := 1 + 1").unwrap();
+    session.with_math(|s| {
+        assert!(matches!(s.arena.get(null), Some(TermKind::Atom(AtomKind::Null))));
+    });
+    let two = session.with_math_mut(|s| push_int(s, 2));
+    assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap(), two));
 }
 
 #[test]
 fn module_does_not_clobber_session_binding() {
     let session = Session::new();
-    assert_eq!(session.evaluate_mathematica("x = 5").unwrap(), Term::int(5));
-    assert_eq!(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap(), Term::int(2));
-    assert_eq!(session.evaluate_mathematica("x").unwrap(), Term::int(5));
+    let five = session.with_math_mut(|s| push_int(s, 5));
+    let two = session.with_math_mut(|s| push_int(s, 2));
+    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap(), five));
+    assert!(session.structural_eq(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap(), two));
+    assert!(session.structural_eq(session.evaluate_mathematica("x").unwrap(), five));
+}
+
+#[test]
+fn try_plot_svg_mathematica() {
+    let session = Session::new();
+    let w = session.parse_mathematica("Plot[x^2, {x, -1, 1}]").unwrap();
+    let id = session.lower_mathematica(&w);
+    let svg = session.try_plot_svg(id, Dialect::Mathematica).expect("extract").expect("render");
+    assert!(svg.contains("<svg"), "{svg}");
 }

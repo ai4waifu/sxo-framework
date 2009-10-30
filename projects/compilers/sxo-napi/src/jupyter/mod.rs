@@ -289,15 +289,15 @@ fn evaluate_mathematica(eng: &Session, code: &str) -> Result<EvalOut, String> {
         return Ok(EvalOut::Text(String::new()));
     }
     let w = eng.parse_mathematica(trimmed).map_err(|e| e.message.clone())?;
-    let term = eng.from_mathematica(&w);
-    if let Some(plot) = eng.try_plot_svg(&term, sxo_types::Dialect::Mathematica) {
+    let term = eng.lower_mathematica(&w);
+    if let Some(plot) = eng.try_plot_svg(term, sxo_types::Dialect::Mathematica) {
         let svg = plot.map_err(|e| e.message.clone())?;
-        let plain = eng.render_as_wolfram(&term);
+        let plain = eng.render_as_wolfram(term);
         return Ok(EvalOut::Svg { svg, plain });
     }
-    let evaluated = eng.evaluate(&term);
-    let simplified = eng.simplify_term(&evaluated);
-    Ok(EvalOut::Text(eng.render_as_wolfram(&simplified)))
+    let evaluated = eng.evaluate(term);
+    let simplified = eng.simplify_term(evaluated);
+    Ok(EvalOut::Text(eng.render_as_wolfram(simplified)))
 }
 
 fn kernel_info_content() -> Value {
