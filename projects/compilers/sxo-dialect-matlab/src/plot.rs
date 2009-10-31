@@ -1,8 +1,15 @@
 //! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
 
 use athena::{
-    SampleDomain, SamplingPolicy, Session, TermId, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
-    symbol_name,
+    plot::SampleDomain,
+    plot::SamplingPolicy,
+    Session,
+    types::ExprId,
+    runtime::values::arena::app_args,
+    runtime::values::arena::app_head_name,
+    runtime::values::arena::number_from_id,
+    numeric::to_f64_lossy,
+    runtime::values::arena::symbol_name,
 };
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
@@ -10,13 +17,13 @@ use sxo_types::SxoError;
 const DEFAULT_SAMPLES: u32 = 128;
 
 /// Try to render MATLAB-style `plot(f,x,a,b)` as SVG.
-pub fn try_plot_svg(session: &mut Session, id: TermId) -> Option<Result<String, SxoError>> {
+pub fn try_plot_svg(session: &mut Session, id: ExprId) -> Option<Result<String, SxoError>> {
     let spec = extract_plot_1d(session, id)?;
     Some(render_plot_1d(session, spec))
 }
 
 struct Plot1dSpec {
-    expr: TermId,
+    expr: ExprId,
     var: String,
     start: f64,
     end: f64,
@@ -40,7 +47,7 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
     }
 }
 
-fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
+fn extract_plot_1d(session: &mut Session, id: ExprId) -> Option<Plot1dSpec> {
     if app_head_name(session, id).as_deref() != Some("plot") {
         return None;
     }
@@ -54,7 +61,7 @@ fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
     Some(Plot1dSpec { expr: args[0], var, start, end })
 }
 
-fn term_as_f64(session: &mut Session, id: TermId) -> Option<f64> {
+fn term_as_f64(session: &mut Session, id: ExprId) -> Option<f64> {
     if let Some(n) = number_from_id(session, id) {
         return to_f64_lossy(n);
     }

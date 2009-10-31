@@ -1,4 +1,4 @@
-//! Bridge flat [`Expr`] ↔ session arena (`TermId`).
+//! Bridge flat [`Expr`] ↔ session arena (`ExprId`).
 //!
 //! [`Expr::Num`] is a **legacy frontend** form; lowering to kernel uses explicit machine-real
 //! conversion only — not exact semantics.
@@ -6,28 +6,40 @@
 #![allow(dead_code)]
 
 use athena::{
-    AtomKind, Number, Session, SourceSpan, TermId, TermKind, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
-    push_app_named, push_int, push_symbol_name, symbol_name,
+    ir::Atom,
+    numeric::Number,
+    Session,
+    types::SourceSpan,
+    types::ExprId,
+    ir::ExprNode,
+    runtime::values::arena::app_args,
+    runtime::values::arena::app_head_name,
+    runtime::values::arena::number_from_id,
+    numeric::to_f64_lossy,
+    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_int,
+    runtime::values::arena::push_symbol_name,
+    runtime::values::arena::symbol_name,
 };
 use sxo_types::SxoError;
 
 use crate::form::Expr;
 
 /// Lower a shared-subset arena node into flat [`Expr`] (lossy for exact numbers).
-pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError> {
+pub fn expr_from_session(session: &Session, id: ExprId) -> Result<Expr, SxoError> {
     match session.arena.get(id) {
-        Some(TermKind::Atom(AtomKind::Number(n))) => {
+        Some(ExprNode::Atom(Atom::Number(n))) => {
             Ok(Expr::num(to_f64_lossy(n).ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?))
         }
-        Some(TermKind::Atom(AtomKind::Symbol(_))) => {
+        Some(ExprNode::Atom(Atom::Symbol(_))) => {
             Ok(Expr::var(symbol_name(session, id).unwrap_or_default()))
         }
-        Some(TermKind::Atom(AtomKind::Boolean(true))) => Ok(Expr::var("True")),
-        Some(TermKind::Atom(AtomKind::Boolean(false))) => Ok(Expr::var("False")),
-        Some(TermKind::Atom(AtomKind::Null)) => Ok(Expr::var("Null")),
-        Some(TermKind::Atom(AtomKind::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
-        Some(TermKind::List(_)) => Err(SxoError::new("bridge: List not in Expr")),
-        Some(TermKind::App { .. }) => {
+        Some(ExprNode::Atom(Atom::Boolean(true))) => Ok(Expr::var("True")),
+        Some(ExprNode::Atom(Atom::Boolean(false))) => Ok(Expr::var("False")),
+        Some(ExprNode::Atom(Atom::Null)) => Ok(Expr::var("Null")),
+        Some(ExprNode::Atom(Atom::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
+        Some(ExprNode::List(_)) => Err(SxoError::new("bridge: List not in Expr")),
+        Some(ExprNode::App { .. }) => {
             let h = app_head_name(session, id).ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
             let args = app_args(session, id).unwrap_or_default();
             match h.as_str() {
@@ -68,17 +80,17 @@ pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError
                 other => Err(SxoError::new(format!("bridge: unsupported head `{other}`"))),
             }
         }
-        None => Err(SxoError::new(format!("bridge: missing TermId({})", id.0))),
+        None => Err(SxoError::new(format!("bridge: missing ExprId({})", id.0))),
     }
 }
 
-/// Lift flat [`Expr`] into a session arena [`TermId`] (numbers become machine reals).
-pub fn lower_expr(session: &mut Session, e: &Expr) -> TermId {
+/// Lift flat [`Expr`] into a session arena [`ExprId`] (numbers become machine reals).
+pub fn lower_expr(session: &mut Session, e: &Expr) -> ExprId {
     match e {
         Expr::Num(n) => {
             session
                 .arena
-                .push(TermKind::Atom(AtomKind::Number(Number::machine(*n))), SourceSpan::default())
+                .push(ExprNode::Atom(Atom::Number(Number::machine(*n))), SourceSpan::default())
         }
         Expr::Var(v) => push_symbol_name(session, v),
         Expr::Neg(a) => {
@@ -122,6 +134,6 @@ pub fn lower_expr(session: &mut Session, e: &Expr) -> TermId {
     }
 }
 
-fn is_neg_one(session: &Session, id: TermId) -> bool {
+fn is_neg_one(session: &Session, id: ExprId) -> bool {
     matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
 }

@@ -127,15 +127,19 @@ dependencies = [
 [[package]]
 name = "athena"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-engine",
+ "athena-ir",
+ "athena-numeric",
+ "athena-rewriter",
+ "athena-types",
 ]
 
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-gc",
  "athena-graph",
@@ -149,7 +153,7 @@ dependencies = [
 [[package]]
 name = "athena-gc"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-types",
 ]
@@ -157,7 +161,7 @@ dependencies = [
 [[package]]
 name = "athena-graph"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-gc",
  "athena-ndarray",
@@ -166,7 +170,7 @@ dependencies = [
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-numeric",
  "athena-types",
@@ -175,7 +179,7 @@ dependencies = [
 [[package]]
 name = "athena-ndarray"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-gc",
 ]
@@ -183,7 +187,7 @@ dependencies = [
 [[package]]
 name = "athena-numeric"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-gc",
  "athena-types",
@@ -192,7 +196,7 @@ dependencies = [
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 dependencies = [
  "athena-ir",
  "athena-types",
@@ -201,7 +205,7 @@ dependencies = [
 [[package]]
 name = "athena-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#c8640ff4288392a309d7d952bb6c95efe677ff89"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#54186c3fe991061e30a7e6860efa386a924a4ef6"
 
 [[package]]
 name = "autocfg"

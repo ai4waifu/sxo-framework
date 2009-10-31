@@ -1,4 +1,4 @@
-//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → session arena [`TermId`].
+//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → session arena [`ExprId`].
 //!
 //! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → arena nodes.
 //! Do not expand GreenTree / `MatlabTokenType` leaf walking here.
@@ -11,15 +11,29 @@ use oak_matlab::{
 };
 
 use athena::{
-    AtomKind, Session, SourceSpan, TermId, TermKind, app_args, app_head_name, clone_number, get_kind, push_app_named,
-    push_bool, push_int, push_list, push_null, push_symbol_name, symbol_name,
+    ir::Atom,
+    Session,
+    types::SourceSpan,
+    types::ExprId,
+    ir::ExprNode,
+    runtime::values::arena::app_args,
+    runtime::values::arena::app_head_name,
+    runtime::values::numeric_clone::clone_number,
+    runtime::values::arena::get_kind,
+    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_bool,
+    runtime::values::arena::push_int,
+    runtime::values::arena::push_list,
+    runtime::values::arena::push_null,
+    runtime::values::arena::push_symbol_name,
+    runtime::values::arena::symbol_name,
 };
 use sxo_types::SxoError;
 
 use crate::shared::parse_number_literal;
 
-/// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
-pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {
+/// Parse MATLAB text into a session arena [`ExprId`] (no evaluate).
+pub fn parse_matlab(session: &mut Session, input: &str) -> Result<ExprId, SxoError> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return Err(SxoError::new("matlab: empty input"));
@@ -34,15 +48,15 @@ pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoErr
     lower_root(session, &root)
 }
 
-fn push_number(session: &mut Session, n: athena::Number) -> TermId {
-    session.arena.push(TermKind::Atom(AtomKind::Number(clone_number(&n))), SourceSpan::default())
+fn push_number(session: &mut Session, n: athena::numeric::Number) -> ExprId {
+    session.arena.push(ExprNode::Atom(Atom::Number(clone_number(&n))), SourceSpan::default())
 }
 
-fn push_string(session: &mut Session, s: String) -> TermId {
-    session.arena.push(TermKind::Atom(AtomKind::String(s)), SourceSpan::default())
+fn push_string(session: &mut Session, s: String) -> ExprId {
+    session.arena.push(ExprNode::Atom(Atom::String(s)), SourceSpan::default())
 }
 
-fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<TermId, SxoError> {
+fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<ExprId, SxoError> {
     let mut items = Vec::with_capacity(root.items.len());
     for stmt in &root.items {
         items.push(lower_stmt(session, stmt)?);
@@ -54,7 +68,7 @@ fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<TermId, SxoErr
     }
 }
 
-fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoError> {
+fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<ExprId, SxoError> {
     match stmt {
         Statement::Expr(expr) => lower_expr(session, expr),
         Statement::If { condition, then_body, elseifs, else_body, .. } => {
@@ -66,7 +80,7 @@ fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoErro
             }
             let then_t = compound_stmts(session, then_body)?;
             let cond_t = lower_expr(session, condition)?;
-            let else_is_null = matches!(get_kind(session, else_term), Some(TermKind::Atom(AtomKind::Null)));
+            let else_is_null = matches!(get_kind(session, else_term), Some(ExprNode::Atom(Atom::Null)));
             if else_is_null && elseifs.is_empty() {
                 Ok(push_app_named(session, "If", vec![cond_t, then_t]))
             }
@@ -101,7 +115,7 @@ fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoErro
     }
 }
 
-fn compound_stmts(session: &mut Session, stmts: &[Statement]) -> Result<TermId, SxoError> {
+fn compound_stmts(session: &mut Session, stmts: &[Statement]) -> Result<ExprId, SxoError> {
     let mut items = Vec::with_capacity(stmts.len());
     for s in stmts {
         items.push(lower_stmt(session, s)?);
@@ -109,7 +123,7 @@ fn compound_stmts(session: &mut Session, stmts: &[Statement]) -> Result<TermId, 
     Ok(compound_or_single(session, items))
 }
 
-fn compound_or_single(session: &mut Session, mut items: Vec<TermId>) -> TermId {
+fn compound_or_single(session: &mut Session, mut items: Vec<ExprId>) -> ExprId {
     match items.len() {
         0 => push_null(session),
         1 => items.remove(0),
@@ -117,7 +131,7 @@ fn compound_or_single(session: &mut Session, mut items: Vec<TermId>) -> TermId {
     }
 }
 
-fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoError> {
+fn lower_expr(session: &mut Session, expr: &Expression) -> Result<ExprId, SxoError> {
     match expr {
         Expression::Symbol(id) => {
             if id.name == "end" {
@@ -176,7 +190,7 @@ fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoErr
             for a in arguments {
                 args.push(lower_expr(session, a)?);
             }
-            let is_part_base = matches!(get_kind(session, expr_t), Some(TermKind::List(_)))
+            let is_part_base = matches!(get_kind(session, expr_t), Some(ExprNode::List(_)))
                 || app_head_name(session, expr_t).as_deref() == Some("Part");
             if is_part_base {
                 let mut part_args = vec![expr_t];
@@ -200,7 +214,7 @@ fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoErr
     }
 }
 
-fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoError> {
+fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<ExprId, SxoError> {
     let l = lower_expr(session, &bin.lhs)?;
     let r = lower_expr(session, &bin.rhs)?;
     Ok(match bin.operator {
@@ -230,7 +244,7 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
     })
 }
 
-fn flatten_span(session: &mut Session, left: TermId, right: TermId) -> TermId {
+fn flatten_span(session: &mut Session, left: ExprId, right: ExprId) -> ExprId {
     if app_head_name(session, left).as_deref() == Some("Span") {
         if let Some(args) = app_args(session, left) {
             if args.len() == 2 {
@@ -241,7 +255,7 @@ fn flatten_span(session: &mut Session, left: TermId, right: TermId) -> TermId {
     push_app_named(session, "Span", vec![left, right])
 }
 
-fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
+fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<ExprId, SxoError> {
     let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
         MatlabTokenType::Minus => {
@@ -254,7 +268,7 @@ fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError
     })
 }
 
-fn lower_postfix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
+fn lower_postfix(session: &mut Session, u: &UnaryExpr) -> Result<ExprId, SxoError> {
     let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
         MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => push_app_named(session, "Transpose", vec![e]),

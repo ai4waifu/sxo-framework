@@ -1,6 +1,13 @@
 //! Integration tests for plot_1d.
 
-use athena::{SampleDomain, SamplingPolicy, Session, push_app_named, push_int, push_symbol_name};
+use athena::{
+    plot::SampleDomain,
+    plot::SamplingPolicy,
+    Session,
+    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_int,
+    runtime::values::arena::push_symbol_name,
+};
 use sxo_adapter_apollo::plot_1d_svg;
 
 #[test]

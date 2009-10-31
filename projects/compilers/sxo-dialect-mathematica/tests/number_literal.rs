@@ -1,6 +1,9 @@
 //! Integration tests for number literals.
 
-use athena::{Number, numeric::to_f64_lossy};
+use athena::{
+    numeric::Number,
+    numeric::to_f64_lossy,
+};
 use sxo_dialect_mathematica::parse_number_literal;
 
 #[test]

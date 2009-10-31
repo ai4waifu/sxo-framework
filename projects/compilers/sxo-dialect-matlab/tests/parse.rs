@@ -1,16 +1,27 @@
-//! Integration tests for MATLAB parse (session arena `TermId`).
+//! Integration tests for MATLAB parse (session arena `ExprId`).
 
 use std::cell::RefCell;
 
 use athena::{
-    AtomKind, EvalKind, Session, TermId, TermKind, app_head_name, number_from_wire, push_app_named, push_bool, push_int,
-    push_list, push_null, push_symbol_name,
+    ir::Atom,
+    execution::EvalKind,
+    Session,
+    types::ExprId,
+    ir::ExprNode,
+    runtime::values::arena::app_head_name,
+    numeric::number_from_wire,
+    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_bool,
+    runtime::values::arena::push_int,
+    runtime::values::arena::push_list,
+    runtime::values::arena::push_null,
+    runtime::values::arena::push_symbol_name,
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
 use sxo_dialect_matlab::{parse_matlab, render_matlab, try_plot_svg};
 
-type Tid = TermId;
+type Tid = ExprId;
 
 struct H {
     s: RefCell<Session>,
@@ -65,8 +76,8 @@ impl H {
     fn rational(&self, n: i64, d: i64) -> Tid {
         let wire = WireNumber::rational_i64(n, d).unwrap();
         let num = number_from_wire(&wire).unwrap();
-        let span = athena::SourceSpan::default();
-        self.s.borrow_mut().arena.push(TermKind::Atom(AtomKind::Number(num)), span)
+        let span = athena::types::SourceSpan::default();
+        self.s.borrow_mut().arena.push(ExprNode::Atom(Atom::Number(num)), span)
     }
 
     fn eq(&self, a: Tid, b: Tid) -> bool {
@@ -295,7 +306,7 @@ fn parse_matrix_constructors_and_size() {
             h.lst(vec![h.i(1), h.i(0)]),
             h.lst(vec![h.i(0), h.i(1)]),
         ]);
-    assert!(h.eq(got, want), "got={} want={} render={}", athena::term_debug(&h.s.borrow(), got), athena::term_debug(&h.s.borrow(), want), h.render(got));
+    assert!(h.eq(got, want), "got={} want={} render={}", athena::diagnostics::expression_summary::expression_debug(&h.s.borrow(), got), athena::diagnostics::expression_summary::expression_debug(&h.s.borrow(), want), h.render(got));
     assert_eq!(h.render(h.eval("eye(2)")), "[1, 0; 0, 1]");
 
     assert!(h.eq(
