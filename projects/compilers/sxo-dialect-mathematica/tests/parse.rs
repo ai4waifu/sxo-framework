@@ -1,26 +1,28 @@
-//! Integration tests for Mathematica parse (session arena `ExprId`).
+//! Integration tests for Mathematica parse (session arena `TermId`).
 
 use std::cell::RefCell;
 
 use athena::{
+    AthenaEngine,
     ir::Atom,
-    Session,
-    types::ExprId,
-    ir::ExprNode,
+    ir::TermNode,
     numeric::number_from_wire,
-    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
     runtime::values::arena::push_int,
     runtime::values::arena::push_list,
     runtime::values::arena::push_null,
     runtime::values::arena::push_symbol_name,
+    Session,
+    types::TermId,
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{
-    WAtom, WExpr, lower_wexpr, parse_mathematica, parse_number_literal, render, try_plot_svg, wexpr_from_session,
+    WAtom, WExpr, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, render, try_plot_svg,
+    wexpr_from_session,
 };
 
-type Tid = ExprId;
+type Tid = TermId;
 
 struct H {
     s: RefCell<Session>,
@@ -41,8 +43,13 @@ impl H {
 
     fn eval(&self, input: &str) -> Tid {
         let w = self.parse_w(input);
-        let id = self.lower(&w);
-        self.s.borrow_mut().evaluate(id).term
+        let mut s = self.s.borrow_mut();
+        let request = lower_request(&mut s, &w);
+        let engine = AthenaEngine::new();
+        match engine.execute_request(&mut s, request) {
+            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| lower_wexpr(&mut s, &w)),
+            Err(_) => lower_wexpr(&mut s, &w),
+        }
     }
 
     fn i(&self, n: i64) -> Tid {
@@ -54,7 +61,7 @@ impl H {
     }
 
     fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
-        push_app_named(&mut self.s.borrow_mut(), head, args)
+        push_application_named(&mut self.s.borrow_mut(), head, args)
     }
 
     fn lst(&self, items: Vec<Tid>) -> Tid {
@@ -73,7 +80,7 @@ impl H {
         let wire = WireNumber::rational_i64(n, d).unwrap();
         let num = number_from_wire(&wire).unwrap();
         let span = athena::types::SourceSpan::default();
-        self.s.borrow_mut().arena.push(ExprNode::Atom(Atom::Number(num)), span)
+        self.s.borrow_mut().arena.push(TermNode::Atom(Atom::Number(num)), span)
     }
 
     fn eq(&self, a: Tid, b: Tid) -> bool {
