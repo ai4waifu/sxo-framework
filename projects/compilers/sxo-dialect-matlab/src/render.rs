@@ -1,13 +1,13 @@
-//! Render session arena [`ExprId`] as MATLAB text (no `WExpr`).
+//! Render session arena [`TermId`] as MATLAB text (no `WExpr`).
 
 use athena::{
     ir::Atom,
     numeric::Number,
     Session,
-    types::ExprId,
-    ir::ExprNode,
-    runtime::values::arena::app_args,
-    runtime::values::arena::app_head_name,
+    types::TermId,
+    ir::TermNode,
+    runtime::values::arena::application_arguments,
+    runtime::values::arena::application_head_name,
     runtime::values::arena::number_from_id,
     runtime::values::arena::symbol_name,
 };
@@ -15,9 +15,9 @@ use athena::{
 use crate::shared::render_number;
 
 /// Render engine IR as MATLAB-ish source.
-pub fn render_matlab(session: &Session, id: ExprId) -> String {
+pub fn render_matlab(session: &Session, id: TermId) -> String {
     match session.arena.get(id) {
-        Some(ExprNode::Atom(a)) => match a {
+        Some(TermNode::Atom(a)) => match a {
             Atom::Number(n) => render_number(n),
             Atom::String(s) => format!("'{s}'"),
             Atom::Symbol(_) => symbol_name(session, id).unwrap_or_else(|| "?".into()),
@@ -25,13 +25,13 @@ pub fn render_matlab(session: &Session, id: ExprId) -> String {
             Atom::Boolean(false) => "false".into(),
             Atom::Null => "[]".into(),
         },
-        Some(ExprNode::List(items)) => {
+        Some(TermNode::Collection { elements: items, .. }) => {
             let items = items.clone();
             if is_matrix_rows(session, &items) {
                 let rows: Vec<String> = items
                     .iter()
                     .map(|row| match session.arena.get(*row) {
-                        Some(ExprNode::List(cols)) => {
+                        Some(TermNode::Collection { elements: cols, .. }) => {
                             cols.iter().map(|c| render_matlab(session, *c)).collect::<Vec<_>>().join(", ")
                         }
                         _ => render_matlab(session, *row),
@@ -44,19 +44,19 @@ pub fn render_matlab(session: &Session, id: ExprId) -> String {
                 format!("[{inner}]")
             }
         }
-        Some(ExprNode::App { .. }) => {
-            let args = app_args(session, id).unwrap_or_default();
+        Some(TermNode::Application { .. }) => {
+            let args = application_arguments(session, id).unwrap_or_default();
             if let Some(infix) = try_infix(session, id, &args) {
                 return infix;
             }
-            let h = match app_head_name(session, id) {
+            let h = match application_head_name(session, id) {
                 Some(n) => head_matlab_name(&n),
                 None => "?".into(),
             };
             let inner = args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(", ");
             format!("{h}({inner})")
         }
-        None => format!("ExprId({})", id.0),
+        None => format!("TermId({})", id.0),
     }
 }
 
@@ -86,8 +86,8 @@ fn head_matlab_name(name: &str) -> String {
     .to_string()
 }
 
-fn try_infix(session: &Session, id: ExprId, args: &[ExprId]) -> Option<String> {
-    let name = app_head_name(session, id)?;
+fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
+    let name = application_head_name(session, id)?;
     match name.as_str() {
         "Plus" if args.len() >= 2 => Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(" + ")),
         "Times" if args.len() >= 2 => {
@@ -130,10 +130,10 @@ fn try_infix(session: &Session, id: ExprId, args: &[ExprId]) -> Option<String> {
     }
 }
 
-fn is_neg_one(session: &Session, id: ExprId) -> bool {
+fn is_neg_one(session: &Session, id: TermId) -> bool {
     matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
 }
 
-fn is_matrix_rows(session: &Session, items: &[ExprId]) -> bool {
-    items.len() > 1 && items.iter().all(|row| matches!(session.arena.get(*row), Some(ExprNode::List(_))))
+fn is_matrix_rows(session: &Session, items: &[TermId]) -> bool {
+    items.len() > 1 && items.iter().all(|row| matches!(session.arena.get(*row), Some(TermNode::Collection { .. })))
 }
