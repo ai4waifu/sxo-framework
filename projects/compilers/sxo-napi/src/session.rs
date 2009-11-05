@@ -15,8 +15,8 @@ use athena::{
     domains::DomainRequest,
     domains::DomainResult,
     Session as AthenaSession,
-    types::ExprId,
-    domains::calculus::materialize_calculus_result_expression,
+    types::TermId,
+    domains::calculus::materialize_calculus_result_term,
     domains::calculus::try_calculus_request,
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
@@ -67,7 +67,7 @@ impl Session {
         f(&self.math_session.borrow())
     }
 
-    fn try_evaluate_calculus(&self, expr: ExprId) -> Option<Result<ExprId, Diagnostic>> {
+    fn try_evaluate_calculus(&self, expr: TermId) -> Option<Result<TermId, Diagnostic>> {
         let mut ms = self.math_session.borrow_mut();
         let request = {
             let mut cc = CalculusCtx::new(&mut ms);
@@ -76,7 +76,7 @@ impl Session {
         Some(self.math_engine().execute_domain(&mut ms, request).and_then(|r| match r {
             DomainResult::Calculus(c) => {
                 let mut cc = CalculusCtx::new(&mut ms);
-                Ok(materialize_calculus_result_expression(&mut cc, &c))
+                Ok(materialize_calculus_result_term(&mut cc, &c))
             }
             other => Err(Diagnostic::new(DiagnosticCode::TypeMismatch)
                 .detail("domain", "calculus")
@@ -88,11 +88,11 @@ impl Session {
     /// Evaluate a term, preferring calculus domain lowering.
     ///
     /// Own `Set` bindings persist on this host session until cleared.
-    pub fn evaluate(&self, expr: ExprId) -> ExprId {
+    pub fn evaluate(&self, expr: TermId) -> TermId {
         if let Some(Ok(term)) = self.try_evaluate_calculus(expr) {
             return term;
         }
-        self.math_session.borrow_mut().evaluate(expr).term
+        self.math_session.borrow_mut().evaluate(expr)
     }
 
     /// Clear Athena Own symbol definitions for this host session.
@@ -101,7 +101,7 @@ impl Session {
     }
 
     /// Differentiate via Athena calculus domain dispatch.
-    pub fn differentiate_term(&self, expr: ExprId, var: &str) -> ExprId {
+    pub fn differentiate_term(&self, expr: TermId, var: &str) -> TermId {
         let mut ms = self.math_session.borrow_mut();
         match self.math_engine().execute_domain(
             &mut ms,
@@ -114,9 +114,9 @@ impl Session {
         ) {
             Ok(DomainResult::Calculus(r)) => {
                 let mut cc = CalculusCtx::new(&mut ms);
-                materialize_calculus_result_expression(&mut cc, &r)
+                materialize_calculus_result_term(&mut cc, &r)
             }
-            _ => self.math_engine().differentiate_expression(&mut ms, expr, var),
+            _ => self.math_engine().differentiate(&mut ms, expr, var),
         }
     }
 
@@ -126,8 +126,8 @@ impl Session {
     }
 
     /// `Simplify` builtin on a term.
-    pub fn simplify_term(&self, expr: ExprId) -> ExprId {
-        self.math_engine().simplify_expression(&mut self.math_session.borrow_mut(), expr)
+    pub fn simplify_term(&self, expr: TermId) -> TermId {
+        self.math_engine().simplify(&mut self.math_session.borrow_mut(), expr)
     }
 
     /// Parse Wolfram text into MMA [`WExpr`] (no evaluate).
@@ -135,57 +135,57 @@ impl Session {
         mathematica::parse_mathematica(input)
     }
 
-    /// MMA form → session arena [`ExprId`].
-    pub fn lower_mathematica(&self, w: &WExpr) -> ExprId {
+    /// MMA form → session arena [`TermId`].
+    pub fn lower_mathematica(&self, w: &WExpr) -> TermId {
         mathematica::lower_wexpr(&mut self.math_session.borrow_mut(), w)
     }
 
-    /// Session arena [`ExprId`] → MMA form.
-    pub fn to_mathematica(&self, id: ExprId) -> WExpr {
+    /// Session arena [`TermId`] → MMA form.
+    pub fn to_mathematica(&self, id: TermId) -> WExpr {
         mathematica::wexpr_from_session(&self.math_session.borrow(), id)
     }
 
     /// Parse Wolfram, lower, evaluate.
-    pub fn evaluate_mathematica(&self, input: &str) -> Result<ExprId, SxoError> {
+    pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
         Ok(self.evaluate(self.lower_mathematica(&w)))
     }
 
     /// Differentiate Wolfram input.
-    pub fn d_mathematica(&self, input: &str, var: &str) -> Result<ExprId, SxoError> {
+    pub fn d_mathematica(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
         Ok(self.differentiate_term(self.lower_mathematica(&w), var))
     }
 
     /// Render a term as Wolfram text.
-    pub fn render_as_wolfram(&self, id: ExprId) -> String {
+    pub fn render_as_wolfram(&self, id: TermId) -> String {
         mathematica::render(&self.to_mathematica(id))
     }
 
-    /// Parse MATLAB text into a [`ExprId`] (no evaluate).
-    pub fn parse_matlab(&self, input: &str) -> Result<ExprId, SxoError> {
+    /// Parse MATLAB text into a [`TermId`] (no evaluate).
+    pub fn parse_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         matlab::parse_matlab(&mut self.math_session.borrow_mut(), input)
     }
 
     /// Parse MATLAB and evaluate.
-    pub fn evaluate_matlab(&self, input: &str) -> Result<ExprId, SxoError> {
+    pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         Ok(self.evaluate(self.parse_matlab(input)?))
     }
 
     /// Differentiate MATLAB input.
-    pub fn d_matlab(&self, input: &str, var: &str) -> Result<ExprId, SxoError> {
+    pub fn d_matlab(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
         Ok(self.differentiate_term(self.parse_matlab(input)?, var))
     }
 
     /// Render a term as MATLAB text.
-    pub fn render_as_matlab(&self, id: ExprId) -> String {
+    pub fn render_as_matlab(&self, id: TermId) -> String {
         matlab::render_matlab(&self.math_session.borrow(), id)
     }
 
     /// Try dialect `Plot` / `plot` → SVG via Athena sampling + Apollo.
     ///
     /// Returns `None` when `id` is not a recognized 1-D plot form.
-    pub fn try_plot_svg(&self, id: ExprId, dialect: Dialect) -> Option<Result<String, SxoError>> {
+    pub fn try_plot_svg(&self, id: TermId, dialect: Dialect) -> Option<Result<String, SxoError>> {
         let mut ms = self.math_session.borrow_mut();
         match dialect {
             Dialect::Mathematica => mathematica::try_plot_svg(&mut ms, id),
@@ -195,7 +195,7 @@ impl Session {
     }
 
     /// Convenience: indefinite integral via calculus domain.
-    pub fn integrate_term(&self, expr: ExprId, var: &str) -> CalculusResult<CalculusValue> {
+    pub fn integrate_term(&self, expr: TermId, var: &str) -> CalculusResult<CalculusValue> {
         match self
             .execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
                 expression: expr,
@@ -210,7 +210,7 @@ impl Session {
     }
 
     /// Structural equality within this host session's arena.
-    pub fn structural_eq(&self, a: ExprId, b: ExprId) -> bool {
+    pub fn structural_eq(&self, a: TermId, b: TermId) -> bool {
         self.math_session.borrow().arena.structural_eq(a, b)
     }
 }

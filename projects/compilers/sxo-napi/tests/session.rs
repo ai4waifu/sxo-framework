@@ -4,7 +4,7 @@ use athena::{
     ir::Atom,
     domains::calculus::CalculusCtx,
     domains::DomainRequest,
-    ir::ExprNode,
+    ir::TermNode,
     runtime::values::arena::push_int,
     diagnostics::expression_summary::expression_debug,
     domains::calculus::try_calculus_request,
@@ -36,7 +36,7 @@ fn big_integer_arithmetic() {
     let expected_n = parse_number_literal("100000000000000000000").unwrap();
     let expected = session.with_math_mut(|s| {
         s.arena
-            .push(ExprNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))), athena::types::SourceSpan::default())
+            .push(TermNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))), athena::types::SourceSpan::default())
     });
     assert!(session.structural_eq(e, expected));
 }
@@ -47,7 +47,7 @@ fn bridge_lowers_to_kernel_app() {
     let w = session.parse_mathematica("1 + 2").unwrap();
     let t = session.lower_mathematica(&w);
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(t), Some(ExprNode::App { .. })));
+        assert!(matches!(s.arena.get(t), Some(TermNode::Application { .. })));
     });
 }
 
@@ -92,7 +92,7 @@ fn session_setdelayed_evaluates_on_use() {
     let session = Session::new();
     let null = session.evaluate_mathematica("a := 1 + 1").unwrap();
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(null), Some(ExprNode::Atom(Atom::Null))));
+        assert!(matches!(s.arena.get(null), Some(TermNode::Atom(Atom::Null))));
     });
     let two = session.with_math_mut(|s| push_int(s, 2));
     assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap(), two));
