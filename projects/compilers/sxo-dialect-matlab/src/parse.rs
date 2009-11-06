@@ -237,22 +237,22 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
         MatlabTokenType::GreaterEqual => push_application_named(session, "GreaterEqual", vec![l, r]),
         MatlabTokenType::AndAnd | MatlabTokenType::And => push_application_named(session, "And", vec![l, r]),
         MatlabTokenType::OrOr | MatlabTokenType::Or => push_application_named(session, "Or", vec![l, r]),
-        MatlabTokenType::Colon => flatten_span(session, l, r),
+        MatlabTokenType::Colon => flatten_range(session, l, r),
         other => {
             return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));
         }
     })
 }
 
-fn flatten_span(session: &mut Session, left: TermId, right: TermId) -> TermId {
-    if application_head_name(session, left).as_deref() == Some("Span") {
+fn flatten_range(session: &mut Session, left: TermId, right: TermId) -> TermId {
+    if application_head_name(session, left).as_deref() == Some("Range") {
         if let Some(args) = application_arguments(session, left) {
             if args.len() == 2 {
-                return push_application_named(session, "Span", vec![args[0], args[1], right]);
+                return push_application_named(session, "Range", vec![args[0], args[1], right]);
             }
         }
     }
-    push_application_named(session, "Span", vec![left, right])
+    push_application_named(session, "Range", vec![left, right])
 }
 
 fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {

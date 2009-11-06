@@ -9,6 +9,7 @@ mod plot;
 mod render;
 mod shared;
 
+pub use lower::lower_request;
 pub use parse::parse_matlab;
 pub use plot::try_plot_svg;
 pub use render::render_matlab;

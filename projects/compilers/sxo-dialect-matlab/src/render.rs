@@ -117,10 +117,10 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
         "DotPower" if args.len() == 2 => {
             Some(format!("{}.^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
-        "Span" if args.len() == 2 => {
+        "Span" | "Range" if args.len() == 2 => {
             Some(format!("{}:{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
-        "Span" if args.len() == 3 => Some(format!(
+        "Span" | "Range" if args.len() == 3 => Some(format!(
             "{}:{}:{}",
             render_matlab(session, args[0]),
             render_matlab(session, args[1]),
