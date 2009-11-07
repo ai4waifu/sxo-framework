@@ -7,7 +7,9 @@ use athena::{
         push_application_named, push_bool, push_int, push_list, push_null, push_symbol_name,
     },
     runtime::values::numeric_clone::clone_number,
-    types::{BindingEvaluationPolicy, BindingKind, SymbolId, TermId},
+    types::{
+        BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
+    },
     Session,
 };
 
@@ -138,6 +140,14 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
                     });
                 }
+                ("Part", args) if args.len() >= 2 => {
+                    if let Some(axes) = args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
+                        return AthenaRequest::Control(ControlPlan::Index {
+                            target: lower_wexpr(session, &args[0]),
+                            axes,
+                        });
+                    }
+                }
                 _ => {}
             },
             _ => {}
@@ -256,6 +266,39 @@ fn lower_span_as_range(session: &mut Session, args: &[WExpr]) -> TermId {
 fn exact_i64(w: &WExpr) -> Option<i64> {
     match w {
         WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer(),
+        _ => None,
+    }
+}
+
+fn index_spec_of(w: &WExpr) -> Option<IndexSpec> {
+    match w {
+        WExpr::Atom(WAtom::Symbol(s)) if s == "All" => Some(IndexSpec::All),
+        WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer().map(|i| IndexSpec::Scalar(IntegerIndex(i))),
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Span" || s == "Range") => {
+            match args.as_slice() {
+                [start, end] => Some(IndexSpec::Range {
+                    start: IntegerIndex(exact_i64(start)?),
+                    end: IntegerIndex(exact_i64(end)?),
+                    step: 1,
+                }),
+                [start, end, step] => Some(IndexSpec::Range {
+                    start: IntegerIndex(exact_i64(start)?),
+                    end: IntegerIndex(exact_i64(end)?),
+                    step: exact_i64(step)?,
+                }),
+                _ => None,
+            }
+        }
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Plus")
+                && args.len() == 2
+                && matches!(&args[0], WExpr::Atom(WAtom::Symbol(s)) if s == "end") =>
+        {
+            // MATLAB-style `end+k` sometimes arrives via other dialects; keep for shared helpers.
+            let off = exact_i64(&args[1])?;
+            Some(IndexSpec::EndRelative(IntegerOffset(off)))
+        }
+        WExpr::Atom(WAtom::Symbol(s)) if s == "end" => Some(IndexSpec::EndRelative(IntegerOffset(0))),
         _ => None,
     }
 }

@@ -208,13 +208,13 @@ fn parse_part_double_bracket() {
         )
     );
     let h = H::new();
-    assert!(h.eq(h.eval("{1,2,3}[[0]]"), h.sym("List")));
+    assert!(h.eq(h.eval("{1,2,3}[[0]]"), h.sym("OrderedCollection")));
 }
 
 #[test]
 fn parse_part_call_zero() {
     let h = H::new();
-    assert!(h.eq(h.eval("Part[{1,2,3},0]"), h.sym("List")));
+    assert!(h.eq(h.eval("Part[{1,2,3},0]"), h.sym("OrderedCollection")));
 }
 
 #[test]
