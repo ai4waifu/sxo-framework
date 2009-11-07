@@ -6,8 +6,12 @@
 use athena::{
     api::{AthenaRequest, ControlPlan, SessionCommand},
     ir::{Atom, TermNode},
-    runtime::values::arena::{application_arguments, application_head_name, push_application_named},
-    types::{BindingEvaluationPolicy, BindingKind, SymbolId, TermId},
+    runtime::values::arena::{
+        application_arguments, application_head_name, number_from_id, push_application_named, symbol_name,
+    },
+    types::{
+        BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
+    },
     Session,
 };
 
@@ -65,10 +69,25 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 }
             }
         }
-        Some("Span") => {
+        Some("Part") => {
             if let Some(args) = application_arguments(session, term) {
-                let rewritten = push_application_named(session, "Range", args);
-                return AthenaRequest::Term(rewritten);
+                if args.len() >= 2 {
+                    if let Some(axes) = args[1..].iter().map(|a| index_spec_of(session, *a)).collect::<Option<Vec<_>>>() {
+                        return AthenaRequest::Control(ControlPlan::Index {
+                            target: args[0],
+                            axes,
+                        });
+                    }
+                }
+            }
+        }
+        Some("Span") | Some("Range") => {
+            // Standalone range terms stay as `Range` applications for iterators.
+            if application_head_name(session, term).as_deref() == Some("Span") {
+                if let Some(args) = application_arguments(session, term) {
+                    let rewritten = push_application_named(session, "Range", args);
+                    return AthenaRequest::Term(rewritten);
+                }
             }
         }
         _ => {}
@@ -79,6 +98,44 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
 fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {
     match session.arena.get(term) {
         Some(TermNode::Atom(Atom::Symbol(symbol))) => Some(*symbol),
+        _ => None,
+    }
+}
+
+fn index_spec_of(session: &Session, term: TermId) -> Option<IndexSpec> {
+    if let Some(n) = number_from_id(session, term).and_then(|n| n.as_exact_integer()) {
+        return Some(IndexSpec::Scalar(IntegerIndex(n)));
+    }
+    match symbol_name(session, term).as_deref() {
+        Some("All") | Some(":") => return Some(IndexSpec::All),
+        Some("end") => return Some(IndexSpec::EndRelative(IntegerOffset(0))),
+        _ => {}
+    }
+    match application_head_name(session, term).as_deref() {
+        Some("Range") | Some("Span") => {
+            let args = application_arguments(session, term)?;
+            match args.as_slice() {
+                [start, end] => Some(IndexSpec::Range {
+                    start: IntegerIndex(number_from_id(session, *start)?.as_exact_integer()?),
+                    end: IntegerIndex(number_from_id(session, *end)?.as_exact_integer()?),
+                    step: 1,
+                }),
+                [start, end, step] => Some(IndexSpec::Range {
+                    start: IntegerIndex(number_from_id(session, *start)?.as_exact_integer()?),
+                    end: IntegerIndex(number_from_id(session, *end)?.as_exact_integer()?),
+                    step: number_from_id(session, *step)?.as_exact_integer()?,
+                }),
+                _ => None,
+            }
+        }
+        Some("Plus") => {
+            let args = application_arguments(session, term)?;
+            if args.len() == 2 && symbol_name(session, args[0]).as_deref() == Some("end") {
+                let off = number_from_id(session, args[1])?.as_exact_integer()?;
+                return Some(IndexSpec::EndRelative(IntegerOffset(off)));
+            }
+            None
+        }
         _ => None,
     }
 }
