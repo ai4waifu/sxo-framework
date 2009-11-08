@@ -248,7 +248,8 @@ fn flatten_range(session: &mut Session, left: TermId, right: TermId) -> TermId {
     if application_head_name(session, left).as_deref() == Some("Range") {
         if let Some(args) = application_arguments(session, left) {
             if args.len() == 2 {
-                return push_application_named(session, "Range", vec![args[0], args[1], right]);
+                // MATLAB `start:step:end` → Athena `Range[start, end, step]`.
+                return push_application_named(session, "Range", vec![args[0], right, args[1]]);
             }
         }
     }
