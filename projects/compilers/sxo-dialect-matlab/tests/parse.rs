@@ -220,7 +220,7 @@ fn parse_colon_step_flattens() {
 fn parse_mldivide_keeps_head() {
     let h = H::new();
     let t = h.parse("A\\b");
-    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
+    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
     let kind = h.outcome_kind(t);
     assert_eq!(kind, EvalKind::Unevaluated);
     assert!(h.render(t).contains('\\'));
@@ -301,7 +301,7 @@ fn parse_column_vector_and_mldivide_shape() {
     let col = h.parse("[5; 6]");
     assert!(h.eq(col, h.lst(vec![h.lst(vec![h.i(5)]), h.lst(vec![h.i(6)])])));
     let t = h.parse("[1, 2; 3, 4] \\ [5; 6]");
-    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
+    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
 }
 
 #[test]

@@ -224,7 +224,7 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
         MatlabTokenType::DotTimes => push_application_named(session, "DotTimes", vec![l, r]),
         MatlabTokenType::Divide => push_application_named(session, "Divide", vec![l, r]),
         MatlabTokenType::DotDivide => push_application_named(session, "DotDivide", vec![l, r]),
-        MatlabTokenType::LeftDivide => push_application_named(session, "Mldivide", vec![l, r]),
+        MatlabTokenType::LeftDivide => push_application_named(session, "LinearSolve", vec![l, r]),
         MatlabTokenType::DotLeftDivide => push_application_named(session, "DotLeftDivide", vec![l, r]),
         MatlabTokenType::Power => push_application_named(session, "Power", vec![l, r]),
         MatlabTokenType::DotPower => push_application_named(session, "DotPower", vec![l, r]),

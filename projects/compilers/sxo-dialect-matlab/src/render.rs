@@ -105,7 +105,7 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
         "Divide" if args.len() == 2 => {
             Some(format!("{}/{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
-        "Mldivide" if args.len() == 2 => {
+        "LinearSolve" | "Mldivide" if args.len() == 2 => {
             Some(format!("{}\\{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
         "DotTimes" if args.len() == 2 => {
