@@ -3,12 +3,14 @@
 use athena::{
     api::{AthenaRequest, ControlPlan, SessionCommand},
     ir::{Atom, TermNode},
+    reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::arena::{
         push_application_named, push_bool, push_int, push_list, push_null, push_symbol_name,
     },
     runtime::values::numeric_clone::clone_number,
     types::{
         BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
+        ValueTypeId,
     },
     Session,
 };
@@ -44,14 +46,6 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
             WExpr::Atom(WAtom::Symbol(name)) if name == "HoldForm" => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_application_named(session, "Hold", arg_ids)
-            }
-            WExpr::Atom(WAtom::Symbol(name)) if name == "MatchQ" => {
-                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
-                push_application_named(session, "Matches", arg_ids)
-            }
-            WExpr::Atom(WAtom::Symbol(name)) if name == "Cases" => {
-                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
-                push_application_named(session, "CollectMatches", arg_ids)
             }
             WExpr::Atom(WAtom::Symbol(name)) => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
@@ -158,6 +152,22 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         return AthenaRequest::Control(ControlPlan::Index {
                             target: lower_wexpr(session, &args[0]),
                             axes,
+                        });
+                    }
+                }
+                ("MatchQ", [expr, pat]) => {
+                    if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
+                        return AthenaRequest::Control(ControlPlan::Match {
+                            target: lower_wexpr(session, expr),
+                            pattern,
+                        });
+                    }
+                }
+                ("Cases", [source, pat]) => {
+                    if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
+                        return AthenaRequest::Control(ControlPlan::CollectMatches {
+                            source: lower_wexpr(session, source),
+                            pattern,
                         });
                     }
                 }
@@ -355,6 +365,36 @@ fn exact_i64(w: &WExpr) -> Option<i64> {
     match w {
         WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer(),
         _ => None,
+    }
+}
+
+/// Mathematica pattern Form → neutral [`TermPattern`] (Living `27`).
+fn wexpr_to_term_pattern(session: &mut Session, w: &WExpr) -> Option<TermPattern> {
+    match w {
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Blank") => {
+            match args.as_slice() {
+                [] => Some(TermPattern::Any),
+                [WExpr::Atom(WAtom::Symbol(ty))] if ty == "Integer" => Some(TermPattern::Constrained {
+                    pattern: Box::new(TermPattern::Any),
+                    constraint: PatternConstraint::ValueType(ValueTypeId::ExactInteger),
+                }),
+                _ => None,
+            }
+        }
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Pattern") && args.len() == 2 =>
+        {
+            let name = match &args[0] {
+                WExpr::Atom(WAtom::Symbol(s)) => session.arena.symbols_mut().intern(s),
+                _ => return None,
+            };
+            let inner = wexpr_to_term_pattern(session, &args[1])?;
+            Some(TermPattern::Bind {
+                name,
+                inner: Box::new(inner),
+            })
+        }
+        other => Some(TermPattern::Exact(lower_wexpr(session, other))),
     }
 }
 
