@@ -2,10 +2,10 @@
 
 use athena::{
     api::{AthenaRequest, ControlPlan, SessionCommand},
-    ir::{Atom, TermNode},
+    ir::{ApplicationHead, Atom, SemanticOperator, TermNode, UnaryFunction},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::arena::{
-        push_application_named, push_bool, push_int, push_list, push_null, push_symbol_name,
+        push_application_named, push_bool, push_int, push_list, push_null, push_semantic, push_symbol_name,
     },
     runtime::values::numeric_clone::clone_number,
     types::{
@@ -16,6 +16,89 @@ use athena::{
 };
 
 use crate::form::{WAtom, WExpr};
+
+/// Map a Mathematica surface head to a closed [`SemanticOperator`] when known.
+pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
+    Some(match name {
+        "Plus" => SemanticOperator::Add,
+        "Times" => SemanticOperator::Multiply,
+        "Subtract" => SemanticOperator::Subtract,
+        "Divide" => SemanticOperator::Divide,
+        "Power" => SemanticOperator::Power,
+        "Minus" => SemanticOperator::Negate,
+        "Equal" => SemanticOperator::Equal,
+        "Unequal" => SemanticOperator::Unequal,
+        "Less" => SemanticOperator::Less,
+        "Greater" => SemanticOperator::Greater,
+        "LessEqual" => SemanticOperator::LessEqual,
+        "GreaterEqual" => SemanticOperator::GreaterEqual,
+        "And" => SemanticOperator::And,
+        "Or" => SemanticOperator::Or,
+        "Not" => SemanticOperator::Not,
+        "Range" | "Span" => SemanticOperator::Range,
+        "Apply" => SemanticOperator::Apply,
+        "Map" => SemanticOperator::Map,
+        "Rule" => SemanticOperator::Rule,
+        "RuleDelayed" => SemanticOperator::RuleDeferred,
+        "ReplaceAll" => SemanticOperator::ReplaceAll,
+        "Simplify" => SemanticOperator::Simplify,
+        "Hold" | "HoldForm" => SemanticOperator::Hold,
+        "Function" => SemanticOperator::Function,
+        "Factorial" => SemanticOperator::Factorial,
+        "Length" => SemanticOperator::Length,
+        "First" => SemanticOperator::First,
+        "Rest" => SemanticOperator::Rest,
+        "Join" => SemanticOperator::Join,
+        "Sum" => SemanticOperator::Sum,
+        "Product" => SemanticOperator::Product,
+        "Determinant" | "Det" => SemanticOperator::Determinant,
+        "DotTimes" => SemanticOperator::ElementwiseMultiply,
+        "DotDivide" => SemanticOperator::ElementwiseDivide,
+        "DotPower" => SemanticOperator::ElementwisePower,
+        "Sin" => SemanticOperator::from_unary(UnaryFunction::Sin),
+        "Cos" => SemanticOperator::from_unary(UnaryFunction::Cos),
+        "Tan" => SemanticOperator::from_unary(UnaryFunction::Tan),
+        "Exp" => SemanticOperator::from_unary(UnaryFunction::Exp),
+        "Log" => SemanticOperator::from_unary(UnaryFunction::Log),
+        "Sinh" => SemanticOperator::from_unary(UnaryFunction::Sinh),
+        "Cosh" => SemanticOperator::from_unary(UnaryFunction::Cosh),
+        "Tanh" => SemanticOperator::from_unary(UnaryFunction::Tanh),
+        "ArcSin" => SemanticOperator::from_unary(UnaryFunction::ArcSin),
+        "ArcCos" => SemanticOperator::from_unary(UnaryFunction::ArcCos),
+        "ArcTan" => SemanticOperator::from_unary(UnaryFunction::ArcTan),
+        "Sqrt" => SemanticOperator::from_unary(UnaryFunction::Sqrt),
+        "Abs" => SemanticOperator::from_unary(UnaryFunction::Abs),
+        "Sign" => SemanticOperator::from_unary(UnaryFunction::Sign),
+        "Gamma" => SemanticOperator::from_unary(UnaryFunction::Gamma),
+        "Erf" => SemanticOperator::from_unary(UnaryFunction::Erf),
+        _ => return None,
+    })
+}
+
+/// Map a closed semantic op back to a Mathematica surface head for Form/render.
+pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
+    match op {
+        SemanticOperator::Add => "Plus",
+        SemanticOperator::Multiply => "Times",
+        SemanticOperator::Negate => "Minus",
+        SemanticOperator::RuleDeferred => "RuleDelayed",
+        SemanticOperator::ElementwiseMultiply => "DotTimes",
+        SemanticOperator::ElementwiseDivide => "DotDivide",
+        SemanticOperator::ElementwisePower => "DotPower",
+        SemanticOperator::ApplyHead => "Application",
+        SemanticOperator::Unary(f) => f.debug_label(),
+        other => other.debug_label(),
+    }
+}
+
+/// Push a Mathematica surface call as Semantic when mapped, else Extension.
+pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -> TermId {
+    if let Some(op) = surface_to_semantic(name) {
+        push_semantic(session, op, args)
+    } else {
+        push_application_named(session, name, args)
+    }
+}
 
 /// Structural `WExpr` → session arena [`TermId`].
 ///
@@ -43,21 +126,42 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
         WExpr::Call { head, args } => match head.as_ref() {
             WExpr::Atom(WAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WExpr::Atom(WAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
-            WExpr::Atom(WAtom::Symbol(name)) if name == "HoldForm" => {
-                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
-                push_application_named(session, "Hold", arg_ids)
+            WExpr::Atom(WAtom::Symbol(name)) if name == "Apply" || name == "Map" => {
+                let mut arg_ids = Vec::with_capacity(args.len());
+                for (i, a) in args.iter().enumerate() {
+                    if i == 0 {
+                        arg_ids.push(lower_operator_value(session, a));
+                    } else {
+                        arg_ids.push(lower_wexpr(session, a));
+                    }
+                }
+                push_surface_call(session, name, arg_ids)
             }
             WExpr::Atom(WAtom::Symbol(name)) => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
-                push_application_named(session, name, arg_ids)
+                push_surface_call(session, name, arg_ids)
             }
             other => {
                 let h = lower_wexpr(session, other);
                 let mut wrapped = vec![h];
                 wrapped.extend(args.iter().map(|a| lower_wexpr(session, a)));
-                push_application_named(session, "Application", wrapped)
+                push_semantic(session, SemanticOperator::ApplyHead, wrapped)
             }
         },
+    }
+}
+
+/// Lower a head used as an operator value (`Apply[Plus, …]` → 0-ary `Add`).
+fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
+    match w {
+        WExpr::Atom(WAtom::Symbol(name)) => {
+            if let Some(op) = surface_to_semantic(name) {
+                push_semantic(session, op, Vec::new())
+            } else {
+                push_symbol_name(session, name)
+            }
+        }
+        other => lower_wexpr(session, other),
     }
 }
 
@@ -283,7 +387,7 @@ fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
 
 fn lower_span_as_range(session: &mut Session, args: &[WExpr]) -> TermId {
     let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
-    push_application_named(session, "Range", arg_ids)
+    push_semantic(session, SemanticOperator::Range, arg_ids)
 }
 
 /// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `27`).
@@ -296,20 +400,20 @@ fn lower_function(session: &mut Session, args: &[WExpr]) -> TermId {
                 let rewritten = replace_slots(body, binder_name);
                 let binder = push_symbol_name(session, binder_name);
                 let body_id = lower_wexpr(session, &rewritten);
-                return push_application_named(session, "Function", vec![binder, body_id]);
+                return push_semantic(session, SemanticOperator::Function, vec![binder, body_id]);
             }
             // No slots or multi-slot: keep structural Function[body] (multi-slot later).
             let body_id = lower_wexpr(session, body);
-            push_application_named(session, "Function", vec![body_id])
+            push_semantic(session, SemanticOperator::Function, vec![body_id])
         }
         [var, body] => {
             let var_id = lower_wexpr(session, var);
             let body_id = lower_wexpr(session, body);
-            push_application_named(session, "Function", vec![var_id, body_id])
+            push_semantic(session, SemanticOperator::Function, vec![var_id, body_id])
         }
         other => {
             let arg_ids: Vec<TermId> = other.iter().map(|a| lower_wexpr(session, a)).collect();
-            push_application_named(session, "Function", arg_ids)
+            push_semantic(session, SemanticOperator::Function, arg_ids)
         }
     }
 }
@@ -447,7 +551,6 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
             WExpr::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
-            use athena::ir::{ApplicationHead, SemanticOperator};
             let head_name = match *op {
                 ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {
                     let head = wexpr_from_session(session, args[0]);
@@ -457,7 +560,7 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
                         args: call_args,
                     };
                 }
-                ApplicationHead::Semantic(sem) => sem.debug_label().to_string(),
+                ApplicationHead::Semantic(sem) => semantic_to_surface(sem).to_string(),
                 ApplicationHead::Extension(id) => {
                     let name = session.operators.name(id).unwrap_or("?").to_string();
                     if name == "Application" && !args.is_empty() {
