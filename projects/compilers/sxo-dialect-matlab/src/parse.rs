@@ -11,26 +11,24 @@ use oak_matlab::{
 };
 
 use athena::{
-    ir::Atom,
+    ir::{Atom, SemanticOperator, TermNode},
     Session,
-    types::SourceSpan,
-    types::TermId,
-    ir::TermNode,
+    types::{SourceSpan, TermId},
     runtime::values::arena::application_arguments,
-    runtime::values::arena::application_head_name,
-    runtime::values::numeric_clone::clone_number,
     runtime::values::arena::get_kind,
     runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
-    runtime::values::arena::push_int,
     runtime::values::arena::push_list,
     runtime::values::arena::push_null,
+    runtime::values::arena::push_semantic,
     runtime::values::arena::push_symbol_name,
     runtime::values::arena::symbol_name,
+    runtime::values::numeric_clone::clone_number,
 };
 use sxo_types::SxoError;
 
 use crate::shared::parse_number_literal;
+use crate::surface::{application_surface_name, push_matlab_call};
 
 /// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
 pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {
@@ -96,7 +94,7 @@ fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoErro
         Statement::For { header, body, .. } => {
             let header_t = lower_expr(session, header)?;
             let body_t = compound_stmts(session, body)?;
-            if application_head_name(session, header_t).as_deref() == Some("Set") {
+            if application_surface_name(session, header_t).as_deref() == Some("Set") {
                 if let Some(args) = application_arguments(session, header_t) {
                     if args.len() == 2 {
                         return Ok(push_application_named(session, "For", vec![args[0], args[1], body_t]));
@@ -191,20 +189,20 @@ fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoErr
                 args.push(lower_expr(session, a)?);
             }
             let is_part_base = matches!(get_kind(session, expr_t), Some(TermNode::Collection { .. }))
-                || application_head_name(session, expr_t).as_deref() == Some("Part");
+                || application_surface_name(session, expr_t).as_deref() == Some("Part");
             if is_part_base {
                 let mut part_args = vec![expr_t];
                 part_args.extend(args);
                 Ok(push_application_named(session, "Part", part_args))
             }
             else if let Some(head_name) = symbol_name(session, expr_t) {
-                Ok(push_application_named(session, &head_name, args))
+                Ok(push_matlab_call(session, &head_name, args))
             }
             else {
-                // Non-symbol head → `Application[head, args…]` for Athena `EvalDynamic`.
+                // Non-symbol head → `ApplyHead[head, args…]`.
                 let mut wrapped = vec![expr_t];
                 wrapped.extend(args);
-                Ok(push_application_named(session, "Application", wrapped))
+                Ok(push_semantic(session, SemanticOperator::ApplyHead, wrapped))
             }
         }
         Expression::Binary(bin) => lower_binary(session, bin),
@@ -218,25 +216,25 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
     let l = lower_expr(session, &bin.lhs)?;
     let r = lower_expr(session, &bin.rhs)?;
     Ok(match bin.operator {
-        MatlabTokenType::Plus => push_application_named(session, "Plus", vec![l, r]),
-        MatlabTokenType::Minus => push_application_named(session, "Subtract", vec![l, r]),
-        MatlabTokenType::Times => push_application_named(session, "Times", vec![l, r]),
-        MatlabTokenType::DotTimes => push_application_named(session, "DotTimes", vec![l, r]),
-        MatlabTokenType::Divide => push_application_named(session, "Divide", vec![l, r]),
-        MatlabTokenType::DotDivide => push_application_named(session, "DotDivide", vec![l, r]),
+        MatlabTokenType::Plus => push_semantic(session, SemanticOperator::Add, vec![l, r]),
+        MatlabTokenType::Minus => push_semantic(session, SemanticOperator::Subtract, vec![l, r]),
+        MatlabTokenType::Times => push_semantic(session, SemanticOperator::Multiply, vec![l, r]),
+        MatlabTokenType::DotTimes => push_semantic(session, SemanticOperator::ElementwiseMultiply, vec![l, r]),
+        MatlabTokenType::Divide => push_semantic(session, SemanticOperator::Divide, vec![l, r]),
+        MatlabTokenType::DotDivide => push_semantic(session, SemanticOperator::ElementwiseDivide, vec![l, r]),
         MatlabTokenType::LeftDivide => push_application_named(session, "LinearSolve", vec![l, r]),
         MatlabTokenType::DotLeftDivide => push_application_named(session, "DotLeftDivide", vec![l, r]),
-        MatlabTokenType::Power => push_application_named(session, "Power", vec![l, r]),
-        MatlabTokenType::DotPower => push_application_named(session, "DotPower", vec![l, r]),
+        MatlabTokenType::Power => push_semantic(session, SemanticOperator::Power, vec![l, r]),
+        MatlabTokenType::DotPower => push_semantic(session, SemanticOperator::ElementwisePower, vec![l, r]),
         MatlabTokenType::Assign => push_application_named(session, "Set", vec![l, r]),
-        MatlabTokenType::Equal => push_application_named(session, "Equal", vec![l, r]),
-        MatlabTokenType::NotEqual => push_application_named(session, "Unequal", vec![l, r]),
-        MatlabTokenType::Less => push_application_named(session, "Less", vec![l, r]),
-        MatlabTokenType::Greater => push_application_named(session, "Greater", vec![l, r]),
-        MatlabTokenType::LessEqual => push_application_named(session, "LessEqual", vec![l, r]),
-        MatlabTokenType::GreaterEqual => push_application_named(session, "GreaterEqual", vec![l, r]),
-        MatlabTokenType::AndAnd | MatlabTokenType::And => push_application_named(session, "And", vec![l, r]),
-        MatlabTokenType::OrOr | MatlabTokenType::Or => push_application_named(session, "Or", vec![l, r]),
+        MatlabTokenType::Equal => push_semantic(session, SemanticOperator::Equal, vec![l, r]),
+        MatlabTokenType::NotEqual => push_semantic(session, SemanticOperator::Unequal, vec![l, r]),
+        MatlabTokenType::Less => push_semantic(session, SemanticOperator::Less, vec![l, r]),
+        MatlabTokenType::Greater => push_semantic(session, SemanticOperator::Greater, vec![l, r]),
+        MatlabTokenType::LessEqual => push_semantic(session, SemanticOperator::LessEqual, vec![l, r]),
+        MatlabTokenType::GreaterEqual => push_semantic(session, SemanticOperator::GreaterEqual, vec![l, r]),
+        MatlabTokenType::AndAnd | MatlabTokenType::And => push_semantic(session, SemanticOperator::And, vec![l, r]),
+        MatlabTokenType::OrOr | MatlabTokenType::Or => push_semantic(session, SemanticOperator::Or, vec![l, r]),
         MatlabTokenType::Colon => flatten_range(session, l, r),
         other => {
             return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));
@@ -245,26 +243,23 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
 }
 
 fn flatten_range(session: &mut Session, left: TermId, right: TermId) -> TermId {
-    if application_head_name(session, left).as_deref() == Some("Range") {
+    if application_surface_name(session, left).as_deref() == Some("Range") {
         if let Some(args) = application_arguments(session, left) {
             if args.len() == 2 {
                 // MATLAB `start:step:end` → Athena `Range[start, end, step]`.
-                return push_application_named(session, "Range", vec![args[0], right, args[1]]);
+                return push_semantic(session, SemanticOperator::Range, vec![args[0], right, args[1]]);
             }
         }
     }
-    push_application_named(session, "Range", vec![left, right])
+    push_semantic(session, SemanticOperator::Range, vec![left, right])
 }
 
 fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
     let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Minus => {
-            let neg1 = push_int(session, -1);
-            push_application_named(session, "Times", vec![neg1, e])
-        }
+        MatlabTokenType::Minus => push_semantic(session, SemanticOperator::Negate, vec![e]),
         MatlabTokenType::Plus => e,
-        MatlabTokenType::Not => push_application_named(session, "Not", vec![e]),
+        MatlabTokenType::Not => push_semantic(session, SemanticOperator::Not, vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported prefix {other:?}"))),
     })
 }

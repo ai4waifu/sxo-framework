@@ -6,11 +6,11 @@ use athena::{
     Session,
     types::TermId,
     runtime::values::arena::application_arguments,
-    runtime::values::arena::application_head_name,
     runtime::values::arena::number_from_id,
     numeric::to_f64_lossy,
     runtime::values::arena::symbol_name,
 };
+use crate::surface::application_surface_name;
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 
@@ -48,7 +48,7 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
 }
 
 fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
-    if application_head_name(session, id).as_deref() != Some("plot") {
+    if application_surface_name(session, id).as_deref() != Some("plot") {
         return None;
     }
     let args = application_arguments(session, id)?;

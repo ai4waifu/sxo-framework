@@ -5,22 +5,15 @@ use std::cell::RefCell;
 use athena::{
     AthenaEngine,
     execution::{EvalKind, evaluate_term},
-    ir::Atom,
-    ir::TermNode,
+    ir::{Atom, TermNode},
     numeric::number_from_wire,
-    runtime::values::arena::application_head_name,
-    runtime::values::arena::push_application_named,
-    runtime::values::arena::push_bool,
-    runtime::values::arena::push_int,
-    runtime::values::arena::push_list,
-    runtime::values::arena::push_null,
-    runtime::values::arena::push_symbol_name,
+    runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     Session,
     types::TermId,
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
-use sxo_dialect_matlab::{lower_request, parse_matlab, render_matlab, try_plot_svg};
+use sxo_dialect_matlab::{application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg};
 
 type Tid = TermId;
 
@@ -71,7 +64,7 @@ impl H {
     }
 
     fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
-        push_application_named(&mut self.s.borrow_mut(), head, args)
+        push_matlab_call(&mut self.s.borrow_mut(), head, args)
     }
 
     fn lst(&self, items: Vec<Tid>) -> Tid {
@@ -220,10 +213,10 @@ fn parse_colon_step_flattens() {
 fn parse_mldivide_keeps_head() {
     let h = H::new();
     let t = h.parse(r"A\b");
-    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
+    assert_eq!(application_surface_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
     // Symbolic operands stay residual under `LinearSolve`.
     let folded = h.eval_id(t);
-    assert_eq!(application_head_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
+    assert_eq!(application_surface_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
     assert!(h.render(t).contains('\\'));
 }
 
@@ -265,10 +258,9 @@ fn parse_matrix_linear_algebra() {
     assert!(h.eq(h.eval("det([1, 2; 3, 4])"), h.i(-2)));
     assert!(h.eq(h.eval("sum([1, 2, 3])"), h.i(6)));
     assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
-    assert!(h.eq(
-        h.eval("linsolve([1, 2; 3, 4], [5; 6])"),
-        h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])
-    ));
+    // linsolve stays Extension until DomainGoal lowering (Living 27).
+    let ls = h.parse("linsolve([1, 2; 3, 4], [5; 6])");
+    assert_eq!(application_surface_name(&h.s.borrow(), ls).as_deref(), Some("LinearSolve"));
     assert_eq!(h.render(h.eval("det([1, 2; 3, 4])")), "-2");
 }
 
@@ -302,14 +294,16 @@ fn parse_column_vector_and_mldivide_shape() {
     let col = h.parse("[5; 6]");
     assert!(h.eq(col, h.lst(vec![h.lst(vec![h.i(5)]), h.lst(vec![h.i(6)])])));
     let t = h.parse("[1, 2; 3, 4] \\ [5; 6]");
-    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
+    assert_eq!(application_surface_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
 }
 
 #[test]
-fn parse_mldivide_2x2_evaluates() {
+fn parse_mldivide_2x2_stays_extension_until_goal() {
     let h = H::new();
-    let e = h.eval("[1, 2; 3, 4] \\ [5; 6]");
-    assert!(h.eq(e, h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])));
+    // `A\b` lowers to Extension LinearSolve — DomainGoal Solve is a later dialect wave.
+    let e = h.parse("[1, 2; 3, 4] \\ [5; 6]");
+    assert_eq!(application_surface_name(&h.s.borrow(), e).as_deref(), Some("LinearSolve"));
+    assert!(h.render(e).contains('\\'));
 }
 
 #[test]
