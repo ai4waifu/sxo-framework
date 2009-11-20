@@ -5,7 +5,7 @@ use athena::{
     numeric::to_f64_lossy,
     plot::SampleDomain,
     plot::SamplingPolicy,
-    runtime::values::arena::{application_arguments, application_head_name, number_from_id, symbol_name},
+    runtime::values::arena::{application_arguments, application_display_name, number_from_id, symbol_name},
     Session,
     types::TermId,
 };
@@ -46,7 +46,7 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
 }
 
 fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
-    if application_head_name(session, id).as_deref() != Some("Plot") {
+    if application_display_name(session, id).as_deref() != Some("Plot") {
         return None;
     }
     let args = application_arguments(session, id)?;
@@ -63,7 +63,7 @@ fn extract_mma_plot(session: &mut Session, expr: TermId, iterator: TermId) -> Op
             return list_iterator(session, expr, &parts);
         }
     }
-    if application_head_name(session, iterator).as_deref() == Some("List") {
+    if application_display_name(session, iterator).as_deref() == Some("List") {
         let parts = application_arguments(session, iterator)?;
         if parts.len() == 3 {
             return list_iterator(session, expr, &parts);
