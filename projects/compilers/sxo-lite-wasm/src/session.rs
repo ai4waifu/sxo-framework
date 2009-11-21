@@ -3,21 +3,19 @@
 use std::cell::RefCell;
 
 use athena::{
-    types::AssumptionSet,
     AthenaEngine,
-    domains::calculus::CalculusCtx,
+    domains::DomainExecutionContext,
+    domains::DomainRequest,
+    domains::DomainResult,
     domains::calculus::CalculusRequest,
     domains::calculus::CalculusResult,
     domains::calculus::CalculusValue,
     domains::calculus::DerivativeOrder,
-    types::Diagnostic,
-    types::DiagnosticCode,
-    domains::DomainRequest,
-    domains::DomainResult,
-    Session as AthenaSession,
-    types::TermId,
     domains::calculus::materialize_calculus_result_term,
-    domains::calculus::try_calculus_request,
+    types::AssumptionSet,
+    types::Diagnostic,
+    types::TermId,
+    Session as AthenaSession,
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
@@ -56,29 +54,8 @@ impl Session {
         AthenaEngine::new()
     }
 
-    fn try_evaluate_calculus(&self, expr: TermId) -> Option<Result<TermId, Diagnostic>> {
-        let mut ms = self.math_session.borrow_mut();
-        let request = {
-            let mut cc = CalculusCtx::new(&mut ms);
-            try_calculus_request(&mut cc, expr).map(DomainRequest::Calculus)?
-        };
-        Some(self.math_engine().execute_domain(&mut ms, request).and_then(|r| match r {
-            DomainResult::Calculus(c) => {
-                let mut cc = CalculusCtx::new(&mut ms);
-                Ok(materialize_calculus_result_term(&mut cc, &c))
-            }
-            other => Err(Diagnostic::new(DiagnosticCode::TypeMismatch)
-                .detail("domain", "calculus")
-                .detail("operation", "try_evaluate_calculus")
-                .detail("got", format!("{other:?}"))),
-        }))
-    }
-
-    /// Evaluate a term, preferring calculus domain lowering.
+    /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
     pub fn evaluate(&self, expr: TermId) -> TermId {
-        if let Some(Ok(term)) = self.try_evaluate_calculus(expr) {
-            return term;
-        }
         self.math_session.borrow_mut().evaluate(expr)
     }
 
@@ -91,18 +68,19 @@ impl Session {
     /// Differentiate via Athena calculus domain dispatch.
     pub fn differentiate_term(&self, expr: TermId, var: &str) -> TermId {
         let mut ms = self.math_session.borrow_mut();
+        let variable = ms.arena.symbols_mut().intern(var);
         match self.math_engine().execute_domain(
             &mut ms,
             DomainRequest::Calculus(CalculusRequest::Derivative {
                 expression: expr,
-                variable: var.to_string(),
+                variable,
                 order: DerivativeOrder::First,
                 assumptions: AssumptionSet::empty(),
             }),
         ) {
             Ok(DomainResult::Calculus(r)) => {
-                let mut cc = CalculusCtx::new(&mut ms);
-                materialize_calculus_result_term(&mut cc, &r)
+                let mut dc = DomainExecutionContext::new(&mut ms);
+                materialize_calculus_result_term(&mut dc, &r)
             }
             _ => self.math_engine().differentiate(&mut ms, expr, var),
         }
@@ -199,12 +177,18 @@ impl Session {
     /// Convenience: indefinite integral via calculus domain.
     #[allow(dead_code)]
     pub fn integrate_term(&self, expr: TermId, var: &str) -> CalculusResult<CalculusValue> {
+        let mut ms = self.math_session.borrow_mut();
+        let variable = ms.arena.symbols_mut().intern(var);
         match self
-            .execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
-                expression: expr,
-                variable: var.to_string(),
-                assumptions: AssumptionSet::empty(),
-            }))
+            .math_engine()
+            .execute_domain(
+                &mut ms,
+                DomainRequest::Calculus(CalculusRequest::Integral {
+                    expression: expr,
+                    variable,
+                    assumptions: AssumptionSet::empty(),
+                }),
+            )
             .expect("calculus Integral dispatch is infallible")
         {
             DomainResult::Calculus(c) => c,
