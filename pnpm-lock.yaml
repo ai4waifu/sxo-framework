@@ -82,6 +82,18 @@ importers:
 
   projects/runtimes/sxo-darwin-x64: {}
 
+  projects/runtimes/sxo-harness:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
   projects/runtimes/sxo-linux-x64: {}
 
   projects/runtimes/sxo-lite:
@@ -156,6 +168,8 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
+  projects/runtimes/sxo-pari-gp: {}
 
   projects/runtimes/sxo-simple-math:
     dependencies:
