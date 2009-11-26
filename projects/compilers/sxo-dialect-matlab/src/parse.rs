@@ -16,7 +16,6 @@ use athena::{
     types::{SourceSpan, TermId},
     runtime::values::arena::application_arguments,
     runtime::values::arena::get_kind,
-    runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
     runtime::values::arena::push_list,
     runtime::values::arena::push_null,
@@ -62,7 +61,7 @@ fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<TermId, SxoErr
     match items.len() {
         0 => Err(SxoError::new("matlab(oak): empty root")),
         1 => Ok(items.remove(0)),
-        _ => Ok(push_application_named(session, "CompoundExpression", items)),
+        _ => Ok(push_matlab_call(session, "CompoundExpression", items)),
     }
 }
 
@@ -74,22 +73,22 @@ fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoErro
             for (cond, body) in elseifs.iter().rev() {
                 let then_t = compound_stmts(session, body)?;
                 let cond_t = lower_expr(session, cond)?;
-                else_term = push_application_named(session, "If", vec![cond_t, then_t, else_term]);
+                else_term = push_matlab_call(session, "If", vec![cond_t, then_t, else_term]);
             }
             let then_t = compound_stmts(session, then_body)?;
             let cond_t = lower_expr(session, condition)?;
             let else_is_null = matches!(get_kind(session, else_term), Some(TermNode::Atom(Atom::Null)));
             if else_is_null && elseifs.is_empty() {
-                Ok(push_application_named(session, "If", vec![cond_t, then_t]))
+                Ok(push_matlab_call(session, "If", vec![cond_t, then_t]))
             }
             else {
-                Ok(push_application_named(session, "If", vec![cond_t, then_t, else_term]))
+                Ok(push_matlab_call(session, "If", vec![cond_t, then_t, else_term]))
             }
         }
         Statement::While { condition, body, .. } => {
             let cond_t = lower_expr(session, condition)?;
             let body_t = compound_stmts(session, body)?;
-            Ok(push_application_named(session, "While", vec![cond_t, body_t]))
+            Ok(push_matlab_call(session, "While", vec![cond_t, body_t]))
         }
         Statement::For { header, body, .. } => {
             let header_t = lower_expr(session, header)?;
@@ -97,17 +96,17 @@ fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoErro
             if application_surface_name(session, header_t).as_deref() == Some("Set") {
                 if let Some(args) = application_arguments(session, header_t) {
                     if args.len() == 2 {
-                        return Ok(push_application_named(session, "For", vec![args[0], args[1], body_t]));
+                        return Ok(push_matlab_call(session, "For", vec![args[0], args[1], body_t]));
                     }
                 }
             }
             let underscore = push_symbol_name(session, "_");
-            Ok(push_application_named(session, "For", vec![underscore, header_t, body_t]))
+            Ok(push_matlab_call(session, "For", vec![underscore, header_t, body_t]))
         }
         Statement::Try { body, catch_body, .. } => {
             let body_t = compound_stmts(session, body)?;
             let catch_t = compound_stmts(session, catch_body)?;
-            Ok(push_application_named(session, "Try", vec![body_t, catch_t]))
+            Ok(push_matlab_call(session, "Try", vec![body_t, catch_t]))
         }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
@@ -125,7 +124,7 @@ fn compound_or_single(session: &mut Session, mut items: Vec<TermId>) -> TermId {
     match items.len() {
         0 => push_null(session),
         1 => items.remove(0),
-        _ => push_application_named(session, "CompoundExpression", items),
+        _ => push_matlab_call(session, "CompoundExpression", items),
     }
 }
 
@@ -193,7 +192,7 @@ fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoErr
             if is_part_base {
                 let mut part_args = vec![expr_t];
                 part_args.extend(args);
-                Ok(push_application_named(session, "Part", part_args))
+                Ok(push_matlab_call(session, "Part", part_args))
             }
             else if let Some(head_name) = symbol_name(session, expr_t) {
                 Ok(push_matlab_call(session, &head_name, args))
@@ -222,11 +221,11 @@ fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoEr
         MatlabTokenType::DotTimes => push_semantic(session, SemanticOperator::ElementwiseMultiply, vec![l, r]),
         MatlabTokenType::Divide => push_semantic(session, SemanticOperator::Divide, vec![l, r]),
         MatlabTokenType::DotDivide => push_semantic(session, SemanticOperator::ElementwiseDivide, vec![l, r]),
-        MatlabTokenType::LeftDivide => push_application_named(session, "LinearSolve", vec![l, r]),
-        MatlabTokenType::DotLeftDivide => push_application_named(session, "DotLeftDivide", vec![l, r]),
+        MatlabTokenType::LeftDivide => push_matlab_call(session, "LinearSolve", vec![l, r]),
+        MatlabTokenType::DotLeftDivide => push_matlab_call(session, "DotLeftDivide", vec![l, r]),
         MatlabTokenType::Power => push_semantic(session, SemanticOperator::Power, vec![l, r]),
         MatlabTokenType::DotPower => push_semantic(session, SemanticOperator::ElementwisePower, vec![l, r]),
-        MatlabTokenType::Assign => push_application_named(session, "Set", vec![l, r]),
+        MatlabTokenType::Assign => push_matlab_call(session, "Set", vec![l, r]),
         MatlabTokenType::Equal => push_semantic(session, SemanticOperator::Equal, vec![l, r]),
         MatlabTokenType::NotEqual => push_semantic(session, SemanticOperator::Unequal, vec![l, r]),
         MatlabTokenType::Less => push_semantic(session, SemanticOperator::Less, vec![l, r]),
@@ -267,7 +266,7 @@ fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError
 fn lower_postfix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
     let e = lower_expr(session, &u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => push_application_named(session, "Transpose", vec![e]),
+        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => push_matlab_call(session, "Transpose", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported postfix {other:?}"))),
     })
 }

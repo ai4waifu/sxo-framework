@@ -4,7 +4,7 @@
 
 use athena::{
     ir::{ApplicationHead, SemanticOperator, TermNode, UnaryFunction},
-    runtime::values::arena::{push_application_named, push_semantic},
+    runtime::values::arena::{push_extension, push_semantic},
     types::TermId,
     Session,
 };
@@ -83,6 +83,7 @@ pub fn push_matlab_call(session: &mut Session, name: &str, args: Vec<TermId>) ->
     if let Some(op) = surface_to_semantic(name) {
         push_semantic(session, op, args)
     } else {
-        push_application_named(session, name, args)
+        let op = session.operators.intern(name);
+        push_extension(session, op, args)
     }
 }
