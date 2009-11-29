@@ -31,7 +31,12 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "test": "vitest run"
+        "test": "vitest run",
+        "report:features": "node ./dist/report-features.js"
+    },
+    "dependencies": {
+        "@sxo/mathematica": "workspace:*",
+        "@sxo/matlab": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^22.15.0",

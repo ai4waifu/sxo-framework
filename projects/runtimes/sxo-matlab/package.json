@@ -28,7 +28,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "node ./dist/feature-matrix/cli.js"
+        "report:features": "node ../sxo-harness/dist/report-features.js matlab"
     },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",

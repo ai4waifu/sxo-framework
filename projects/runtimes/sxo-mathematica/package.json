@@ -44,7 +44,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "node ./dist/feature-matrix/cli.js"
+        "report:features": "node ../sxo-harness/dist/report-features.js mathematica"
     },
     "dependencies": {
         "@vmz/commander": "0.1.26",

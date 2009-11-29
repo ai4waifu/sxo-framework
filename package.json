@@ -4,7 +4,7 @@
     "type": "module",
     "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "build:ts": "pnpm --filter @sxo/harness --filter @sxo/core --filter @sxo/mathematica --filter @sxo/matlab --filter @sxo/simple-math --filter @sxo/lite --filter @sxo/sxo run build",
+        "build:ts": "pnpm --filter @sxo/core --filter @sxo/mathematica --filter @sxo/matlab --filter @sxo/simple-math --filter @sxo/lite --filter @sxo/harness --filter @sxo/sxo run build",
         "build:native": "node scripts/build/napi.mjs --release",
         "build:lite-wasm": "node scripts/build/lite-wasm.mjs",
         "build": "pnpm run build:lite-wasm && pnpm run build:ts && pnpm run build:native",
