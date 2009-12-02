@@ -1,18 +1,18 @@
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import type { FeatureMatrix } from './matrix/types.js';
 import { validateFeatureMatrix } from './matrix/validate.js';
 import { toConsoleRows, toMarkdownTable } from './reporters/matrix.js';
 
 type DialectId = 'mathematica' | 'matlab';
 
-const LOADERS: Record<DialectId, () => Promise<FeatureMatrix>> = {
-    mathematica: async () => {
-        const mod = await import('@sxo/mathematica/feature-matrix');
-        return mod.featureMatrix as FeatureMatrix;
-    },
-    matlab: async () => {
-        const mod = await import('@sxo/matlab/feature-matrix');
-        return mod.featureMatrix as FeatureMatrix;
-    },
+const HARNESS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const RUNTIMES_ROOT = path.resolve(HARNESS_ROOT, '..');
+
+const MATRIX_ENTRY: Record<DialectId, string> = {
+    mathematica: path.join(RUNTIMES_ROOT, 'sxo-mathematica', 'dist', 'feature-matrix', 'index.js'),
+    matlab: path.join(RUNTIMES_ROOT, 'sxo-matlab', 'dist', 'feature-matrix', 'index.js'),
 };
 
 function isDialectId(value: string | undefined): value is DialectId {
@@ -20,7 +20,9 @@ function isDialectId(value: string | undefined): value is DialectId {
 }
 
 export async function loadDialectFeatureMatrix(dialect: DialectId): Promise<FeatureMatrix> {
-    return LOADERS[dialect]();
+    const entry = MATRIX_ENTRY[dialect];
+    const mod = (await import(pathToFileURL(entry).href)) as { featureMatrix: FeatureMatrix };
+    return mod.featureMatrix;
 }
 
 export async function reportDialectFeatures(
@@ -61,7 +63,8 @@ async function main(argv: string[] = process.argv): Promise<number> {
     }
 }
 
-const isDirect = process.argv[1] !== undefined && /report-features\.[cm]?js$/.test(process.argv[1].replace(/\\/g, '/'));
+const isDirect =
+    process.argv[1] !== undefined && /report-features\.[cm]?js$/.test(process.argv[1].replace(/\\/g, '/'));
 if (isDirect) {
     process.exitCode = await main();
 }
