@@ -153,12 +153,7 @@ export class Matlab {
     }
 }
 
-export {
-    featureMatrix,
-    listGaps,
-    toConsoleRows,
-    toMarkdownTable,
-} from './feature-matrix/index.js';
+export { featureMatrix } from './feature-matrix/index.js';
 export type {
     CaseKind,
     FeatureCase,
