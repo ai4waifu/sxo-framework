@@ -47,6 +47,7 @@
         "report:features": "node ../sxo-harness/dist/report-features.js mathematica"
     },
     "dependencies": {
+        "@sxo/harness": "workspace:*",
         "@vmz/commander": "0.1.26",
         "@vmz/diagnostic": "0.1.26"
     },
