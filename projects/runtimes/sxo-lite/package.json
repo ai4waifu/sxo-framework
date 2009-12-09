@@ -4,10 +4,22 @@
     "private": true,
     "type": "module",
     "description": "Browser-first WebAssembly symbolic API for SXO",
-    "repository": {"type": "git", "url": "https://github.com/vm-z/sxo-framework.git", "directory": "projects/runtimes/sxo-lite"},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vm-z/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-lite"
+    },
     "homepage": "https://github.com/vm-z/sxo-framework#readme",
-    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
-    "keywords": ["sxo", "wasm", "webassembly", "browser", "symbolic-computation"],
+    "bugs": {
+        "url": "https://github.com/vm-z/sxo-framework/issues"
+    },
+    "keywords": [
+        "sxo",
+        "wasm",
+        "webassembly",
+        "browser",
+        "symbolic-computation"
+    ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

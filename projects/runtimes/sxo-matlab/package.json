@@ -4,10 +4,22 @@
     "private": true,
     "type": "module",
     "description": "MATLAB-oriented SXO frontend for parsing, lowering, and rendering, not a kernel",
-    "repository": {"type": "git", "url": "https://github.com/vm-z/sxo-framework.git", "directory": "projects/runtimes/sxo-matlab"},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vm-z/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-matlab"
+    },
     "homepage": "https://github.com/vm-z/sxo-framework#readme",
-    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
-    "keywords": ["sxo", "matlab", "parser", "symbolic-computation", "frontend"],
+    "bugs": {
+        "url": "https://github.com/vm-z/sxo-framework/issues"
+    },
+    "keywords": [
+        "sxo",
+        "matlab",
+        "parser",
+        "symbolic-computation",
+        "frontend"
+    ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -24,7 +36,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "pnpm exec vite-node ./tests/feature-matrix/report.ts"
+        "report:features": "vite-node ./tests/feature-matrix/report.ts"
     },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",

@@ -190,7 +190,10 @@ const ALL_STUBS = [
 /** @type {StubSpec[]} */
 const STUBS = (() => {
     if (!onlyFlag) return ALL_STUBS;
-    const wanted = onlyFlag.split(',').map((s) => s.trim()).filter(Boolean);
+    const wanted = onlyFlag
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     const selected = ALL_STUBS.filter((s) => wanted.includes(s.name));
     if (selected.length !== wanted.length) {
         const known = ALL_STUBS.map((s) => s.name).join(', ');

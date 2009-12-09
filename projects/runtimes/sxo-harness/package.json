@@ -3,15 +3,22 @@
     "version": "0.0.2",
     "private": true,
     "type": "module",
-    "description": "Private SXO acceptance harness for feature matrix, doctor, and benchmark orchestration",
+    "description": "Private SXO R&D capability package: feature-matrix builders, validation, runners, and reporters",
     "repository": {
         "type": "git",
         "url": "https://github.com/vm-z/sxo-framework.git",
         "directory": "projects/runtimes/sxo-harness"
     },
     "homepage": "https://github.com/vm-z/sxo-framework#readme",
-    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
-    "keywords": ["sxo", "harness", "feature-matrix", "acceptance"],
+    "bugs": {
+        "url": "https://github.com/vm-z/sxo-framework/issues"
+    },
+    "keywords": [
+        "sxo",
+        "harness",
+        "feature-matrix",
+        "acceptance"
+    ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -25,18 +32,22 @@
             "default": "./dist/matrix/index.js"
         }
     },
-    "files": ["dist", "README.md"],
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "engines": {
         "node": ">=20"
     },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "node ./dist/report-features.js"
+        "report:features": "vite-node --script ./src/report-features.ts"
     },
     "devDependencies": {
         "@types/node": "^22.15.0",
         "typescript": "^5.8.3",
+        "vite-node": "^3.2.4",
         "vitest": "^3.2.4"
     }
 }

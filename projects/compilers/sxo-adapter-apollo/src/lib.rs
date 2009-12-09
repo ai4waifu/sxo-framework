@@ -6,13 +6,9 @@
 
 use apollo::{ColumnTable, CompileOptions, LayerSpec, Mapping, PlotSpec, compile_plot, render_svg};
 use athena::{
-    types::Diagnostic as AthenaDiagnostic,
-    plot::SampleDomain,
-    plot::SampledCurve,
-    plot::SamplingPolicy,
     Session,
-    types::TermId,
-    plot::sample_1d,
+    plot::{SampleDomain, SampledCurve, SamplingPolicy, sample_1d},
+    types::{Diagnostic as AthenaDiagnostic, TermId},
 };
 
 /// 适配层错误（结构化 code 优先，文案仅调试）。

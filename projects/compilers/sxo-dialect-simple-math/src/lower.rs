@@ -8,10 +8,10 @@
 #![allow(dead_code)]
 
 use athena::{
+    Session,
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode, UnaryFunction},
     numeric::{Number, to_f64_lossy},
     runtime::values::arena::{application_arguments, number_from_id, push_semantic, push_symbol_name, symbol_name},
-    Session,
     types::{SourceSpan, TermId},
 };
 use sxo_types::SxoError;
@@ -57,7 +57,8 @@ fn expr_from_semantic(session: &Session, op: SemanticOperator, args: &[TermId]) 
         SemanticOperator::Multiply if args.len() == 2 => {
             if is_neg_one(session, args[0]) {
                 Ok(Expr::neg(expr_from_session(session, args[1])?))
-            } else {
+            }
+            else {
                 Ok(Expr::mul(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
             }
         }
@@ -78,12 +79,8 @@ fn expr_from_semantic(session: &Session, op: SemanticOperator, args: &[TermId]) 
         SemanticOperator::Power if args.len() == 2 => {
             Ok(Expr::pow(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
         }
-        SemanticOperator::Unary(UnaryFunction::Sin) if args.len() == 1 => {
-            Ok(Expr::sin(expr_from_session(session, args[0])?))
-        }
-        SemanticOperator::Unary(UnaryFunction::Cos) if args.len() == 1 => {
-            Ok(Expr::cos(expr_from_session(session, args[0])?))
-        }
+        SemanticOperator::Unary(UnaryFunction::Sin) if args.len() == 1 => Ok(Expr::sin(expr_from_session(session, args[0])?)),
+        SemanticOperator::Unary(UnaryFunction::Cos) if args.len() == 1 => Ok(Expr::cos(expr_from_session(session, args[0])?)),
         other => Err(SxoError::new(format!("bridge: unsupported semantic `{}`", other.debug_label()))),
     }
 }
@@ -91,9 +88,7 @@ fn expr_from_semantic(session: &Session, op: SemanticOperator, args: &[TermId]) 
 /// Lift flat [`Expr`] into a session arena [`TermId`] (numbers become machine reals).
 pub fn lower_expr(session: &mut Session, e: &Expr) -> TermId {
     match e {
-        Expr::Num(n) => session
-            .arena
-            .push(TermNode::Atom(Atom::Number(Number::machine(*n))), SourceSpan::default()),
+        Expr::Num(n) => session.arena.push(TermNode::Atom(Atom::Number(Number::machine(*n))), SourceSpan::default()),
         Expr::Var(v) => push_symbol_name(session, v),
         Expr::Neg(a) => {
             let inner = lower_expr(session, a);

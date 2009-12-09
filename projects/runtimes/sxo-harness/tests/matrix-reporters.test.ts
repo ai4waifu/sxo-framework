@@ -29,9 +29,7 @@ describe('matrix reporters', () => {
     });
 
     it('lists gap rows', () => {
-        expect(listGaps(sample)).toEqual([
-            { name: 'Map', id: 'map.gap', input: 'Map[f,{1}]', notes: 'symbolic' },
-        ]);
+        expect(listGaps(sample)).toEqual([{ name: 'Map', id: 'map.gap', input: 'Map[f,{1}]', notes: 'symbolic' }]);
     });
 
     it('renders a markdown table with counts', () => {

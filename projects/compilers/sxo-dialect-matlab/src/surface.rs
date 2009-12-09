@@ -3,10 +3,10 @@
 //! Strings here are **dialect display / parse maps only** — never Athena core dispatch.
 
 use athena::{
+    Session,
     ir::{ApplicationHead, SemanticOperator, TermNode, UnaryFunction},
     runtime::values::arena::{push_extension, push_semantic},
     types::TermId,
-    Session,
 };
 
 /// Map an Athena-facing surface head (often Mathematica-shaped shared IR labels) to a closed op.
@@ -82,7 +82,8 @@ pub fn application_surface_name(session: &Session, id: TermId) -> Option<String>
 pub fn push_matlab_call(session: &mut Session, name: &str, args: Vec<TermId>) -> TermId {
     if let Some(op) = surface_to_semantic(name) {
         push_semantic(session, op, args)
-    } else {
+    }
+    else {
         let op = session.operators.intern(name);
         push_extension(session, op, args)
     }

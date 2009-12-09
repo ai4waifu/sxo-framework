@@ -1,9 +1,6 @@
 //! Frontend number literal parse/render (SXO-owned; Athena holds [`Number`] only).
 
-use athena::{
-    numeric::Number,
-    numeric::number_from_wire,
-};
+use athena::numeric::{Number, number_from_wire};
 use athena_types::WireNumber;
 
 /// Parse source text into kernel [`Number`] via wire (integer, rational, or machine float).

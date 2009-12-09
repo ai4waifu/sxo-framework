@@ -1,13 +1,4 @@
-import type {
-    CaseKind,
-    FeatureBackend,
-    FeatureCase,
-    FeatureEffect,
-    FeatureEntry,
-    FeatureHost,
-    FeatureMatrix,
-    FeatureStatus,
-} from './types.js';
+import type { CaseKind, FeatureBackend, FeatureCase, FeatureEffect, FeatureEntry, FeatureHost, FeatureMatrix, FeatureStatus } from './types.js';
 
 /** Optional fields shared by case constructors. */
 export type FeatureCaseOptions = {

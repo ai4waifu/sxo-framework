@@ -13,12 +13,7 @@ export type FeatureHost = 'native' | 'wasm';
  * Backend identity for acceptance runs.
  * External reference backends are local opt-in only.
  */
-export type FeatureBackend =
-    | 'internal-athena'
-    | 'internal-titan'
-    | 'reference-wolfram'
-    | 'reference-matlab'
-    | 'reference-pari-gp';
+export type FeatureBackend = 'internal-athena' | 'internal-titan' | 'reference-wolfram' | 'reference-matlab' | 'reference-pari-gp';
 
 export type FeatureCase = {
     id: string;

@@ -51,9 +51,7 @@ export function runFeatureCase(hooks: FeatureFixtureHooks, c: FeatureCase): Feat
         const rendered = hooks.parse(c.input);
         const needle = c.expected ?? '';
         if (!rendered.includes(needle)) {
-            return fail(
-                `${c.kind} \`${c.id}\`: render ${JSON.stringify(rendered)} does not contain ${JSON.stringify(needle)}`,
-            );
+            return fail(`${c.kind} \`${c.id}\`: render ${JSON.stringify(rendered)} does not contain ${JSON.stringify(needle)}`);
         }
         return { status: 'ok' };
     }
@@ -90,9 +88,7 @@ export function runFeatureCase(hooks: FeatureFixtureHooks, c: FeatureCase): Feat
             }
             return { status: 'ok' };
         }
-        const okNegative = hooks.isNegativeSuccess
-            ? hooks.isNegativeSuccess(c.input, out, threw)
-            : threw;
+        const okNegative = hooks.isNegativeSuccess ? hooks.isNegativeSuccess(c.input, out, threw) : threw;
         if (!okNegative) {
             return fail(`negative \`${c.id}\`: did not satisfy dialect negative success rule`);
         }

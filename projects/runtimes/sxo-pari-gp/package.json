@@ -1,13 +1,27 @@
 {
-  "name": "@sxo/pari-gp",
-  "version": "0.0.2",
-  "private": true,
-  "type": "module",
-  "description": "SXO PARI/GP dialect placeholder. No parser or evaluator is shipped yet.",
-  "license": "Apache-2.0",
-  "files": ["README.md"],
-  "keywords": ["sxo", "pari", "pari-gp", "computer-algebra", "symbolic-computation"],
-  "repository": {"type": "git", "url": "https://github.com/ai4waifu/sxo-framework.git", "directory": "projects/runtimes/sxo-pari-gp"},
-  "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-pari-gp",
-  "bugs": {"url": "https://github.com/ai4waifu/sxo-framework/issues"}
+    "name": "@sxo/pari-gp",
+    "version": "0.0.2",
+    "private": true,
+    "type": "module",
+    "description": "SXO PARI/GP dialect placeholder. No parser or evaluator is shipped yet.",
+    "license": "Apache-2.0",
+    "files": [
+        "README.md"
+    ],
+    "keywords": [
+        "sxo",
+        "pari",
+        "pari-gp",
+        "computer-algebra",
+        "symbolic-computation"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-pari-gp"
+    },
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-pari-gp",
+    "bugs": {
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
+    }
 }
