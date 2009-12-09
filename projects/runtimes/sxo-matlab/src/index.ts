@@ -153,15 +153,6 @@ export class Matlab {
     }
 }
 
-export { featureMatrix } from './feature-matrix/index.js';
-export type {
-    CaseKind,
-    FeatureCase,
-    FeatureEffect,
-    FeatureEntry,
-    FeatureStatus,
-} from './feature-matrix/index.js';
-
 /** Shared default MATLAB frontend (stateless S0). */
 export const matlab = Matlab.create();
 

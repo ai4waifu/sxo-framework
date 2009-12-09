@@ -1,6 +1,7 @@
 import { runFeatureCase, validateFeatureMatrix } from '@sxo/harness';
-import { Matlab, featureMatrix, matlab } from '@sxo/matlab';
+import { Matlab, matlab } from '@sxo/matlab';
 import { describe, expect, it } from 'vitest';
+import { featureMatrix } from './feature-matrix/index.js';
 
 const ml = Matlab.create({ autoSimplify: true });
 

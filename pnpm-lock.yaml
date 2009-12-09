@@ -151,10 +151,6 @@ importers:
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
 
   projects/runtimes/sxo-matlab:
-    dependencies:
-      '@sxo/harness':
-        specifier: workspace:*
-        version: link:../sxo-harness
     optionalDependencies:
       '@sxo/sxo-darwin-arm64':
         specifier: workspace:*
@@ -169,12 +165,18 @@ importers:
         specifier: workspace:*
         version: link:../sxo-win32-x64
     devDependencies:
+      '@sxo/harness':
+        specifier: workspace:*
+        version: link:../sxo-harness
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+      vite-node:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)

@@ -100,10 +100,11 @@ teams avoid promising execution when their actual product only performs source a
 
 ## 📊 Feature matrix and reports
 
-The package exports `./feature-matrix` and provides a report command after building:
+Capability status lives under `tests/feature-matrix/` (R&D / acceptance only — not a product export). Use the report
+script after installing workspace deps:
 
 ```bash
-node ./dist/feature-matrix/cli.js
+pnpm --filter @sxo/matlab report:features
 ```
 
 Interpret each state carefully:
