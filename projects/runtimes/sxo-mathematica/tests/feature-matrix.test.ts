@@ -1,6 +1,7 @@
 import { runFeatureCase, validateFeatureMatrix } from '@sxo/harness';
-import { Mathematica, featureMatrix, mathematica } from '@sxo/mathematica';
+import { Mathematica, mathematica } from '@sxo/mathematica';
 import { describe, expect, it } from 'vitest';
+import { featureMatrix } from './feature-matrix/index.js';
 
 const mma = Mathematica.create({ autoSimplify: true });
 
