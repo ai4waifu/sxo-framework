@@ -1,4 +1,4 @@
-﻿[workspace]
+[workspace]
 resolver = "2"
 members = [
     "projects/compilers/sxo-types",
@@ -12,7 +12,7 @@ members = [
 default-members = ["projects/compilers/sxo-dialect-mathematica"]
 
 [workspace.package]
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["SXO Contributors"]

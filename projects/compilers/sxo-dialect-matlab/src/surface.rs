@@ -72,7 +72,7 @@ pub fn application_surface_name(session: &Session, id: TermId) -> Option<String>
     match session.arena.get(id)? {
         TermNode::Application { head, .. } => match *head {
             ApplicationHead::Semantic(op) => Some(semantic_to_surface(op).to_string()),
-            ApplicationHead::Extension(oid) => session.operators.name(oid).map(str::to_string),
+            ApplicationHead::Extension(oid) => session.extensions.display_name(oid).map(str::to_string),
         },
         _ => None,
     }
@@ -84,7 +84,7 @@ pub fn push_matlab_call(session: &mut Session, name: &str, args: Vec<TermId>) ->
         push_semantic(session, op, args)
     }
     else {
-        let op = session.operators.intern(name);
+        let op = session.extensions.intern(name);
         push_extension(session, op, args)
     }
 }

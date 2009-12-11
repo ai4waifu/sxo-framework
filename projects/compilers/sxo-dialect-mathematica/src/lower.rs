@@ -101,7 +101,7 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
         push_semantic(session, op, args)
     }
     else {
-        let op = session.operators.intern(name);
+        let op = session.extensions.intern(name);
         push_extension(session, op, args)
     }
 }
@@ -181,9 +181,9 @@ fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
 /// and calculus surface (`D` / `Integrate` / `Limit`) into [`AthenaRequest::Goal`].
 /// Other forms lower to [`AthenaRequest::Term`].
 pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
-    match w {
-        WExpr::Call { head, args } => match head.as_ref() {
-            WExpr::Atom(WAtom::Symbol(name)) => match (name.as_str(), args.as_slice()) {
+    if let WExpr::Call { head, args } = w {
+        if let WExpr::Atom(WAtom::Symbol(name)) = head.as_ref() {
+            match (name.as_str(), args.as_slice()) {
                 ("D", [expr, spec]) => {
                     if let Some(variable) = symbol_of(session, spec) {
                         let expression = lower_wexpr(session, expr);
@@ -332,10 +332,8 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                     }
                 }
                 _ => {}
-            },
-            _ => {}
-        },
-        _ => {}
+            }
+        }
     }
     AthenaRequest::Term(lower_wexpr(session, w))
 }
@@ -698,7 +696,7 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
                 }
                 ApplicationHead::Semantic(sem) => semantic_to_surface(sem).to_string(),
                 ApplicationHead::Extension(id) => {
-                    let name = session.operators.name(id).unwrap_or("?").to_string();
+                    let name = session.extensions.display_name(id).unwrap_or("?").to_string();
                     if name == "Application" && !args.is_empty() {
                         let head = wexpr_from_session(session, args[0]);
                         let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();

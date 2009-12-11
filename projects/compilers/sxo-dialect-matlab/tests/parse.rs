@@ -4,13 +4,9 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session,
-    execution::{EvalKind, evaluate_term},
-    ir::{Atom, TermNode},
-    numeric::number_from_wire,
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
-use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
 use sxo_dialect_matlab::{
     application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg,
@@ -52,10 +48,6 @@ impl H {
         }
     }
 
-    fn outcome_kind(&self, id: Tid) -> EvalKind {
-        evaluate_term(&mut self.s.borrow_mut(), id).kind
-    }
-
     fn i(&self, n: i64) -> Tid {
         push_int(&mut self.s.borrow_mut(), n)
     }
@@ -78,13 +70,6 @@ impl H {
 
     fn null(&self) -> Tid {
         push_null(&mut self.s.borrow_mut())
-    }
-
-    fn rational(&self, n: i64, d: i64) -> Tid {
-        let wire = WireNumber::rational_i64(n, d).unwrap();
-        let num = number_from_wire(&wire).unwrap();
-        let span = athena::types::SourceSpan::default();
-        self.s.borrow_mut().arena.push(TermNode::Atom(Atom::Number(num)), span)
     }
 
     fn eq(&self, a: Tid, b: Tid) -> bool {
