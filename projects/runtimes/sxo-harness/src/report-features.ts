@@ -1,6 +1,5 @@
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import type { FeatureMatrix } from './matrix/types.js';
 import { validateFeatureMatrix } from './matrix/validate.js';
 import { toConsoleRows, toMarkdownTable } from './reporters/matrix.js';
