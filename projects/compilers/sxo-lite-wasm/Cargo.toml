@@ -25,4 +25,6 @@ wasm-bindgen = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1"
+# Both major lines appear in the graph (`rand` → 0.3, direct → 0.4). Feature alone is not enough — also see `.cargo/config.toml`.
 getrandom = { version = "0.4", features = ["wasm_js"] }
+getrandom_0_3 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
