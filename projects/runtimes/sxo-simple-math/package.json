@@ -1,6 +1,6 @@
 {
     "name": "@sxo/simple-math",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "private": true,
     "type": "module",
     "description": "Small, predictable symbolic expression API for SXO",

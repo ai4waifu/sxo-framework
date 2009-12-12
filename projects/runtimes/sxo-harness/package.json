@@ -1,6 +1,6 @@
 {
     "name": "@sxo/harness",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "private": true,
     "type": "module",
     "description": "Private SXO R&D capability package: feature-matrix builders, validation, runners, and reporters",
