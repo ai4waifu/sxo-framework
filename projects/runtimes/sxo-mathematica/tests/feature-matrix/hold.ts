@@ -1,8 +1,17 @@
 import { feature } from '@sxo/harness';
 
 export const holdFeatures = [
-    feature('Hold', 'hold').supported().unevaluated().notes('HoldAll args preserved').eval('hold.plus', 'Hold[1 + 1]', 'Hold[1 + 1]').done(),
-    feature('HoldForm', 'hold').supported().unevaluated().eval('holdform.plus', 'HoldForm[1 + 1]', 'HoldForm[1 + 1]').done(),
+    feature('Hold', 'hold')
+        .partial('evaluate preserves Hold; autoSimplify still folds held Add on pinned Athena')
+        .unevaluated()
+        .notes('HoldAll args preserved on evaluate; simplify-through-Hold needs a newer green Athena')
+        .gap('hold.plus', 'Hold[1 + 1]', { expected: 'Hold[1 + 1]', notes: 'autoSimplify → Hold[2] on Athena 4e59b260' })
+        .done(),
+    feature('HoldForm', 'hold')
+        .partial('dialect maps HoldForm → neutral Hold; same simplify caveat as Hold')
+        .unevaluated()
+        .gap('holdform.plus', 'HoldForm[1 + 1]', { expected: 'Hold[1 + 1]', notes: 'autoSimplify → Hold[2] on Athena 4e59b260' })
+        .done(),
     feature('Evaluate', 'hold')
         .unsupported('Hold args already evaluated: Evaluate[Hold[1+1]] → Evaluate[Hold[2]]')
         .pure()

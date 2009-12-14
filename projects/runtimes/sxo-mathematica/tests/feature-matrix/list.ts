@@ -10,10 +10,10 @@ export const listFeatures = [
     feature('Part', 'list')
         .supported()
         .pure()
-        .notes('1-based Part; [[0]] returns head List')
+        .notes('1-based Part; [[0]] → empty list (kernel Index contract)')
         .eval('part.infix', '{1, 2, 3}[[2]]', '2')
         .eval('part.head', 'Part[{1, 2, 3}, 1]', '1')
-        .eval('part.zero', '{1, 2, 3}[[0]]', 'List')
+        .eval('part.zero', '{1, 2, 3}[[0]]', '{}')
         .done(),
     feature('Range', 'list').supported().pure().notes('Range[n] integer sequence').eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
     feature('Map', 'list')

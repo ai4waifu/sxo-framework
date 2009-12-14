@@ -53,12 +53,23 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Te
     Ok((term, resolved))
 }
 
-/// Fork `root` into a fresh host [`Session`] via Mathematica Form round-trip.
-fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Expression {
-    let w = session.to_mathematica(root);
+/// Fork `root` into a fresh host [`Session`] via dialect-native round-trip.
+///
+/// MATLAB must **not** go through Mathematica Form — that rewrites surface heads
+/// (`diff` / `eye` / …) and breaks [`matlab::lower_request`].
+fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<Expression> {
     let fresh = Session::new();
-    let root = fresh.lower_mathematica(&w);
-    Expression { session: fresh, root, dialect }
+    let root = match dialect {
+        Dialect::Matlab => {
+            let text = session.render_as_matlab(root);
+            fresh.parse_matlab(&text).map_err(map_err)?
+        }
+        Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+            let w = session.to_mathematica(root);
+            fresh.lower_mathematica(&w)
+        }
+    };
+    Ok(Expression { session: fresh, root, dialect })
 }
 
 /// Return the SXO engine version string.
@@ -90,7 +101,7 @@ impl Expression {
     /// Differentiate with respect to `var`.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
         out.root = out.session.differentiate_term(out.root, &var);
         Ok(out)
     }
@@ -98,16 +109,16 @@ impl Expression {
     /// Simplify via the engine (`Simplify` head).
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
         out.root = out.session.simplify_term(out.root);
         Ok(out)
     }
 
-    /// Evaluate (canonical rewrite) this expression.
+    /// Evaluate via dialect `lower_request` (Session / Control / Domain Goals).
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
-        out.root = out.session.evaluate(out.root);
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
+        out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
         Ok(out)
     }
 
@@ -165,13 +176,23 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     Ok(Expression { session, root, dialect: resolved })
 }
 
+/// Top-level `evaluate(expr, dialect?)` — parse + dialect `lower_request` path.
+#[napi]
+pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
+    let d = dialect_from_str(dialect)?;
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, &input, d)?;
+    let root = session.evaluate_form(term, resolved).map_err(map_err)?;
+    Ok(Expression { session, root, dialect: resolved })
+}
+
 /// Top-level `simplify(expr, dialect?)`.
 #[napi]
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, &input, d)?;
-    let evaluated = session.evaluate(term);
+    let evaluated = session.evaluate_form(term, resolved).map_err(map_err)?;
     let root = session.simplify_term(evaluated);
     Ok(Expression { session, root, dialect: resolved })
 }

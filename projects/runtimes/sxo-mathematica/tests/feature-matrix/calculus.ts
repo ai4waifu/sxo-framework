@@ -30,11 +30,11 @@ export const calculusFeatures = [
         })
         .done(),
     feature('Limit', 'calculus')
-        .partial('sinc and Infinity OK; (1+x)^(1/x) still gap')
+        .partial('sinc OK; Infinity on Power[x,-1] unevaluated on pinned Athena 4e59b260')
         .pure()
         .eval('limit.sinc', 'Limit[Sin[x]/x, x -> 0]', '1')
         .gap('limit.exp', 'Limit[(1 + x)^(1/x), x -> 0]', { expected: 'E', notes: 'currently 1^0^-1' })
-        .eval('limit.inf', 'Limit[1/x, x -> Infinity]', '0')
+        .gap('limit.inf', 'Limit[1/x, x -> Infinity]', { expected: '0', notes: 'pinned Athena returns Limit[x^-1, {x, Infinity}]' })
         .done(),
     feature('Series', 'calculus')
         .partial('Exp order-2 OK as float 0.5; order-3 drops /6 (…+x^3 not …+x^3/6); Sin series wrong; Normal wrapper unevaluated')

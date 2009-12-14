@@ -41,11 +41,19 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Te
     Ok((term, resolved))
 }
 
-fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Expression {
-    let w = session.to_mathematica(root);
+fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<Expression, JsValue> {
     let fresh = Session::new();
-    let root = fresh.lower_mathematica(&w);
-    Expression { session: fresh, root, dialect }
+    let root = match dialect {
+        Dialect::Matlab => {
+            let text = session.render_as_matlab(root);
+            fresh.parse_matlab(&text).map_err(map_err)?
+        }
+        Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+            let w = session.to_mathematica(root);
+            fresh.lower_mathematica(&w)
+        }
+    };
+    Ok(Expression { session: fresh, root, dialect })
 }
 
 /// Return the SXO engine version string.
@@ -75,25 +83,24 @@ impl Expression {
     }
 
     /// Differentiate with respect to `var`.
-    pub fn d(&self, var: &str) -> Expression {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
+    pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
         out.root = out.session.differentiate_term(out.root, var);
-        out
+        Ok(out)
     }
 
     /// Simplify via `Session`.
-    pub fn simplify(&self) -> Expression {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
-        let evaluated = out.session.evaluate(out.root);
-        out.root = out.session.simplify_term(evaluated);
-        out
+    pub fn simplify(&self) -> Result<Expression, JsValue> {
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
+        out.root = out.session.simplify_term(out.root);
+        Ok(out)
     }
 
-    /// Evaluate (canonical rewrite) this expression.
-    pub fn evaluate(&self) -> Expression {
-        let mut out = fork_expression(&self.session, self.root, self.dialect);
-        out.root = out.session.evaluate(out.root);
-        out
+    /// Evaluate via dialect `lower_request` (Session / Control / Domain Goals).
+    pub fn evaluate(&self) -> Result<Expression, JsValue> {
+        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
+        out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
+        Ok(out)
     }
 
     /// Render as string in the expression's dialect.
@@ -134,6 +141,16 @@ impl Expression {
     }
 }
 
+/// Top-level `evaluate` — parse + dialect `lower_request` path.
+#[wasm_bindgen]
+pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
+    let d = dialect_from_str(dialect)?;
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, input, d)?;
+    let root = session.evaluate_form(term, resolved).map_err(map_err)?;
+    Ok(Expression { session, root, dialect: resolved })
+}
+
 /// Top-level `d`.
 #[wasm_bindgen]
 pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
@@ -150,7 +167,7 @@ pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, input, d)?;
-    let evaluated = session.evaluate(term);
+    let evaluated = session.evaluate_form(term, resolved).map_err(map_err)?;
     let root = session.simplify_term(evaluated);
     Ok(Expression { session, root, dialect: resolved })
 }

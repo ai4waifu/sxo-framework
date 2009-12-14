@@ -19,6 +19,7 @@ export type NativeExpression = {
 export type NativeBinding = {
     version(): string;
     expression(input: string, dialect?: string | null): NativeExpression;
+    evaluate(input: string, dialect?: string | null): NativeExpression;
     d(input: string, varName: string, dialect?: string | null): NativeExpression;
     simplify(input: string, dialect?: string | null): NativeExpression;
     plotSvg(input: string, dialect?: string | null): string;

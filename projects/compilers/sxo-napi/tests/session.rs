@@ -109,6 +109,46 @@ fn module_does_not_clobber_session_binding() {
 }
 
 #[test]
+fn probe_eval_forms() {
+    let session = Session::new();
+    for (input, dialect) in [
+        ("diff(x^3, x)", Dialect::Matlab),
+        ("int(x^2, x)", Dialect::Matlab),
+        ("Hold[1+1]", Dialect::Mathematica),
+        ("Solve[x^2 == 1, x]", Dialect::Mathematica),
+        ("Integrate[x^2, x]", Dialect::Mathematica),
+        ("0 < 1 < 2", Dialect::Mathematica),
+        ("1 < 3 > 2", Dialect::Mathematica),
+        ("x^2 == 1", Dialect::Mathematica),
+        ("Equal[Power[x, 2], 1]", Dialect::Mathematica),
+    ] {
+        let root = match dialect {
+            Dialect::Matlab => session.parse_matlab(input).unwrap(),
+            _ => {
+                let w = session.parse_mathematica(input).unwrap();
+                session.lower_mathematica(&w)
+            }
+        };
+        let kind = session.with_math_mut(|s| {
+            let req = match dialect {
+                Dialect::Matlab => sxo_dialect_matlab::lower_request(s, root),
+                _ => {
+                    let w = sxo_dialect_mathematica::wexpr_from_session(s, root);
+                    sxo_dialect_mathematica::lower_request(s, &w)
+                }
+            };
+            req.kind_name().to_string()
+        });
+        let out = session.evaluate_form(root, dialect).unwrap();
+        let rendered = match dialect {
+            Dialect::Matlab => session.render_as_matlab(out),
+            _ => session.render_as_wolfram(out),
+        };
+        eprintln!("IN={input} kind={kind} out={rendered}");
+    }
+}
+
+#[test]
 fn try_plot_svg_mathematica() {
     let session = Session::new();
     let w = session.parse_mathematica("Plot[x^2, {x, -1, 1}]").unwrap();

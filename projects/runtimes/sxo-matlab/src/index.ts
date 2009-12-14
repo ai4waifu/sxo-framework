@@ -108,6 +108,10 @@ export class Matlab {
      * (`autoSimplify`, default true).
      */
     evaluate(input: ExprInput): Expression {
+        if (typeof input === 'string') {
+            const evaluated = Expression.fromNative(this, loadNative().evaluate(input, MATLAB_DIALECT));
+            return this.#autoSimplify ? this.simplify(evaluated) : evaluated;
+        }
         const parsed = this.parse(input);
         const evaluated = Expression.fromNative(this, parsed.native.evaluate());
         return this.#autoSimplify ? this.simplify(evaluated) : evaluated;

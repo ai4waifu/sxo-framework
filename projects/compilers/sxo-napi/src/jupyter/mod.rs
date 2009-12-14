@@ -290,7 +290,7 @@ fn evaluate_mathematica(eng: &Session, code: &str) -> Result<EvalOut, String> {
         let plain = eng.render_as_wolfram(term);
         return Ok(EvalOut::Svg { svg, plain });
     }
-    let evaluated = eng.evaluate(term);
+    let evaluated = eng.evaluate_form(term, sxo_types::Dialect::Mathematica).map_err(|e| e.message.clone())?;
     let simplified = eng.simplify_term(evaluated);
     Ok(EvalOut::Text(eng.render_as_wolfram(simplified)))
 }

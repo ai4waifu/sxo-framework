@@ -4,11 +4,19 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session as AthenaSession,
+    api::{AthenaRequest, DomainGoal},
     domains::{
         DomainExecutionContext, DomainRequest, DomainResult,
         calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, materialize_calculus_result_term},
+        linear_algebra::{ExactDetResult, ExactSolveResult, LinearAlgebraResult, LinearAlgebraValue, MatrixEntry, MatrixValue},
     },
-    types::{AssumptionSet, Diagnostic, TermId},
+    execution::push_number,
+    numeric::{Number, Rational},
+    runtime::values::{
+        arena::push_list,
+        numeric_clone::{clone_integer, clone_rational},
+    },
+    types::{AssumptionSet, Diagnostic, ResultId, TermId},
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
@@ -61,8 +69,44 @@ impl Session {
     /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
     ///
     /// Own `Set` bindings persist on this host session until cleared.
+    /// Prefer [`Self::evaluate_form`] for dialect surface that needs `lower_request`.
     pub fn evaluate(&self, expr: TermId) -> TermId {
         self.math_session.borrow_mut().evaluate(expr)
+    }
+
+    /// Dialect Form → [`lower_request`] → execute → symbolic term.
+    ///
+    /// Domain Goals go through [`AthenaEngine::execute_domain`] then host-side
+    /// materialization. Pinned Athena tips may leave `ComputationResult.symbolic_term`
+    /// empty for LinearAlgebra / Series / Residue payloads.
+    pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
+        match dialect {
+            Dialect::Matlab => {
+                let mut ms = self.math_session.borrow_mut();
+                let request = matlab::lower_request(&mut ms, root);
+                self.execute_lowered(&mut ms, request, root)
+            }
+            Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+                let w = self.to_mathematica(root);
+                let mut ms = self.math_session.borrow_mut();
+                let request = mathematica::lower_request(&mut ms, &w);
+                let fallback = mathematica::lower_wexpr(&mut ms, &w);
+                self.execute_lowered(&mut ms, request, fallback)
+            }
+        }
+    }
+
+    fn execute_lowered(&self, ms: &mut AthenaSession, request: AthenaRequest, fallback: TermId) -> Result<TermId, SxoError> {
+        match request {
+            AthenaRequest::Goal(DomainGoal::Dispatch(domain)) => match self.math_engine().execute_domain(ms, domain) {
+                Ok(domain) => Ok(materialize_domain_term(ms, domain).unwrap_or(fallback)),
+                Err(d) => Err(SxoError::from_diagnostic(d)),
+            },
+            other => match self.math_engine().execute_request(ms, other) {
+                Ok(result_id) => Ok(symbolic_or_fallback(ms, result_id, fallback)),
+                Err(d) => Err(SxoError::from_diagnostic(d)),
+            },
+        }
     }
 
     /// Clear Athena Own symbol definitions for this host session.
@@ -119,16 +163,8 @@ impl Session {
     /// Parse Wolfram, lower via [`mathematica::lower_request`], execute.
     pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        let mut ms = self.math_session.borrow_mut();
-        let request = mathematica::lower_request(&mut ms, &w);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms
-                .results
-                .get(result_id)
-                .and_then(|r| r.symbolic_term)
-                .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        let root = self.lower_mathematica(&w);
+        self.evaluate_form(root, Dialect::Mathematica)
     }
 
     /// Differentiate Wolfram input.
@@ -150,12 +186,7 @@ impl Session {
     /// Parse MATLAB, lift via [`matlab::lower_request`], execute.
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         let term = self.parse_matlab(input)?;
-        let mut ms = self.math_session.borrow_mut();
-        let request = matlab::lower_request(&mut ms, term);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(term)),
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        self.evaluate_form(term, Dialect::Matlab)
     }
 
     /// Differentiate MATLAB input.
@@ -205,4 +236,57 @@ impl Session {
     pub fn structural_eq(&self, a: TermId, b: TermId) -> bool {
         self.math_session.borrow().arena.structural_eq(a, b)
     }
+}
+
+fn symbolic_or_fallback(ms: &AthenaSession, result_id: ResultId, fallback: TermId) -> TermId {
+    ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)
+}
+
+fn materialize_domain_term(ms: &mut AthenaSession, domain: DomainResult) -> Option<TermId> {
+    match domain {
+        DomainResult::Calculus(r) => {
+            let mut dc = DomainExecutionContext::new(ms);
+            Some(materialize_calculus_result_term(&mut dc, &r))
+        }
+        DomainResult::LinearAlgebra(LinearAlgebraResult::Ok { value }) => match value {
+            LinearAlgebraValue::Matrix(m) => matrix_to_nested_list(ms, &m).ok(),
+            LinearAlgebraValue::ExactSolve(ExactSolveResult { particular: Some(m), .. }) => matrix_to_nested_list(ms, &m).ok(),
+            LinearAlgebraValue::ExactDet(ExactDetResult { det, .. }) => Some(rational_to_term(ms, &det)),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn rational_to_term(session: &mut AthenaSession, r: &Rational) -> TermId {
+    if r.is_integer() {
+        if let Some(i) = r.numerator().to_i64() {
+            return session.builder().int(i, Default::default());
+        }
+    }
+    push_number(session, Number::from_rational_normalized(clone_rational(r)))
+}
+
+fn matrix_to_nested_list(session: &mut AthenaSession, m: &MatrixValue) -> Result<TermId, Diagnostic> {
+    let (rows, cols) = (m.shape().rows, m.shape().cols);
+    let mut out = Vec::with_capacity(rows as usize);
+    for i in 0..rows {
+        let mut row = Vec::with_capacity(cols as usize);
+        for j in 0..cols {
+            match m.get(i, j)? {
+                MatrixEntry::Rational(r) => row.push(rational_to_term(session, &r)),
+                MatrixEntry::Integer(n) => {
+                    if let Some(i64v) = n.to_i64() {
+                        row.push(session.builder().int(i64v, Default::default()));
+                    }
+                    else {
+                        row.push(push_number(session, Number::integer(clone_integer(&n))));
+                    }
+                }
+                MatrixEntry::MachineF64(x) => row.push(push_number(session, Number::machine(x))),
+            }
+        }
+        out.push(push_list(session, row));
+    }
+    Ok(push_list(session, out))
 }

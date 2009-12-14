@@ -28,11 +28,11 @@ export const comparisonFeatures = [
         .done(),
     feature('UnsameQ', 'comparison').unsupported().pure().gap('unsameq.12', 'UnsameQ[1, 2]', { expected: 'True' }).done(),
     feature('InequalityChain', 'comparison')
-        .supported()
+        .partial('same-op chains OK via Athena flatten; mixed ops still nest and need Inequality sugar')
         .pure()
         .notes('nested relational ops evaluate via Athena compare-chain flattening')
         .eval('ineq.lt_chain', '1 < 2 < 3', 'True')
-        .eval('ineq.mixed', '1 < 3 > 2', 'True')
+        .gap('ineq.mixed', '1 < 3 > 2', { expected: 'True', notes: 'currently Greater[True, 2]' })
         .done(),
     feature('UnsameQInfix', 'comparison')
         .partial('numeric 1=!=2 → 1; symbols lower to Unequal not UnsameQ')

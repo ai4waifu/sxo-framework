@@ -236,6 +236,29 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         });
                     }
                 }
+                ("Series", [expr, spec]) => {
+                    if let Some((variable, center, order)) = series_spec(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Series {
+                            expression,
+                            variable,
+                            center,
+                            order,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("Residue", [expr, spec]) => {
+                    if let Some((variable, point)) = residue_spec(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Residue {
+                            expression,
+                            variable,
+                            point,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);
@@ -461,6 +484,32 @@ fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApp
         other => LimitApproach::Finite(lower_wexpr(session, other)),
     };
     Some((variable, approach, LimitDirection::TwoSided))
+}
+
+/// `Series` iterator `{var, center, order}`.
+fn series_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId, u32)> {
+    let items = list_items(spec)?;
+    match items {
+        [var, center, order] => {
+            let variable = symbol_of(session, var)?;
+            let center = lower_wexpr(session, center);
+            let n = exact_i64(order)?;
+            if n < 0 {
+                return None;
+            }
+            Some((variable, center, n as u32))
+        }
+        _ => None,
+    }
+}
+
+/// `Residue` iterator `{var, point}`.
+fn residue_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId)> {
+    let items = list_items(spec)?;
+    match items {
+        [var, point] => Some((symbol_of(session, var)?, lower_wexpr(session, point))),
+        _ => None,
+    }
 }
 
 fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {

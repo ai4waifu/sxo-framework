@@ -9,9 +9,14 @@ use athena::{
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder},
+        linear_algebra::MatrixValue,
     },
     ir::{Atom, SemanticOperator, TermNode},
-    runtime::values::arena::{application_arguments, number_from_id, push_semantic, symbol_name},
+    numeric::{Integer, Rational},
+    runtime::values::{
+        arena::{application_arguments, number_from_id, push_semantic, symbol_name},
+        numeric_clone::{clone_integer, clone_rational},
+    },
     types::{AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId},
 };
 
@@ -74,11 +79,64 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
         Some("For") | Some("CountedLoop") => {
             if let Some(args) = application_arguments(session, term) {
                 if let [variable, iterator, body] = args.as_slice() {
+                    let body_req = lower_request(session, *body);
+                    if matches!(body_req, AthenaRequest::Term(_)) {
+                        return AthenaRequest::Control(ControlPlan::CountedLoop {
+                            variable: *variable,
+                            iterator: *iterator,
+                            body: Box::new(body_req),
+                        });
+                    }
+                    // Athena CountedLoop only unrolls `Term` bodies. Assignment / Sequence
+                    // bodies expand here into Define(var) + body steps.
+                    if let (Some(symbol), Some(items)) =
+                        (symbol_atom(session, *variable), expand_counted_iterator(session, *iterator))
+                    {
+                        let mut steps = Vec::with_capacity(items.len().saturating_mul(2));
+                        for item in items {
+                            steps.push(AthenaRequest::Command(SessionCommand::Define {
+                                symbol,
+                                value: item,
+                                kind: BindingKind::Session,
+                                evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                            }));
+                            steps.push(lower_request(session, *body));
+                        }
+                        return AthenaRequest::Control(ControlPlan::Sequence { steps });
+                    }
                     return AthenaRequest::Control(ControlPlan::CountedLoop {
                         variable: *variable,
                         iterator: *iterator,
-                        body: Box::new(lower_request(session, *body)),
+                        body: Box::new(body_req),
                     });
+                }
+            }
+        }
+        Some("Try") | Some("Recover") => {
+            if let Some(args) = application_arguments(session, term) {
+                if let [body, handler] = args.as_slice() {
+                    return AthenaRequest::Control(ControlPlan::Recover {
+                        body: Box::new(lower_request(session, *body)),
+                        handler: Box::new(lower_request(session, *handler)),
+                    });
+                }
+            }
+        }
+        Some("error") | Some("Error") | Some("Reject") => {
+            return AthenaRequest::Control(ControlPlan::Reject);
+        }
+        Some("LinearSolve") | Some("Mldivide") => {
+            if let Some(args) = application_arguments(session, term) {
+                if let [a_term, b_term] = args.as_slice() {
+                    if let (Some(a_mat), Some(b_mat)) =
+                        (matrix_from_nested_list(session, *a_term), matrix_from_nested_list(session, *b_term))
+                    {
+                        let a = session.matrix_objects.intern(a_mat);
+                        let b = session.matrix_objects.intern(b_mat);
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
+                        )));
+                    }
                 }
             }
         }
@@ -97,7 +155,8 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 return AthenaRequest::Term(rewritten);
             }
         }
-        Some("diff") | Some("Diff") => {
+        // Parse maps `diff` → Extension `D`, `int` → Extension `Integrate`.
+        Some("diff") | Some("Diff") | Some("D") => {
             if let Some(args) = application_arguments(session, term) {
                 match args.as_slice() {
                     [expr, var] => {
@@ -130,7 +189,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 }
             }
         }
-        Some("int") | Some("Int") | Some("integral") => {
+        Some("int") | Some("Int") | Some("integral") | Some("Integrate") => {
             if let Some(args) = application_arguments(session, term) {
                 if let [expr, var] = args.as_slice() {
                     if let Some(variable) = symbol_atom(session, *var) {
@@ -156,6 +215,92 @@ fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {
     match session.arena.get(term) {
         Some(TermNode::Atom(Atom::Symbol(symbol))) => Some(*symbol),
         _ => None,
+    }
+}
+
+fn expand_counted_iterator(session: &mut Session, iterator: TermId) -> Option<Vec<TermId>> {
+    if let Some(TermNode::Collection { elements, .. }) = session.arena.get(iterator) {
+        return Some(elements.clone());
+    }
+    let args = application_arguments(session, iterator)?;
+    let ints: Option<Vec<i64>> = args.iter().map(|t| number_from_id(session, *t).and_then(|n| n.as_exact_integer())).collect();
+    let ints = ints?;
+    let values = match ints.as_slice() {
+        [a, b] => expand_span(*a, 1, *b),
+        // Athena `Range[start, end, step]` argument order.
+        [a, b, step] => expand_span(*a, *step, *b),
+        _ => return None,
+    }?;
+    Some(values.into_iter().map(|v| session.builder().int(v, Default::default())).collect())
+}
+
+fn expand_span(start: i64, step: i64, end: i64) -> Option<Vec<i64>> {
+    if step == 0 {
+        return None;
+    }
+    let mut out = Vec::new();
+    let mut cur = start;
+    if step > 0 {
+        while cur <= end {
+            out.push(cur);
+            cur = cur.checked_add(step)?;
+        }
+    }
+    else {
+        while cur >= end {
+            out.push(cur);
+            cur = cur.checked_add(step)?;
+        }
+    }
+    Some(out)
+}
+
+fn term_scalar_rational(session: &Session, term: TermId) -> Option<Rational> {
+    let n = number_from_id(session, term)?;
+    if let Some(i) = n.as_exact_integer() {
+        return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+    }
+    if let Some(i) = n.as_integer() {
+        return Some(Rational::from_integer(clone_integer(i)));
+    }
+    n.as_rational().map(clone_rational)
+}
+
+fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValue> {
+    match session.arena.get(term) {
+        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
+            if matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. })) {
+                let mut data = Vec::new();
+                let mut cols: Option<u64> = None;
+                for row in rows {
+                    let cells = match session.arena.get(*row) {
+                        Some(TermNode::Collection { elements: cells, .. }) => cells.clone(),
+                        _ => return None,
+                    };
+                    let c = cells.len() as u64;
+                    match cols {
+                        Some(prev) if prev != c => return None,
+                        None => cols = Some(c),
+                        _ => {}
+                    }
+                    for cell in cells {
+                        data.push(term_scalar_rational(session, cell)?);
+                    }
+                }
+                MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+            }
+            else {
+                let mut data = Vec::with_capacity(rows.len());
+                for cell in rows {
+                    data.push(term_scalar_rational(session, *cell)?);
+                }
+                MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+            }
+        }
+        _ => {
+            let r = term_scalar_rational(session, term)?;
+            MatrixValue::from_rationals_row_major(1, 1, vec![r]).ok()
+        }
     }
 }
 

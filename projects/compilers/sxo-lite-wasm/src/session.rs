@@ -48,8 +48,36 @@ impl Session {
     }
 
     /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
+    /// Prefer [`Self::evaluate_form`] for dialect surface that needs `lower_request`.
     pub fn evaluate(&self, expr: TermId) -> TermId {
         self.math_session.borrow_mut().evaluate(expr)
+    }
+
+    /// Dialect Form → `lower_request` → `execute_request` → symbolic term.
+    pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
+        match dialect {
+            Dialect::Matlab => {
+                let mut ms = self.math_session.borrow_mut();
+                let request = matlab::lower_request(&mut ms, root);
+                match self.math_engine().execute_request(&mut ms, request) {
+                    Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(root)),
+                    Err(d) => Err(SxoError::from_diagnostic(d)),
+                }
+            }
+            Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+                let w = self.to_mathematica(root);
+                let mut ms = self.math_session.borrow_mut();
+                let request = mathematica::lower_request(&mut ms, &w);
+                match self.math_engine().execute_request(&mut ms, request) {
+                    Ok(result_id) => Ok(ms
+                        .results
+                        .get(result_id)
+                        .and_then(|r| r.symbolic_term)
+                        .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
+                    Err(d) => Err(SxoError::from_diagnostic(d)),
+                }
+            }
+        }
     }
 
     /// Clear Athena Own symbol definitions for this host session.
@@ -109,16 +137,8 @@ impl Session {
     #[allow(dead_code)]
     pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        let mut ms = self.math_session.borrow_mut();
-        let request = mathematica::lower_request(&mut ms, &w);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms
-                .results
-                .get(result_id)
-                .and_then(|r| r.symbolic_term)
-                .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        let root = self.lower_mathematica(&w);
+        self.evaluate_form(root, Dialect::Mathematica)
     }
 
     /// Differentiate Wolfram input.
@@ -142,12 +162,7 @@ impl Session {
     #[allow(dead_code)]
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         let term = self.parse_matlab(input)?;
-        let mut ms = self.math_session.borrow_mut();
-        let request = matlab::lower_request(&mut ms, term);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(term)),
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        self.evaluate_form(term, Dialect::Matlab)
     }
 
     /// Differentiate MATLAB input.
