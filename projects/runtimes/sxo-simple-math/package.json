@@ -3,22 +3,20 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Small, predictable symbolic expression API for SXO",
+    "description": "Minimal arithmetic dialect frontend on top of @sxo/core (parse / differentiate / simplify).",
     "repository": {
         "type": "git",
-        "url": "https://github.com/vm-z/sxo-framework.git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
         "directory": "projects/runtimes/sxo-simple-math"
     },
-    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-simple-math",
     "bugs": {
-        "url": "https://github.com/vm-z/sxo-framework/issues"
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
     "keywords": [
         "sxo",
         "simple-math",
-        "symbolic",
-        "expression",
-        "typescript"
+        "dialect"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",

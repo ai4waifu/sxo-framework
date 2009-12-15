@@ -3,7 +3,21 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Internal WASM artifact for @sxo/lite (not a user API)",
+    "description": "wasm-pack artifact consumed by @sxo/lite. Not a standalone product API.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-lite-unknown-wasm32"
+    },
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-lite-unknown-wasm32",
+    "bugs": {
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
+    },
+    "keywords": [
+        "sxo",
+        "wasm",
+        "wasm-pack"
+    ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

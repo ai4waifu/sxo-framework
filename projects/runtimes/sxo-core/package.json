@@ -3,22 +3,21 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Shared TypeScript types, handles, and session integration for SXO",
+    "description": "Loads the SXO N-API addon and exposes a thin Expression API for the simple-math dialect.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/vm-z/sxo-framework.git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
         "directory": "projects/runtimes/sxo-core"
     },
-    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-core",
     "bugs": {
-        "url": "https://github.com/vm-z/sxo-framework/issues"
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
     "keywords": [
         "sxo",
-        "typescript",
-        "symbolic-computation",
-        "api",
-        "handles"
+        "napi",
+        "native-addon",
+        "simple-math"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",

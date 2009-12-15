@@ -3,17 +3,15 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "SXO PARI/GP dialect placeholder. No parser or evaluator is shipped yet.",
+    "description": "Placeholder for a future PARI/GP dialect frontend. No parser or evaluator is shipped.",
     "license": "Apache-2.0",
     "files": [
         "README.md"
     ],
     "keywords": [
         "sxo",
-        "pari",
         "pari-gp",
-        "computer-algebra",
-        "symbolic-computation"
+        "placeholder"
     ],
     "repository": {
         "type": "git",

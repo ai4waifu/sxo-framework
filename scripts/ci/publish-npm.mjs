@@ -184,7 +184,7 @@ function publishNative(version, artifactsRoot) {
         writeJson(path.join(stage, 'package.json'), {
             name,
             version,
-            description: `SXO native N-API addon (${plat.short})`,
+            description: `Optional SXO N-API binary for ${plat.short} (${plat.triple}). Loaded by @sxo/core and dialect frontends.`,
             license: 'Apache-2.0',
             private: false,
             os: plat.os,
@@ -192,7 +192,14 @@ function publishNative(version, artifactsRoot) {
             main: want,
             files: [want, 'README.md'],
             publishConfig: { access: 'public' },
-            repository: { type: 'git', url: REPO_URL },
+            repository: {
+                type: 'git',
+                url: REPO_URL,
+                directory: `projects/runtimes/sxo-${plat.short}`,
+            },
+            homepage: `https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-${plat.short}`,
+            bugs: { url: 'https://github.com/ai4waifu/sxo-framework/issues' },
+            keywords: ['sxo', 'napi', plat.os[0], plat.cpu[0]],
         });
         for (const f of fs.readdirSync(stage)) {
             if (f.endsWith('.node') && f !== want) fs.unlinkSync(path.join(stage, f));
@@ -297,9 +304,18 @@ function publishJs(version) {
             delete pkg.scripts.prepare;
             if (Object.keys(pkg.scripts).length === 0) delete pkg.scripts;
         }
-        if (!pkg.repository) {
-            pkg.repository = { type: 'git', url: REPO_URL };
-        }
+        // Always pin provenance to the Trusted Publisher repo (never keep a stale clone URL).
+        const directory =
+            typeof pkg.repository?.directory === 'string'
+                ? pkg.repository.directory
+                : spec.dir.replace(/\\/g, '/');
+        pkg.repository = {
+            type: 'git',
+            url: REPO_URL,
+            directory,
+        };
+        pkg.homepage = `https://github.com/ai4waifu/sxo-framework/tree/dev/${directory}`;
+        pkg.bugs = { url: 'https://github.com/ai4waifu/sxo-framework/issues' };
         if (NATIVE_CONSUMERS.has(name)) {
             pkg.optionalDependencies = { ...(pkg.optionalDependencies ?? {}), ...optionalNatives };
         }

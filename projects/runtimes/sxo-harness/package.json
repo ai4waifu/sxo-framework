@@ -3,21 +3,21 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Private SXO R&D capability package: feature-matrix builders, validation, runners, and reporters",
+    "description": "Private R&D package: feature-matrix builders, validators, runners, and reporters for dialect acceptance. Not a product runtime.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/vm-z/sxo-framework.git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
         "directory": "projects/runtimes/sxo-harness"
     },
-    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-harness",
     "bugs": {
-        "url": "https://github.com/vm-z/sxo-framework/issues"
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
     "keywords": [
         "sxo",
-        "harness",
         "feature-matrix",
-        "acceptance"
+        "harness",
+        "private"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",

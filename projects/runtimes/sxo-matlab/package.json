@@ -3,22 +3,21 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "MATLAB-oriented SXO frontend for parsing, lowering, and rendering, not a kernel",
+    "description": "MATLAB dialect frontend: parse, evaluate, and render via the SXO native addon. Not a MATLAB runtime or toolbox.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/vm-z/sxo-framework.git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
         "directory": "projects/runtimes/sxo-matlab"
     },
-    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-matlab",
     "bugs": {
-        "url": "https://github.com/vm-z/sxo-framework/issues"
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
     "keywords": [
         "sxo",
         "matlab",
-        "parser",
-        "symbolic-computation",
-        "frontend"
+        "dialect",
+        "napi"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",

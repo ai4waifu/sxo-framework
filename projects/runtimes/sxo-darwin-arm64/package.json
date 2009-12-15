@@ -2,7 +2,22 @@
     "name": "@sxo/sxo-darwin-arm64",
     "version": "0.0.3",
     "private": true,
-    "description": "SXO native N-API addon (darwin-arm64)",
+    "description": "Optional SXO N-API binary for macOS arm64 (darwin-arm64). Loaded by @sxo/core and dialect frontends.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-darwin-arm64"
+    },
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-darwin-arm64",
+    "bugs": {
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
+    },
+    "keywords": [
+        "sxo",
+        "napi",
+        "darwin",
+        "arm64"
+    ],
     "license": "Apache-2.0",
     "os": [
         "darwin"

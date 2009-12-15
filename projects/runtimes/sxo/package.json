@@ -3,22 +3,19 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Command-line interface for running SXO symbolic workflows in Node.js",
+    "description": "Node CLI (`sxo`) for SXO package helpers. Not the CAS kernel — math evaluation lives in dialect packages.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/vm-z/sxo-framework.git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
         "directory": "projects/runtimes/sxo"
     },
-    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo",
     "bugs": {
-        "url": "https://github.com/vm-z/sxo-framework/issues"
+        "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
     "keywords": [
         "sxo",
-        "symbolic-computation",
-        "computer-algebra",
-        "cli",
-        "nodejs"
+        "cli"
     ],
     "license": "Apache-2.0",
     "bin": {
