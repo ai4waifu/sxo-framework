@@ -16,7 +16,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const REPO_URL = 'git+https://github.com/ai4waifu/sxo-framework.git';
 
 const NATIVE_PLATFORMS = [
     { short: 'win32-x64', triple: 'win32-x64-msvc', os: ['win32'], cpu: ['x64'] },
@@ -42,6 +41,42 @@ const JS_PACKAGES = [
 function fail(msg) {
     console.error(`ci-publish-npm: ${msg}`);
     process.exit(1);
+}
+
+/** Normalize repository.url for Trusted Publisher comparison. */
+function normalizeRepoUrl(url) {
+    return String(url)
+        .trim()
+        .replace(/^git\+/, '')
+        .replace(/\.git$/i, '')
+        .replace(/\/$/, '');
+}
+
+const TRUSTED_REPO_CANONICAL = 'https://github.com/ai4waifu/sxo-framework';
+
+/**
+ * Fail loud if package.json provenance metadata does not match Trusted Publisher.
+ * Does not rewrite fields — package.json is the source of truth.
+ */
+function assertTrustedPublisherRepository(pkg, name, packageDir) {
+    const wantDir = packageDir.replace(/\\/g, '/');
+    const repo = pkg.repository;
+    if (!repo || typeof repo !== 'object' || typeof repo.url !== 'string' || !repo.url.trim()) {
+        fail(`${name}: package.json missing repository.url (required for npm provenance · Trusted Publisher)`);
+    }
+    const got = normalizeRepoUrl(repo.url);
+    if (got !== TRUSTED_REPO_CANONICAL) {
+        fail(
+            `${name}: repository.url is ${JSON.stringify(repo.url)} (normalized ${JSON.stringify(got)}). ` +
+                `Expected ${JSON.stringify(TRUSTED_REPO_CANONICAL)} or with optional .git / git+ prefix. Fix package.json — publish will not rewrite it.`,
+        );
+    }
+    if (typeof repo.directory !== 'string' || repo.directory !== wantDir) {
+        fail(
+            `${name}: repository.directory is ${JSON.stringify(repo.directory)}. ` +
+                `Expected ${JSON.stringify(wantDir)}. Fix package.json — publish will not rewrite it.`,
+        );
+    }
 }
 
 function run(cmd, args, opts = {}) {
@@ -163,6 +198,12 @@ function publishNative(version, artifactsRoot) {
     let skipped = 0;
     for (const plat of NATIVE_PLATFORMS) {
         const name = `@sxo/sxo-${plat.short}`;
+        const pkgDir = `projects/runtimes/sxo-${plat.short}`;
+        const pkgPath = path.join(ROOT, pkgDir, 'package.json');
+        if (!fs.existsSync(pkgPath)) fail(`${name}: missing ${pkgDir}/package.json`);
+        const raw = readJson(pkgPath);
+        assertTrustedPublisherRepository(raw, name, pkgDir);
+
         const artDir = path.join(artifactsRoot, plat.short);
         if (!fs.existsSync(artDir)) {
             console.log(` · ${name} no artifact (${plat.short}) — skip`);
@@ -181,26 +222,14 @@ function publishNative(version, artifactsRoot) {
             fs.copyFileSync(path.join(artDir, f), path.join(stage, f));
         }
         const want = `sxo.${plat.triple}.node`;
-        writeJson(path.join(stage, 'package.json'), {
-            name,
-            version,
-            description: `Optional SXO N-API binary for ${plat.short} (${plat.triple}). Loaded by @sxo/core and dialect frontends.`,
-            license: 'Apache-2.0',
-            private: false,
-            os: plat.os,
-            cpu: plat.cpu,
-            main: want,
-            files: [want, 'README.md'],
-            publishConfig: { access: 'public' },
-            repository: {
-                type: 'git',
-                url: REPO_URL,
-                directory: `projects/runtimes/sxo-${plat.short}`,
-            },
-            homepage: `https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-${plat.short}`,
-            bugs: { url: 'https://github.com/ai4waifu/sxo-framework/issues' },
-            keywords: ['sxo', 'napi', plat.os[0], plat.cpu[0]],
-        });
+        const pkg = { ...raw };
+        pkg.name = name;
+        pkg.version = version;
+        delete pkg.private;
+        pkg.publishConfig = { ...(pkg.publishConfig ?? {}), access: 'public' };
+        pkg.main = want;
+        pkg.files = [want, 'README.md'];
+        writeJson(path.join(stage, 'package.json'), pkg);
         for (const f of fs.readdirSync(stage)) {
             if (f.endsWith('.node') && f !== want) fs.unlinkSync(path.join(stage, f));
         }
@@ -211,10 +240,15 @@ function publishNative(version, artifactsRoot) {
         if (!fs.existsSync(path.join(stage, want))) {
             fail(`${name}: staged artifact missing ${want}`);
         }
-        fs.writeFileSync(
-            path.join(stage, 'README.md'),
-            `# ${name}\n\nOptional native binary for \`@sxo/core\` (${plat.short} / ${plat.triple}).\n`,
-        );
+        const readmeSrc = path.join(ROOT, pkgDir, 'README.md');
+        if (fs.existsSync(readmeSrc)) {
+            fs.copyFileSync(readmeSrc, path.join(stage, 'README.md'));
+        } else {
+            fs.writeFileSync(
+                path.join(stage, 'README.md'),
+                `# ${name}\n\nOptional native binary for \`@sxo/core\` (${plat.short} / ${plat.triple}).\n`,
+            );
+        }
         const outcome = npmPublish(stage, name, version);
         if (outcome === 'published') published += 1;
         else if (outcome === 'exists') {
@@ -304,18 +338,8 @@ function publishJs(version) {
             delete pkg.scripts.prepare;
             if (Object.keys(pkg.scripts).length === 0) delete pkg.scripts;
         }
-        // Always pin provenance to the Trusted Publisher repo (never keep a stale clone URL).
-        const directory =
-            typeof pkg.repository?.directory === 'string'
-                ? pkg.repository.directory
-                : spec.dir.replace(/\\/g, '/');
-        pkg.repository = {
-            type: 'git',
-            url: REPO_URL,
-            directory,
-        };
-        pkg.homepage = `https://github.com/ai4waifu/sxo-framework/tree/dev/${directory}`;
-        pkg.bugs = { url: 'https://github.com/ai4waifu/sxo-framework/issues' };
+        // Source package.json is truth. Refuse publish if provenance metadata is wrong.
+        assertTrustedPublisherRepository(pkg, name, spec.dir);
         if (NATIVE_CONSUMERS.has(name)) {
             pkg.optionalDependencies = { ...(pkg.optionalDependencies ?? {}), ...optionalNatives };
         }
