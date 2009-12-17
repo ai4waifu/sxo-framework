@@ -43,42 +43,6 @@ function fail(msg) {
     process.exit(1);
 }
 
-/** Normalize repository.url for Trusted Publisher comparison. */
-function normalizeRepoUrl(url) {
-    return String(url)
-        .trim()
-        .replace(/^git\+/, '')
-        .replace(/\.git$/i, '')
-        .replace(/\/$/, '');
-}
-
-const TRUSTED_REPO_CANONICAL = 'https://github.com/ai4waifu/sxo-framework';
-
-/**
- * Fail loud if package.json provenance metadata does not match Trusted Publisher.
- * Does not rewrite fields — package.json is the source of truth.
- */
-function assertTrustedPublisherRepository(pkg, name, packageDir) {
-    const wantDir = packageDir.replace(/\\/g, '/');
-    const repo = pkg.repository;
-    if (!repo || typeof repo !== 'object' || typeof repo.url !== 'string' || !repo.url.trim()) {
-        fail(`${name}: package.json missing repository.url (required for npm provenance · Trusted Publisher)`);
-    }
-    const got = normalizeRepoUrl(repo.url);
-    if (got !== TRUSTED_REPO_CANONICAL) {
-        fail(
-            `${name}: repository.url is ${JSON.stringify(repo.url)} (normalized ${JSON.stringify(got)}). ` +
-                `Expected ${JSON.stringify(TRUSTED_REPO_CANONICAL)} or with optional .git / git+ prefix. Fix package.json — publish will not rewrite it.`,
-        );
-    }
-    if (typeof repo.directory !== 'string' || repo.directory !== wantDir) {
-        fail(
-            `${name}: repository.directory is ${JSON.stringify(repo.directory)}. ` +
-                `Expected ${JSON.stringify(wantDir)}. Fix package.json — publish will not rewrite it.`,
-        );
-    }
-}
-
 function run(cmd, args, opts = {}) {
     const r = spawnSync(cmd, args, {
         cwd: opts.cwd ?? ROOT,
@@ -202,7 +166,6 @@ function publishNative(version, artifactsRoot) {
         const pkgPath = path.join(ROOT, pkgDir, 'package.json');
         if (!fs.existsSync(pkgPath)) fail(`${name}: missing ${pkgDir}/package.json`);
         const raw = readJson(pkgPath);
-        assertTrustedPublisherRepository(raw, name, pkgDir);
 
         const artDir = path.join(artifactsRoot, plat.short);
         if (!fs.existsSync(artDir)) {
@@ -221,14 +184,11 @@ function publishNative(version, artifactsRoot) {
         for (const f of fs.readdirSync(artDir)) {
             fs.copyFileSync(path.join(artDir, f), path.join(stage, f));
         }
-        const want = `sxo.${plat.triple}.node`;
+        const want = typeof raw.main === 'string' ? raw.main : `sxo.${plat.triple}.node`;
         const pkg = { ...raw };
-        pkg.name = name;
         pkg.version = version;
         delete pkg.private;
         pkg.publishConfig = { ...(pkg.publishConfig ?? {}), access: 'public' };
-        pkg.main = want;
-        pkg.files = [want, 'README.md'];
         writeJson(path.join(stage, 'package.json'), pkg);
         for (const f of fs.readdirSync(stage)) {
             if (f.endsWith('.node') && f !== want) fs.unlinkSync(path.join(stage, f));
@@ -338,8 +298,6 @@ function publishJs(version) {
             delete pkg.scripts.prepare;
             if (Object.keys(pkg.scripts).length === 0) delete pkg.scripts;
         }
-        // Source package.json is truth. Refuse publish if provenance metadata is wrong.
-        assertTrustedPublisherRepository(pkg, name, spec.dir);
         if (NATIVE_CONSUMERS.has(name)) {
             pkg.optionalDependencies = { ...(pkg.optionalDependencies ?? {}), ...optionalNatives };
         }
