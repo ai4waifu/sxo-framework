@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "description": "SXO project layout move manifest (Living 16). Script moves paths only; no source rewrites.",
+  "entries": [
+    {
+      "from": "projects/compilers/sxo-dialect-mathematica",
+      "to": "projects/dialects/sxo-dialect-mathematica",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-dialect-matlab",
+      "to": "projects/dialects/sxo-dialect-matlab",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-dialect-simple-math",
+      "to": "projects/dialects/sxo-dialect-simple-math",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-napi",
+      "to": "projects/bindings/sxo-napi",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-lite-wasm",
+      "to": "projects/bindings/sxo-lite-wasm",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-types",
+      "to": "projects/bindings/sxo-types",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/compilers/sxo-adapter-apollo",
+      "to": "projects/adapters/sxo-adapter-apollo",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-core",
+      "to": "projects/packages/sxo-core",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-mathematica",
+      "to": "projects/packages/sxo-mathematica",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-matlab",
+      "to": "projects/packages/sxo-matlab",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-simple-math",
+      "to": "projects/packages/sxo-simple-math",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-lite",
+      "to": "projects/packages/sxo-lite",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo",
+      "to": "projects/packages/sxo",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-harness",
+      "to": "projects/tooling/sxo-harness",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-win32-x64",
+      "to": "projects/platforms/native/sxo-win32-x64",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-linux-x64",
+      "to": "projects/platforms/native/sxo-linux-x64",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-darwin-x64",
+      "to": "projects/platforms/native/sxo-darwin-x64",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-darwin-arm64",
+      "to": "projects/platforms/native/sxo-darwin-arm64",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/runtimes/sxo-lite-unknown-wasm32",
+      "to": "projects/platforms/wasm/sxo-lite-unknown-wasm32",
+      "kind": "directory",
+      "required": true
+    },
+    {
+      "from": "projects/homepage",
+      "to": "projects/site/homepage",
+      "kind": "directory",
+      "required": true
+    }
+  ],
+  "excludedFromMove": [
+    {
+      "path": "projects/runtimes/sxo-pari-gp",
+      "reason": "feasibility placeholder · not part of target product tree (Living 16)"
+    }
+  ]
+}
