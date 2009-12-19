@@ -7,9 +7,9 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
-        "directory": "projects/runtimes/sxo-harness"
+        "directory": "projects/tooling/sxo-harness"
     },
-    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-harness",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/tooling/sxo-harness",
     "bugs": {
         "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },

@@ -18,7 +18,157 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
 
-  projects/homepage:
+  projects/packages/sxo:
+    dependencies:
+      '@sxo/core':
+        specifier: workspace:*
+        version: link:../sxo-core
+      '@vmz/commander':
+        specifier: 0.1.26
+        version: 0.1.26
+      '@vmz/diagnostic':
+        specifier: 0.1.26
+        version: 0.1.26
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  projects/packages/sxo-core:
+    optionalDependencies:
+      '@sxo/sxo-darwin-arm64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-arm64
+      '@sxo/sxo-darwin-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-x64
+      '@sxo/sxo-linux-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-linux-x64
+      '@sxo/sxo-win32-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-win32-x64
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
+  projects/packages/sxo-lite:
+    dependencies:
+      '@sxo/lite-unknown-wasm32':
+        specifier: workspace:*
+        version: link:../../platforms/wasm/sxo-lite-unknown-wasm32
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  projects/packages/sxo-mathematica:
+    dependencies:
+      '@vmz/commander':
+        specifier: 0.1.26
+        version: 0.1.26
+      '@vmz/diagnostic':
+        specifier: 0.1.26
+        version: 0.1.26
+    optionalDependencies:
+      '@sxo/sxo-darwin-arm64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-arm64
+      '@sxo/sxo-darwin-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-x64
+      '@sxo/sxo-linux-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-linux-x64
+      '@sxo/sxo-win32-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-win32-x64
+    devDependencies:
+      '@sxo/harness':
+        specifier: workspace:*
+        version: link:../../tooling/sxo-harness
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vite-node:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
+  projects/packages/sxo-matlab:
+    optionalDependencies:
+      '@sxo/sxo-darwin-arm64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-arm64
+      '@sxo/sxo-darwin-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-darwin-x64
+      '@sxo/sxo-linux-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-linux-x64
+      '@sxo/sxo-win32-x64':
+        specifier: workspace:*
+        version: link:../../platforms/native/sxo-win32-x64
+    devDependencies:
+      '@sxo/harness':
+        specifier: workspace:*
+        version: link:../../tooling/sxo-harness
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vite-node:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
+  projects/packages/sxo-simple-math:
+    dependencies:
+      '@sxo/core':
+        specifier: workspace:*
+        version: link:../sxo-core
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
+  projects/platforms/native/sxo-darwin-arm64: {}
+
+  projects/platforms/native/sxo-darwin-x64: {}
+
+  projects/platforms/native/sxo-linux-x64: {}
+
+  projects/platforms/native/sxo-win32-x64: {}
+
+  projects/platforms/wasm/sxo-lite-unknown-wasm32:
+    devDependencies:
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  projects/site/homepage:
     dependencies:
       '@dxo/lite':
         specifier: 0.0.10
@@ -34,55 +184,7 @@ importers:
         specifier: 0.1.17
         version: 0.1.17(typescript@5.9.3)
 
-  projects/runtimes/sxo:
-    dependencies:
-      '@sxo/core':
-        specifier: workspace:*
-        version: link:../sxo-core
-      '@vmz/commander':
-        specifier: 0.1.26
-        version: 0.1.26
-      '@vmz/diagnostic':
-        specifier: 0.1.26
-        version: 0.1.26
-    devDependencies:
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  projects/runtimes/sxo-core:
-    optionalDependencies:
-      '@sxo/sxo-darwin-arm64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-arm64
-      '@sxo/sxo-darwin-x64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-x64
-      '@sxo/sxo-linux-x64':
-        specifier: workspace:*
-        version: link:../sxo-linux-x64
-      '@sxo/sxo-win32-x64':
-        specifier: workspace:*
-        version: link:../sxo-win32-x64
-    devDependencies:
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
-
-  projects/runtimes/sxo-darwin-arm64: {}
-
-  projects/runtimes/sxo-darwin-x64: {}
-
-  projects/runtimes/sxo-harness:
+  projects/tooling/sxo-harness:
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
@@ -96,110 +198,6 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
-
-  projects/runtimes/sxo-linux-x64: {}
-
-  projects/runtimes/sxo-lite:
-    dependencies:
-      '@sxo/lite-unknown-wasm32':
-        specifier: workspace:*
-        version: link:../sxo-lite-unknown-wasm32
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  projects/runtimes/sxo-lite-unknown-wasm32:
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-
-  projects/runtimes/sxo-mathematica:
-    dependencies:
-      '@vmz/commander':
-        specifier: 0.1.26
-        version: 0.1.26
-      '@vmz/diagnostic':
-        specifier: 0.1.26
-        version: 0.1.26
-    optionalDependencies:
-      '@sxo/sxo-darwin-arm64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-arm64
-      '@sxo/sxo-darwin-x64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-x64
-      '@sxo/sxo-linux-x64':
-        specifier: workspace:*
-        version: link:../sxo-linux-x64
-      '@sxo/sxo-win32-x64':
-        specifier: workspace:*
-        version: link:../sxo-win32-x64
-    devDependencies:
-      '@sxo/harness':
-        specifier: workspace:*
-        version: link:../sxo-harness
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vite-node:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
-
-  projects/runtimes/sxo-matlab:
-    optionalDependencies:
-      '@sxo/sxo-darwin-arm64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-arm64
-      '@sxo/sxo-darwin-x64':
-        specifier: workspace:*
-        version: link:../sxo-darwin-x64
-      '@sxo/sxo-linux-x64':
-        specifier: workspace:*
-        version: link:../sxo-linux-x64
-      '@sxo/sxo-win32-x64':
-        specifier: workspace:*
-        version: link:../sxo-win32-x64
-    devDependencies:
-      '@sxo/harness':
-        specifier: workspace:*
-        version: link:../sxo-harness
-      '@types/node':
-        specifier: ^22.15.0
-        version: 22.20.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vite-node:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
-
-  projects/runtimes/sxo-pari-gp: {}
-
-  projects/runtimes/sxo-simple-math:
-    dependencies:
-      '@sxo/core':
-        specifier: workspace:*
-        version: link:../sxo-core
-    devDependencies:
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
-
-  projects/runtimes/sxo-win32-x64: {}
 
 packages:
 

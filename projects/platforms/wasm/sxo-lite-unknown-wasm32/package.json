@@ -7,9 +7,9 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
-        "directory": "projects/runtimes/sxo-lite-unknown-wasm32"
+        "directory": "projects/platforms/wasm/sxo-lite-unknown-wasm32"
     },
-    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-lite-unknown-wasm32",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/platforms/wasm/sxo-lite-unknown-wasm32",
     "bugs": {
         "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },

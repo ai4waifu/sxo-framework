@@ -29,13 +29,13 @@ const NATIVE_CONSUMERS = new Set(['@sxo/core', '@sxo/mathematica', '@sxo/matlab'
 
 /** @type {{ dir: string, publishName?: string }[]} */
 const JS_PACKAGES = [
-    { dir: 'projects/runtimes/sxo-lite-unknown-wasm32', publishName: '@sxo/lite-unknown-wasm32' },
-    { dir: 'projects/runtimes/sxo-lite', publishName: '@sxo/lite' },
-    { dir: 'projects/runtimes/sxo-core', publishName: '@sxo/core' },
-    { dir: 'projects/runtimes/sxo-simple-math', publishName: '@sxo/simple-math' },
-    { dir: 'projects/runtimes/sxo-mathematica', publishName: '@sxo/mathematica' },
-    { dir: 'projects/runtimes/sxo-matlab', publishName: '@sxo/matlab' },
-    { dir: 'projects/runtimes/sxo', publishName: '@sxo/sxo' },
+    { dir: 'projects/platforms/wasm/sxo-lite-unknown-wasm32', publishName: '@sxo/lite-unknown-wasm32' },
+    { dir: 'projects/packages/sxo-lite', publishName: '@sxo/lite' },
+    { dir: 'projects/packages/sxo-core', publishName: '@sxo/core' },
+    { dir: 'projects/packages/sxo-simple-math', publishName: '@sxo/simple-math' },
+    { dir: 'projects/packages/sxo-mathematica', publishName: '@sxo/mathematica' },
+    { dir: 'projects/packages/sxo-matlab', publishName: '@sxo/matlab' },
+    { dir: 'projects/packages/sxo', publishName: '@sxo/sxo' },
 ];
 
 function fail(msg) {
@@ -162,7 +162,7 @@ function publishNative(version, artifactsRoot) {
     let skipped = 0;
     for (const plat of NATIVE_PLATFORMS) {
         const name = `@sxo/sxo-${plat.short}`;
-        const pkgDir = `projects/runtimes/sxo-${plat.short}`;
+        const pkgDir = `projects/platforms/native/sxo-${plat.short}`;
         const pkgPath = path.join(ROOT, pkgDir, 'package.json');
         if (!fs.existsSync(pkgPath)) fail(`${name}: missing ${pkgDir}/package.json`);
         const raw = readJson(pkgPath);

@@ -7,9 +7,9 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
-        "directory": "projects/runtimes/sxo"
+        "directory": "projects/packages/sxo"
     },
-    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/packages/sxo",
     "bugs": {
         "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },

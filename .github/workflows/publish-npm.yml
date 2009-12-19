@@ -72,7 +72,7 @@ jobs:
           set -euo pipefail
           out="dist/${{ matrix.short }}"
           mkdir -p "$out"
-          src="projects/runtimes/sxo-${{ matrix.short }}"
+          src="projects/platforms/native/sxo-${{ matrix.short }}"
           named="sxo.${{ matrix.triple }}.node"
           if [[ -f "$src/$named" ]]; then
             cp "$src/$named" "$out/$named"

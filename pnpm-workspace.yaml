@@ -1,3 +1,6 @@
 packages:
-  - 'projects/runtimes/*'
-  - 'projects/homepage'
+  - 'projects/packages/*'
+  - 'projects/platforms/native/*'
+  - 'projects/platforms/wasm/*'
+  - 'projects/tooling/*'
+  - 'projects/site/*'

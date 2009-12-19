@@ -1,15 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-    "projects/compilers/sxo-types",
-    "projects/compilers/sxo-dialect-mathematica",
-    "projects/compilers/sxo-dialect-matlab",
-    "projects/compilers/sxo-dialect-simple-math",
-    "projects/compilers/sxo-adapter-apollo",
-    "projects/compilers/sxo-napi",
-    "projects/compilers/sxo-lite-wasm",
+    "projects/bindings/sxo-types",
+    "projects/dialects/sxo-dialect-mathematica",
+    "projects/dialects/sxo-dialect-matlab",
+    "projects/dialects/sxo-dialect-simple-math",
+    "projects/adapters/sxo-adapter-apollo",
+    "projects/bindings/sxo-napi",
+    "projects/bindings/sxo-lite-wasm",
 ]
-default-members = ["projects/compilers/sxo-dialect-mathematica"]
+default-members = ["projects/dialects/sxo-dialect-mathematica"]
 
 [workspace.package]
 version = "0.0.3"
@@ -20,11 +20,11 @@ repository = "https://github.com/ai4waifu/sxo-framework"
 rust-version = "1.89"
 
 [workspace.dependencies]
-sxo-types = { path = "projects/compilers/sxo-types" }
-sxo-dialect-mathematica = { path = "projects/compilers/sxo-dialect-mathematica" }
-sxo-dialect-matlab = { path = "projects/compilers/sxo-dialect-matlab" }
-sxo-dialect-simple-math = { path = "projects/compilers/sxo-dialect-simple-math" }
-sxo-adapter-apollo = { path = "projects/compilers/sxo-adapter-apollo" }
+sxo-types = { path = "projects/bindings/sxo-types" }
+sxo-dialect-mathematica = { path = "projects/dialects/sxo-dialect-mathematica" }
+sxo-dialect-matlab = { path = "projects/dialects/sxo-dialect-matlab" }
+sxo-dialect-simple-math = { path = "projects/dialects/sxo-dialect-simple-math" }
+sxo-adapter-apollo = { path = "projects/adapters/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"

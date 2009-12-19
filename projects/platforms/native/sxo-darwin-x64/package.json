@@ -6,9 +6,9 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
-        "directory": "projects/runtimes/sxo-darwin-x64"
+        "directory": "projects/platforms/native/sxo-darwin-x64"
     },
-    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/runtimes/sxo-darwin-x64",
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/platforms/native/sxo-darwin-x64",
     "bugs": {
         "url": "https://github.com/ai4waifu/sxo-framework/issues"
     },
