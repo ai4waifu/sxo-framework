@@ -8,7 +8,7 @@ use athena::{
     types::TermId,
 };
 
-use crate::{shared::render_number, surface::application_surface_name};
+use crate::{number_literal::render_number, surface::application_surface_name};
 
 /// Render engine IR as MATLAB-ish source.
 pub fn render_matlab(session: &Session, id: TermId) -> String {

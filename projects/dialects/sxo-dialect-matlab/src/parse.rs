@@ -24,7 +24,7 @@ use athena::{
 use sxo_types::SxoError;
 
 use crate::{
-    shared::parse_number_literal,
+    number_literal::parse_number_literal,
     surface::{application_surface_name, push_matlab_call},
 };
 

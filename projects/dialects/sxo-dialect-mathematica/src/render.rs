@@ -2,7 +2,7 @@
 
 use crate::{
     form::{WAtom, WExpr},
-    shared::render_number,
+    number_literal::render_number,
 };
 
 /// Render a Wolfram expression.

@@ -14,7 +14,7 @@ use sxo_types::SxoError;
 
 use crate::{
     form::{WAtom, WExpr},
-    shared::parse_number_literal,
+    number_literal::parse_number_literal,
 };
 
 /// Parse Mathematica / Wolfram text into a structural [`WExpr`] (no evaluate).

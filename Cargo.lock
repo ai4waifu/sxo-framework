@@ -1023,7 +1023,6 @@ dependencies = [
  "oak-core",
  "oak-matlab",
  "sxo-adapter-apollo",
- "sxo-dialect-mathematica",
  "sxo-types",
 ]
 

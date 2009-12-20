@@ -7,7 +7,6 @@ use athena::{
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
-use sxo_dialect_mathematica::{render, wexpr_from_session};
 use sxo_dialect_matlab::{
     application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg,
 };
@@ -129,10 +128,7 @@ fn parse_pythagorean() {
 fn parse_diff() {
     let h = H::new();
     let e = h.eval("diff(x^3, x)");
-    let s = h.with_mut(|s| {
-        let w = wexpr_from_session(s, e);
-        render(&w)
-    });
+    let s = h.render(e);
     assert!(s.contains('x'), "got {s}");
 }
 

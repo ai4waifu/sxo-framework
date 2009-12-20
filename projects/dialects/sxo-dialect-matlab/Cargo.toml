@@ -23,4 +23,3 @@ oak-matlab = { workspace = true }
 
 [dev-dependencies]
 athena = { workspace = true }
-sxo-dialect-mathematica = { workspace = true }
