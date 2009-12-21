@@ -21,7 +21,6 @@ compatibility promise.
 | Small predictable grammar       | `@sxo/simple-math` | Examples, education, tests                        |
 | Wolfram-style source            | `@sxo/mathematica` | Wolfram and notebook users                        |
 | MATLAB-style source             | `@sxo/matlab`      | MATLAB users and tooling authors                  |
-| PARI/GP-style number theory     | `@sxo/pari-gp`     | Placeholder package reserved for a future adapter |
 | Browser or worker execution     | `@sxo/lite`        | Frontend and bundler users                        |
 
 Platform packages are optional native artifacts selected by npm. The internal WASM artifact is consumed by `@sxo/lite`,

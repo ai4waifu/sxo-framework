@@ -17,8 +17,8 @@
  * Usage:
  *   node scripts/ci/publish-placeholder.mjs
  *   node scripts/ci/publish-placeholder.mjs --refresh
- *   node scripts/ci/publish-placeholder.mjs publish --only @sxo/pari-gp
- *   node scripts/ci/publish-placeholder.mjs trust --only @sxo/pari-gp
+ *   node scripts/ci/publish-placeholder.mjs publish --only @sxo/core
+ *   node scripts/ci/publish-placeholder.mjs trust --only @sxo/lite
  *   # or in .env.placeholder.local:
  *   #   NPM_TOTP_SECRET=<authenticator base32>
  *   #   NPM_TOKEN=npm_xxx
@@ -76,7 +76,6 @@ const JS_STUBS = [
     '@sxo/mathematica',
     '@sxo/matlab',
     '@sxo/sxo',
-    '@sxo/pari-gp',
 ];
 const NATIVE_STUBS = [
     { name: '@sxo/sxo-win32-x64', os: ['win32'], cpu: ['x64'] },
@@ -176,10 +175,7 @@ if (rest.includes('--publish') || rest.includes('--trust')) {
 const ALL_STUBS = [
     ...JS_STUBS.map((name) => ({
         name,
-        description:
-            name === '@sxo/pari-gp'
-                ? 'SXO PARI/GP dialect placeholder. No parser or evaluator is shipped yet.'
-                : 'SXO placeholder — not for production use.',
+        description: 'SXO placeholder — not for production use.',
     })),
     ...NATIVE_STUBS.map((s) => ({
         ...s,

@@ -122,11 +122,5 @@
       "kind": "directory",
       "required": true
     }
-  ],
-  "excludedFromMove": [
-    {
-      "path": "projects/runtimes/sxo-pari-gp",
-      "reason": "feasibility placeholder · not part of target product tree (Living 16)"
-    }
   ]
 }
