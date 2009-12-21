@@ -7,7 +7,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
     resolve: {
         alias: {
-            '@sxo/harness': path.join(root, '../sxo-harness/src/index.ts'),
+            // Resolve harness via workspace package (`projects/tooling/sxo-harness`).
             '@sxo/mathematica/jupyter': path.join(root, 'src/jupyter/install.ts'),
             '@sxo/mathematica/cli': path.join(root, 'src/cli.ts'),
             '@sxo/mathematica': path.join(root, 'src/index.ts'),
