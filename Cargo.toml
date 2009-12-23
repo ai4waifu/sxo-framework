@@ -36,10 +36,6 @@ athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "4e59b2603da
 athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "4e59b2603da3971b97b1af797e8ecdf8c518ba49", package = "athena-types" }
 athena-ir = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "4e59b2603da3971b97b1af797e8ecdf8c518ba49", package = "athena-ir" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
-num-bigint = { version = "0.4", default-features = false, features = ["std"] }
-num-rational = { version = "0.4", default-features = false, features = ["std", "num-bigint"] }
-num-traits = "0.2"
-num-integer = "0.1"
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 serde = { version = "1", features = ["derive"] }
