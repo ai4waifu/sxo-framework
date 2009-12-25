@@ -1005,8 +1005,6 @@ name = "sxo-dialect-mathematica"
 version = "0.0.3"
 dependencies = [
  "athena",
- "athena-ir",
- "athena-types",
  "oak-core",
  "oak-wolfram",
  "sxo-adapter-apollo",
@@ -1018,8 +1016,6 @@ name = "sxo-dialect-matlab"
 version = "0.0.3"
 dependencies = [
  "athena",
- "athena-ir",
- "athena-types",
  "oak-core",
  "oak-matlab",
  "sxo-adapter-apollo",
@@ -1031,8 +1027,6 @@ name = "sxo-dialect-simple-math"
 version = "0.0.3"
 dependencies = [
  "athena",
- "athena-ir",
- "athena-types",
  "sxo-types",
 ]
 

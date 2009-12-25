@@ -14,6 +14,4 @@ workspace = true
 
 [dependencies]
 athena = { workspace = true }
-athena-ir = { workspace = true }
-athena-types = { workspace = true }
 sxo-types = { workspace = true }
