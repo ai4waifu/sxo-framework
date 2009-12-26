@@ -18,7 +18,8 @@ fn map_err(err: SxoError) -> Error {
 
 fn dialect_from_str(s: Option<String>) -> Result<Dialect> {
     match s.as_deref() {
-        None | Some("auto") => Ok(Dialect::Auto),
+        None => Err(Error::from_reason("dialect is required (mathematica | matlab | simple-math)")),
+        Some("auto") => Err(Error::from_reason("dialect auto is removed. pass an explicit dialect")),
         Some("simple-math") | Some("sm") => Ok(Dialect::SimpleMath),
         Some("mathematica") => Ok(Dialect::Mathematica),
         Some("matlab") => Ok(Dialect::Matlab),
@@ -28,7 +29,6 @@ fn dialect_from_str(s: Option<String>) -> Result<Dialect> {
 
 fn dialect_to_str(d: Dialect) -> &'static str {
     match d {
-        Dialect::Auto => "auto",
         Dialect::SimpleMath => "simple-math",
         Dialect::Mathematica => "mathematica",
         Dialect::Matlab => "matlab",
@@ -36,21 +36,17 @@ fn dialect_to_str(d: Dialect) -> &'static str {
 }
 
 fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect)> {
-    let resolved = match session.resolve_dialect(input, dialect) {
-        Dialect::Auto => Dialect::Mathematica,
-        other => other,
-    };
-    let term = match resolved {
+    let term = match dialect {
         Dialect::Mathematica => {
             let w = session.parse_mathematica(input).map_err(map_err)?;
             session.lower_mathematica(&w)
         }
         Dialect::Matlab => session.parse_matlab(input).map_err(map_err)?,
-        Dialect::SimpleMath | Dialect::Auto => {
+        Dialect::SimpleMath => {
             return Err(Error::from_reason("simple-math dialect is off the current delivery route"));
         }
     };
-    Ok((term, resolved))
+    Ok((term, dialect))
 }
 
 /// Fork `root` into a fresh host [`Session`] via dialect-native round-trip.
@@ -64,7 +60,7 @@ fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<
             let text = session.render_as_matlab(root);
             fresh.parse_matlab(&text).map_err(map_err)?
         }
-        Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+        Dialect::Mathematica | Dialect::SimpleMath => {
             let w = session.to_mathematica(root);
             fresh.lower_mathematica(&w)
         }
@@ -89,7 +85,7 @@ pub struct Expression {
 
 #[napi]
 impl Expression {
-    /// Parse `input` with optional dialect (`auto` | `mathematica` | `matlab`).
+    /// Parse `input` with an explicit dialect (`mathematica` | `matlab` | `simple-math`).
     #[napi(factory)]
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;

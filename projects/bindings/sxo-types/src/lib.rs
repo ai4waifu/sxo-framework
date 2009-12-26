@@ -8,7 +8,7 @@ mod dialect;
 mod error;
 
 pub use athena_types::{Diagnostic, DiagnosticCode, Severity, SourceSpan, TermId};
-pub use dialect::{Dialect, detect_dialect};
+pub use dialect::Dialect;
 pub use error::SxoError;
 
 /// SXO product version (semver string for N-API / packages).

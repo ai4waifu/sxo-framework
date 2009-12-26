@@ -20,13 +20,11 @@ use athena::{
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
-use sxo_types::{Dialect, SxoError, detect_dialect};
+use sxo_types::{Dialect, SxoError};
 
 /// SXO host session: dialect crates + Athena math with persistent Own `Set` defs.
 #[derive(Debug, Default)]
 pub struct Session {
-    /// Preferred render dialect when callers do not override.
-    pub default_dialect: Dialect,
     /// Athena eval session (definitions persist across `evaluate` calls).
     math_session: RefCell<AthenaSession>,
 }
@@ -34,22 +32,14 @@ pub struct Session {
 impl Clone for Session {
     fn clone(&self) -> Self {
         // Fresh Athena session: definitions are not shared across cloned host sessions.
-        Self { default_dialect: self.default_dialect, math_session: RefCell::new(AthenaSession::new()) }
+        Self { math_session: RefCell::new(AthenaSession::new()) }
     }
 }
 
 impl Session {
-    /// Create a session with `Auto` as the default dialect preference.
+    /// Create a host session with a fresh Athena math session.
     pub fn new() -> Self {
-        Self { default_dialect: Dialect::Auto, math_session: RefCell::new(AthenaSession::new()) }
-    }
-
-    /// Resolve `Auto` against `input`, otherwise return `dialect`.
-    pub fn resolve_dialect(&self, input: &str, dialect: Dialect) -> Dialect {
-        match dialect {
-            Dialect::Auto => detect_dialect(input),
-            other => other,
-        }
+        Self { math_session: RefCell::new(AthenaSession::new()) }
     }
 
     fn math_engine(&self) -> AthenaEngine {
@@ -86,7 +76,7 @@ impl Session {
                 let request = matlab::lower_request(&mut ms, root);
                 self.execute_lowered(&mut ms, request, root)
             }
-            Dialect::Mathematica | Dialect::Auto | Dialect::SimpleMath => {
+            Dialect::Mathematica | Dialect::SimpleMath => {
                 let w = self.to_mathematica(root);
                 let mut ms = self.math_session.borrow_mut();
                 let request = mathematica::lower_request(&mut ms, &w);
@@ -207,7 +197,7 @@ impl Session {
         match dialect {
             Dialect::Mathematica => mathematica::try_plot_svg(&mut ms, id),
             Dialect::Matlab => matlab::try_plot_svg(&mut ms, id),
-            Dialect::SimpleMath | Dialect::Auto => None,
+            Dialect::SimpleMath => None,
         }
     }
 
