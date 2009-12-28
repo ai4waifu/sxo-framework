@@ -37,6 +37,7 @@ function platformPackage(): { name: string; triple: string } {
 
 let cached: NativeBinding | null = null;
 
+/** Load the platform N-API addon (cached). */
 export function loadNative(): NativeBinding {
     if (cached) return cached;
     const { name, triple } = platformPackage();
@@ -49,6 +50,3 @@ export function loadNative(): NativeBinding {
     cached = require(binary) as NativeBinding;
     return cached;
 }
-
-/** Always simple-math for `@sxo/core`. */
-export const CORE_DIALECT = 'simple-math';

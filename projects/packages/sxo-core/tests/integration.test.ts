@@ -1,4 +1,4 @@
-import { d, version } from '@sxo/core';
+import { CAPABILITIES, createSession, version } from '@sxo/core';
 import { describe, expect, it } from 'vitest';
 
 describe('@sxo/core', () => {
@@ -8,7 +8,14 @@ describe('@sxo/core', () => {
         expect(v).toMatch(/^\d+\.\d+\.\d+/);
     });
 
-    it('rejects simple-math on the current delivery route', () => {
-        expect(() => d('x^3', 'x')).toThrow(/off the current delivery route/);
+    it('exposes native capabilities without WASM', () => {
+        expect(CAPABILITIES.host).toBe('native');
+        expect(CAPABILITIES.wasm).toBe(false);
+        expect(CAPABILITIES.jupyter).toBe(true);
+    });
+
+    it('creates a Session with the same version()', () => {
+        const session = createSession();
+        expect(session.version()).toBe(version());
     });
 });

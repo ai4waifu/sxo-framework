@@ -3,7 +3,7 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Loads the SXO N-API addon and exposes a thin Expression API for the simple-math dialect.",
+    "description": "Native TypeScript CAS face: Session, opaque handles, diagnostics, and host capabilities. No dialect parsers and no WASM.",
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
@@ -17,7 +17,8 @@
         "sxo",
         "napi",
         "native-addon",
-        "simple-math"
+        "cas",
+        "session"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
