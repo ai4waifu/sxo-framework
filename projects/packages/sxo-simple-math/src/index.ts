@@ -1,15 +1,28 @@
-import { d as coreD, expression as coreExpression, simplify as coreSimplify, Expression, version } from '@sxo/core';
+import { Expression, createSession, version } from '@sxo/core';
 
 export { Expression, version };
 
+/** Explicit simple-math dialect tag for the native host. */
+const SIMPLE_MATH_DIALECT = 'simple-math';
+
+function binding() {
+    return createSession().binding;
+}
+
+/** Parse simple-math source (no evaluate). */
 export function expression(input: string | Expression): Expression {
-    return coreExpression(input);
+    if (input instanceof Expression) return input;
+    return Expression.fromNative(binding().expression(input, SIMPLE_MATH_DIALECT));
 }
 
+/** Differentiate simple-math source or an existing expression. */
 export function d(input: string | Expression, varName: string): Expression {
-    return coreD(input, varName);
+    if (input instanceof Expression) return input.d(varName);
+    return Expression.fromNative(binding().d(input, varName, SIMPLE_MATH_DIALECT));
 }
 
+/** Simplify simple-math source or an existing expression. */
 export function simplify(input: string | Expression): Expression {
-    return coreSimplify(input);
+    if (input instanceof Expression) return input.simplify();
+    return Expression.fromNative(binding().simplify(input, SIMPLE_MATH_DIALECT));
 }

@@ -8,6 +8,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@sxo/simple-math': path.join(root, 'src/index.ts'),
+            '@sxo/core': path.join(root, '../sxo-core/src/index.ts'),
         },
     },
     test: {

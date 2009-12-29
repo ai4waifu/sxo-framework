@@ -3,7 +3,7 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Minimal arithmetic dialect frontend on top of @sxo/core (parse / differentiate / simplify).",
+    "description": "Simple Math dialect frontend. Adapts `@sxo/core` Session with an explicit simple-math dialect tag.",
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
