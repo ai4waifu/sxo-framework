@@ -3,7 +3,7 @@
     "version": "0.0.3",
     "private": true,
     "type": "module",
-    "description": "Browser TypeScript facade over the @sxo/lite-unknown-wasm32 wasm-pack artifact.",
+    "description": "WASM TypeScript CAS face isomorphic with `@sxo/core`: Session, opaque handles, diagnostics, and host capabilities.",
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
@@ -16,7 +16,9 @@
     "keywords": [
         "sxo",
         "wasm",
-        "browser"
+        "browser",
+        "cas",
+        "session"
     ],
     "license": "Apache-2.0",
     "main": "./dist/index.js",
@@ -32,12 +34,14 @@
         "README.md"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json"
+        "build": "tsc -p tsconfig.json",
+        "test": "vitest run"
     },
     "dependencies": {
         "@sxo/lite-unknown-wasm32": "workspace:*"
     },
     "devDependencies": {
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.4"
     }
 }
