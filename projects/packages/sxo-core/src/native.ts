@@ -4,18 +4,29 @@ import path from 'node:path';
 
 const require = createRequire(import.meta.url);
 
+/** Opaque N-API expression handle (methods only; no arena identity). */
 export type NativeExpression = {
     d(varName: string): NativeExpression;
     simplify(): NativeExpression;
+    evaluate(): NativeExpression;
     toString(): string;
+    toWolfram(): string;
+    toMatlab(): string;
     isEqual(other: NativeExpression): boolean;
+    plotSvg(): string;
+    dialect: string;
 };
 
+/** Full native host ABI used by `@sxo/core` and dialect adapters. */
 export type NativeBinding = {
     version(): string;
     expression(input: string, dialect?: string | null): NativeExpression;
+    evaluate(input: string, dialect?: string | null): NativeExpression;
     d(input: string, varName: string, dialect?: string | null): NativeExpression;
     simplify(input: string, dialect?: string | null): NativeExpression;
+    plotSvg(input: string, dialect?: string | null): string;
+    /** Block until Jupyter kernel shutdown (connection file path). */
+    runJupyterKernel(connectionFile: string): void;
 };
 
 function platformPackage(): { name: string; triple: string } {
