@@ -37,6 +37,9 @@
         "test": "vitest run",
         "report:features": "vite-node ./tests/feature-matrix/report.ts"
     },
+    "dependencies": {
+        "@sxo/core": "workspace:*"
+    },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",
         "@sxo/sxo-linux-x64": "workspace:*",

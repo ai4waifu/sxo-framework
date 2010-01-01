@@ -9,6 +9,7 @@ export default defineConfig({
         alias: {
             // Resolve harness via workspace package (`projects/tooling/sxo-harness`).
             '@sxo/matlab': path.join(root, 'src/index.ts'),
+            '@sxo/core': path.join(root, '../sxo-core/src/index.ts'),
         },
     },
     test: {
