@@ -11,6 +11,7 @@ export default defineConfig({
             '@sxo/mathematica/jupyter': path.join(root, 'src/jupyter/install.ts'),
             '@sxo/mathematica/cli': path.join(root, 'src/cli.ts'),
             '@sxo/mathematica': path.join(root, 'src/index.ts'),
+            '@sxo/core': path.join(root, '../sxo-core/src/index.ts'),
         },
     },
     test: {

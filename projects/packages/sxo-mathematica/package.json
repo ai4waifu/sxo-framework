@@ -55,6 +55,7 @@
         "report:features": "vite-node ./tests/feature-matrix/report.ts"
     },
     "dependencies": {
+        "@sxo/core": "workspace:*",
         "@vmz/commander": "0.1.26",
         "@vmz/diagnostic": "0.1.26"
     },
