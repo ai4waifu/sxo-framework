@@ -7,12 +7,12 @@ import { toConsoleRows, toMarkdownTable } from './reporters/matrix.js';
 type DialectId = 'mathematica' | 'matlab';
 
 const HARNESS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const RUNTIMES_ROOT = path.resolve(HARNESS_ROOT, '..');
+const PACKAGES_ROOT = path.resolve(HARNESS_ROOT, '..', '..', 'packages');
 
 /** Dialect-owned tests trees (not product `src/` / dist exports). */
 const MATRIX_ENTRY: Record<DialectId, string> = {
-    mathematica: path.join(RUNTIMES_ROOT, 'sxo-mathematica', 'tests', 'feature-matrix', 'index.ts'),
-    matlab: path.join(RUNTIMES_ROOT, 'sxo-matlab', 'tests', 'feature-matrix', 'index.ts'),
+    mathematica: path.join(PACKAGES_ROOT, 'sxo-mathematica', 'tests', 'feature-matrix', 'index.ts'),
+    matlab: path.join(PACKAGES_ROOT, 'sxo-matlab', 'tests', 'feature-matrix', 'index.ts'),
 };
 
 function isDialectId(value: string | undefined): value is DialectId {
