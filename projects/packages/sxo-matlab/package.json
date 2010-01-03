@@ -20,6 +20,9 @@
         "napi"
     ],
     "license": "Apache-2.0",
+    "sxo": {
+        "featureMatrix": "./tests/feature-matrix/index.ts"
+    },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {

@@ -1,27 +1,73 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import type { FeatureMatrix } from './matrix/types.js';
 import { validateFeatureMatrix } from './matrix/validate.js';
 import { toConsoleRows, toMarkdownTable } from './reporters/matrix.js';
 
 type DialectId = 'mathematica' | 'matlab';
 
-const HARNESS_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PACKAGES_ROOT = path.resolve(HARNESS_ROOT, '..', '..', 'packages');
+const require = createRequire(import.meta.url);
 
-/** Dialect-owned tests trees (not product `src/` / dist exports). */
-const MATRIX_ENTRY: Record<DialectId, string> = {
-    mathematica: path.join(PACKAGES_ROOT, 'sxo-mathematica', 'tests', 'feature-matrix', 'index.ts'),
-    matlab: path.join(PACKAGES_ROOT, 'sxo-matlab', 'tests', 'feature-matrix', 'index.ts'),
+/** Map CLI dialect id → npm package that owns the matrix. */
+const DIALECT_PACKAGE: Record<DialectId, string> = {
+    mathematica: '@sxo/mathematica',
+    matlab: '@sxo/matlab',
 };
 
-function isDialectId(value: string | undefined): value is DialectId {
-    return value === 'mathematica' || value === 'matlab';
+type SxoPackageConfig = {
+    featureMatrix?: string;
+};
+
+type PackageJson = {
+    name?: string;
+    sxo?: SxoPackageConfig;
+};
+
+/** Walk up from a resolved package entry until package.json with matching name. */
+function resolvePackageRoot(pkgName: string): string {
+    const entry = require.resolve(pkgName);
+    let dir = path.dirname(entry);
+    for (;;) {
+        const candidate = path.join(dir, 'package.json');
+        if (existsSync(candidate)) {
+            const pkg = JSON.parse(readFileSync(candidate, 'utf8')) as PackageJson;
+            if (pkg.name === pkgName) {
+                return dir;
+            }
+        }
+        const parent = path.dirname(dir);
+        if (parent === dir) {
+            throw new Error(`cannot locate package root for ${pkgName} (started at ${entry})`);
+        }
+        dir = parent;
+    }
+}
+
+/**
+ * Resolve the dialect-owned feature matrix entry from package.json `sxo.featureMatrix`.
+ *
+ * Harness does not hard-code package tree paths. Dialects declare the relative entry
+ * under their own package root.
+ */
+export function resolveDialectFeatureMatrixEntry(dialect: DialectId): string {
+    const pkgName = DIALECT_PACKAGE[dialect];
+    const root = resolvePackageRoot(pkgName);
+    const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')) as PackageJson;
+    const rel = pkg.sxo?.featureMatrix?.trim();
+    if (!rel) {
+        throw new Error(`${pkgName} package.json missing sxo.featureMatrix (dialect-owned matrix entry)`);
+    }
+    return path.resolve(root, rel);
 }
 
 export async function loadDialectFeatureMatrix(dialect: DialectId): Promise<FeatureMatrix> {
-    const entry = MATRIX_ENTRY[dialect];
+    const entry = resolveDialectFeatureMatrixEntry(dialect);
     const mod = (await import(pathToFileURL(entry).href)) as { featureMatrix: FeatureMatrix };
+    if (!mod.featureMatrix) {
+        throw new Error(`${entry} must export featureMatrix`);
+    }
     return mod.featureMatrix;
 }
 
@@ -39,29 +85,3 @@ export async function reportDialectFeatures(dialect: DialectId, mode: 'markdown'
     return toMarkdownTable(matrix);
 }
 
-async function main(argv: string[] = process.argv): Promise<number> {
-    const dialectArg = argv[2];
-    const modeArg = argv[3] ?? 'markdown';
-    if (!isDialectId(dialectArg)) {
-        console.error('Usage: report-features <mathematica|matlab> [markdown|table]');
-        console.error('Prefer: pnpm --filter @sxo/<dialect> report:features');
-        return 1;
-    }
-    if (modeArg !== 'markdown' && modeArg !== 'table') {
-        console.error('Mode must be markdown or table');
-        return 1;
-    }
-    try {
-        const out = await reportDialectFeatures(dialectArg, modeArg);
-        if (out !== null) process.stdout.write(out);
-        return 0;
-    } catch (err) {
-        console.error(err instanceof Error ? err.message : String(err));
-        return 1;
-    }
-}
-
-const isDirect = process.argv[1] !== undefined && /report-features\.[cm]?[jt]s$/.test(process.argv[1].replace(/\\/g, '/'));
-if (isDirect) {
-    process.exitCode = await main();
-}

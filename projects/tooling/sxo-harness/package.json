@@ -42,9 +42,11 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "vite-node --script ./src/report-features.ts"
+        "report:features": "vite-node ./src/report-features.cli.ts"
     },
     "devDependencies": {
+        "@sxo/mathematica": "workspace:*",
+        "@sxo/matlab": "workspace:*",
         "@types/node": "^22.15.0",
         "typescript": "^5.8.3",
         "vite-node": "^3.2.4",

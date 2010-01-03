@@ -21,6 +21,9 @@
         "jupyter"
     ],
     "license": "Apache-2.0",
+    "sxo": {
+        "featureMatrix": "./tests/feature-matrix/index.ts"
+    },
     "bin": {
         "wolframscript": "./bin/wolframscript.mjs"
     },

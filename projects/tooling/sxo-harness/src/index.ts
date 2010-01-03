@@ -35,6 +35,10 @@ export {
     runFeatureCase,
     validateFeatureMatrix,
 } from './matrix/index.js';
-export { loadDialectFeatureMatrix, reportDialectFeatures } from './report-features.js';
+export {
+    loadDialectFeatureMatrix,
+    reportDialectFeatures,
+    resolveDialectFeatureMatrixEntry,
+} from './report-features.js';
 export type { FeatureGapRow } from './reporters/index.js';
 export { listGaps, summarizeMatrix, toConsoleRows, toMarkdownTable } from './reporters/index.js';
