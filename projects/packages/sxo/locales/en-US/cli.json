@@ -2,6 +2,10 @@
     "cli.intro": "sxo — toolchain CLI for the SXO symbolic engine (not a calculator)",
     "cli.cmd.version": "Print CLI and engine versions",
     "cli.cmd.doctor": "Check Node + native engine load",
+    "cli.cmd.features": "Print how to report an explicit dialect feature matrix (no auto dialect)",
+    "cli.arg.dialect": "Dialect id (mathematica | matlab)",
     "cli.opt.json": "Emit one JSON document on stdout",
-    "diag.native_unavailable": "Native engine unavailable: {detail}"
+    "diag.native_unavailable": "Native engine unavailable: {detail}",
+    "diag.dialect_required": "Dialect is required (mathematica | matlab). Auto detection is not supported.",
+    "diag.unknown_dialect": "Unknown dialect: {detail}. Use mathematica or matlab."
 }

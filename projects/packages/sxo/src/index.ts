@@ -110,13 +110,37 @@ function buildCli() {
         return ok ? 0 : 1;
     });
 
+    cli.command('features', 'cli.cmd.features').action((options: { json?: boolean; _?: string[] }) => {
+        const id = options._?.[0]?.trim().toLowerCase();
+        if (!id || id === 'auto') {
+            writeDiag('diag.dialect_required');
+            return 1;
+        }
+        if (id !== 'mathematica' && id !== 'matlab') {
+            writeDiag('diag.unknown_dialect', id);
+            return 1;
+        }
+        const filter = id === 'mathematica' ? '@sxo/mathematica' : '@sxo/matlab';
+        const body = {
+            dialect: id,
+            command: `pnpm --filter ${filter} report:features`,
+            note: 'Feature matrix data is owned by the dialect package. This CLI does not guess dialects.',
+        };
+        if (options.json === true) {
+            console.log(JSON.stringify(body));
+        } else {
+            console.log([`dialect  ${body.dialect}`, `run      ${body.command}`, `note     ${body.note}`].join('\n'));
+        }
+        return 0;
+    });
+
     assertCatalogCoverage(cli, loadCatalog('en-US', resolveLocalesRoot()));
     return cli;
 }
 
 /**
  * CLI entry used by `bin/sxo.mjs`.
- * Tooling only (version / doctor) — symbolic compute stays in library APIs.
+ * Tooling only (version / doctor / features routing) — symbolic compute stays in dialect packages.
  */
 export async function main(argv: string[] = process.argv): Promise<number> {
     return buildCli().parse(argv);

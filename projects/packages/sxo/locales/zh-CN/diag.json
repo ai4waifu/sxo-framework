@@ -1,3 +1,5 @@
 {
-    "diag.native_unavailable": "原生引擎不可用：{detail}"
+    "diag.native_unavailable": "原生引擎不可用：{detail}",
+    "diag.dialect_required": "必须显式指定方言（mathematica | matlab）。不支持自动探测。",
+    "diag.unknown_dialect": "未知方言：{detail}。请使用 mathematica 或 matlab。"
 }

@@ -1,3 +1,5 @@
 {
-    "diag.native_unavailable": "Native engine unavailable: {detail}"
+    "diag.native_unavailable": "Native engine unavailable: {detail}",
+    "diag.dialect_required": "Dialect is required (mathematica | matlab). Auto detection is not supported.",
+    "diag.unknown_dialect": "Unknown dialect: {detail}. Use mathematica or matlab."
 }
