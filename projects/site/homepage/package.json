@@ -1,13 +1,11 @@
 {
-    "name": "@dxo/homepage",
+    "name": "@sxo/homepage",
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO marketing homepage - VMZ frontend with pinned @dxo/lite (CF Pages cannot build Rust/wasm)",
+    "description": "SXO marketing homepage (VMZ static site). Isolated from core build, test, and publish graphs.",
     "scripts": {
         "check": "vmz check .",
-        "predev": "node ../../scripts/build/stage-homepage-wasm.mjs",
-        "prebuild": "node ../../scripts/build/stage-homepage-wasm.mjs",
         "build": "vmz build --release --profile static .",
         "dev": "vmz dev .",
         "preview": "vmz serve --profile static .",

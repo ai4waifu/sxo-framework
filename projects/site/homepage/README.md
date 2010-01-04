@@ -1,6 +1,7 @@
-# 🏠 DXO Homepage
+# SXO Homepage
 
-The public homepage for DXO: TypeScript-first deep learning for Node.js, browsers, and edge applications.
+Public marketing site for **SXO** (symbolic computing). Built with VMZ as a static site and kept outside the core
+product build, test, and npm publish graphs.
 
-The site showcases tensor workflows, model-powered experiences, and the DXO ecosystem through a fast static web
-experience.
+Browser demos may still pin a published WASM face for Cloudflare Pages (which cannot compile Rust in CI). That pin is a
+site concern only — it must not pull `@sxo/core` native addons or dialect packages into the homepage dependency graph.
