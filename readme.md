@@ -216,15 +216,17 @@ selection, runtime mode, and feature-report status before comparing display stri
 
 ## 🗂️ Repository Layout
 
-The repository keeps product packages under `projects/runtimes`, the private homepage under `projects/homepage`, and
-build, test, and release automation under `scripts`. Package READMEs live next to their manifests so npm users see the
-same guidance as repository contributors. Native artifacts are intentionally separated from TypeScript sources. The root
-manifest is a private workspace manifest and is not itself an installable SXO product.
+The repository keeps product packages under `projects/packages`, native and WASM artifacts under `projects/platforms`,
+Rust dialects and bindings under `projects/dialects` / `projects/bindings` / `projects/adapters`, private R&D tooling
+under `projects/tooling`, and the marketing site under `projects/site`. Build, test, and release automation live under
+`scripts`. Package READMEs live next to their manifests so npm users see the same guidance as repository contributors.
+Native artifacts are intentionally separated from TypeScript sources. The root manifest is a private workspace manifest
+and is not itself an installable SXO product.
 
 ## 🔭 Related Projects
 
-- [Runtime packages](projects/runtimes)
-- [Homepage application](projects/homepage)
+- [Product packages](projects/packages)
+- [Homepage application](projects/site/homepage)
 - [Build scripts](scripts)
 - [Athena](../athena.rs)
 
