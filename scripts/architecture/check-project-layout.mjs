@@ -36,6 +36,12 @@ const PRODUCT_PACKAGE_DIRS = [
     'projects/packages/sxo-simple-math',
 ];
 
+const RUST_SCAN_ROOTS = [
+    'projects/dialects',
+    'projects/bindings',
+    'projects/adapters',
+];
+
 function fail(msg) {
     console.error(`check-project-layout: ${msg}`);
     process.exit(1);
@@ -85,6 +91,89 @@ function packageJsonDeps(relDir) {
         peerDependencies: pkg.peerDependencies ?? {},
         devDependencies: pkg.devDependencies ?? {},
     };
+}
+
+function* walkFiles(absDir, exts) {
+    if (!fs.existsSync(absDir)) return;
+    for (const ent of fs.readdirSync(absDir, { withFileTypes: true })) {
+        const abs = path.join(absDir, ent.name);
+        if (ent.isDirectory()) {
+            if (ent.name === 'target' || ent.name === 'node_modules' || ent.name === 'dist') continue;
+            yield* walkFiles(abs, exts);
+        } else if (exts.some((e) => ent.name.endsWith(e))) {
+            yield abs;
+        }
+    }
+}
+
+function relFromRoot(abs) {
+    return path.relative(ROOT, abs).replace(/\\/g, '/');
+}
+
+function scanForbiddenRustTokens(findings) {
+    const patterns = [
+        { re: /\bDialect::Auto\b/, label: 'Dialect::Auto' },
+        { re: /\bdetect_dialect\b/, label: 'detect_dialect' },
+        { re: /\bSxoEngine\b/, label: 'SxoEngine' },
+        { re: /\bathena-engine\b/, label: 'athena-engine dependency token' },
+        { re: /\bathena_engine::/, label: 'athena_engine:: import' },
+    ];
+    for (const root of RUST_SCAN_ROOTS) {
+        const absRoot = path.join(ROOT, root);
+        for (const file of walkFiles(absRoot, ['.rs', '.toml'])) {
+            const text = fs.readFileSync(file, 'utf8');
+            const rel = relFromRoot(file);
+            for (const { re, label } of patterns) {
+                if (re.test(text)) {
+                    findings.push({ level: 'error', message: `forbidden ${label} in ${rel}` });
+                }
+            }
+        }
+    }
+}
+
+function scanDialectCrateCrossDeps(findings) {
+    const dialectDirs = [
+        'projects/dialects/sxo-dialect-mathematica',
+        'projects/dialects/sxo-dialect-matlab',
+        'projects/dialects/sxo-dialect-simple-math',
+    ];
+    const dialectCrates = new Set([
+        'sxo-dialect-mathematica',
+        'sxo-dialect-matlab',
+        'sxo-dialect-simple-math',
+    ]);
+    for (const dir of dialectDirs) {
+        const cargoRel = path.join(dir, 'Cargo.toml');
+        if (!exists(cargoRel)) continue;
+        const toml = readText(cargoRel);
+        for (const other of dialectCrates) {
+            if (dir.endsWith(other)) continue;
+            if (new RegExp(`\\b${other}\\b`).test(toml)) {
+                findings.push({
+                    level: 'error',
+                    message: `${cargoRel} must not depend on ${other}`,
+                });
+            }
+        }
+    }
+}
+
+function scanBugsUrl(findings) {
+    for (const globPat of listPnpmGlobs()) {
+        for (const member of expandWorkspaceGlob(globPat)) {
+            const pkgRel = path.join(member, 'package.json');
+            if (!exists(pkgRel)) continue;
+            const pkg = JSON.parse(readText(pkgRel));
+            const bugs = pkg.bugs?.url;
+            if (typeof bugs === 'string' && bugs.includes('/issues')) {
+                findings.push({
+                    level: 'error',
+                    message: `${pkgRel} bugs.url must not point at GitHub Issues (use Discussions bugs)`,
+                });
+            }
+        }
+    }
 }
 
 function main() {
@@ -188,6 +277,10 @@ function main() {
         if (exists('projects/bindings/sxo-engine') || exists('projects/packages/sxo-engine')) {
             findings.push({ level: 'error', message: 'sxo-engine path must not exist' });
         }
+
+        scanForbiddenRustTokens(findings);
+        scanDialectCrateCrossDeps(findings);
+        scanBugsUrl(findings);
     } else {
         findings.push({
             level: 'info',
