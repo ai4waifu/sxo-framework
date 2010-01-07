@@ -1,8 +1,8 @@
 <template>
-  <div class="dxo-lite-page">
-    <header class="dxo-site-header">
-      <Link class="dxo-site-header__brand" href="/"><strong>DXO</strong></Link>
-      <nav class="dxo-site-header__nav" aria-label="Primary">
+  <div class="sxo-lite-page">
+    <header class="sxo-site-header">
+      <Link class="sxo-site-header__brand" href="/"><strong>SXO</strong></Link>
+      <nav class="sxo-site-header__nav" aria-label="Primary">
         <Link href="/">Home</Link>
         <Link href="/lite">@dxo/lite</Link>
         <Link href="/playground">Playground</Link>
@@ -10,13 +10,13 @@
     </header>
     <main>
       <h1>@dxo/lite test surface</h1>
-      <p class="dxo-lite-page__lede">
-        Async runtime facade; host f32 until the DXO GPU WASM facade is linked. TS never retains GPUDevice. WebGL is not a
+      <p class="sxo-lite-page__lede">
+        Async runtime facade; host f32 until the GPU WASM facade is linked. TS never retains GPUDevice. WebGL is not a
         tensor backend.
       </p>
 
       <Card title="Probe results" description="Live createRuntime capabilities.">
-        <dl class="dxo-lite-page__probe">
+        <dl class="sxo-lite-page__probe">
           <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
           <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
           <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
@@ -41,7 +41,7 @@
 </template>
 
 <style>
-  .dxo-site-header {
+  .sxo-site-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -50,18 +50,18 @@
     margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--vmz-line-default, #e2e8f0);
   }
-  .dxo-site-header__brand {
+  .sxo-site-header__brand {
     font-size: 1.15rem;
     letter-spacing: 0.04em;
     text-decoration: none;
     color: var(--vmz-text-ink, #0f172a);
   }
-  .dxo-site-header__nav {
+  .sxo-site-header__nav {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
   }
-  .dxo-lite-page {
+  .sxo-lite-page {
     max-width: 48rem;
     margin: 0 auto;
     padding: 0 1.25rem 3rem;
@@ -69,30 +69,30 @@
     flex-direction: column;
     gap: 1.25rem;
   }
-  .dxo-lite-page h1 {
+  .sxo-lite-page h1 {
     margin: 0;
   }
-  .dxo-lite-page__lede {
+  .sxo-lite-page__lede {
     margin: 0;
     color: var(--vmz-text-steel, #475569);
     line-height: 1.55;
   }
-  .dxo-lite-page__probe {
+  .sxo-lite-page__probe {
     margin: 0;
     display: grid;
     gap: 0.35rem;
   }
-  .dxo-lite-page__probe div {
+  .sxo-lite-page__probe div {
     display: grid;
     grid-template-columns: 11rem 1fr;
     gap: 0.5rem;
     font-family: var(--vmz-font-mono, ui-monospace, monospace);
     font-size: 0.85rem;
   }
-  .dxo-lite-page__probe dt {
+  .sxo-lite-page__probe dt {
     color: var(--vmz-text-steel, #475569);
   }
-  .dxo-lite-page__probe dd {
+  .sxo-lite-page__probe dd {
     margin: 0;
   }
 </style>
@@ -101,7 +101,7 @@
 import { probeLite } from '../lib/lite-probe.ts';
 
 export default class LiteTestPage {
-    selfTestSample = 'pnpm --filter @dxo/homepage test:lite\npnpm verify -- lite-webgpu-smoke';
+    selfTestSample = 'pnpm --filter @sxo/homepage test:lite\npnpm verify -- lite-webgpu-smoke';
     liteVersion = '';
     liteBackend = '';
     liteWasm = '';
