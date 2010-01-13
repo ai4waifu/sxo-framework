@@ -39,6 +39,7 @@ impl Session {
 
     /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
     /// Prefer [`Self::evaluate_form`] for dialect surface that needs `lower_request`.
+    #[allow(dead_code)]
     pub fn evaluate(&self, expr: TermId) -> TermId {
         self.math_session.borrow_mut().evaluate(expr)
     }
