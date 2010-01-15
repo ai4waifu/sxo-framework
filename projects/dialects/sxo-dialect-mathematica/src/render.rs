@@ -42,7 +42,9 @@ fn try_infix(head: &WExpr, args: &[WExpr]) -> Option<String> {
             Some(args.iter().map(|a| maybe_paren(a, Prec::Mul)).collect::<Vec<_>>().join("*"))
         }
         "Power" if args.len() == 2 => {
-            Some(format!("{}^{}", maybe_paren(&args[0], Prec::Pow), maybe_paren(&args[1], Prec::Pow)))
+            // Negative / rational number atoms print with leading `-` or `/`.
+            // Without parens, Wolfram re-parses `(-8)^(1/3)` as `-8^1/3`.
+            Some(format!("{}^{}", power_operand(&args[0]), power_operand(&args[1])))
         }
         "Subtract" if args.len() == 2 => {
             Some(format!("{} - {}", maybe_paren(&args[0], Prec::Add), maybe_paren(&args[1], Prec::Mul)))
@@ -88,4 +90,23 @@ fn prec(expr: &WExpr) -> Prec {
 fn maybe_paren(expr: &WExpr, parent: Prec) -> String {
     let s = render(expr);
     if prec(expr) < parent { format!("({s})") } else { s }
+}
+
+fn power_operand(expr: &WExpr) -> String {
+    let s = render(expr);
+    if power_atom_needs_paren(expr) || prec(expr) < Prec::Pow {
+        format!("({s})")
+    } else {
+        s
+    }
+}
+
+fn power_atom_needs_paren(expr: &WExpr) -> bool {
+    match expr {
+        WExpr::Atom(WAtom::Number(n)) => {
+            let text = n.to_render_string();
+            text.starts_with('-') || text.contains('/')
+        }
+        _ => false,
+    }
 }

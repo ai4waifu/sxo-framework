@@ -318,3 +318,13 @@ fn parse_plot_negative_domain_renders_svg() {
     let svg = h.with_mut(|s| try_plot_svg(s, t)).expect("extract").expect("render");
     assert!(svg.contains("<svg"), "got {svg}");
 }
+
+#[test]
+fn render_keeps_parens_for_negative_rational_power() {
+    let h = H::new();
+    let parsed = h.parse_w("(-8)^(1/3)");
+    assert_eq!(render(&parsed), "(-8)^(1/3)");
+    // Athena may fold Times[-1,8] / Divide into Number atoms; render must still paren.
+    let roundtrip = h.wolfram(h.eval("(-8)^(1/3)"));
+    assert_eq!(roundtrip, "(-8)^(1/3)", "got {roundtrip}");
+}
