@@ -95,7 +95,9 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("*"))
         }
         "Minus" if args.len() == 1 => Some(format!("-{}", render_matlab(session, args[0]))),
-        "Power" if args.len() == 2 => Some(format!("{}^{}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
+        "Power" if args.len() == 2 => {
+            Some(format!("{}^{}", power_operand(session, args[0]), power_operand(session, args[1])))
+        }
         "Subtract" if args.len() == 2 => {
             Some(format!("{} - {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
@@ -110,7 +112,7 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             Some(format!("{}./{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
         "DotPower" if args.len() == 2 => {
-            Some(format!("{}.^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+            Some(format!("{}.^{}", power_operand(session, args[0]), power_operand(session, args[1])))
         }
         "Span" | "Range" if args.len() == 2 => {
             Some(format!("{}:{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
@@ -127,6 +129,25 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
 
 fn is_neg_one(session: &Session, id: TermId) -> bool {
     matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
+}
+
+fn power_operand(session: &Session, id: TermId) -> String {
+    let s = render_matlab(session, id);
+    if number_needs_power_paren(session, id) {
+        format!("({s})")
+    } else {
+        s
+    }
+}
+
+fn number_needs_power_paren(session: &Session, id: TermId) -> bool {
+    match number_from_id(session, id) {
+        Some(n) => {
+            let text = n.to_render_string();
+            text.starts_with('-') || text.contains('/')
+        }
+        None => false,
+    }
 }
 
 fn is_matrix_rows(session: &Session, items: &[TermId]) -> bool {

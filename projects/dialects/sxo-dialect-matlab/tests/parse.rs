@@ -302,3 +302,10 @@ fn parse_plot_negative_domain_renders_svg() {
     let svg = h.with_mut(|s| try_plot_svg(s, t)).expect("extract").expect("render");
     assert!(svg.contains("<svg"), "got {svg}");
 }
+
+#[test]
+fn render_keeps_parens_for_negative_rational_power() {
+    let h = H::new();
+    let roundtrip = h.render(h.eval("(-8)^(1/3)"));
+    assert_eq!(roundtrip, "(-8)^(1/3)", "got {roundtrip}");
+}
