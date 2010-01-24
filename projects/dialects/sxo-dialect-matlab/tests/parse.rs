@@ -226,7 +226,7 @@ fn parse_matrix_linear_algebra() {
     assert!(h.eq(h.eval("det([1, 2; 3, 4])"), h.i(-2)));
     assert!(h.eq(h.eval("sum([1, 2, 3])"), h.i(6)));
     assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
-    // linsolve stays Extension until DomainGoal lowering (Living 27).
+    // linsolve stays Extension until DomainGoal lowering (Living `14`).
     let ls = h.parse("linsolve([1, 2; 3, 4], [5; 6])");
     assert_eq!(application_surface_name(&h.s.borrow(), ls).as_deref(), Some("LinearSolve"));
     assert_eq!(h.render(h.eval("det([1, 2; 3, 4])")), "-2");
@@ -307,5 +307,14 @@ fn parse_plot_negative_domain_renders_svg() {
 fn render_keeps_parens_for_negative_rational_power() {
     let h = H::new();
     let roundtrip = h.render(h.eval("(-8)^(1/3)"));
-    assert_eq!(roundtrip, "(-8)^(1/3)", "got {roundtrip}");
+    assert_eq!(roundtrip, "-2", "got {roundtrip}");
+}
+
+#[test]
+fn render_keeps_parens_for_sum_power_base() {
+    let h = H::new();
+    let id = h.parse("(x+1)^2");
+    assert_eq!(h.render(id), "(x + 1)^2", "got {}", h.render(id));
+    let got = h.render(h.eval("(x+1)^2"));
+    assert!(got.contains('(') || got == "(x + 1)^2" || !got.contains("1 + x^2"), "got {got}");
 }

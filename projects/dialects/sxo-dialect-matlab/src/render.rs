@@ -133,7 +133,7 @@ fn is_neg_one(session: &Session, id: TermId) -> bool {
 
 fn power_operand(session: &Session, id: TermId) -> String {
     let s = render_matlab(session, id);
-    if number_needs_power_paren(session, id) {
+    if number_needs_power_paren(session, id) || compound_needs_power_paren(session, id) {
         format!("({s})")
     } else {
         s
@@ -147,6 +147,13 @@ fn number_needs_power_paren(session: &Session, id: TermId) -> bool {
             text.starts_with('-') || text.contains('/')
         }
         None => false,
+    }
+}
+
+fn compound_needs_power_paren(session: &Session, id: TermId) -> bool {
+    match application_surface_name(session, id).as_deref() {
+        Some("Plus" | "Subtract" | "Times" | "Divide" | "Power" | "DotPower" | "Minus") => true,
+        _ => false,
     }
 }
 
