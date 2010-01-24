@@ -1,4 +1,4 @@
-//! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `27`).
+//! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `14`).
 
 use athena::{
     Session,
@@ -271,7 +271,6 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                     }
                 }
                 ("SetDelayed", [lhs, rhs]) => {
-                    // Pattern lhs `f[…]` needs `RegisterRuleDispatch` in a later slice.
                     if matches!(lhs, WExpr::Atom(WAtom::Symbol(_))) {
                         if let Some(symbol) = symbol_of(session, lhs) {
                             let value = lower_wexpr(session, rhs);
@@ -281,6 +280,32 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                                 kind: BindingKind::Session,
                                 evaluation: BindingEvaluationPolicy::StoreResidualTerm,
                             });
+                        }
+                    }
+                    // Patterned down-value: `f[x_]:=…` → typed `TermPattern` dispatch (Living `14`).
+                    if let WExpr::Call { head, args } = lhs {
+                        if let WExpr::Atom(WAtom::Symbol(name)) = head.as_ref() {
+                            let mut pat_args = Vec::with_capacity(args.len());
+                            let mut ok = true;
+                            for a in args {
+                                match wexpr_to_term_pattern(session, a) {
+                                    Some(p) => pat_args.push(p),
+                                    None => {
+                                        ok = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if ok {
+                                let f_op = session.extensions.intern(name);
+                                let pattern = TermPattern::Application {
+                                    operator: ApplicationHead::Extension(f_op),
+                                    arguments: pat_args,
+                                };
+                                let value = lower_wexpr(session, rhs);
+                                session.defs.register_extension_rule(f_op, pattern, value);
+                                return AthenaRequest::Term(push_null(session));
+                            }
                         }
                     }
                 }
@@ -577,7 +602,7 @@ fn lower_span_as_range(session: &mut Session, args: &[WExpr]) -> TermId {
     push_semantic(session, SemanticOperator::Range, arg_ids)
 }
 
-/// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `27`).
+/// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `14`).
 fn lower_function(session: &mut Session, args: &[WExpr]) -> TermId {
     match args {
         [body] => {
@@ -659,7 +684,7 @@ fn exact_i64(w: &WExpr) -> Option<i64> {
     }
 }
 
-/// Mathematica pattern Form → neutral [`TermPattern`] (Living `27`).
+/// Mathematica pattern Form → neutral [`TermPattern`] (Living `14`).
 fn wexpr_to_term_pattern(session: &mut Session, w: &WExpr) -> Option<TermPattern> {
     match w {
         WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Blank") => {

@@ -32,8 +32,8 @@ oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", defau
 oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
 # Pin a CI-green Athena tip (do not float `branch = "dev"` while Athena churns).
-athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "4e59b2603da3971b97b1af797e8ecdf8c518ba49", package = "athena" }
-athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "4e59b2603da3971b97b1af797e8ecdf8c518ba49", package = "athena-types" }
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "53a7a5dde3ccb8ac083034694797ba44cc398f69", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "53a7a5dde3ccb8ac083034694797ba44cc398f69", package = "athena-types" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }

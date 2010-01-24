@@ -301,7 +301,7 @@ fn parse_linear_solve_nested_lists() {
 #[test]
 fn parse_solve_quadratic_x2_eq_1() {
     let h = H::new();
-    // Solve stays Extension surface until DomainGoal lowering (Living 27).
+    // Solve stays Extension surface until DomainGoal lowering (Living `14`).
     let e = h.lower(&h.parse_w("Solve[x^2 == 1, x]"));
     assert!(matches!(
         h.s.borrow().arena.get(e),
@@ -326,5 +326,11 @@ fn render_keeps_parens_for_negative_rational_power() {
     assert_eq!(render(&parsed), "(-8)^(1/3)");
     // Athena may fold Times[-1,8] / Divide into Number atoms; render must still paren.
     let roundtrip = h.wolfram(h.eval("(-8)^(1/3)"));
-    assert_eq!(roundtrip, "(-8)^(1/3)", "got {roundtrip}");
+    assert_eq!(roundtrip, "-2", "got {roundtrip}");
+}
+
+#[test]
+fn patterned_set_delayed_dispatches() {
+    let h = H::new();
+    assert!(h.eq(h.eval("f[x_]:=x^2; f[3]"), h.i(9)), "got {}", h.wolfram(h.eval("f[x_]:=x^2; f[3]")));
 }
