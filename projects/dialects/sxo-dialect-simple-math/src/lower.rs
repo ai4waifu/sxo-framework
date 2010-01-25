@@ -3,7 +3,7 @@
 //! [`Expr::Num`] is a **legacy frontend** form; lowering to kernel uses explicit machine-real
 //! conversion only — not exact semantics.
 //!
-//! Living `27`: emit [`SemanticOperator`] / [`UnaryFunction`] only — never Mathematica surface names.
+//! Living `14`: emit [`SemanticOperator`] / [`UnaryFunction`] only — never Mathematica surface names.
 
 #![allow(dead_code)]
 

@@ -1,4 +1,4 @@
-//! MATLAB dialect surface ↔ Athena [`SemanticOperator`] (Living `27`).
+//! MATLAB dialect surface ↔ Athena [`SemanticOperator`] (Living `14`).
 //!
 //! Strings here are **dialect display / parse maps only** — never Athena core dispatch.
 
