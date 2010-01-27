@@ -10,6 +10,7 @@ mod plot;
 mod render;
 mod surface;
 
+pub use form::{MatlabAtom, MatlabForm};
 pub use lower::lower_request;
 pub use number_literal::{parse_number_literal, render_number};
 pub use parse::parse_matlab;
