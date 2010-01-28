@@ -1,7 +1,7 @@
-//! MATLAB Form (session [`TermId`]) → neutral [`AthenaRequest`] (Living `14`).
+//! MATLAB Form → session terms / neutral [`AthenaRequest`] (Living `14`).
 //!
-//! CST → term conversion lives in [`crate::parse`]. This module lifts dialect-shaped
-//! applications into Session / Control contracts without inventing a second Form type.
+//! `parse` produces [`MatlabForm`]. [`form_to_term`] is the transitional arena bridge.
+//! [`lower_request`] still lifts from `TermId` until Form→request is fully wired.
 
 use athena::{
     Session,
@@ -14,13 +14,52 @@ use athena::{
     ir::{Atom, SemanticOperator, TermNode},
     numeric::{Integer, Rational},
     runtime::values::{
-        arena::{application_arguments, number_from_id, push_semantic, symbol_name},
-        numeric_clone::{clone_integer, clone_rational},
+        arena::{
+            application_arguments, number_from_id, push_bool, push_list, push_null, push_semantic, push_symbol_name,
+            symbol_name,
+        },
+        numeric_clone::{clone_integer, clone_number, clone_rational},
     },
-    types::{AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId},
+    types::{AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SourceSpan, SymbolId, TermId},
 };
 
-use crate::surface::application_surface_name;
+use crate::form::{MatlabAtom, MatlabForm};
+use crate::surface::{application_surface_name, push_matlab_call};
+
+/// Materialize a [`MatlabForm`] into the session arena (transitional bridge).
+pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
+    match form {
+        MatlabForm::Atom(MatlabAtom::Number(n)) => {
+            session.arena.push(TermNode::Atom(Atom::Number(clone_number(n))), SourceSpan::default())
+        }
+        MatlabForm::Atom(MatlabAtom::String(s)) => {
+            session.arena.push(TermNode::Atom(Atom::String(s.clone())), SourceSpan::default())
+        }
+        MatlabForm::Atom(MatlabAtom::Symbol(name)) => push_symbol_name(session, name),
+        MatlabForm::Atom(MatlabAtom::Bool(b)) => push_bool(session, *b),
+        MatlabForm::Atom(MatlabAtom::Null) => push_null(session),
+        MatlabForm::List(items) => {
+            let ids: Vec<TermId> = items.iter().map(|i| form_to_term(session, i)).collect();
+            push_list(session, ids)
+        }
+        MatlabForm::Call { head, args } => {
+            if head == "Application" {
+                let mut ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
+                if ids.is_empty() {
+                    return push_matlab_call(session, head, ids);
+                }
+                let callee = ids.remove(0);
+                let mut wrapped = vec![callee];
+                wrapped.extend(ids);
+                push_semantic(session, SemanticOperator::ApplyHead, wrapped)
+            }
+            else {
+                let ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
+                push_matlab_call(session, head, ids)
+            }
+        }
+    }
+}
 
 /// Lift a MATLAB-lowered term into a neutral [`AthenaRequest`].
 pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
