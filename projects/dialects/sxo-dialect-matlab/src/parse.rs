@@ -1,6 +1,7 @@
-//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → session arena [`TermId`].
+//! MATLAB dialect via oaks **language AST** (`MatlabBuilder`) → [`MatlabForm`].
 //!
-//! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → arena nodes.
+//! Formal path: oak CST → [`MatlabRoot`] / [`Statement`] / [`Expression`] → [`MatlabForm`].
+//! Session [`TermId`] materialization is [`crate::form_to_term`] (transitional).
 //! Do not expand GreenTree / `MatlabTokenType` leaf walking here.
 
 use oak_core::{Builder, source::SourceText};
@@ -10,26 +11,15 @@ use oak_matlab::{
     lexer::token_type::MatlabTokenType,
 };
 
-use athena::{
-    Session,
-    ir::{Atom, SemanticOperator, TermNode},
-    runtime::values::{
-        arena::{
-            application_arguments, get_kind, push_bool, push_list, push_null, push_semantic, push_symbol_name, symbol_name,
-        },
-        numeric_clone::clone_number,
-    },
-    types::{SourceSpan, TermId},
-};
+use athena::{Session, types::TermId};
 use sxo_types::SxoError;
 
-use crate::{
-    number_literal::parse_number_literal,
-    surface::{application_surface_name, push_matlab_call},
-};
+use crate::form::{MatlabAtom, MatlabForm};
+use crate::lower::form_to_term;
+use crate::number_literal::parse_number_literal;
 
-/// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
-pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {
+/// Parse MATLAB text into a [`MatlabForm`] (no evaluate, no arena write).
+pub fn parse_matlab_form(input: &str) -> Result<MatlabForm, SxoError> {
     let trimmed = input.trim();
     if trimmed.is_empty() {
         return Err(SxoError::new("matlab: empty input"));
@@ -41,231 +31,232 @@ pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoErr
     let mut oak_session = oak_core::ParseSession::<MatlabLanguage>::default();
     let output = builder.build(&source, &[], &mut oak_session);
     let root = output.result.map_err(|e| SxoError::new(format!("matlab(oak): {e:?}")))?;
-    lower_root(session, &root)
+    lower_root(&root)
 }
 
-fn push_number(session: &mut Session, n: athena::numeric::Number) -> TermId {
-    session.arena.push(TermNode::Atom(Atom::Number(clone_number(&n))), SourceSpan::default())
+/// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
+///
+/// Transitional: `parse_matlab_form` → [`form_to_term`]. Prefer Form APIs for new paths.
+pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {
+    let form = parse_matlab_form(input)?;
+    Ok(form_to_term(session, &form))
 }
 
-fn push_string(session: &mut Session, s: String) -> TermId {
-    session.arena.push(TermNode::Atom(Atom::String(s)), SourceSpan::default())
-}
-
-fn lower_root(session: &mut Session, root: &MatlabRoot) -> Result<TermId, SxoError> {
+fn lower_root(root: &MatlabRoot) -> Result<MatlabForm, SxoError> {
     let mut items = Vec::with_capacity(root.items.len());
     for stmt in &root.items {
-        items.push(lower_stmt(session, stmt)?);
+        items.push(lower_stmt(stmt)?);
     }
     match items.len() {
         0 => Err(SxoError::new("matlab(oak): empty root")),
         1 => Ok(items.remove(0)),
-        _ => Ok(push_matlab_call(session, "CompoundExpression", items)),
+        _ => Ok(MatlabForm::call("CompoundExpression", items)),
     }
 }
 
-fn lower_stmt(session: &mut Session, stmt: &Statement) -> Result<TermId, SxoError> {
+fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
     match stmt {
-        Statement::Expr(expr) => lower_expr(session, expr),
+        Statement::Expr(expr) => lower_expr(expr),
         Statement::If { condition, then_body, elseifs, else_body, .. } => {
-            let mut else_term = compound_stmts(session, else_body)?;
+            let mut else_form = compound_stmts(else_body)?;
             for (cond, body) in elseifs.iter().rev() {
-                let then_t = compound_stmts(session, body)?;
-                let cond_t = lower_expr(session, cond)?;
-                else_term = push_matlab_call(session, "If", vec![cond_t, then_t, else_term]);
+                let then_f = compound_stmts(body)?;
+                let cond_f = lower_expr(cond)?;
+                else_form = MatlabForm::call("If", vec![cond_f, then_f, else_form]);
             }
-            let then_t = compound_stmts(session, then_body)?;
-            let cond_t = lower_expr(session, condition)?;
-            let else_is_null = matches!(get_kind(session, else_term), Some(TermNode::Atom(Atom::Null)));
+            let then_f = compound_stmts(then_body)?;
+            let cond_f = lower_expr(condition)?;
+            let else_is_null = matches!(else_form, MatlabForm::Atom(MatlabAtom::Null));
             if else_is_null && elseifs.is_empty() {
-                Ok(push_matlab_call(session, "If", vec![cond_t, then_t]))
+                Ok(MatlabForm::call("If", vec![cond_f, then_f]))
             }
             else {
-                Ok(push_matlab_call(session, "If", vec![cond_t, then_t, else_term]))
+                Ok(MatlabForm::call("If", vec![cond_f, then_f, else_form]))
             }
         }
         Statement::While { condition, body, .. } => {
-            let cond_t = lower_expr(session, condition)?;
-            let body_t = compound_stmts(session, body)?;
-            Ok(push_matlab_call(session, "While", vec![cond_t, body_t]))
+            let cond_f = lower_expr(condition)?;
+            let body_f = compound_stmts(body)?;
+            Ok(MatlabForm::call("While", vec![cond_f, body_f]))
         }
         Statement::For { header, body, .. } => {
-            let header_t = lower_expr(session, header)?;
-            let body_t = compound_stmts(session, body)?;
-            if application_surface_name(session, header_t).as_deref() == Some("Set") {
-                if let Some(args) = application_arguments(session, header_t) {
+            let header_f = lower_expr(header)?;
+            let body_f = compound_stmts(body)?;
+            if header_f.head_name() == Some("Set") {
+                if let MatlabForm::Call { args, .. } = &header_f {
                     if args.len() == 2 {
-                        return Ok(push_matlab_call(session, "For", vec![args[0], args[1], body_t]));
+                        return Ok(MatlabForm::call(
+                            "For",
+                            vec![args[0].clone(), args[1].clone(), body_f],
+                        ));
                     }
                 }
             }
-            let underscore = push_symbol_name(session, "_");
-            Ok(push_matlab_call(session, "For", vec![underscore, header_t, body_t]))
+            Ok(MatlabForm::call("For", vec![MatlabForm::symbol("_"), header_f, body_f]))
         }
         Statement::Try { body, catch_body, .. } => {
-            let body_t = compound_stmts(session, body)?;
-            let catch_t = compound_stmts(session, catch_body)?;
-            Ok(push_matlab_call(session, "Try", vec![body_t, catch_t]))
+            let body_f = compound_stmts(body)?;
+            let catch_f = compound_stmts(catch_body)?;
+            Ok(MatlabForm::call("Try", vec![body_f, catch_f]))
         }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
 }
 
-fn compound_stmts(session: &mut Session, stmts: &[Statement]) -> Result<TermId, SxoError> {
+fn compound_stmts(stmts: &[Statement]) -> Result<MatlabForm, SxoError> {
     let mut items = Vec::with_capacity(stmts.len());
     for s in stmts {
-        items.push(lower_stmt(session, s)?);
+        items.push(lower_stmt(s)?);
     }
-    Ok(compound_or_single(session, items))
+    Ok(compound_or_single(items))
 }
 
-fn compound_or_single(session: &mut Session, mut items: Vec<TermId>) -> TermId {
+fn compound_or_single(mut items: Vec<MatlabForm>) -> MatlabForm {
     match items.len() {
-        0 => push_null(session),
+        0 => MatlabForm::null(),
         1 => items.remove(0),
-        _ => push_matlab_call(session, "CompoundExpression", items),
+        _ => MatlabForm::call("CompoundExpression", items),
     }
 }
 
-fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoError> {
+fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
     match expr {
         Expression::Symbol(id) => {
             if id.name == "end" {
-                Ok(push_symbol_name(session, "end"))
+                Ok(MatlabForm::symbol("end"))
             }
             else if id.name == "true" {
-                Ok(push_bool(session, true))
+                Ok(MatlabForm::bool(true))
             }
             else if id.name == "false" {
-                Ok(push_bool(session, false))
+                Ok(MatlabForm::bool(false))
             }
             else {
-                Ok(push_symbol_name(session, &id.name))
+                Ok(MatlabForm::symbol(&id.name))
             }
         }
         Expression::Literal { value, .. } => {
             let text = value.trim();
             if let Some(n) = parse_number_literal(text) {
-                return Ok(push_number(session, n));
+                return Ok(MatlabForm::number(n));
             }
             if (text.starts_with('"') && text.ends_with('"'))
                 || (text.starts_with('\'') && text.ends_with('\'') && text.len() >= 2)
             {
-                Ok(push_string(session, text[1..text.len() - 1].to_string()))
+                Ok(MatlabForm::string(text[1..text.len() - 1].to_string()))
             }
             else {
-                Ok(push_symbol_name(session, text))
+                Ok(MatlabForm::symbol(text))
             }
         }
         Expression::Array { rows, .. } => {
             if rows.len() == 1 {
                 let mut items = Vec::with_capacity(rows[0].len());
                 for cell in &rows[0] {
-                    items.push(lower_expr(session, cell)?);
+                    items.push(lower_expr(cell)?);
                 }
-                Ok(push_list(session, items))
+                Ok(MatlabForm::list(items))
             }
             else {
                 let mut out = Vec::with_capacity(rows.len());
                 for row in rows {
                     let mut cols = Vec::with_capacity(row.len());
                     for cell in row {
-                        cols.push(lower_expr(session, cell)?);
+                        cols.push(lower_expr(cell)?);
                     }
-                    out.push(push_list(session, cols));
+                    out.push(MatlabForm::list(cols));
                 }
-                Ok(push_list(session, out))
+                Ok(MatlabForm::list(out))
             }
         }
         Expression::Call { head, arguments, .. } => {
-            let mut expr_t = lower_expr(session, head)?;
-            if let Some(name) = symbol_name(session, expr_t) {
-                expr_t = push_symbol_name(session, &map_matlab_head(&name));
+            let mut head_f = lower_expr(head)?;
+            if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &head_f {
+                head_f = MatlabForm::symbol(map_matlab_head(name));
             }
             let mut args = Vec::with_capacity(arguments.len());
             for a in arguments {
-                args.push(lower_expr(session, a)?);
+                args.push(lower_expr(a)?);
             }
-            let is_part_base = matches!(get_kind(session, expr_t), Some(TermNode::Collection { .. }))
-                || application_surface_name(session, expr_t).as_deref() == Some("Part");
+            let is_part_base = matches!(head_f, MatlabForm::List(_)) || head_f.head_name() == Some("Part");
             if is_part_base {
-                let mut part_args = vec![expr_t];
+                let mut part_args = vec![head_f];
                 part_args.extend(args);
-                Ok(push_matlab_call(session, "Part", part_args))
+                Ok(MatlabForm::call("Part", part_args))
             }
-            else if let Some(head_name) = symbol_name(session, expr_t) {
-                Ok(push_matlab_call(session, &head_name, args))
+            else if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &head_f {
+                Ok(MatlabForm::call(name.clone(), args))
             }
             else {
-                // Non-symbol head → `ApplyHead[head, args…]`.
-                let mut wrapped = vec![expr_t];
+                // Non-symbol head → Application[head, args…] (form_to_term → ApplyHead).
+                let mut wrapped = vec![head_f];
                 wrapped.extend(args);
-                Ok(push_semantic(session, SemanticOperator::ApplyHead, wrapped))
+                Ok(MatlabForm::call("Application", wrapped))
             }
         }
-        Expression::Binary(bin) => lower_binary(session, bin),
-        Expression::Prefix(u) => lower_prefix(session, u),
-        Expression::Postfix(u) => lower_postfix(session, u),
-        Expression::Grouped { expression, .. } => lower_expr(session, expression),
+        Expression::Binary(bin) => lower_binary(bin),
+        Expression::Prefix(u) => lower_prefix(u),
+        Expression::Postfix(u) => lower_postfix(u),
+        Expression::Grouped { expression, .. } => lower_expr(expression),
     }
 }
 
-fn lower_binary(session: &mut Session, bin: &BinaryExpr) -> Result<TermId, SxoError> {
-    let l = lower_expr(session, &bin.lhs)?;
-    let r = lower_expr(session, &bin.rhs)?;
+fn lower_binary(bin: &BinaryExpr) -> Result<MatlabForm, SxoError> {
+    let l = lower_expr(&bin.lhs)?;
+    let r = lower_expr(&bin.rhs)?;
     Ok(match bin.operator {
-        MatlabTokenType::Plus => push_semantic(session, SemanticOperator::Add, vec![l, r]),
-        MatlabTokenType::Minus => push_semantic(session, SemanticOperator::Subtract, vec![l, r]),
-        MatlabTokenType::Times => push_semantic(session, SemanticOperator::Multiply, vec![l, r]),
-        MatlabTokenType::DotTimes => push_semantic(session, SemanticOperator::ElementwiseMultiply, vec![l, r]),
-        MatlabTokenType::Divide => push_semantic(session, SemanticOperator::Divide, vec![l, r]),
-        MatlabTokenType::DotDivide => push_semantic(session, SemanticOperator::ElementwiseDivide, vec![l, r]),
-        MatlabTokenType::LeftDivide => push_matlab_call(session, "LinearSolve", vec![l, r]),
-        MatlabTokenType::DotLeftDivide => push_matlab_call(session, "DotLeftDivide", vec![l, r]),
-        MatlabTokenType::Power => push_semantic(session, SemanticOperator::Power, vec![l, r]),
-        MatlabTokenType::DotPower => push_semantic(session, SemanticOperator::ElementwisePower, vec![l, r]),
-        MatlabTokenType::Assign => push_matlab_call(session, "Set", vec![l, r]),
-        MatlabTokenType::Equal => push_semantic(session, SemanticOperator::Equal, vec![l, r]),
-        MatlabTokenType::NotEqual => push_semantic(session, SemanticOperator::Unequal, vec![l, r]),
-        MatlabTokenType::Less => push_semantic(session, SemanticOperator::Less, vec![l, r]),
-        MatlabTokenType::Greater => push_semantic(session, SemanticOperator::Greater, vec![l, r]),
-        MatlabTokenType::LessEqual => push_semantic(session, SemanticOperator::LessEqual, vec![l, r]),
-        MatlabTokenType::GreaterEqual => push_semantic(session, SemanticOperator::GreaterEqual, vec![l, r]),
-        MatlabTokenType::AndAnd | MatlabTokenType::And => push_semantic(session, SemanticOperator::And, vec![l, r]),
-        MatlabTokenType::OrOr | MatlabTokenType::Or => push_semantic(session, SemanticOperator::Or, vec![l, r]),
-        MatlabTokenType::Colon => flatten_range(session, l, r),
+        MatlabTokenType::Plus => MatlabForm::call("Plus", vec![l, r]),
+        MatlabTokenType::Minus => MatlabForm::call("Subtract", vec![l, r]),
+        MatlabTokenType::Times => MatlabForm::call("Times", vec![l, r]),
+        MatlabTokenType::DotTimes => MatlabForm::call("DotTimes", vec![l, r]),
+        MatlabTokenType::Divide => MatlabForm::call("Divide", vec![l, r]),
+        MatlabTokenType::DotDivide => MatlabForm::call("DotDivide", vec![l, r]),
+        MatlabTokenType::LeftDivide => MatlabForm::call("LinearSolve", vec![l, r]),
+        MatlabTokenType::DotLeftDivide => MatlabForm::call("DotLeftDivide", vec![l, r]),
+        MatlabTokenType::Power => MatlabForm::call("Power", vec![l, r]),
+        MatlabTokenType::DotPower => MatlabForm::call("DotPower", vec![l, r]),
+        MatlabTokenType::Assign => MatlabForm::call("Set", vec![l, r]),
+        MatlabTokenType::Equal => MatlabForm::call("Equal", vec![l, r]),
+        MatlabTokenType::NotEqual => MatlabForm::call("Unequal", vec![l, r]),
+        MatlabTokenType::Less => MatlabForm::call("Less", vec![l, r]),
+        MatlabTokenType::Greater => MatlabForm::call("Greater", vec![l, r]),
+        MatlabTokenType::LessEqual => MatlabForm::call("LessEqual", vec![l, r]),
+        MatlabTokenType::GreaterEqual => MatlabForm::call("GreaterEqual", vec![l, r]),
+        MatlabTokenType::AndAnd | MatlabTokenType::And => MatlabForm::call("And", vec![l, r]),
+        MatlabTokenType::OrOr | MatlabTokenType::Or => MatlabForm::call("Or", vec![l, r]),
+        MatlabTokenType::Colon => flatten_range(l, r),
         other => {
             return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));
         }
     })
 }
 
-fn flatten_range(session: &mut Session, left: TermId, right: TermId) -> TermId {
-    if application_surface_name(session, left).as_deref() == Some("Range") {
-        if let Some(args) = application_arguments(session, left) {
+fn flatten_range(left: MatlabForm, right: MatlabForm) -> MatlabForm {
+    if left.head_name() == Some("Range") {
+        if let MatlabForm::Call { args, .. } = &left {
             if args.len() == 2 {
                 // MATLAB `start:step:end` → Athena `Range[start, end, step]`.
-                return push_semantic(session, SemanticOperator::Range, vec![args[0], right, args[1]]);
+                return MatlabForm::call("Range", vec![args[0].clone(), right, args[1].clone()]);
             }
         }
     }
-    push_semantic(session, SemanticOperator::Range, vec![left, right])
+    MatlabForm::call("Range", vec![left, right])
 }
 
-fn lower_prefix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
-    let e = lower_expr(session, &u.operand)?;
+fn lower_prefix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
+    let e = lower_expr(&u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Minus => push_semantic(session, SemanticOperator::Negate, vec![e]),
+        MatlabTokenType::Minus => MatlabForm::call("Minus", vec![e]),
         MatlabTokenType::Plus => e,
-        MatlabTokenType::Not => push_semantic(session, SemanticOperator::Not, vec![e]),
+        MatlabTokenType::Not => MatlabForm::call("Not", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported prefix {other:?}"))),
     })
 }
 
-fn lower_postfix(session: &mut Session, u: &UnaryExpr) -> Result<TermId, SxoError> {
-    let e = lower_expr(session, &u.operand)?;
+fn lower_postfix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
+    let e = lower_expr(&u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => push_matlab_call(session, "Transpose", vec![e]),
+        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => MatlabForm::call("Transpose", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported postfix {other:?}"))),
     })
 }
