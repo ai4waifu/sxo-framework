@@ -14,10 +14,11 @@ export const sessionFeatures = [
         .eval('set.persist', 'x = 5', '5', { notes: 'follow-up x+1 on same Session → 6 (napi session test)' })
         .done(),
     feature('SetDelayed', 'session')
-        .partial('symbol := returns Null; patterned f[x_]:= still pending')
+        .supported()
         .stateful()
+        .notes('symbol := stores residual; patterned f[x_]:= dispatches via TermPattern')
         .eval('setdelayed.symbol', 'a := 1 + 1', 'Null')
-        .gap('setdelayed.def', 'f[x_] := x^2; f[3]', { expected: '9', notes: 'patterned SetDelayed still pending' })
+        .eval('setdelayed.def', 'f[x_] := x^2; f[3]', '9')
         .done(),
     feature('Module', 'session')
         .supported()
