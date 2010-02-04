@@ -315,6 +315,7 @@ fn render_keeps_parens_for_sum_power_base() {
     let h = H::new();
     let id = h.parse("(x+1)^2");
     assert_eq!(h.render(id), "(x + 1)^2", "got {}", h.render(id));
+    // Eval may commute Plus arguments; must not expand away the Power wrapper.
     let got = h.render(h.eval("(x+1)^2"));
-    assert!(got.contains('(') || got == "(x + 1)^2" || !got.contains("1 + x^2"), "got {got}");
+    assert_eq!(got, "(1 + x)^2", "got {got}");
 }
