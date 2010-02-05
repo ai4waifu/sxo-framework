@@ -37,12 +37,10 @@ export const arithmeticFeatures = [
         .gap('indet.0pow0', '0^0', { expected: 'Indeterminate', notes: 'currently 1' })
         .done(),
     feature('CubeRootPow', 'arithmetic')
-        .unsupported('Athena does not reduce (-8)^(1/3) to -2 yet; SXO render now keeps parens after Number fold')
+        .supported()
         .pure()
-        .gap('cuberoot.neg8', '(-8)^(1/3)', {
-            expected: '-2',
-            notes: 'round-trip render is (-8)^(1/3); value still unevaluated on pinned Athena',
-        })
+        .notes('exact integer cube root of negative base under current athena pin')
+        .eval('cuberoot.neg8', '(-8)^(1/3)', '-2')
         .done(),
     feature('SqrtRational', 'arithmetic').supported().pure().eval('sqrt.9_4', 'Sqrt[9/4]', '3/2').done(),
     feature('RationalAdd', 'arithmetic').supported().pure().eval('rational.add', '1/2 + 1/3', '5/6').done(),
