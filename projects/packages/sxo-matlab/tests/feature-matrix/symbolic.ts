@@ -9,9 +9,9 @@ export const symbolicFeatures = [
         .gap('syms.strip', 'syms x', { expected: '...', notes: 'currently returns x' })
         .done(),
     feature('expand', 'symbolic')
-        .unsupported('args already wrongly powered: expand((x+1)^2) sees expand(1+x^2)')
+        .unsupported('expand not implemented; input now keeps Power form after parse/eval')
         .pure()
-        .gap('expand.binomsq', 'expand((x + 1)^2)', { expected: 'x^2 + 2*x + 1' })
+        .gap('expand.binomsq', 'expand((x + 1)^2)', { expected: 'x^2 + 2*x + 1', notes: 'no longer mis-sees expand(1+x^2)' })
         .done(),
     feature('limit', 'symbolic').unsupported().pure().gap('limit.sinc', 'limit(sin(x)/x, x, 0)', { expected: '1' }).done(),
     feature('dsolve', 'symbolic').planned().pure().gap('dsolve.exp', 'dsolve(diff(y)==y)', { expected: 'C1*exp(t)' }).done(),

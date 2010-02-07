@@ -16,11 +16,12 @@ export const arithmeticFeatures = [
         .eval('times.vec', '[1, 2].*[3, 4]', '[3, 8]')
         .done(),
     feature('power', 'arithmetic')
-        .partial('scalar ^ and .^ OK; (x+1)^2 still expands')
+        .supported()
         .pure()
+        .notes('scalar ^ and .^; binomial base keeps Power after eval (Plus may commute)')
         .eval('power.basic', '2^3', '8')
         .eval('power.elementwise', '[1, 2].^[2, 3]', '[1, 8]')
-        .gap('power.binomsq', '(x + 1)^2', { expected: '(x + 1)^2', notes: 'currently expands' })
+        .eval('power.binomsq', '(x + 1)^2', '(1 + x)^2')
         .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
         .done(),
     feature('mrdivide', 'arithmetic').supported().pure().eval('mrdivide.basic', '6 / 2', '3').done(),
