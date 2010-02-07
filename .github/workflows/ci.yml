@@ -25,6 +25,9 @@ jobs:
       - name: Architecture layout gate
         run: node scripts/architecture/check-project-layout.mjs --strict
 
+      - name: Forbid dialect GreenTree layout walks
+        run: node scripts/architecture/check-no-greentree-layout.mjs
+
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
