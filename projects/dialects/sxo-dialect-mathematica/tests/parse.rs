@@ -334,3 +334,10 @@ fn patterned_set_delayed_dispatches() {
     let h = H::new();
     assert!(h.eq(h.eval("f[x_]:=x^2; f[3]"), h.i(9)), "got {}", h.wolfram(h.eval("f[x_]:=x^2; f[3]")));
 }
+
+#[test]
+fn clear_definition_returns_null_and_unbinds() {
+    let h = H::new();
+    assert!(h.eq(h.eval("x = 5; Clear[x]; x"), h.sym("x")), "got {}", h.wolfram(h.eval("x = 5; Clear[x]; x")));
+    assert_eq!(h.wolfram(h.eval("Clear[y]")), "Null");
+}

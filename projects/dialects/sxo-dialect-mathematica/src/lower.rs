@@ -270,6 +270,26 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         });
                     }
                 }
+                ("Clear", args) => {
+                    let mut steps = Vec::with_capacity(args.len());
+                    let mut ok = true;
+                    for a in args {
+                        match symbol_of(session, a) {
+                            Some(symbol) => steps.push(AthenaRequest::Command(SessionCommand::ClearDefinition { symbol })),
+                            None => {
+                                ok = false;
+                                break;
+                            }
+                        }
+                    }
+                    if ok && !steps.is_empty() {
+                        return if steps.len() == 1 {
+                            steps.remove(0)
+                        } else {
+                            AthenaRequest::Control(ControlPlan::Sequence { steps })
+                        };
+                    }
+                }
                 ("SetDelayed", [lhs, rhs]) => {
                     if matches!(lhs, WExpr::Atom(WAtom::Symbol(_))) {
                         if let Some(symbol) = symbol_of(session, lhs) {
