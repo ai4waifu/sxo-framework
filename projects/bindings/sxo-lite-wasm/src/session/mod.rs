@@ -49,7 +49,7 @@ impl Session {
         match dialect {
             Dialect::Matlab => {
                 let mut ms = self.math_session.borrow_mut();
-                let request = matlab::lower_request(&mut ms, root);
+                let request = matlab::lower_term_request(&mut ms, root);
                 match self.math_engine().execute_request(&mut ms, request) {
                     Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(root)),
                     Err(d) => Err(SxoError::from_diagnostic(d)),
@@ -149,11 +149,17 @@ impl Session {
         matlab::parse_matlab(&mut self.math_session.borrow_mut(), input)
     }
 
-    /// Parse MATLAB, lift via [`matlab::lower_request`], execute.
+    /// Parse MATLAB, lift via Form → Athena request, execute.
     #[allow(dead_code)]
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
-        let term = self.parse_matlab(input)?;
-        self.evaluate_form(term, Dialect::Matlab)
+        let form = matlab::parse_matlab_form(input)?;
+        let mut ms = self.math_session.borrow_mut();
+        let fallback = matlab::form_to_term(&mut ms, &form);
+        let request = matlab::lower_term_request(&mut ms, fallback);
+        match self.math_engine().execute_request(&mut ms, request) {
+            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
     }
 
     /// Differentiate MATLAB input.

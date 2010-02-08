@@ -8,7 +8,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_matlab::{
-    application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg,
+    application_surface_name, form_to_term, lower_request, lower_term_request, parse_matlab, parse_matlab_form,
+    push_matlab_call, render_matlab, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -27,19 +28,23 @@ impl H {
     }
 
     fn eval(&self, input: &str) -> Tid {
-        let id = self.parse(input);
+        let form = parse_matlab_form(input).unwrap();
         let mut s = self.s.borrow_mut();
-        let request = lower_request(&mut s, id);
+        let request = lower_request(&mut s, &form);
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
-            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(id),
-            Err(_) => id,
+            Ok(result_id) => s
+                .results
+                .get(result_id)
+                .and_then(|r| r.symbolic_term)
+                .unwrap_or_else(|| form_to_term(&mut s, &form)),
+            Err(_) => form_to_term(&mut s, &form),
         }
     }
 
     fn eval_id(&self, id: Tid) -> Tid {
         let mut s = self.s.borrow_mut();
-        let request = lower_request(&mut s, id);
+        let request = lower_term_request(&mut s, id);
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(id),

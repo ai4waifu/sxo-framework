@@ -1,7 +1,7 @@
 //! MATLAB Form → session terms / neutral [`AthenaRequest`] (Living `14`).
 //!
-//! `parse` produces [`MatlabForm`]. [`form_to_term`] is the transitional arena bridge.
-//! [`lower_request`] still lifts from `TermId` until Form→request is fully wired.
+//! Formal entry: [`lower_request`] on [`MatlabForm`].
+//! [`lower_term_request`] remains for hosts that already hold arena `TermId`s.
 
 use athena::{
     Session,
@@ -61,8 +61,19 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
     }
 }
 
-/// Lift a MATLAB-lowered term into a neutral [`AthenaRequest`].
-pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
+/// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
+///
+/// Currently materializes via [`form_to_term`] then [`lower_term_request`]. Control and
+/// domain arms will move onto Form matching directly as the Term bridge shrinks.
+pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
+    let term = form_to_term(session, form);
+    lower_term_request(session, term)
+}
+
+/// Lift an arena term produced by MATLAB Form materialization into a neutral [`AthenaRequest`].
+///
+/// Prefer [`lower_request`] with [`MatlabForm`] for new dialect surface paths.
+pub fn lower_term_request(session: &mut Session, term: TermId) -> AthenaRequest {
     match application_surface_name(session, term).as_deref() {
         Some("Set") => {
             if let Some(args) = application_arguments(session, term) {
@@ -80,7 +91,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
         }
         Some("CompoundExpression") => {
             if let Some(args) = application_arguments(session, term) {
-                let steps: Vec<AthenaRequest> = args.iter().map(|t| lower_request(session, *t)).collect();
+                let steps: Vec<AthenaRequest> = args.iter().map(|t| lower_term_request(session, *t)).collect();
                 return AthenaRequest::Control(ControlPlan::Sequence { steps });
             }
         }
@@ -90,15 +101,15 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                     [cond, then_branch] => {
                         return AthenaRequest::Control(ControlPlan::Branch {
                             condition: *cond,
-                            then_branch: Box::new(lower_request(session, *then_branch)),
+                            then_branch: Box::new(lower_term_request(session, *then_branch)),
                             else_branch: None,
                         });
                     }
                     [cond, then_branch, else_branch] => {
                         return AthenaRequest::Control(ControlPlan::Branch {
                             condition: *cond,
-                            then_branch: Box::new(lower_request(session, *then_branch)),
-                            else_branch: Some(Box::new(lower_request(session, *else_branch))),
+                            then_branch: Box::new(lower_term_request(session, *then_branch)),
+                            else_branch: Some(Box::new(lower_term_request(session, *else_branch))),
                         });
                     }
                     _ => {}
@@ -110,7 +121,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 if let [cond, body] = args.as_slice() {
                     return AthenaRequest::Control(ControlPlan::LoopWhile {
                         condition: *cond,
-                        body: Box::new(lower_request(session, *body)),
+                        body: Box::new(lower_term_request(session, *body)),
                     });
                 }
             }
@@ -118,7 +129,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
         Some("For") | Some("CountedLoop") => {
             if let Some(args) = application_arguments(session, term) {
                 if let [variable, iterator, body] = args.as_slice() {
-                    let body_req = lower_request(session, *body);
+                    let body_req = lower_term_request(session, *body);
                     if matches!(body_req, AthenaRequest::Term(_)) {
                         return AthenaRequest::Control(ControlPlan::CountedLoop {
                             variable: *variable,
@@ -139,7 +150,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                                 kind: BindingKind::Session,
                                 evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                             }));
-                            steps.push(lower_request(session, *body));
+                            steps.push(lower_term_request(session, *body));
                         }
                         return AthenaRequest::Control(ControlPlan::Sequence { steps });
                     }
@@ -155,8 +166,8 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
             if let Some(args) = application_arguments(session, term) {
                 if let [body, handler] = args.as_slice() {
                     return AthenaRequest::Control(ControlPlan::Recover {
-                        body: Box::new(lower_request(session, *body)),
-                        handler: Box::new(lower_request(session, *handler)),
+                        body: Box::new(lower_term_request(session, *body)),
+                        handler: Box::new(lower_term_request(session, *handler)),
                     });
                 }
             }

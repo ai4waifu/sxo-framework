@@ -131,7 +131,7 @@ fn probe_eval_forms() {
         };
         let kind = session.with_math_mut(|s| {
             let req = match dialect {
-                Dialect::Matlab => sxo_dialect_matlab::lower_request(s, root),
+                Dialect::Matlab => sxo_dialect_matlab::lower_term_request(s, root),
                 _ => {
                     let w = sxo_dialect_mathematica::wexpr_from_session(s, root);
                     sxo_dialect_mathematica::lower_request(s, &w)
