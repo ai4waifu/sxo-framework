@@ -63,11 +63,39 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
 
 /// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
 ///
-/// Currently materializes via [`form_to_term`] then [`lower_term_request`]. Control and
-/// domain arms will move onto Form matching directly as the Term bridge shrinks.
+/// Session / sequence heads match on Form first. Remaining arms still materialize via
+/// [`form_to_term`] then [`lower_term_request`] while the Term bridge shrinks.
 pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
+    match form {
+        MatlabForm::Call { head, args } if head == "Set" => {
+            if let [lhs, rhs] = args.as_slice() {
+                if let Some(name) = form_symbol_name(lhs) {
+                    let symbol = session.arena.symbols_mut().intern(name);
+                    let value = form_to_term(session, rhs);
+                    return AthenaRequest::Command(SessionCommand::Define {
+                        symbol,
+                        value,
+                        kind: BindingKind::Session,
+                        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                    });
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "CompoundExpression" => {
+            let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
+            return AthenaRequest::Control(ControlPlan::Sequence { steps });
+        }
+        _ => {}
+    }
     let term = form_to_term(session, form);
     lower_term_request(session, term)
+}
+
+fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
+    match form {
+        MatlabForm::Atom(MatlabAtom::Symbol(name)) => Some(name.as_str()),
+        _ => None,
+    }
 }
 
 /// Lift an arena term produced by MATLAB Form materialization into a neutral [`AthenaRequest`].
