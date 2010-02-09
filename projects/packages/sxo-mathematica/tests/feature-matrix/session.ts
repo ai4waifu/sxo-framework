@@ -34,9 +34,11 @@ export const sessionFeatures = [
         .eval('block.bind', 'Block[{x = 1}, x + 1]', '2')
         .done(),
     feature('Clear', 'session')
-        .unsupported('SILENT WRONG: Clear[x] returns x')
+        .supported()
         .stateful()
-        .gap('clear.strip', 'Clear[x]', { expected: 'Null', notes: 'currently returns x' })
+        .notes('ClearDefinition → Null; strips session Own bindings')
+        .eval('clear.strip', 'Clear[x]', 'Null')
+        .eval('clear.unbind', 'x = 5; Clear[x]; x', 'x')
         .done(),
     feature('UpSet', 'session').planned().stateful().gap('upset.basic', 'UpSet[f[x], 1]', { expected: '1' }).done(),
     feature('TagSet', 'session').planned('oak error on x/:f[x]=1').stateful().gap('tagset.basic', 'x /: f[x] = 1', { expected: '1' }).done(),
