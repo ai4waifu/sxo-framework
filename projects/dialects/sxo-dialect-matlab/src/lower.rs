@@ -63,7 +63,7 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
 
 /// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
 ///
-/// Session / sequence heads match on Form first. Remaining arms still materialize via
+/// Control / session heads match on Form first. Remaining arms still materialize via
 /// [`form_to_term`] then [`lower_term_request`] while the Term bridge shrinks.
 pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
     match form {
@@ -84,6 +84,43 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "CompoundExpression" => {
             let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
             return AthenaRequest::Control(ControlPlan::Sequence { steps });
+        }
+        MatlabForm::Call { head, args } if head == "If" || head == "Branch" => match args.as_slice() {
+            [cond, then_branch] => {
+                return AthenaRequest::Control(ControlPlan::Branch {
+                    condition: form_to_term(session, cond),
+                    then_branch: Box::new(lower_request(session, then_branch)),
+                    else_branch: None,
+                });
+            }
+            [cond, then_branch, else_branch] => {
+                return AthenaRequest::Control(ControlPlan::Branch {
+                    condition: form_to_term(session, cond),
+                    then_branch: Box::new(lower_request(session, then_branch)),
+                    else_branch: Some(Box::new(lower_request(session, else_branch))),
+                });
+            }
+            _ => {}
+        },
+        MatlabForm::Call { head, args } if head == "While" || head == "LoopWhile" => {
+            if let [cond, body] = args.as_slice() {
+                return AthenaRequest::Control(ControlPlan::LoopWhile {
+                    condition: form_to_term(session, cond),
+                    body: Box::new(lower_request(session, body)),
+                });
+            }
+        }
+        MatlabForm::Call { head, args } if head == "Try" || head == "Recover" => {
+            if let [body, handler] = args.as_slice() {
+                return AthenaRequest::Control(ControlPlan::Recover {
+                    body: Box::new(lower_request(session, body)),
+                    handler: Box::new(lower_request(session, handler)),
+                });
+            }
+        }
+        MatlabForm::Call { head, args } if head == "error" || head == "Error" || head == "Reject" => {
+            let _ = args;
+            return AthenaRequest::Control(ControlPlan::Reject);
         }
         _ => {}
     }
