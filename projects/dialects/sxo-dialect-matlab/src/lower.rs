@@ -118,6 +118,40 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 });
             }
         }
+        MatlabForm::Call { head, args } if head == "For" || head == "CountedLoop" => {
+            if let [variable, iterator, body] = args.as_slice() {
+                let variable_t = form_to_term(session, variable);
+                let iterator_t = form_to_term(session, iterator);
+                let body_req = lower_request(session, body);
+                if matches!(body_req, AthenaRequest::Term(_)) {
+                    return AthenaRequest::Control(ControlPlan::CountedLoop {
+                        variable: variable_t,
+                        iterator: iterator_t,
+                        body: Box::new(body_req),
+                    });
+                }
+                if let (Some(symbol), Some(items)) =
+                    (symbol_atom(session, variable_t), expand_counted_iterator(session, iterator_t))
+                {
+                    let mut steps = Vec::with_capacity(items.len().saturating_mul(2));
+                    for item in items {
+                        steps.push(AthenaRequest::Command(SessionCommand::Define {
+                            symbol,
+                            value: item,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }));
+                        steps.push(lower_request(session, body));
+                    }
+                    return AthenaRequest::Control(ControlPlan::Sequence { steps });
+                }
+                return AthenaRequest::Control(ControlPlan::CountedLoop {
+                    variable: variable_t,
+                    iterator: iterator_t,
+                    body: Box::new(body_req),
+                });
+            }
+        }
         MatlabForm::Call { head, args } if head == "error" || head == "Error" || head == "Reject" => {
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
