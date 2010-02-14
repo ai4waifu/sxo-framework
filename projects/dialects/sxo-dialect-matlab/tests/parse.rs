@@ -324,3 +324,11 @@ fn render_keeps_parens_for_sum_power_base() {
     let got = h.render(h.eval("(x+1)^2"));
     assert_eq!(got, "(1 + x)^2", "got {got}");
 }
+
+#[test]
+fn elementwise_less_vector_scalar() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("[1, 2, 3] < 2")), "[true, false, false]");
+    assert_eq!(h.render(h.eval("[1, 2, 3] > 2")), "[false, false, true]");
+    assert_eq!(h.render(h.eval("[1, 2, 3] >= 2")), "[false, true, true]");
+}
