@@ -156,6 +156,76 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
         }
+        MatlabForm::Call { head, args } if head == "Part" => {
+            if args.len() >= 2 {
+                let target = form_to_term(session, &args[0]);
+                let axis_terms: Vec<TermId> = args[1..].iter().map(|a| form_to_term(session, a)).collect();
+                if let Some(axes) = axis_terms.iter().copied().map(|a| index_spec_of(session, a)).collect::<Option<Vec<_>>>() {
+                    return AthenaRequest::Control(ControlPlan::Index { target, axes });
+                }
+            }
+        }
+        MatlabForm::Call { head, args }
+            if matches!(head.as_str(), "diff" | "Diff" | "D" | "int" | "Int" | "integral" | "Integrate") =>
+        {
+            match (head.as_str(), args.as_slice()) {
+                ("diff" | "Diff" | "D", [expr, var]) => {
+                    if let Some(name) = form_symbol_name(var) {
+                        let variable = session.arena.symbols_mut().intern(name);
+                        return calculus_goal(CalculusRequest::Derivative {
+                            expression: form_to_term(session, expr),
+                            variable,
+                            order: DerivativeOrder::First,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("diff" | "Diff" | "D", [expr, var, order]) => {
+                    if let Some(name) = form_symbol_name(var) {
+                        let order_term = form_to_term(session, order);
+                        if let Some(n) = number_from_id(session, order_term).and_then(|n| n.as_exact_integer()) {
+                            if n > 0 {
+                                let variable = session.arena.symbols_mut().intern(name);
+                                let order =
+                                    if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
+                                return calculus_goal(CalculusRequest::Derivative {
+                                    expression: form_to_term(session, expr),
+                                    variable,
+                                    order,
+                                    assumptions: AssumptionSet::empty(),
+                                });
+                            }
+                        }
+                    }
+                }
+                ("int" | "Int" | "integral" | "Integrate", [expr, var]) => {
+                    if let Some(name) = form_symbol_name(var) {
+                        let variable = session.arena.symbols_mut().intern(name);
+                        return calculus_goal(CalculusRequest::Integral {
+                            expression: form_to_term(session, expr),
+                            variable,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+        MatlabForm::Call { head, args } if head == "LinearSolve" || head == "Mldivide" => {
+            if let [a_form, b_form] = args.as_slice() {
+                let a_term = form_to_term(session, a_form);
+                let b_term = form_to_term(session, b_form);
+                if let (Some(a_mat), Some(b_mat)) =
+                    (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
+                {
+                    let a = session.matrix_objects.intern(a_mat);
+                    let b = session.matrix_objects.intern(b_mat);
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
+                    )));
+                }
+            }
+        }
         _ => {}
     }
     let term = form_to_term(session, form);
