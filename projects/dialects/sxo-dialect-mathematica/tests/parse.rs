@@ -341,3 +341,10 @@ fn clear_definition_returns_null_and_unbinds() {
     assert!(h.eq(h.eval("x = 5; Clear[x]; x"), h.sym("x")), "got {}", h.wolfram(h.eval("x = 5; Clear[x]; x")));
     assert_eq!(h.wolfram(h.eval("Clear[y]")), "Null");
 }
+
+#[test]
+fn map_sin_keeps_exact_sin_one() {
+    let h = H::new();
+    let got = h.wolfram(h.eval("Map[Sin, {0, 1}]"));
+    assert_eq!(got, "{0, Sin[1]}", "got {got}");
+}
