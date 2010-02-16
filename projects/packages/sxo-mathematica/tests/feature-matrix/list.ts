@@ -17,9 +17,10 @@ export const listFeatures = [
         .done(),
     feature('Range', 'list').supported().pure().notes('Range[n] integer sequence').eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
     feature('Map', 'list')
-        .partial('Slot Map OK; Map[Sin,{0,1}] currently numericizes Sin[1]')
+        .supported()
         .pure()
-        .gap('map.sin', 'Map[Sin, {0, 1}]', { expected: '{0, Sin[1]}', notes: 'currently {0, 0.8414709848078965}' })
+        .notes('Map keeps exact Sin[1]; Slot Map folds integers')
+        .eval('map.sin', 'Map[Sin, {0, 1}]', '{0, Sin[1]}')
         .eval('map.slot', 'Map[#^2 &, {1, 2, 3}]', '{1, 4, 9}')
         .done(),
     feature('Table', 'list')
