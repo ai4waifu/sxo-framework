@@ -165,6 +165,10 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Span" => {
+            let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
+            return AthenaRequest::Term(rewritten);
+        }
         MatlabForm::Call { head, args }
             if matches!(head.as_str(), "diff" | "Diff" | "D" | "int" | "Int" | "integral" | "Integrate") =>
         {
