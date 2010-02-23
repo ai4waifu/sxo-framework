@@ -63,8 +63,9 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
 
 /// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
 ///
-/// Control / session heads match on Form first. Remaining arms still materialize via
-/// [`form_to_term`] then [`lower_term_request`] while the Term bridge shrinks.
+/// Request-shaped heads match on Form. Ordinary expressions become
+/// [`AthenaRequest::Term`] via [`form_to_term`]. [`lower_term_request`] remains for
+/// hosts that already hold arena `TermId`s.
 pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
     match form {
         MatlabForm::Call { head, args } if head == "Set" => {
@@ -232,8 +233,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         _ => {}
     }
-    let term = form_to_term(session, form);
-    lower_term_request(session, term)
+    // Ordinary expression Forms materialize once. Request-shaped heads above already returned.
+    AthenaRequest::Term(form_to_term(session, form))
 }
 
 fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
