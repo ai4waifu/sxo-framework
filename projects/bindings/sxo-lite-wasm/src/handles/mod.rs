@@ -58,9 +58,19 @@ impl Expression {
 
     /// Evaluate via dialect `lower_request` (Session / Control / Domain Goals).
     pub fn evaluate(&self) -> Result<Expression, JsValue> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-        out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
-        Ok(out)
+        match self.dialect {
+            Dialect::Matlab => {
+                let text = self.session.render_as_matlab(self.root);
+                let session = Session::new();
+                let root = session.evaluate_matlab(&text).map_err(map_err)?;
+                Ok(Expression { session, root, dialect: Dialect::Matlab })
+            }
+            Dialect::Mathematica | Dialect::SimpleMath => {
+                let mut out = fork_expression(&self.session, self.root, self.dialect)?;
+                out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
+                Ok(out)
+            }
+        }
     }
 
     /// Render as string in the expression's dialect.

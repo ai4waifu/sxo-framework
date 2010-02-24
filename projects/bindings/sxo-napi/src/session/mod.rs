@@ -177,9 +177,26 @@ impl Session {
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         let form = matlab::parse_matlab_form(input)?;
         let mut ms = self.math_session.borrow_mut();
-        let fallback = matlab::form_to_term(&mut ms, &form);
-        let request = matlab::lower_term_request(&mut ms, fallback);
+        let request = matlab::lower_request(&mut ms, &form);
+        let fallback = match &request {
+            AthenaRequest::Term(term) => *term,
+            _ => matlab::form_to_term(&mut ms, &form),
+        };
         self.execute_lowered(&mut ms, request, fallback)
+    }
+
+    /// Parse + dialect Form request path for an explicit dialect tag.
+    pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<TermId, SxoError> {
+        match dialect {
+            Dialect::Matlab => self.evaluate_matlab(input),
+            Dialect::Mathematica | Dialect::SimpleMath => {
+                let w = self.parse_mathematica(input)?;
+                let mut ms = self.math_session.borrow_mut();
+                let request = mathematica::lower_request(&mut ms, &w);
+                let fallback = mathematica::lower_wexpr(&mut ms, &w);
+                self.execute_lowered(&mut ms, request, fallback)
+            }
+        }
     }
 
     /// Differentiate MATLAB input.

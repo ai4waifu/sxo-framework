@@ -24,9 +24,8 @@ pub fn version() -> String {
 pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
-    let (term, resolved) = parse_to_term(&session, input, d)?;
-    let root = session.evaluate_form(term, resolved).map_err(map_err)?;
-    Ok(Expression { session, root, dialect: resolved })
+    let root = session.evaluate_input(input, d).map_err(map_err)?;
+    Ok(Expression { session, root, dialect: d })
 }
 
 /// Top-level `d`.
@@ -44,10 +43,9 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
-    let (term, resolved) = parse_to_term(&session, input, d)?;
-    let evaluated = session.evaluate_form(term, resolved).map_err(map_err)?;
+    let evaluated = session.evaluate_input(input, d).map_err(map_err)?;
     let root = session.simplify_term(evaluated);
-    Ok(Expression { session, root, dialect: resolved })
+    Ok(Expression { session, root, dialect: d })
 }
 
 /// Top-level `expression` — parse only (no evaluate).

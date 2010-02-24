@@ -154,11 +154,34 @@ impl Session {
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
         let form = matlab::parse_matlab_form(input)?;
         let mut ms = self.math_session.borrow_mut();
-        let fallback = matlab::form_to_term(&mut ms, &form);
-        let request = matlab::lower_term_request(&mut ms, fallback);
+        let request = matlab::lower_request(&mut ms, &form);
+        let fallback = match &request {
+            athena::api::AthenaRequest::Term(term) => *term,
+            _ => matlab::form_to_term(&mut ms, &form),
+        };
         match self.math_engine().execute_request(&mut ms, request) {
             Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
             Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
+    }
+
+    /// Parse + dialect Form request path for an explicit dialect tag.
+    pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<TermId, SxoError> {
+        match dialect {
+            Dialect::Matlab => self.evaluate_matlab(input),
+            Dialect::Mathematica | Dialect::SimpleMath => {
+                let w = self.parse_mathematica(input)?;
+                let mut ms = self.math_session.borrow_mut();
+                let request = mathematica::lower_request(&mut ms, &w);
+                match self.math_engine().execute_request(&mut ms, request) {
+                    Ok(result_id) => Ok(ms
+                        .results
+                        .get(result_id)
+                        .and_then(|r| r.symbolic_term)
+                        .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
+                    Err(d) => Err(SxoError::from_diagnostic(d)),
+                }
+            }
         }
     }
 
