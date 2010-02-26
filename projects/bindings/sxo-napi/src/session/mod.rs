@@ -66,9 +66,9 @@ impl Session {
 
     /// Dialect Form → [`lower_request`] → execute → symbolic term.
     ///
-    /// Domain Goals go through [`AthenaEngine::execute_domain`] then host-side
-    /// materialization. Pinned Athena tips may leave `ComputationResult.symbolic_term`
-    /// empty for LinearAlgebra / Series / Residue payloads.
+    /// Prefer [`Self::evaluate_input`] / [`Self::evaluate_matlab`] for source text.
+    /// This `TermId` entry is transitional: MATLAB uses [`matlab::lower_term_request`]
+    /// and must not grow new request-shaped heads (add those on `MatlabForm` instead).
     pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
         match dialect {
             Dialect::Matlab => {

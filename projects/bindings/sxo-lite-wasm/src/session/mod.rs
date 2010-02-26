@@ -45,6 +45,9 @@ impl Session {
     }
 
     /// Dialect Form → `lower_request` → `execute_request` → symbolic term.
+    ///
+    /// Prefer [`Self::evaluate_input`] / [`Self::evaluate_matlab`] for source text.
+    /// MATLAB `TermId` entry uses `lower_term_request` and must not grow new heads.
     pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
         match dialect {
             Dialect::Matlab => {

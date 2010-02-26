@@ -246,7 +246,9 @@ fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
 
 /// Lift an arena term produced by MATLAB Form materialization into a neutral [`AthenaRequest`].
 ///
-/// Prefer [`lower_request`] with [`MatlabForm`] for new dialect surface paths.
+/// **Transitional compatibility only** for hosts that already hold arena [`TermId`]s
+/// (`evaluate_form(TermId)`). Do **not** add new request-shaped heads here.
+/// New session / control / domain heads belong on [`lower_request`] (`MatlabForm` match).
 pub fn lower_term_request(session: &mut Session, term: TermId) -> AthenaRequest {
     match application_surface_name(session, term).as_deref() {
         Some("Set") => {
