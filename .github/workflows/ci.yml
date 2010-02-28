@@ -28,6 +28,9 @@ jobs:
       - name: Forbid dialect GreenTree layout walks
         run: node scripts/architecture/check-no-greentree-layout.mjs
 
+      - name: MATLAB Form boundary gate
+        run: node scripts/architecture/check-matlab-form-boundary.mjs
+
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
