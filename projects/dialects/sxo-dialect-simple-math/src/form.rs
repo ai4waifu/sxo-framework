@@ -1,4 +1,7 @@
-//! Owned expression AST for SXO (no third-party E-Graph).
+//! Simple Math dialect Form (`Expr`) — flat owned tree, not Athena IR and not `WExpr`.
+//!
+//! Off current delivery route. Living `05`/`14`: when re-enabled, keep
+//! `parse → Expr → lower_request` and do not push arena terms from `parse.rs`.
 
 use std::fmt;
 
