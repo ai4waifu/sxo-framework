@@ -31,6 +31,9 @@ jobs:
       - name: MATLAB Form boundary gate
         run: node scripts/architecture/check-matlab-form-boundary.mjs
 
+      - name: Mathematica Form boundary gate
+        run: node scripts/architecture/check-mathematica-form-boundary.mjs
+
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
