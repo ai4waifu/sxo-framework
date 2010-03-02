@@ -8,8 +8,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_matlab::{
-    application_surface_name, form_to_term, lower_request, lower_term_request, parse_matlab, parse_matlab_form,
-    push_matlab_call, render_matlab, try_plot_svg,
+    MatlabAtom, MatlabForm, application_surface_name, form_to_term, lower_request, lower_term_request, parse_matlab,
+    parse_matlab_form, push_matlab_call, render_matlab, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -331,4 +331,23 @@ fn elementwise_less_vector_scalar() {
     assert_eq!(h.render(h.eval("[1, 2, 3] < 2")), "[true, false, false]");
     assert_eq!(h.render(h.eval("[1, 2, 3] > 2")), "[false, false, true]");
     assert_eq!(h.render(h.eval("[1, 2, 3] >= 2")), "[false, true, true]");
+}
+
+#[test]
+fn parse_matlab_form_without_session() {
+    let form = parse_matlab_form("1 + 2 * 3").unwrap();
+    assert_eq!(form.head_name(), Some("Plus"));
+    match form {
+        MatlabForm::Call { args, .. } => {
+            assert!(matches!(args[0], MatlabForm::Atom(MatlabAtom::Number(_))));
+            assert_eq!(args[1].head_name(), Some("Times"));
+        }
+        other => panic!("expected Plus call, got {other:?}"),
+    }
+}
+
+#[test]
+fn parse_matlab_form_if_without_session() {
+    let form = parse_matlab_form("if true, 1, else, 2, end").unwrap();
+    assert_eq!(form.head_name(), Some("If"));
 }
