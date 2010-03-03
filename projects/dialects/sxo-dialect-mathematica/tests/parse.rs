@@ -348,3 +348,9 @@ fn map_sin_keeps_exact_sin_one() {
     let got = h.wolfram(h.eval("Map[Sin, {0, 1}]"));
     assert_eq!(got, "{0, Sin[1]}", "got {got}");
 }
+
+#[test]
+fn rest_drops_first_element() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Rest[{1, 2, 3}]")), "{2, 3}");
+}
