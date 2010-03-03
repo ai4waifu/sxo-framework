@@ -244,191 +244,73 @@ fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
     }
 }
 
+fn is_form_request_head(head: &str) -> bool {
+    matches!(
+        head,
+        "Set"
+            | "CompoundExpression"
+            | "If"
+            | "Branch"
+            | "While"
+            | "LoopWhile"
+            | "For"
+            | "CountedLoop"
+            | "Try"
+            | "Recover"
+            | "error"
+            | "Error"
+            | "Reject"
+            | "LinearSolve"
+            | "Mldivide"
+            | "Part"
+            | "Span"
+            | "diff"
+            | "Diff"
+            | "D"
+            | "int"
+            | "Int"
+            | "integral"
+            | "Integrate"
+    )
+}
+
+/// Reconstruct a [`MatlabForm`] from an arena term (transitional Term→Form bridge).
+fn term_to_form(session: &Session, term: TermId) -> Option<MatlabForm> {
+    match session.arena.get(term)? {
+        TermNode::Atom(Atom::Number(n)) => Some(MatlabForm::number(clone_number(n))),
+        TermNode::Atom(Atom::String(s)) => Some(MatlabForm::string(s.clone())),
+        TermNode::Atom(Atom::Symbol(_)) => {
+            let name = symbol_name(session, term)?;
+            Some(MatlabForm::symbol(name))
+        }
+        TermNode::Atom(Atom::Boolean(b)) => Some(MatlabForm::bool(*b)),
+        TermNode::Atom(Atom::Null) => Some(MatlabForm::null()),
+        TermNode::Collection { elements, .. } => {
+            let items: Option<Vec<MatlabForm>> = elements.iter().map(|e| term_to_form(session, *e)).collect();
+            Some(MatlabForm::list(items?))
+        }
+        TermNode::Application { .. } => {
+            let head = application_surface_name(session, term)?;
+            let args = application_arguments(session, term)?;
+            let form_args: Option<Vec<MatlabForm>> = args.iter().map(|a| term_to_form(session, *a)).collect();
+            Some(MatlabForm::call(head, form_args?))
+        }
+        _ => None,
+    }
+}
+
 /// Lift an arena term produced by MATLAB Form materialization into a neutral [`AthenaRequest`].
 ///
 /// **Transitional compatibility only** for hosts that already hold arena [`TermId`]s
 /// (`evaluate_form(TermId)`). Do **not** add new request-shaped heads here.
 /// New session / control / domain heads belong on [`lower_request`] (`MatlabForm` match).
 pub fn lower_term_request(session: &mut Session, term: TermId) -> AthenaRequest {
-    match application_surface_name(session, term).as_deref() {
-        Some("Set") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [lhs, rhs] = args.as_slice() {
-                    if let Some(symbol) = symbol_atom(session, *lhs) {
-                        return AthenaRequest::Command(SessionCommand::Define {
-                            symbol,
-                            value: *rhs,
-                            kind: BindingKind::Session,
-                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-                        });
-                    }
-                }
+    if let Some(form) = term_to_form(session, term) {
+        if let MatlabForm::Call { head, .. } = &form {
+            if is_form_request_head(head) {
+                return lower_request(session, &form);
             }
         }
-        Some("CompoundExpression") => {
-            if let Some(args) = application_arguments(session, term) {
-                let steps: Vec<AthenaRequest> = args.iter().map(|t| lower_term_request(session, *t)).collect();
-                return AthenaRequest::Control(ControlPlan::Sequence { steps });
-            }
-        }
-        Some("If") | Some("Branch") => {
-            if let Some(args) = application_arguments(session, term) {
-                match args.as_slice() {
-                    [cond, then_branch] => {
-                        return AthenaRequest::Control(ControlPlan::Branch {
-                            condition: *cond,
-                            then_branch: Box::new(lower_term_request(session, *then_branch)),
-                            else_branch: None,
-                        });
-                    }
-                    [cond, then_branch, else_branch] => {
-                        return AthenaRequest::Control(ControlPlan::Branch {
-                            condition: *cond,
-                            then_branch: Box::new(lower_term_request(session, *then_branch)),
-                            else_branch: Some(Box::new(lower_term_request(session, *else_branch))),
-                        });
-                    }
-                    _ => {}
-                }
-            }
-        }
-        Some("While") | Some("LoopWhile") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [cond, body] = args.as_slice() {
-                    return AthenaRequest::Control(ControlPlan::LoopWhile {
-                        condition: *cond,
-                        body: Box::new(lower_term_request(session, *body)),
-                    });
-                }
-            }
-        }
-        Some("For") | Some("CountedLoop") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [variable, iterator, body] = args.as_slice() {
-                    let body_req = lower_term_request(session, *body);
-                    if matches!(body_req, AthenaRequest::Term(_)) {
-                        return AthenaRequest::Control(ControlPlan::CountedLoop {
-                            variable: *variable,
-                            iterator: *iterator,
-                            body: Box::new(body_req),
-                        });
-                    }
-                    // Athena CountedLoop only unrolls `Term` bodies. Assignment / Sequence
-                    // bodies expand here into Define(var) + body steps.
-                    if let (Some(symbol), Some(items)) =
-                        (symbol_atom(session, *variable), expand_counted_iterator(session, *iterator))
-                    {
-                        let mut steps = Vec::with_capacity(items.len().saturating_mul(2));
-                        for item in items {
-                            steps.push(AthenaRequest::Command(SessionCommand::Define {
-                                symbol,
-                                value: item,
-                                kind: BindingKind::Session,
-                                evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-                            }));
-                            steps.push(lower_term_request(session, *body));
-                        }
-                        return AthenaRequest::Control(ControlPlan::Sequence { steps });
-                    }
-                    return AthenaRequest::Control(ControlPlan::CountedLoop {
-                        variable: *variable,
-                        iterator: *iterator,
-                        body: Box::new(body_req),
-                    });
-                }
-            }
-        }
-        Some("Try") | Some("Recover") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [body, handler] = args.as_slice() {
-                    return AthenaRequest::Control(ControlPlan::Recover {
-                        body: Box::new(lower_term_request(session, *body)),
-                        handler: Box::new(lower_term_request(session, *handler)),
-                    });
-                }
-            }
-        }
-        Some("error") | Some("Error") | Some("Reject") => {
-            return AthenaRequest::Control(ControlPlan::Reject);
-        }
-        Some("LinearSolve") | Some("Mldivide") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [a_term, b_term] = args.as_slice() {
-                    if let (Some(a_mat), Some(b_mat)) =
-                        (matrix_from_nested_list(session, *a_term), matrix_from_nested_list(session, *b_term))
-                    {
-                        let a = session.matrix_objects.intern(a_mat);
-                        let b = session.matrix_objects.intern(b_mat);
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
-                        )));
-                    }
-                }
-            }
-        }
-        Some("Part") => {
-            if let Some(args) = application_arguments(session, term) {
-                if args.len() >= 2 {
-                    if let Some(axes) = args[1..].iter().map(|a| index_spec_of(session, *a)).collect::<Option<Vec<_>>>() {
-                        return AthenaRequest::Control(ControlPlan::Index { target: args[0], axes });
-                    }
-                }
-            }
-        }
-        Some("Span") => {
-            if let Some(args) = application_arguments(session, term) {
-                let rewritten = push_semantic(session, SemanticOperator::Range, args);
-                return AthenaRequest::Term(rewritten);
-            }
-        }
-        // Parse maps `diff` → Extension `D`, `int` → Extension `Integrate`.
-        Some("diff") | Some("Diff") | Some("D") => {
-            if let Some(args) = application_arguments(session, term) {
-                match args.as_slice() {
-                    [expr, var] => {
-                        if let Some(variable) = symbol_atom(session, *var) {
-                            return calculus_goal(CalculusRequest::Derivative {
-                                expression: *expr,
-                                variable,
-                                order: DerivativeOrder::First,
-                                assumptions: AssumptionSet::empty(),
-                            });
-                        }
-                    }
-                    [expr, var, order] => {
-                        if let Some(variable) = symbol_atom(session, *var) {
-                            if let Some(n) = number_from_id(session, *order).and_then(|n| n.as_exact_integer()) {
-                                if n > 0 {
-                                    let order =
-                                        if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
-                                    return calculus_goal(CalculusRequest::Derivative {
-                                        expression: *expr,
-                                        variable,
-                                        order,
-                                        assumptions: AssumptionSet::empty(),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        Some("int") | Some("Int") | Some("integral") | Some("Integrate") => {
-            if let Some(args) = application_arguments(session, term) {
-                if let [expr, var] = args.as_slice() {
-                    if let Some(variable) = symbol_atom(session, *var) {
-                        return calculus_goal(CalculusRequest::Integral {
-                            expression: *expr,
-                            variable,
-                            assumptions: AssumptionSet::empty(),
-                        });
-                    }
-                }
-            }
-        }
-        _ => {}
     }
     AthenaRequest::Term(term)
 }
