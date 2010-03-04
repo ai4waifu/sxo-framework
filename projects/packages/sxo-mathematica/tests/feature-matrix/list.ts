@@ -79,7 +79,7 @@ export const listFeatures = [
     feature('Riffle', 'list').unsupported().pure().gap('riffle.ab', 'Riffle[{1, 2}, {a, b}]', { expected: '{1, a, 2, b}' }).done(),
     feature('Accumulate', 'list').unsupported().pure().gap('accumulate.3', 'Accumulate[{1, 2, 3}]', { expected: '{1, 3, 6}' }).done(),
     feature('Differences', 'list').unsupported().pure().gap('differences.3', 'Differences[{1, 4, 9}]', { expected: '{3, 5}' }).done(),
-    feature('Total', 'list').unsupported().pure().gap('total.3', 'Total[{1, 2, 3}]', { expected: '6' }).done(),
+    feature('Total', 'list').supported().pure().notes('Total lowers to Sum').eval('total.3', 'Total[{1, 2, 3}]', '6').done(),
     feature('Append', 'list').unsupported().pure().gap('append.3', 'Append[{1, 2}, 3]', { expected: '{1, 2, 3}' }).done(),
     feature('Prepend', 'list').unsupported().pure().gap('prepend.1', 'Prepend[{2, 3}, 1]', { expected: '{1, 2, 3}' }).done(),
     feature('DeleteDuplicates', 'list').unsupported().pure().gap('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', { expected: '{1, 2}' }).done(),
