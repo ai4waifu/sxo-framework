@@ -54,6 +54,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Rest" => SemanticOperator::Rest,
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
+        "Total" => SemanticOperator::Sum,
         "Product" => SemanticOperator::Product,
         "Determinant" | "Det" => SemanticOperator::Determinant,
         "DotTimes" => SemanticOperator::ElementwiseMultiply,

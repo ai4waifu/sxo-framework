@@ -354,3 +354,9 @@ fn rest_drops_first_element() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Rest[{1, 2, 3}]")), "{2, 3}");
 }
+
+#[test]
+fn total_sums_list_elements() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
+}
