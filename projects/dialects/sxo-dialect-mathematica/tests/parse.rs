@@ -360,3 +360,57 @@ fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
 }
+
+#[test]
+fn flatten_nested_lists() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Flatten[{{1, 2}, {3}}]")), "{1, 2, 3}");
+}
+
+#[test]
+fn reverse_list_elements() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Reverse[{1, 2, 3}]")), "{3, 2, 1}");
+}
+
+#[test]
+fn append_extends_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Append[{1, 2}, 3]")), "{1, 2, 3}");
+}
+
+#[test]
+fn prepend_extends_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Prepend[{2, 3}, 1]")), "{1, 2, 3}");
+}
+
+#[test]
+fn sort_list_elements() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Sort[{3, 1, 2}]")), "{1, 2, 3}");
+}
+
+#[test]
+fn memberq_true_for_present() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("MemberQ[{1, 2, 3}, 2]")), "True");
+}
+
+#[test]
+fn count_occurrences() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Count[{1, 1, 2}, 1]")), "2");
+}
+
+#[test]
+fn freeq_true_when_absent() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("FreeQ[{1, 2}, 3]")), "True");
+}
+
+#[test]
+fn constant_array_zeros() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ConstantArray[0, 3]")), "{0, 0, 0}");
+}
