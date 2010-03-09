@@ -57,9 +57,19 @@ export const listFeatures = [
         .done(),
     feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
-    feature('Most', 'list').unsupported().pure().gap('most.basic', 'Most[{1, 2, 3}]', { expected: '{1, 2}' }).done(),
-    feature('Take', 'list').unsupported().pure().gap('take.2', 'Take[{1, 2, 3, 4}, 2]', { expected: '{1, 2}' }).done(),
-    feature('Drop', 'list').unsupported().pure().gap('drop.2', 'Drop[{1, 2, 3, 4}, 2]', { expected: '{3, 4}' }).done(),
+    feature('Most', 'list').supported().pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
+    feature('Take', 'list')
+        .supported()
+        .pure()
+        .notes('literal List Take with non-negative integer count')
+        .eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}')
+        .done(),
+    feature('Drop', 'list')
+        .supported()
+        .pure()
+        .notes('literal List Drop with non-negative integer count')
+        .eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}')
+        .done(),
     feature('Reverse', 'list')
         .supported()
         .pure()
