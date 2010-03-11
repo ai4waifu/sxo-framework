@@ -414,21 +414,3 @@ fn constant_array_zeros() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("ConstantArray[0, 3]")), "{0, 0, 0}");
 }
-
-#[test]
-fn most_drops_last_element() {
-    let h = H::new();
-    assert_eq!(h.wolfram(h.eval("Most[{1, 2, 3}]")), "{1, 2}");
-}
-
-#[test]
-fn take_first_n_elements() {
-    let h = H::new();
-    assert_eq!(h.wolfram(h.eval("Take[{1, 2, 3, 4}, 2]")), "{1, 2}");
-}
-
-#[test]
-fn drop_first_n_elements() {
-    let h = H::new();
-    assert_eq!(h.wolfram(h.eval("Drop[{1, 2, 3, 4}, 2]")), "{3, 4}");
-}

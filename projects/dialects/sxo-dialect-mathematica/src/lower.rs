@@ -65,28 +65,6 @@ fn expand_list_surface(w: &WExpr) -> Option<WExpr> {
             }
             Some(WExpr::List(out))
         }
-        ("Most", [WExpr::List(items)]) => {
-            if items.is_empty() {
-                return None;
-            }
-            Some(WExpr::List(items[..items.len() - 1].to_vec()))
-        }
-        ("Take", [WExpr::List(items), WExpr::Atom(WAtom::Number(n))]) => {
-            let n = n.as_exact_integer()?;
-            if n < 0 {
-                return None;
-            }
-            let take = (n as usize).min(items.len());
-            Some(WExpr::List(items[..take].to_vec()))
-        }
-        ("Drop", [WExpr::List(items), WExpr::Atom(WAtom::Number(n))]) => {
-            let n = n.as_exact_integer()?;
-            if n < 0 {
-                return None;
-            }
-            let drop = (n as usize).min(items.len());
-            Some(WExpr::List(items[drop..].to_vec()))
-        }
         ("ConstantArray", [value, WExpr::Atom(WAtom::Number(n))]) => {
             let len = n.as_exact_integer()?;
             if !(0..=MAX_CONSTANT_ARRAY_LEN).contains(&len) {
