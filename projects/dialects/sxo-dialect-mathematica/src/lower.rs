@@ -1,7 +1,5 @@
 //! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `14`).
 
-use std::cmp::Ordering;
-
 use athena::{
     Session,
     api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
@@ -10,7 +8,6 @@ use athena::{
         calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
-    numeric::to_f64_lossy,
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::{
         arena::{push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name},
@@ -23,105 +20,6 @@ use athena::{
 };
 
 use crate::form::{WAtom, WExpr};
-
-/// Max length accepted by dialect-side `ConstantArray` materialization.
-const MAX_CONSTANT_ARRAY_LEN: i64 = 10_000;
-
-/// Rewrite pure list-structure surface forms into concrete [`WExpr`] trees.
-///
-/// Dialect Form materialization only (not a second evaluator). Non-literal list
-/// arguments stay unevaluated so Athena can own the general cases later.
-fn expand_list_surface(w: &WExpr) -> Option<WExpr> {
-    let WExpr::Call { head, args } = w else {
-        return None;
-    };
-    let WExpr::Atom(WAtom::Symbol(name)) = head.as_ref() else {
-        return None;
-    };
-    match (name.as_str(), args.as_slice()) {
-        ("Reverse", [WExpr::List(items)]) => {
-            let mut out = items.clone();
-            out.reverse();
-            Some(WExpr::List(out))
-        }
-        ("Append", [WExpr::List(items), x]) => {
-            let mut out = items.clone();
-            out.push(x.clone());
-            Some(WExpr::List(out))
-        }
-        ("Prepend", [WExpr::List(items), x]) => {
-            let mut out = Vec::with_capacity(items.len() + 1);
-            out.push(x.clone());
-            out.extend(items.iter().cloned());
-            Some(WExpr::List(out))
-        }
-        ("Flatten", [WExpr::List(items)]) => {
-            let mut out = Vec::new();
-            for item in items {
-                match item {
-                    WExpr::List(inner) => out.extend(inner.iter().cloned()),
-                    other => out.push(other.clone()),
-                }
-            }
-            Some(WExpr::List(out))
-        }
-        ("ConstantArray", [value, WExpr::Atom(WAtom::Number(n))]) => {
-            let len = n.as_exact_integer()?;
-            if !(0..=MAX_CONSTANT_ARRAY_LEN).contains(&len) {
-                return None;
-            }
-            Some(WExpr::List(vec![value.clone(); len as usize]))
-        }
-        ("Sort", [WExpr::List(items)]) => {
-            if !items.iter().all(|item| matches!(item, WExpr::Atom(WAtom::Number(_)))) {
-                return None;
-            }
-            let mut out = items.clone();
-            out.sort_by(cmp_number_atoms);
-            Some(WExpr::List(out))
-        }
-        ("MemberQ", [WExpr::List(items), needle]) => {
-            let found = items.iter().any(|item| item == needle);
-            Some(WExpr::symbol(if found { "True" } else { "False" }))
-        }
-        ("Count", [WExpr::List(items), needle]) => {
-            let count = items.iter().filter(|item| *item == needle).count();
-            Some(WExpr::int(count as i64))
-        }
-        ("FreeQ", [haystack, needle]) => {
-            Some(WExpr::symbol(if expr_free_of(haystack, needle) { "True" } else { "False" }))
-        }
-        _ => None,
-    }
-}
-
-fn cmp_number_atoms(a: &WExpr, b: &WExpr) -> Ordering {
-    match (a, b) {
-        (WExpr::Atom(WAtom::Number(x)), WExpr::Atom(WAtom::Number(y))) => {
-            match (x.as_exact_integer(), y.as_exact_integer()) {
-                (Some(i), Some(j)) => i.cmp(&j),
-                _ => match (to_f64_lossy(x), to_f64_lossy(y)) {
-                    (Some(i), Some(j)) => i.partial_cmp(&j).unwrap_or(Ordering::Equal),
-                    _ => Ordering::Equal,
-                },
-            }
-        }
-        _ => Ordering::Equal,
-    }
-}
-
-fn expr_free_of(haystack: &WExpr, needle: &WExpr) -> bool {
-    if haystack == needle {
-        return false;
-    }
-    match haystack {
-        WExpr::List(items) => items.iter().all(|item| expr_free_of(item, needle)),
-        WExpr::Call { head, args } => {
-            expr_free_of(head, needle) && args.iter().all(|arg| expr_free_of(arg, needle))
-        }
-        WExpr::Atom(_) => true,
-    }
-}
 
 /// Map a Mathematica surface head to a closed [`SemanticOperator`] when known.
 pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
@@ -213,9 +111,6 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
 pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
-    if let Some(expanded) = expand_list_surface(w) {
-        return lower_wexpr(session, &expanded);
-    }
     match w {
         WExpr::Atom(a) => match a {
             WAtom::Number(n) => {

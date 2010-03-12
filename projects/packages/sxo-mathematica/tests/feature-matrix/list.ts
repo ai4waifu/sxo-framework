@@ -49,35 +49,15 @@ export const listFeatures = [
         .eval('first.ab', 'First[{a, b}]', 'a')
         .done(),
     feature('Join', 'list').supported().pure().eval('join.basic', 'Join[{1}, {2}]', '{1, 2}').done(),
-    feature('Flatten', 'list')
-        .supported()
-        .pure()
-        .notes('literal one-level Flatten on List Form')
-        .eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}')
-        .done(),
+    feature('Flatten', 'list').unsupported().pure().gap('flatten.basic', 'Flatten[{{1, 2}, {3}}]', { expected: '{1, 2, 3}' }).done(),
     feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
     feature('Most', 'list').unsupported().pure().gap('most.basic', 'Most[{1, 2, 3}]', { expected: '{1, 2}' }).done(),
     feature('Take', 'list').unsupported().pure().gap('take.2', 'Take[{1, 2, 3, 4}, 2]', { expected: '{1, 2}' }).done(),
     feature('Drop', 'list').unsupported().pure().gap('drop.2', 'Drop[{1, 2, 3, 4}, 2]', { expected: '{3, 4}' }).done(),
-    feature('Reverse', 'list')
-        .supported()
-        .pure()
-        .notes('literal List Form rewrite')
-        .eval('reverse.3', 'Reverse[{1, 2, 3}]', '{3, 2, 1}')
-        .done(),
-    feature('Sort', 'list')
-        .supported()
-        .pure()
-        .notes('literal numeric List Form rewrite')
-        .eval('sort.3', 'Sort[{3, 1, 2}]', '{1, 2, 3}')
-        .done(),
-    feature('MemberQ', 'list')
-        .supported()
-        .pure()
-        .notes('literal List top-level MemberQ')
-        .eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True')
-        .done(),
+    feature('Reverse', 'list').unsupported().pure().gap('reverse.3', 'Reverse[{1, 2, 3}]', { expected: '{3, 2, 1}' }).done(),
+    feature('Sort', 'list').unsupported().pure().gap('sort.3', 'Sort[{3, 1, 2}]', { expected: '{1, 2, 3}' }).done(),
+    feature('MemberQ', 'list').unsupported().pure().gap('memberq.2', 'MemberQ[{1, 2, 3}, 2]', { expected: 'True' }).done(),
     feature('Select', 'list')
         .unsupported('SILENT WRONG: Select[{1,2,3,4},EvenQ] → EvenQ')
         .pure()
@@ -88,21 +68,11 @@ export const listFeatures = [
         .pure()
         .gap('cases.integer', 'Cases[{1, 2, 3}, _Integer]', { expected: '{1, 2, 3}', notes: 'currently returns Integer' })
         .done(),
-    feature('Count', 'list')
-        .supported()
-        .pure()
-        .notes('literal List top-level Count')
-        .eval('count.1', 'Count[{1, 1, 2}, 1]', '2')
-        .done(),
+    feature('Count', 'list').unsupported().pure().gap('count.1', 'Count[{1, 1, 2}, 1]', { expected: '2' }).done(),
     feature('Partition', 'list').unsupported().pure().gap('partition.2', 'Partition[{1, 2, 3, 4}, 2]', { expected: '{{1, 2}, {3, 4}}' }).done(),
     feature('Union', 'list').unsupported().pure().gap('union.basic', 'Union[{1, 2}, {2, 3}]', { expected: '{1, 2, 3}' }).done(),
     feature('Intersection', 'list').unsupported().pure().gap('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', { expected: '{2}' }).done(),
-    feature('FreeQ', 'list')
-        .supported()
-        .pure()
-        .notes('Form deep FreeQ for literal trees')
-        .eval('freeq.3', 'FreeQ[{1, 2}, 3]', 'True')
-        .done(),
+    feature('FreeQ', 'list').unsupported().pure().gap('freeq.3', 'FreeQ[{1, 2}, 3]', { expected: 'True' }).done(),
     feature('Position', 'list').unsupported().pure().gap('position.1', 'Position[{1, 2, 1}, 1]', { expected: '{{1}, {3}}' }).done(),
     feature('Extract', 'list').unsupported().pure().gap('extract.2', 'Extract[{1, 2, 3}, 2]', { expected: '2' }).done(),
     feature('PadLeft', 'list').unsupported().pure().gap('padleft.4', 'PadLeft[{1, 2}, 4]', { expected: '{0, 0, 1, 2}' }).done(),
@@ -110,26 +80,11 @@ export const listFeatures = [
     feature('Accumulate', 'list').unsupported().pure().gap('accumulate.3', 'Accumulate[{1, 2, 3}]', { expected: '{1, 3, 6}' }).done(),
     feature('Differences', 'list').unsupported().pure().gap('differences.3', 'Differences[{1, 4, 9}]', { expected: '{3, 5}' }).done(),
     feature('Total', 'list').supported().pure().notes('Total lowers to Sum').eval('total.3', 'Total[{1, 2, 3}]', '6').done(),
-    feature('Append', 'list')
-        .supported()
-        .pure()
-        .notes('literal List Form rewrite')
-        .eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}')
-        .done(),
-    feature('Prepend', 'list')
-        .supported()
-        .pure()
-        .notes('literal List Form rewrite')
-        .eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}')
-        .done(),
+    feature('Append', 'list').unsupported().pure().gap('append.3', 'Append[{1, 2}, 3]', { expected: '{1, 2, 3}' }).done(),
+    feature('Prepend', 'list').unsupported().pure().gap('prepend.1', 'Prepend[{2, 3}, 1]', { expected: '{1, 2, 3}' }).done(),
     feature('DeleteDuplicates', 'list').unsupported().pure().gap('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', { expected: '{1, 2}' }).done(),
     feature('Array', 'list').unsupported().pure().gap('array.f3', 'Array[f, 3]', { expected: '{f[1], f[2], f[3]}' }).done(),
-    feature('ConstantArray', 'list')
-        .supported()
-        .pure()
-        .notes('literal ConstantArray Form rewrite')
-        .eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}')
-        .done(),
+    feature('ConstantArray', 'list').unsupported().pure().gap('constarray.0', 'ConstantArray[0, 3]', { expected: '{0, 0, 0}' }).done(),
     feature('DeleteCases', 'list')
         .unsupported('Blank stripped: DeleteCases[{1,a,2},_Integer] → DeleteCases[..., Integer]')
         .pure()
