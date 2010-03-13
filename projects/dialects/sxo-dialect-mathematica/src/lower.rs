@@ -22,6 +22,10 @@ use athena::{
 use crate::form::{WAtom, WExpr};
 
 /// Map a Mathematica surface head to a closed [`SemanticOperator`] when known.
+///
+/// Only closed Athena operators belong here (Living `07`). Do **not** rewrite list
+/// structure into concrete Form trees in this crate to fake evaluation — that
+/// belongs in Athena kernels. Surface aliases such as `Total` → `Sum` are OK.
 pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
     Some(match name {
         "Plus" => SemanticOperator::Add,
