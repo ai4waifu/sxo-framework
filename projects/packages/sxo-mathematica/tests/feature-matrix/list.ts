@@ -59,14 +59,19 @@ export const listFeatures = [
     feature('Sort', 'list').unsupported().pure().gap('sort.3', 'Sort[{3, 1, 2}]', { expected: '{1, 2, 3}' }).done(),
     feature('MemberQ', 'list').unsupported().pure().gap('memberq.2', 'MemberQ[{1, 2, 3}, 2]', { expected: 'True' }).done(),
     feature('Select', 'list')
-        .unsupported('SILENT WRONG: Select[{1,2,3,4},EvenQ] → EvenQ')
+        .unsupported('unevaluated Select[list, EvenQ] (no predicate fold yet)')
         .pure()
-        .gap('select.evenq', 'Select[{1, 2, 3, 4}, EvenQ]', { expected: '{2, 4}', notes: 'currently returns EvenQ' })
+        .gap('select.evenq', 'Select[{1, 2, 3, 4}, EvenQ]', {
+            expected: '{2, 4}',
+            notes: 'stays Select[…]; not a silent strip to EvenQ',
+        })
         .done(),
     feature('Cases', 'list')
-        .unsupported('SILENT WRONG: Cases[{1,2,3},_Integer] → Integer (Blank stripped)')
+        .supported()
         .pure()
-        .gap('cases.integer', 'Cases[{1, 2, 3}, _Integer]', { expected: '{1, 2, 3}', notes: 'currently returns Integer' })
+        .notes('CollectMatches via Blank[Integer]; also covered under pattern.blank')
+        .eval('cases.integer', 'Cases[{1, 2, 3}, _Integer]', '{1, 2, 3}')
+        .eval('cases.mixed', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
     feature('Count', 'list').unsupported().pure().gap('count.1', 'Count[{1, 1, 2}, 1]', { expected: '2' }).done(),
     feature('Partition', 'list').unsupported().pure().gap('partition.2', 'Partition[{1, 2, 3, 4}, 2]', { expected: '{{1, 2}, {3, 4}}' }).done(),
