@@ -9,9 +9,10 @@ export const patternFeatures = [
         .eval('blank.cases', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
     feature('MatchQ', 'pattern')
-        .unsupported('SILENT WRONG: Blank stripped — MatchQ[1,_Integer]→MatchQ[1,Integer]; MatchQ[f[1],f[_]]→MatchQ[f[1],f[]]')
+        .supported()
         .pure()
-        .gap('matchq.integer', 'MatchQ[1, _Integer]', { expected: 'True', notes: 'currently MatchQ[1, Integer]' })
+        .notes('ControlPlan::Match with typed Blank[Integer]')
+        .eval('matchq.integer', 'MatchQ[1, _Integer]', 'True')
         .done(),
     feature('Condition', 'pattern')
         .unsupported('Blank stripped: Condition[x_,x>0] → Condition[x, Greater[x, 0]]')
@@ -19,19 +20,25 @@ export const patternFeatures = [
         .gap('condition.pattern', 'MatchQ[2, x_ /; x > 0]', { expected: 'True' })
         .done(),
     feature('PatternTest', 'pattern')
-        .unsupported('SILENT WRONG: Cases[{1,a,2},_?NumberQ] → NumberQ (same Blank/? strip as MatchQ)')
+        .unsupported('PatternTest not lowered; Cases stays Cases[list, Blank[], NumberQ]')
         .pure()
-        .gap('patterntest.numberq', 'Cases[{1, a, 2}, _?NumberQ]', { expected: '{1, 2}', notes: 'currently returns NumberQ' })
+        .gap('patterntest.numberq', 'Cases[{1, a, 2}, _?NumberQ]', {
+            expected: '{1, 2}',
+            notes: 'unevaluated Cases with Blank[] + NumberQ args; not a silent strip to NumberQ',
+        })
         .done(),
     feature('BlankSequence', 'pattern')
-        .unsupported('SILENT WRONG: MatchQ[f[1,2],f[__]] → MatchQ[f[1,2],f[]] (__ stripped)')
+        .unsupported('MatchQ[f[1,2],f[__]] evaluates False (BlankSequence not matched)')
         .pure()
-        .gap('blankseq.match', 'MatchQ[f[1, 2], f[__]]', { expected: 'True', notes: 'currently MatchQ[f[1, 2], f[]]' })
+        .gap('blankseq.match', 'MatchQ[f[1, 2], f[__]]', {
+            expected: 'True',
+            notes: 'returns False; BlankSequence form is preserved (not stripped to f[])',
+        })
         .done(),
     feature('BlankNullSequence', 'pattern')
-        .unsupported('SILENT WRONG: ___ stripped to empty args')
+        .unsupported('___ matching incomplete')
         .pure()
-        .gap('blanknullseq.match', 'MatchQ[f[], f[___]]', { expected: 'True', notes: 'currently MatchQ[f[], f[]]' })
+        .gap('blanknullseq.match', 'MatchQ[f[], f[___]]', { expected: 'True' })
         .done(),
     feature('PatternConditionDef', 'pattern')
         .unsupported('f[x_/;x>0]:=x oak error; f[x_?Positive]:=x; f[1] stays f[1]')
