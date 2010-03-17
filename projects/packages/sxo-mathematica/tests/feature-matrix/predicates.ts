@@ -13,14 +13,20 @@ export const predicatesFeatures = [
     feature('ListQ', 'predicates').unsupported().pure().gap('listq.1', 'ListQ[{1}]', { expected: 'True' }).done(),
     feature('StringQ', 'predicates').unsupported().pure().gap('stringq.a', 'StringQ["a"]', { expected: 'True' }).done(),
     feature('TrueQ', 'predicates')
-        .unsupported('SILENT WRONG: TrueQ[True]→TrueQ[]; TrueQ[1==1]→TrueQ[1]')
+        .unsupported('unevaluated TrueQ[True] / TrueQ[Equal→True] (no TrueQ fold)')
         .pure()
-        .gap('trueq.equal', 'TrueQ[1 == 1]', { expected: 'True', notes: 'currently TrueQ[1]' })
+        .gap('trueq.equal', 'TrueQ[1 == 1]', {
+            expected: 'True',
+            notes: 'becomes TrueQ[True] then stays; True atom no longer stripped to TrueQ[]',
+        })
         .done(),
     feature('BooleanQ', 'predicates')
-        .unsupported('SILENT WRONG: BooleanQ[True] → BooleanQ[]')
+        .unsupported('unevaluated BooleanQ[True]')
         .pure()
-        .gap('booleanq.true', 'BooleanQ[True]', { expected: 'True', notes: 'currently BooleanQ[]' })
+        .gap('booleanq.true', 'BooleanQ[True]', {
+            expected: 'True',
+            notes: 'stays BooleanQ[True]; True atom no longer stripped to BooleanQ[]',
+        })
         .done(),
     feature('Element', 'predicates').unsupported().pure().gap('element.int', 'Element[1, Integers]', { expected: 'True' }).done(),
     feature('SymmetricMatrixQ', 'predicates')
