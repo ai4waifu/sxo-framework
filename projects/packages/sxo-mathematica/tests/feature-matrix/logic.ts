@@ -23,19 +23,31 @@ export const logicFeatures = [
         .done(),
     feature('Which', 'logic').supported().pure().eval('which.basic', 'Which[False, 1, True, 2]', '2').done(),
     feature('Boole', 'logic')
-        .unsupported('SILENT WRONG: Boole[True] → Boole[] (True stripped); Boole[2>1] → Boole[1] (no 0/1 coerce)')
+        .unsupported('unevaluated Boole[True] / Boole[2>1→True] (no 0/1 coerce)')
         .pure()
-        .gap('boole.true', 'Boole[True]', { expected: '1', notes: 'currently Boole[]' })
-        .gap('boole.pred', 'Boole[2 > 1]', { expected: '1', notes: 'currently Boole[1]' })
+        .gap('boole.true', 'Boole[True]', {
+            expected: '1',
+            notes: 'stays Boole[True]; True atom no longer stripped to Boole[]',
+        })
+        .gap('boole.pred', 'Boole[2 > 1]', {
+            expected: '1',
+            notes: 'becomes Boole[True] then stays',
+        })
         .done(),
     feature('Xor', 'logic')
-        .unsupported('SILENT WRONG: Xor[True,False] → Xor[] (True/False stripped)')
+        .unsupported('unevaluated Xor[True, False]')
         .pure()
-        .gap('xor.tf', 'Xor[True, False]', { expected: 'True', notes: 'currently Xor[]' })
+        .gap('xor.tf', 'Xor[True, False]', {
+            expected: 'True',
+            notes: 'stays Xor[True, False]; bool atoms no longer stripped to Xor[]',
+        })
         .done(),
     feature('Implies', 'logic')
-        .unsupported('SILENT WRONG: Implies[True,False] → Implies[]')
+        .unsupported('unevaluated Implies[True, False]')
         .pure()
-        .gap('implies.tf', 'Implies[True, False]', { expected: 'False', notes: 'currently Implies[]' })
+        .gap('implies.tf', 'Implies[True, False]', {
+            expected: 'False',
+            notes: 'stays Implies[True, False]; bool atoms no longer stripped to Implies[]',
+        })
         .done(),
 ];
