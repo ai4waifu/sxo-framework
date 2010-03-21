@@ -373,3 +373,9 @@ fn matchq_integer_blank() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatchQ[1, _Integer]")), "True");
 }
+
+#[test]
+fn compound_expression_set_binds() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("CompoundExpression[a = 1, a]")), "1");
+}
