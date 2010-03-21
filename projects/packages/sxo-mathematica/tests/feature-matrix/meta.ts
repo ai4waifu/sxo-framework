@@ -19,9 +19,12 @@ export const metaFeatures = [
         .gap('trace.plus', 'Trace[1 + 1]', { expected: '{{1+1,2}}' })
         .done(),
     feature('Assert', 'meta')
-        .unsupported('SILENT WRONG: Assert[True] → Assert[] (True stripped)')
+        .unsupported('unevaluated Assert[True] (no Assert fold / Null return)')
         .pure()
-        .gap('assert.true', 'Assert[True]', { expected: 'Null', notes: 'currently Assert[]' })
+        .gap('assert.true', 'Assert[True]', {
+            expected: 'Null',
+            notes: 'stays Assert[True]; True atom no longer stripped to Assert[]',
+        })
         .done(),
     feature('MessageName', 'meta')
         .unsupported('SILENT WRONG: Message[f::x] → Message[f, x] (:: MessageName broken)')

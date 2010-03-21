@@ -2,9 +2,12 @@ import { feature } from '@sxo/harness';
 
 export const ioFeatures = [
     feature('Import', 'io')
-        .unsupported('SILENT WRONG: Import["x.csv"] returns "x.csv" string')
+        .unsupported('unevaluated Import["x.csv"] (no I/O / UnsupportedOperation yet)')
         .effectful()
-        .gap('import.strip', 'Import["x.csv"]', { expected: 'UnsupportedOperation', notes: 'must not strip to filename' })
+        .gap('import.strip', 'Import["x.csv"]', {
+            expected: 'UnsupportedOperation',
+            notes: 'stays Import["x.csv"]; no longer silently returns the filename string',
+        })
         .done(),
     feature('Export', 'io')
         .unsupported('SILENT WRONG: Export["x.csv",1] returns 1')
