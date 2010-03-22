@@ -12,9 +12,12 @@ export const functionFeatures = [
     feature('Fold', 'function').unsupported().pure().gap('fold.plus', 'Fold[Plus, 0, {1, 2, 3}]', { expected: '6' }).done(),
     feature('Thread', 'function').unsupported().pure().gap('thread.rule', 'Thread[{a, b} -> {1, 2}]', { expected: '{a -> 1, b -> 2}' }).done(),
     feature('Through', 'function')
-        .unsupported('SILENT WRONG parse reshape: Through[{Sin,Cos}[0]] → Through[{Sin, Cos}, 0]')
+        .unsupported('unevaluated Through[{Sin,Cos}[0]] (parse shape retained)')
         .pure()
-        .gap('through.sincos', 'Through[{Sin, Cos}[0]]', { expected: '{0, 1}' })
+        .gap('through.sincos', 'Through[{Sin, Cos}[0]]', {
+            expected: '{0, 1}',
+            notes: 'stays Through[{Sin, Cos}[0]]; not reshaped to Through[{Sin, Cos}, 0]',
+        })
         .done(),
     feature('Composition', 'function')
         .unsupported()
