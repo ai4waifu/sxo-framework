@@ -44,24 +44,37 @@ export const sessionFeatures = [
     feature('TagSet', 'session').planned('oak error on x/:f[x]=1').stateful().gap('tagset.basic', 'x /: f[x] = 1', { expected: '1' }).done(),
     feature('Unset', 'session').planned('oak error on a=.=').stateful().gap('unset.basic', 'a =.', { expected: 'Null' }).done(),
     feature('DynamicModule', 'session')
-        .unsupported('SILENT WRONG: DynamicModule[{x=1},x] → DynamicModule[{1}, x]')
+        .unsupported('unevaluated DynamicModule[{Set[x,1]}, x] (no frontend Dynamic eval)')
         .stateful()
-        .gap('dynamicmodule.bind', 'DynamicModule[{x = 1}, x]', { expected: '1', notes: 'currently DynamicModule[{1}, x]' })
+        .gap('dynamicmodule.bind', 'DynamicModule[{x = 1}, x]', {
+            expected: '1',
+            notes: 'stays DynamicModule[{Set[x, 1]}, x]; no longer collapses binder to {1}',
+        })
         .done(),
     feature('PrependTo', 'session')
-        .unsupported('SILENT WRONG: PrependTo[x={1},0] → PrependTo[{1},0] (loses symbol)')
+        .unsupported('PrependTo does not mutate session list binding yet')
         .stateful()
-        .gap('prependto.x', 'x = {1}; PrependTo[x, 0]; x', { expected: '{0, 1}' })
+        .gap('prependto.x', 'x = {1}; PrependTo[x, 0]; x', {
+            expected: '{0, 1}',
+            notes: 'x remains {1}; not the old PrependTo[{1},0] symbol-loss shape',
+        })
         .done(),
     feature('CompoundExpressionSet', 'session')
-        .unsupported('SILENT WRONG: CompoundExpression[a=1,a] → a (no binding)')
+        .supported()
         .stateful()
-        .gap('compound.set', 'CompoundExpression[a = 1, a]', { expected: '1', notes: 'currently returns a' })
+        .notes('head-form CompoundExpression with Set binds like semicolon compound')
+        .eval('compound.set', 'CompoundExpression[a = 1, a]', '1')
         .done(),
     feature('ReapSow', 'session')
-        .unsupported('SILENT WRONG: Reap[Sow[1];Sow[2]] → Reap[Sow[2]] (CompoundExpression last-only + no Reap collect)')
+        .unsupported('unevaluated Reap/Sow (no collect journal)')
         .stateful()
-        .gap('reap.basic', 'Reap[Sow[1]]', { expected: '{1, {{1}}}' })
-        .gap('reap.two', 'Reap[Sow[1]; Sow[2]]', { expected: '{2, {{1, 2}}}', notes: 'currently Reap[Sow[2]]' })
+        .gap('reap.basic', 'Reap[Sow[1]]', {
+            expected: '{1, {{1}}}',
+            notes: 'stays Reap[Sow[1]]',
+        })
+        .gap('reap.two', 'Reap[Sow[1]; Sow[2]]', {
+            expected: '{2, {{1, 2}}}',
+            notes: 'stays Reap[CompoundExpression[Sow[1], Sow[2]]] (compound preserved inside Reap)',
+        })
         .done(),
 ];
