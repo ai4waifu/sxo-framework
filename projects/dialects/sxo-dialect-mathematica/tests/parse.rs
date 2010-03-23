@@ -379,3 +379,17 @@ fn compound_expression_set_binds() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("CompoundExpression[a = 1, a]")), "1");
 }
+
+#[test]
+fn hold_preserves_plus() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Hold[1 + 1]")), "Hold[1 + 1]");
+    assert_eq!(h.wolfram(h.eval("HoldForm[1 + 1]")), "Hold[1 + 1]");
+}
+
+#[test]
+fn sameq_infix_symbols_and_numbers() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("1 === 1")), "True");
+    assert_eq!(h.wolfram(h.eval("x === x")), "True");
+}
