@@ -2,23 +2,26 @@ import { feature } from '@sxo/harness';
 
 export const holdFeatures = [
     feature('Hold', 'hold')
-        .partial('evaluate preserves Hold; autoSimplify still folds held Add on pinned Athena')
+        .supported()
         .unevaluated()
-        .notes('HoldAll args preserved on evaluate; simplify-through-Hold needs a newer green Athena')
-        .gap('hold.plus', 'Hold[1 + 1]', { expected: 'Hold[1 + 1]', notes: 'autoSimplify → Hold[2] on Athena 4e59b260' })
+        .pure()
+        .notes('HoldAll args preserved on evaluate (no autoSimplify fold through Hold)')
+        .eval('hold.plus', 'Hold[1 + 1]', 'Hold[1 + 1]')
         .done(),
     feature('HoldForm', 'hold')
-        .partial('dialect maps HoldForm → neutral Hold; same simplify caveat as Hold')
+        .supported()
         .unevaluated()
-        .gap('holdform.plus', 'HoldForm[1 + 1]', { expected: 'Hold[1 + 1]', notes: 'autoSimplify → Hold[2] on Athena 4e59b260' })
+        .pure()
+        .notes('dialect maps HoldForm → neutral Hold; held Add preserved')
+        .eval('holdform.plus', 'HoldForm[1 + 1]', 'Hold[1 + 1]')
         .done(),
     feature('Evaluate', 'hold')
-        .unsupported('Hold args already evaluated: Evaluate[Hold[1+1]] → Evaluate[Hold[2]]')
+        .unsupported('Evaluate[Hold[…]] not released yet')
         .pure()
         .gap('evaluate.hold', 'Evaluate[Hold[1 + 1]]', { expected: '2' })
         .done(),
     feature('ReleaseHold', 'hold')
-        .unsupported('Hold already forced: ReleaseHold[Hold[1+1]] → ReleaseHold[Hold[2]]')
+        .unsupported('ReleaseHold not folded yet')
         .pure()
         .gap('releasehold.plus', 'ReleaseHold[Hold[1 + 1]]', { expected: '2' })
         .done(),
