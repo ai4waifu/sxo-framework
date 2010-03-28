@@ -20,11 +20,11 @@ export const comparisonFeatures = [
         .gap('ge.inequality', 'Inequality[1, Less, 2, Less, 3]', { expected: 'True' })
         .done(),
     feature('SameQ', 'comparison')
-        .partial('SILENT WRONG: === lowers to Equal for symbols (x===x → Equal[x,x]); SameQ[1,1] unevaluated; numeric 1===1 → 1')
+        .partial('infix === works for numbers and symbols; head-form SameQ[1,1] unevaluated')
         .pure()
         .eval('sameq.num_infix', '1 === 1', 'True')
-        .gap('sameq.head', 'SameQ[1, 1]', { expected: 'True' })
-        .gap('sameq.sym_infix', 'x === x', { expected: 'True', notes: 'currently Equal[x, x]' })
+        .eval('sameq.sym_infix', 'x === x', 'True')
+        .gap('sameq.head', 'SameQ[1, 1]', { expected: 'True', notes: 'stays SameQ[1, 1]' })
         .done(),
     feature('UnsameQ', 'comparison').unsupported().pure().gap('unsameq.12', 'UnsameQ[1, 2]', { expected: 'True' }).done(),
     feature('InequalityChain', 'comparison')
