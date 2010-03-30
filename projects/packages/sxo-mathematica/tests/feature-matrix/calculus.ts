@@ -62,13 +62,14 @@ export const calculusFeatures = [
         .gap('inversefourier.impulse', 'InverseFourier[{1, 0, 0, 0}]', { expected: '...' })
         .done(),
     feature('Residue', 'calculus')
-        .partial(
-            'some simple poles OK (1/z, Exp[z]/z); Residue[1/(z-1),{z,1}] → 0 SILENT WRONG (expect 1); partial fractions often unevaluated',
-        )
+        .partial('simple poles at 0 OK; shifted pole Residue[1/(z-1),{z,1}] unevaluated')
         .pure()
         .eval('residue.1_z', 'Residue[1/z, {z, 0}]', '1')
         .eval('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', '1')
-        .gap('residue.shift', 'Residue[1/(z - 1), {z, 1}]', { expected: '1', notes: 'currently returns 0' })
+        .gap('residue.shift', 'Residue[1/(z - 1), {z, 1}]', {
+            expected: '1',
+            notes: 'stays Residue[1/(z - 1), {z, 1}]; no longer silently returns 0',
+        })
         .done(),
     feature('InverseLaplaceTransform', 'calculus')
         .unsupported()
@@ -81,18 +82,21 @@ export const calculusFeatures = [
         .eval('dabs.x', 'D[Abs[x], x]', 'x^-1*Abs[x]')
         .done(),
     feature('Curl', 'calculus')
-        .unsupported('SILENT WRONG: Curl[{-y,x},{x,y}] → {} (expect 2)')
+        .unsupported('unevaluated Curl[{-y,x},{x,y}]')
         .pure()
-        .gap('curl.2d', 'Curl[{-y, x}, {x, y}]', { expected: '2', notes: 'currently {}' })
+        .gap('curl.2d', 'Curl[{-y, x}, {x, y}]', {
+            expected: '2',
+            notes: 'stays Curl[…]; no longer silently returns {}',
+        })
         .done(),
     feature('Grad', 'calculus').unsupported().pure().gap('grad.xy', 'Grad[x*y, {x, y}]', { expected: '{y, x}' }).done(),
     feature('Div', 'calculus').unsupported().pure().gap('div.xy', 'Div[{x, y}, {x, y}]', { expected: '2' }).done(),
     feature('ZTransform', 'calculus')
-        .unsupported('SILENT WRONG: nested ZTransform[…, ROCUnknown] re-wrapping (same family as LaplaceTransform)')
+        .unsupported('unevaluated ZTransform[n,n,z]')
         .pure()
         .gap('ztransform.n', 'ZTransform[n, n, z]', {
             expected: 'z/(-1 + z)^2',
-            notes: 'currently ZTransform[ZTransform[n, n, z], {n, z}, ROCUnknown]',
+            notes: 'stays ZTransform[n, n, z]; no nested ROCUnknown re-wrap',
         })
         .done(),
     feature('InverseZTransform', 'calculus')

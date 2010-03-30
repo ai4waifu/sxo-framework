@@ -10,9 +10,12 @@ export const ioFeatures = [
         })
         .done(),
     feature('Export', 'io')
-        .unsupported('SILENT WRONG: Export["x.csv",1] returns 1')
+        .unsupported('unevaluated Export["x.csv", 1] (no I/O / UnsupportedOperation yet)')
         .effectful()
-        .gap('export.strip', 'Export["x.csv", 1]', { expected: 'UnsupportedOperation' })
+        .gap('export.strip', 'Export["x.csv", 1]', {
+            expected: 'UnsupportedOperation',
+            notes: 'stays Export["x.csv", 1]; no longer silently returns 1',
+        })
         .done(),
     feature('FileNameJoin', 'io').unsupported().pure().gap('filenamejoin.ab', 'FileNameJoin[{"a", "b"}]', { expected: '...' }).done(),
     feature('ExportString', 'io')
