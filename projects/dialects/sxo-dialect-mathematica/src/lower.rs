@@ -378,6 +378,25 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                     }
                     return AthenaRequest::Control(ControlPlan::Cond { arms, otherwise });
                 }
+                ("While", [cond, body]) => {
+                    return AthenaRequest::Control(ControlPlan::LoopWhile {
+                        condition: lower_wexpr(session, cond),
+                        body: Box::new(lower_request(session, body)),
+                    });
+                }
+                ("Do", [body, iter]) => {
+                    if let Some((variable, iterator)) = do_loop_parts(session, iter) {
+                        let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
+                            variable,
+                            iterator,
+                            body: Box::new(lower_request(session, body)),
+                        });
+                        // Mathematica `Do` evaluates to `Null`.
+                        return AthenaRequest::Control(ControlPlan::Sequence {
+                            steps: vec![counted, AthenaRequest::Term(push_null(session))],
+                        });
+                    }
+                }
                 ("With" | "Module" | "Block", [bindings, body]) => {
                     let mut steps = Vec::new();
                     push_binding_defines(session, bindings, &mut steps);
@@ -569,6 +588,28 @@ fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {
             if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") && !args.is_empty() =>
         {
             Some(lower_wexpr(session, &args[0]))
+        }
+        _ => None,
+    }
+}
+
+/// `Do` iterator `{n}` / `{i, n}` / `{i, a, b}` → counted-loop variable + value list.
+fn do_loop_parts(session: &mut Session, iter: &WExpr) -> Option<(TermId, TermId)> {
+    let items = list_items(iter)?;
+    match items {
+        [n] => {
+            let count = exact_i64(n)?;
+            if !(0..=10_000).contains(&count) {
+                return None;
+            }
+            let variable = push_symbol_name(session, "$do");
+            let vals: Vec<TermId> = (1..=count).map(|i| push_int(session, i)).collect();
+            Some((variable, push_list(session, vals)))
+        }
+        [_binder, ..] => {
+            let variable = extract_table_binder(session, iter)?;
+            let iterator = normalize_table_range(session, iter);
+            Some((variable, iterator))
         }
         _ => None,
     }

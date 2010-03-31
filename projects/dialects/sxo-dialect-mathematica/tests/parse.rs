@@ -393,3 +393,16 @@ fn sameq_infix_symbols_and_numbers() {
     assert_eq!(h.wolfram(h.eval("1 === 1")), "True");
     assert_eq!(h.wolfram(h.eval("x === x")), "True");
 }
+
+#[test]
+fn while_false_returns_null() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("While[False, 1]")), "Null");
+}
+
+#[test]
+fn do_count_returns_null() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Do[1, {3}]")), "Null");
+    assert_eq!(h.wolfram(h.eval("Do[i, {i, 3}]")), "Null");
+}
