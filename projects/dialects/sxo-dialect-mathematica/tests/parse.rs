@@ -406,3 +406,17 @@ fn do_count_returns_null() {
     assert_eq!(h.wolfram(h.eval("Do[1, {3}]")), "Null");
     assert_eq!(h.wolfram(h.eval("Do[i, {i, 3}]")), "Null");
 }
+
+#[test]
+fn release_hold_evaluates_held_plus() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ReleaseHold[Hold[1 + 1]]")), "2");
+    assert_eq!(h.wolfram(h.eval("Evaluate[Hold[1 + 1]]")), "2");
+}
+
+#[test]
+fn assert_true_returns_null() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Assert[True]")), "Null");
+    assert_eq!(h.wolfram(h.eval("Assert[1 == 1]")), "Null");
+}

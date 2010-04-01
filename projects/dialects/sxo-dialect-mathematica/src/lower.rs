@@ -384,6 +384,18 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         body: Box::new(lower_request(session, body)),
                     });
                 }
+                ("ReleaseHold" | "Evaluate", [inner]) => {
+                    if let Some(held) = unwrap_hold_form(inner) {
+                        return lower_request(session, held);
+                    }
+                }
+                ("Assert", [cond]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(AthenaRequest::Term(push_null(session))),
+                        else_branch: Some(Box::new(AthenaRequest::Control(ControlPlan::Reject))),
+                    });
+                }
                 ("Do", [body, iter]) => {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
                         let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
@@ -477,6 +489,25 @@ fn list_items(w: &WExpr) -> Option<&[WExpr]> {
         WExpr::List(items) => Some(items.as_slice()),
         WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
             Some(args.as_slice())
+        }
+        _ => None,
+    }
+}
+
+/// Unwrap a single held argument from `Hold` / `HoldForm` / `HoldComplete`.
+fn unwrap_hold_form(w: &WExpr) -> Option<&WExpr> {
+    match w {
+        WExpr::Call { head, args } => {
+            let name = match head.as_ref() {
+                WExpr::Atom(WAtom::Symbol(s)) => s.as_str(),
+                _ => return None,
+            };
+            if matches!(name, "Hold" | "HoldForm" | "HoldComplete") {
+                if let [inner] = args.as_slice() {
+                    return Some(inner);
+                }
+            }
+            None
         }
         _ => None,
     }
