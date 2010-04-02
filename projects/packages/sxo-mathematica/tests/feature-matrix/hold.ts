@@ -16,14 +16,16 @@ export const holdFeatures = [
         .eval('holdform.plus', 'HoldForm[1 + 1]', 'Hold[1 + 1]')
         .done(),
     feature('Evaluate', 'hold')
-        .unsupported('Evaluate[Hold[…]] not released yet')
+        .supported()
         .pure()
-        .gap('evaluate.hold', 'Evaluate[Hold[1 + 1]]', { expected: '2' })
+        .notes('Evaluate unwraps Hold/HoldForm/HoldComplete then evaluates')
+        .eval('evaluate.hold', 'Evaluate[Hold[1 + 1]]', '2')
         .done(),
     feature('ReleaseHold', 'hold')
-        .unsupported('ReleaseHold not folded yet')
+        .supported()
         .pure()
-        .gap('releasehold.plus', 'ReleaseHold[Hold[1 + 1]]', { expected: '2' })
+        .notes('ReleaseHold unwraps Hold/HoldForm/HoldComplete then evaluates')
+        .eval('releasehold.plus', 'ReleaseHold[Hold[1 + 1]]', '2')
         .done(),
     feature('Unevaluated', 'hold')
         .unsupported('SILENT WRONG: Unevaluated[1+1] → Unevaluated[2]')
