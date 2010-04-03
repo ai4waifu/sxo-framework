@@ -420,3 +420,14 @@ fn assert_true_returns_null() {
     assert_eq!(h.wolfram(h.eval("Assert[True]")), "Null");
     assert_eq!(h.wolfram(h.eval("Assert[1 == 1]")), "Null");
 }
+
+#[test]
+fn trueq_and_boole_from_predicates() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("TrueQ[True]")), "True");
+    assert_eq!(h.wolfram(h.eval("TrueQ[1 == 1]")), "True");
+    assert_eq!(h.wolfram(h.eval("TrueQ[False]")), "False");
+    assert_eq!(h.wolfram(h.eval("Boole[True]")), "1");
+    assert_eq!(h.wolfram(h.eval("Boole[2 > 1]")), "1");
+    assert_eq!(h.wolfram(h.eval("Boole[False]")), "0");
+}

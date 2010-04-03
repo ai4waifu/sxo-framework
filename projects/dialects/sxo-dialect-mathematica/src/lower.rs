@@ -396,6 +396,20 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         else_branch: Some(Box::new(AthenaRequest::Control(ControlPlan::Reject))),
                     });
                 }
+                ("TrueQ", [cond]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+                        else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+                    });
+                }
+                ("Boole", [cond]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(AthenaRequest::Term(push_int(session, 1))),
+                        else_branch: Some(Box::new(AthenaRequest::Term(push_int(session, 0)))),
+                    });
+                }
                 ("Do", [body, iter]) => {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
                         let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
