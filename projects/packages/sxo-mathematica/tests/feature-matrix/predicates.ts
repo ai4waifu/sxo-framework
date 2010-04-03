@@ -13,12 +13,12 @@ export const predicatesFeatures = [
     feature('ListQ', 'predicates').unsupported().pure().gap('listq.1', 'ListQ[{1}]', { expected: 'True' }).done(),
     feature('StringQ', 'predicates').unsupported().pure().gap('stringq.a', 'StringQ["a"]', { expected: 'True' }).done(),
     feature('TrueQ', 'predicates')
-        .unsupported('unevaluated TrueQ[True] / TrueQ[Equal→True] (no TrueQ fold)')
+        .supported()
         .pure()
-        .gap('trueq.equal', 'TrueQ[1 == 1]', {
-            expected: 'True',
-            notes: 'becomes TrueQ[True] then stays; True atom no longer stripped to TrueQ[]',
-        })
+        .notes('TrueQ lowers to Branch → True/False')
+        .eval('trueq.true', 'TrueQ[True]', 'True')
+        .eval('trueq.equal', 'TrueQ[1 == 1]', 'True')
+        .eval('trueq.false', 'TrueQ[False]', 'False')
         .done(),
     feature('BooleanQ', 'predicates')
         .unsupported('unevaluated BooleanQ[True]')

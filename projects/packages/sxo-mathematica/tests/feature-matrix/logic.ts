@@ -23,16 +23,12 @@ export const logicFeatures = [
         .done(),
     feature('Which', 'logic').supported().pure().eval('which.basic', 'Which[False, 1, True, 2]', '2').done(),
     feature('Boole', 'logic')
-        .unsupported('unevaluated Boole[True] / Boole[2>1→True] (no 0/1 coerce)')
+        .supported()
         .pure()
-        .gap('boole.true', 'Boole[True]', {
-            expected: '1',
-            notes: 'stays Boole[True]; True atom no longer stripped to Boole[]',
-        })
-        .gap('boole.pred', 'Boole[2 > 1]', {
-            expected: '1',
-            notes: 'becomes Boole[True] then stays',
-        })
+        .notes('Boole lowers to Branch → 1/0')
+        .eval('boole.true', 'Boole[True]', '1')
+        .eval('boole.pred', 'Boole[2 > 1]', '1')
+        .eval('boole.false', 'Boole[False]', '0')
         .done(),
     feature('Xor', 'logic')
         .unsupported('unevaluated Xor[True, False]')
