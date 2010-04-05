@@ -410,6 +410,29 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         else_branch: Some(Box::new(AthenaRequest::Term(push_int(session, 0)))),
                     });
                 }
+                ("Implies", [antecedent, consequent]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, antecedent),
+                        then_branch: Box::new(lower_request(session, consequent)),
+                        else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, true)))),
+                    });
+                }
+                ("Xor", [left, right]) => {
+                    let right_term = lower_wexpr(session, right);
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, left),
+                        then_branch: Box::new(AthenaRequest::Control(ControlPlan::Branch {
+                            condition: right_term,
+                            then_branch: Box::new(AthenaRequest::Term(push_bool(session, false))),
+                            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, true)))),
+                        })),
+                        else_branch: Some(Box::new(AthenaRequest::Control(ControlPlan::Branch {
+                            condition: right_term,
+                            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+                            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+                        }))),
+                    });
+                }
                 ("Do", [body, iter]) => {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
                         let counted = AthenaRequest::Control(ControlPlan::CountedLoop {

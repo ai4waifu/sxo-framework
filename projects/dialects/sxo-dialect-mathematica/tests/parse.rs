@@ -431,3 +431,12 @@ fn trueq_and_boole_from_predicates() {
     assert_eq!(h.wolfram(h.eval("Boole[2 > 1]")), "1");
     assert_eq!(h.wolfram(h.eval("Boole[False]")), "0");
 }
+
+#[test]
+fn xor_and_implies_from_branch() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Xor[True, False]")), "True");
+    assert_eq!(h.wolfram(h.eval("Xor[True, True]")), "False");
+    assert_eq!(h.wolfram(h.eval("Implies[True, False]")), "False");
+    assert_eq!(h.wolfram(h.eval("Implies[False, False]")), "True");
+}
