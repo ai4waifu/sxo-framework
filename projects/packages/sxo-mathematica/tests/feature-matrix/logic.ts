@@ -31,19 +31,17 @@ export const logicFeatures = [
         .eval('boole.false', 'Boole[False]', '0')
         .done(),
     feature('Xor', 'logic')
-        .unsupported('unevaluated Xor[True, False]')
+        .supported()
         .pure()
-        .gap('xor.tf', 'Xor[True, False]', {
-            expected: 'True',
-            notes: 'stays Xor[True, False]; bool atoms no longer stripped to Xor[]',
-        })
+        .notes('Xor lowers to nested Branch')
+        .eval('xor.tf', 'Xor[True, False]', 'True')
+        .eval('xor.tt', 'Xor[True, True]', 'False')
         .done(),
     feature('Implies', 'logic')
-        .unsupported('unevaluated Implies[True, False]')
+        .supported()
         .pure()
-        .gap('implies.tf', 'Implies[True, False]', {
-            expected: 'False',
-            notes: 'stays Implies[True, False]; bool atoms no longer stripped to Implies[]',
-        })
+        .notes('Implies lowers to Branch(antecedent, consequent, True)')
+        .eval('implies.tf', 'Implies[True, False]', 'False')
+        .eval('implies.ff', 'Implies[False, False]', 'True')
         .done(),
 ];
