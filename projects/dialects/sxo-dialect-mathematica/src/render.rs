@@ -1,23 +1,23 @@
 //! Render Mathematica Form as Wolfram text.
 
 use crate::{
-    form::{WAtom, WExpr},
+    form::{WolframAtom, WolframForm},
     number_literal::render_number,
 };
 
 /// Render a Wolfram expression.
-pub fn render(expr: &WExpr) -> String {
+pub fn render(expr: &WolframForm) -> String {
     match expr {
-        WExpr::Atom(a) => match a {
-            WAtom::Number(n) => render_number(n),
-            WAtom::String(s) => format!("\"{}\"", s.replace('"', "\\\"")),
-            WAtom::Symbol(s) => s.clone(),
+        WolframForm::Atom(a) => match a {
+            WolframAtom::Number(n) => render_number(n),
+            WolframAtom::String(s) => format!("\"{}\"", s.replace('"', "\\\"")),
+            WolframAtom::Symbol(s) => s.clone(),
         },
-        WExpr::List(items) => {
+        WolframForm::List(items) => {
             let inner = items.iter().map(render).collect::<Vec<_>>().join(", ");
             format!("{{{inner}}}")
         }
-        WExpr::Call { head, args } => {
+        WolframForm::Call { head, args } => {
             if let Some(infix) = try_infix(head, args) {
                 return infix;
             }
@@ -28,9 +28,9 @@ pub fn render(expr: &WExpr) -> String {
     }
 }
 
-fn try_infix(head: &WExpr, args: &[WExpr]) -> Option<String> {
+fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
     let name = match head {
-        WExpr::Atom(WAtom::Symbol(s)) => s.as_str(),
+        WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
         _ => return None,
     };
     match name {
@@ -75,7 +75,7 @@ enum Prec {
     Atom = 8,
 }
 
-fn prec(expr: &WExpr) -> Prec {
+fn prec(expr: &WolframForm) -> Prec {
     match expr.head_name() {
         Some("ReplaceAll") | Some("ReplaceRepeated") => Prec::Replace,
         Some("Function") => Prec::Function,
@@ -87,23 +87,19 @@ fn prec(expr: &WExpr) -> Prec {
     }
 }
 
-fn maybe_paren(expr: &WExpr, parent: Prec) -> String {
+fn maybe_paren(expr: &WolframForm, parent: Prec) -> String {
     let s = render(expr);
     if prec(expr) < parent { format!("({s})") } else { s }
 }
 
-fn power_operand(expr: &WExpr) -> String {
+fn power_operand(expr: &WolframForm) -> String {
     let s = render(expr);
-    if power_atom_needs_paren(expr) || prec(expr) < Prec::Pow {
-        format!("({s})")
-    } else {
-        s
-    }
+    if power_atom_needs_paren(expr) || prec(expr) < Prec::Pow { format!("({s})") } else { s }
 }
 
-fn power_atom_needs_paren(expr: &WExpr) -> bool {
+fn power_atom_needs_paren(expr: &WolframForm) -> bool {
     match expr {
-        WExpr::Atom(WAtom::Number(n)) => {
+        WolframForm::Atom(WolframAtom::Number(n)) => {
             let text = n.to_render_string();
             text.starts_with('-') || text.contains('/')
         }

@@ -1,4 +1,4 @@
-//! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `14`).
+//! Lower Mathematica Form ([`WolframForm`]) into Athena session terms / requests (Living `14`).
 
 use athena::{
     Session,
@@ -19,7 +19,7 @@ use athena::{
     },
 };
 
-use crate::form::{WAtom, WExpr};
+use crate::form::{WolframAtom, WolframForm};
 
 /// Map a Mathematica surface head to a closed [`SemanticOperator`] when known.
 ///
@@ -114,32 +114,32 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
 /// Structural `WExpr` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
-pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
+pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
     match w {
-        WExpr::Atom(a) => match a {
-            WAtom::Number(n) => {
+        WolframForm::Atom(a) => match a {
+            WolframAtom::Number(n) => {
                 let span = athena::types::SourceSpan::default();
                 session.arena.push(TermNode::Atom(Atom::Number(clone_number(n))), span)
             }
-            WAtom::String(s) => {
+            WolframAtom::String(s) => {
                 let span = athena::types::SourceSpan::default();
                 session.arena.push(TermNode::Atom(Atom::String(s.clone())), span)
             }
-            WAtom::Symbol(s) if s == "True" => push_bool(session, true),
-            WAtom::Symbol(s) if s == "False" => push_bool(session, false),
-            WAtom::Symbol(s) if s == "Null" => push_null(session),
-            WAtom::Symbol(s) if s == "Pi" => push_constant(session, MathematicalConstant::Pi),
-            WAtom::Symbol(s) if s == "E" => push_constant(session, MathematicalConstant::EulerNumber),
-            WAtom::Symbol(s) => push_symbol_name(session, s),
+            WolframAtom::Symbol(s) if s == "True" => push_bool(session, true),
+            WolframAtom::Symbol(s) if s == "False" => push_bool(session, false),
+            WolframAtom::Symbol(s) if s == "Null" => push_null(session),
+            WolframAtom::Symbol(s) if s == "Pi" => push_constant(session, MathematicalConstant::Pi),
+            WolframAtom::Symbol(s) if s == "E" => push_constant(session, MathematicalConstant::EulerNumber),
+            WolframAtom::Symbol(s) => push_symbol_name(session, s),
         },
-        WExpr::List(items) => {
+        WolframForm::List(items) => {
             let ids: Vec<TermId> = items.iter().map(|i| lower_wexpr(session, i)).collect();
             push_list(session, ids)
         }
-        WExpr::Call { head, args } => match head.as_ref() {
-            WExpr::Atom(WAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
-            WExpr::Atom(WAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
-            WExpr::Atom(WAtom::Symbol(name)) if name == "Apply" || name == "Map" => {
+        WolframForm::Call { head, args } => match head.as_ref() {
+            WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
+            WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
+            WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Apply" || name == "Map" => {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
                     if i == 0 {
@@ -151,7 +151,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
                 }
                 push_surface_call(session, name, arg_ids)
             }
-            WExpr::Atom(WAtom::Symbol(name)) => {
+            WolframForm::Atom(WolframAtom::Symbol(name)) => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
             }
@@ -166,9 +166,9 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
 }
 
 /// Lower a head used as an operator value (`Apply[Plus, …]` → 0-ary `Add`).
-fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
+fn lower_operator_value(session: &mut Session, w: &WolframForm) -> TermId {
     match w {
-        WExpr::Atom(WAtom::Symbol(name)) => {
+        WolframForm::Atom(WolframAtom::Symbol(name)) => {
             if let Some(op) = surface_to_semantic(name) {
                 push_semantic(session, op, Vec::new())
             }
@@ -185,9 +185,9 @@ fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
 /// Maps Mathematica surface assignment / iteration into Session / Control contracts,
 /// and calculus surface (`D` / `Integrate` / `Limit`) into [`AthenaRequest::Goal`].
 /// Other forms lower to [`AthenaRequest::Term`].
-pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
-    if let WExpr::Call { head, args } = w {
-        if let WExpr::Atom(WAtom::Symbol(name)) = head.as_ref() {
+pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
+    if let WolframForm::Call { head, args } = w {
+        if let WolframForm::Atom(WolframAtom::Symbol(name)) = head.as_ref() {
             match (name.as_str(), args.as_slice()) {
                 ("D", [expr, spec]) => {
                     if let Some(variable) = symbol_of(session, spec) {
@@ -290,13 +290,14 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                     if ok && !steps.is_empty() {
                         return if steps.len() == 1 {
                             steps.remove(0)
-                        } else {
+                        }
+                        else {
                             AthenaRequest::Control(ControlPlan::Sequence { steps })
                         };
                     }
                 }
                 ("SetDelayed", [lhs, rhs]) => {
-                    if matches!(lhs, WExpr::Atom(WAtom::Symbol(_))) {
+                    if matches!(lhs, WolframForm::Atom(WolframAtom::Symbol(_))) {
                         if let Some(symbol) = symbol_of(session, lhs) {
                             let value = lower_wexpr(session, rhs);
                             return AthenaRequest::Command(SessionCommand::Define {
@@ -308,8 +309,8 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         }
                     }
                     // Patterned down-value: `f[x_]:=…` → typed `TermPattern` dispatch (Living `14`).
-                    if let WExpr::Call { head, args } = lhs {
-                        if let WExpr::Atom(WAtom::Symbol(name)) = head.as_ref() {
+                    if let WolframForm::Call { head, args } = lhs {
+                        if let WolframForm::Atom(WolframAtom::Symbol(name)) = head.as_ref() {
                             let mut pat_args = Vec::with_capacity(args.len());
                             let mut ok = true;
                             for a in args {
@@ -479,10 +480,10 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
     AthenaRequest::Term(lower_wexpr(session, w))
 }
 
-fn push_binding_defines(session: &mut Session, bindings: &WExpr, steps: &mut Vec<AthenaRequest>) {
-    let items: Option<Vec<&WExpr>> = match bindings {
-        WExpr::List(items) => Some(items.iter().collect()),
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
+fn push_binding_defines(session: &mut Session, bindings: &WolframForm, steps: &mut Vec<AthenaRequest>) {
+    let items: Option<Vec<&WolframForm>> = match bindings {
+        WolframForm::List(items) => Some(items.iter().collect()),
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") => {
             Some(args.iter().collect())
         }
         _ => None,
@@ -492,8 +493,8 @@ fn push_binding_defines(session: &mut Session, bindings: &WExpr, steps: &mut Vec
         return;
     };
     for item in items {
-        if let WExpr::Call { head, args } = item {
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Set") {
+        if let WolframForm::Call { head, args } = item {
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") {
                 if let [lhs, rhs] = args.as_slice() {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);
@@ -510,9 +511,9 @@ fn push_binding_defines(session: &mut Session, bindings: &WExpr, steps: &mut Vec
     }
 }
 
-fn symbol_of(session: &mut Session, w: &WExpr) -> Option<SymbolId> {
+fn symbol_of(session: &mut Session, w: &WolframForm) -> Option<SymbolId> {
     match w {
-        WExpr::Atom(WAtom::Symbol(name)) => Some(session.arena.symbols_mut().intern(name)),
+        WolframForm::Atom(WolframAtom::Symbol(name)) => Some(session.arena.symbols_mut().intern(name)),
         _ => None,
     }
 }
@@ -521,10 +522,10 @@ fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
     AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
 }
 
-fn list_items(w: &WExpr) -> Option<&[WExpr]> {
+fn list_items(w: &WolframForm) -> Option<&[WolframForm]> {
     match w {
-        WExpr::List(items) => Some(items.as_slice()),
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
+        WolframForm::List(items) => Some(items.as_slice()),
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") => {
             Some(args.as_slice())
         }
         _ => None,
@@ -532,11 +533,11 @@ fn list_items(w: &WExpr) -> Option<&[WExpr]> {
 }
 
 /// Unwrap a single held argument from `Hold` / `HoldForm` / `HoldComplete`.
-fn unwrap_hold_form(w: &WExpr) -> Option<&WExpr> {
+fn unwrap_hold_form(w: &WolframForm) -> Option<&WolframForm> {
     match w {
-        WExpr::Call { head, args } => {
+        WolframForm::Call { head, args } => {
             let name = match head.as_ref() {
-                WExpr::Atom(WAtom::Symbol(s)) => s.as_str(),
+                WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
                 _ => return None,
             };
             if matches!(name, "Hold" | "HoldForm" | "HoldComplete") {
@@ -550,13 +551,13 @@ fn unwrap_hold_form(w: &WExpr) -> Option<&WExpr> {
     }
 }
 
-fn derivative_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, DerivativeOrder)> {
+fn derivative_spec(session: &mut Session, spec: &WolframForm) -> Option<(SymbolId, DerivativeOrder)> {
     let items = list_items(spec)?;
     match items {
         [var, order] => {
             let variable = symbol_of(session, var)?;
             let n = match order {
-                WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer()?,
+                WolframForm::Atom(WolframAtom::Number(n)) => n.as_exact_integer()?,
                 _ => return None,
             };
             if n <= 0 {
@@ -569,7 +570,7 @@ fn derivative_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, Der
     }
 }
 
-fn definite_integral_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId, TermId)> {
+fn definite_integral_spec(session: &mut Session, spec: &WolframForm) -> Option<(SymbolId, TermId, TermId)> {
     let items = list_items(spec)?;
     match items {
         [var, lower, upper] => {
@@ -582,12 +583,12 @@ fn definite_integral_spec(session: &mut Session, spec: &WExpr) -> Option<(Symbol
     }
 }
 
-fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApproach, LimitDirection)> {
-    let WExpr::Call { head, args } = rule
+fn limit_rule(session: &mut Session, rule: &WolframForm) -> Option<(SymbolId, LimitApproach, LimitDirection)> {
+    let WolframForm::Call { head, args } = rule
     else {
         return None;
     };
-    if !matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Rule" || s == "RuleDelayed") {
+    if !matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Rule" || s == "RuleDelayed") {
         return None;
     }
     let [var, point] = args.as_slice()
@@ -596,25 +597,25 @@ fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApp
     };
     let variable = symbol_of(session, var)?;
     let approach = match point {
-        WExpr::Atom(WAtom::Symbol(s)) if s == "Infinity" => LimitApproach::PositiveInfinity,
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "DirectedInfinity")
+        WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Infinity" => LimitApproach::PositiveInfinity,
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "DirectedInfinity")
                 && args.len() == 1
-                && matches!(&args[0], WExpr::Atom(WAtom::Number(n)) if n.as_exact_integer() == Some(1)) =>
+                && matches!(&args[0], WolframForm::Atom(WolframAtom::Number(n)) if n.as_exact_integer() == Some(1)) =>
         {
             LimitApproach::PositiveInfinity
         }
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "DirectedInfinity")
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "DirectedInfinity")
                 && args.len() == 1
-                && matches!(&args[0], WExpr::Atom(WAtom::Number(n)) if n.as_exact_integer() == Some(-1)) =>
+                && matches!(&args[0], WolframForm::Atom(WolframAtom::Number(n)) if n.as_exact_integer() == Some(-1)) =>
         {
             LimitApproach::NegativeInfinity
         }
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Minus" || s == "Negate")
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Minus" || s == "Negate")
                 && args.len() == 1
-                && matches!(&args[0], WExpr::Atom(WAtom::Symbol(s)) if s == "Infinity") =>
+                && matches!(&args[0], WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Infinity") =>
         {
             LimitApproach::NegativeInfinity
         }
@@ -624,7 +625,7 @@ fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApp
 }
 
 /// `Series` iterator `{var, center, order}`.
-fn series_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId, u32)> {
+fn series_spec(session: &mut Session, spec: &WolframForm) -> Option<(SymbolId, TermId, u32)> {
     let items = list_items(spec)?;
     match items {
         [var, center, order] => {
@@ -641,7 +642,7 @@ fn series_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId,
 }
 
 /// `Residue` iterator `{var, point}`.
-fn residue_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId)> {
+fn residue_spec(session: &mut Session, spec: &WolframForm) -> Option<(SymbolId, TermId)> {
     let items = list_items(spec)?;
     match items {
         [var, point] => Some((symbol_of(session, var)?, lower_wexpr(session, point))),
@@ -649,11 +650,11 @@ fn residue_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId
     }
 }
 
-fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {
+fn extract_table_binder(session: &mut Session, iter: &WolframForm) -> Option<TermId> {
     match iter {
-        WExpr::List(items) if !items.is_empty() => Some(lower_wexpr(session, &items[0])),
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") && !args.is_empty() =>
+        WolframForm::List(items) if !items.is_empty() => Some(lower_wexpr(session, &items[0])),
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") && !args.is_empty() =>
         {
             Some(lower_wexpr(session, &args[0]))
         }
@@ -662,7 +663,7 @@ fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {
 }
 
 /// `Do` iterator `{n}` / `{i, n}` / `{i, a, b}` → counted-loop variable + value list.
-fn do_loop_parts(session: &mut Session, iter: &WExpr) -> Option<(TermId, TermId)> {
+fn do_loop_parts(session: &mut Session, iter: &WolframForm) -> Option<(TermId, TermId)> {
     let items = list_items(iter)?;
     match items {
         [n] => {
@@ -684,10 +685,10 @@ fn do_loop_parts(session: &mut Session, iter: &WExpr) -> Option<(TermId, TermId)
 }
 
 /// `Table` iterator `{i, n}` / `{i, a, b}` → ordered collection of values (binder excluded).
-fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
-    let items: Option<Vec<&WExpr>> = match iter {
-        WExpr::List(items) => Some(items.iter().collect()),
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
+fn normalize_table_range(session: &mut Session, iter: &WolframForm) -> TermId {
+    let items: Option<Vec<&WolframForm>> = match iter {
+        WolframForm::List(items) => Some(items.iter().collect()),
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") => {
             Some(args.iter().collect())
         }
         _ => None,
@@ -731,13 +732,13 @@ fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
     lower_wexpr(session, iter)
 }
 
-fn lower_span_as_range(session: &mut Session, args: &[WExpr]) -> TermId {
+fn lower_span_as_range(session: &mut Session, args: &[WolframForm]) -> TermId {
     let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
     push_semantic(session, SemanticOperator::Range, arg_ids)
 }
 
 /// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `14`).
-fn lower_function(session: &mut Session, args: &[WExpr]) -> TermId {
+fn lower_function(session: &mut Session, args: &[WolframForm]) -> TermId {
     match args {
         [body] => {
             let max_slot = max_slot_index(body).unwrap_or(0);
@@ -764,12 +765,12 @@ fn lower_function(session: &mut Session, args: &[WExpr]) -> TermId {
     }
 }
 
-fn max_slot_index(w: &WExpr) -> Option<i64> {
+fn max_slot_index(w: &WolframForm) -> Option<i64> {
     match w {
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Slot") => {
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") => {
             exact_i64(args.first()?)
         }
-        WExpr::Call { head, args } => {
+        WolframForm::Call { head, args } => {
             let mut max: Option<i64> = max_slot_index(head);
             for a in args {
                 max = match (max, max_slot_index(a)) {
@@ -781,7 +782,7 @@ fn max_slot_index(w: &WExpr) -> Option<i64> {
             }
             max
         }
-        WExpr::List(items) => {
+        WolframForm::List(items) => {
             let mut max: Option<i64> = None;
             for a in items {
                 max = match (max, max_slot_index(a)) {
@@ -797,45 +798,45 @@ fn max_slot_index(w: &WExpr) -> Option<i64> {
     }
 }
 
-fn replace_slots(w: &WExpr, binder: &str) -> WExpr {
+fn replace_slots(w: &WolframForm, binder: &str) -> WolframForm {
     match w {
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Slot") => {
-            WExpr::Atom(WAtom::Symbol(binder.to_string()))
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") => {
+            WolframForm::Atom(WolframAtom::Symbol(binder.to_string()))
         }
-        WExpr::Call { head, args } => WExpr::Call {
+        WolframForm::Call { head, args } => WolframForm::Call {
             head: Box::new(replace_slots(head, binder)),
             args: args.iter().map(|a| replace_slots(a, binder)).collect(),
         },
-        WExpr::List(items) => WExpr::List(items.iter().map(|a| replace_slots(a, binder)).collect()),
+        WolframForm::List(items) => WolframForm::List(items.iter().map(|a| replace_slots(a, binder)).collect()),
         other => other.clone(),
     }
 }
 
-fn exact_i64(w: &WExpr) -> Option<i64> {
+fn exact_i64(w: &WolframForm) -> Option<i64> {
     match w {
-        WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer(),
+        WolframForm::Atom(WolframAtom::Number(n)) => n.as_exact_integer(),
         _ => None,
     }
 }
 
 /// Mathematica pattern Form → neutral [`TermPattern`] (Living `14`).
-fn wexpr_to_term_pattern(session: &mut Session, w: &WExpr) -> Option<TermPattern> {
+fn wexpr_to_term_pattern(session: &mut Session, w: &WolframForm) -> Option<TermPattern> {
     match w {
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Blank") => {
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Blank") => {
             match args.as_slice() {
                 [] => Some(TermPattern::Any),
-                [WExpr::Atom(WAtom::Symbol(ty))] if ty == "Integer" => Some(TermPattern::Constrained {
+                [WolframForm::Atom(WolframAtom::Symbol(ty))] if ty == "Integer" => Some(TermPattern::Constrained {
                     pattern: Box::new(TermPattern::Any),
                     constraint: PatternConstraint::ValueType(ValueTypeId::ExactInteger),
                 }),
                 _ => None,
             }
         }
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Pattern") && args.len() == 2 =>
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Pattern") && args.len() == 2 =>
         {
             let name = match &args[0] {
-                WExpr::Atom(WAtom::Symbol(s)) => session.arena.symbols_mut().intern(s),
+                WolframForm::Atom(WolframAtom::Symbol(s)) => session.arena.symbols_mut().intern(s),
                 _ => return None,
             };
             let inner = wexpr_to_term_pattern(session, &args[1])?;
@@ -845,11 +846,11 @@ fn wexpr_to_term_pattern(session: &mut Session, w: &WExpr) -> Option<TermPattern
     }
 }
 
-fn index_spec_of(w: &WExpr) -> Option<IndexSpec> {
+fn index_spec_of(w: &WolframForm) -> Option<IndexSpec> {
     match w {
-        WExpr::Atom(WAtom::Symbol(s)) if s == "All" => Some(IndexSpec::All),
-        WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer().map(|i| IndexSpec::Scalar(IntegerIndex(i))),
-        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Span" || s == "Range") => {
+        WolframForm::Atom(WolframAtom::Symbol(s)) if s == "All" => Some(IndexSpec::All),
+        WolframForm::Atom(WolframAtom::Number(n)) => n.as_exact_integer().map(|i| IndexSpec::Scalar(IntegerIndex(i))),
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Span" || s == "Range") => {
             match args.as_slice() {
                 [start, end] => Some(IndexSpec::Range {
                     start: IntegerIndex(exact_i64(start)?),
@@ -864,60 +865,62 @@ fn index_spec_of(w: &WExpr) -> Option<IndexSpec> {
                 _ => None,
             }
         }
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Plus")
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Plus")
                 && args.len() == 2
-                && matches!(&args[0], WExpr::Atom(WAtom::Symbol(s)) if s == "end") =>
+                && matches!(&args[0], WolframForm::Atom(WolframAtom::Symbol(s)) if s == "end") =>
         {
             // MATLAB-style `end+k` sometimes arrives via other dialects; keep for shared helpers.
             let off = exact_i64(&args[1])?;
             Some(IndexSpec::EndRelative(IntegerOffset(off)))
         }
-        WExpr::Atom(WAtom::Symbol(s)) if s == "end" => Some(IndexSpec::EndRelative(IntegerOffset(0))),
+        WolframForm::Atom(WolframAtom::Symbol(s)) if s == "end" => Some(IndexSpec::EndRelative(IntegerOffset(0))),
         _ => None,
     }
 }
 
 /// Session arena [`TermId`] → structural `WExpr`.
-pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
+pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
     match session.arena.get(id) {
-        Some(TermNode::Atom(Atom::Number(n))) => WExpr::Atom(WAtom::Number(clone_number(n))),
-        Some(TermNode::Atom(Atom::String(s))) => WExpr::Atom(WAtom::String(s.clone())),
-        Some(TermNode::Atom(Atom::Boolean(true))) => WExpr::Atom(WAtom::Symbol("True".into())),
-        Some(TermNode::Atom(Atom::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
-        Some(TermNode::Atom(Atom::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
-        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Pi))) => WExpr::Atom(WAtom::Symbol("Pi".into())),
-        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => WExpr::Atom(WAtom::Symbol("E".into())),
+        Some(TermNode::Atom(Atom::Number(n))) => WolframForm::Atom(WolframAtom::Number(clone_number(n))),
+        Some(TermNode::Atom(Atom::String(s))) => WolframForm::Atom(WolframAtom::String(s.clone())),
+        Some(TermNode::Atom(Atom::Boolean(true))) => WolframForm::Atom(WolframAtom::Symbol("True".into())),
+        Some(TermNode::Atom(Atom::Boolean(false))) => WolframForm::Atom(WolframAtom::Symbol("False".into())),
+        Some(TermNode::Atom(Atom::Null)) => WolframForm::Atom(WolframAtom::Symbol("Null".into())),
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Pi))) => WolframForm::Atom(WolframAtom::Symbol("Pi".into())),
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => {
+            WolframForm::Atom(WolframAtom::Symbol("E".into()))
+        }
         Some(TermNode::Atom(Atom::Symbol(sym))) => {
             let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
-            WExpr::Atom(WAtom::Symbol(name))
+            WolframForm::Atom(WolframAtom::Symbol(name))
         }
         Some(TermNode::Collection { elements: items, .. }) => {
-            WExpr::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
+            WolframForm::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
             let head_name = match *op {
                 ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {
                     let head = wexpr_from_session(session, args[0]);
-                    let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
-                    return WExpr::Call { head: Box::new(head), args: call_args };
+                    let call_args: Vec<WolframForm> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
+                    return WolframForm::Call { head: Box::new(head), args: call_args };
                 }
                 ApplicationHead::Semantic(sem) => semantic_to_surface(sem).to_string(),
                 ApplicationHead::Extension(id) => {
                     let name = session.extensions.display_name(id).unwrap_or("?").to_string();
                     if name == "Application" && !args.is_empty() {
                         let head = wexpr_from_session(session, args[0]);
-                        let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
-                        return WExpr::Call { head: Box::new(head), args: call_args };
+                        let call_args: Vec<WolframForm> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
+                        return WolframForm::Call { head: Box::new(head), args: call_args };
                     }
                     name
                 }
             };
-            WExpr::Call {
-                head: Box::new(WExpr::Atom(WAtom::Symbol(head_name))),
+            WolframForm::Call {
+                head: Box::new(WolframForm::Atom(WolframAtom::Symbol(head_name))),
                 args: args.iter().map(|a| wexpr_from_session(session, *a)).collect(),
             }
         }
-        None => WExpr::Atom(WAtom::Symbol(format!("TermId({})", id.0))),
+        None => WolframForm::Atom(WolframAtom::Symbol(format!("TermId({})", id.0))),
     }
 }

@@ -9,7 +9,7 @@ mod parse;
 mod plot;
 mod render;
 
-pub use form::{WAtom, WExpr};
+pub use form::{WolframAtom, WolframForm};
 pub use lower::{lower_request, lower_wexpr, push_surface_call, semantic_to_surface, surface_to_semantic, wexpr_from_session};
 pub use number_literal::{parse_number_literal, render_number};
 pub use parse::parse_mathematica;

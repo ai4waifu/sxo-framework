@@ -9,8 +9,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_mathematica::{
-    WAtom, WExpr, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, push_surface_call, render, try_plot_svg,
-    wexpr_from_session,
+    WolframAtom, WolframForm, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, push_surface_call, render,
+    try_plot_svg, wexpr_from_session,
 };
 
 type Tid = TermId;
@@ -24,11 +24,11 @@ impl H {
         Self { s: RefCell::new(Session::new()) }
     }
 
-    fn parse_w(&self, input: &str) -> WExpr {
+    fn parse_w(&self, input: &str) -> WolframForm {
         parse_mathematica(input).unwrap()
     }
 
-    fn lower(&self, w: &WExpr) -> Tid {
+    fn lower(&self, w: &WolframForm) -> Tid {
         lower_wexpr(&mut self.s.borrow_mut(), w)
     }
 
@@ -102,7 +102,7 @@ fn parse_power_one() {
 #[test]
 fn parse_sin() {
     let e = parse_mathematica("Sin[x]").unwrap();
-    assert_eq!(e, WExpr::call("Sin", vec![WExpr::symbol("x")]));
+    assert_eq!(e, WolframForm::call("Sin", vec![WolframForm::symbol("x")]));
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn parse_d() {
 #[test]
 fn parse_compound_expression() {
     let w = parse_mathematica("a; b").unwrap();
-    assert_eq!(w, WExpr::call("CompoundExpression", vec![WExpr::symbol("a"), WExpr::symbol("b")]));
+    assert_eq!(w, WolframForm::call("CompoundExpression", vec![WolframForm::symbol("a"), WolframForm::symbol("b")]));
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn parse_root_semicolon_returns_last() {
 #[test]
 fn parse_equal_and_factorial() {
     let w = parse_mathematica("2 == 2").unwrap();
-    assert_eq!(w, WExpr::call("Equal", vec![WExpr::int(2), WExpr::int(2)]));
+    assert_eq!(w, WolframForm::call("Equal", vec![WolframForm::int(2), WolframForm::int(2)]));
     let h = H::new();
     assert!(h.eq(h.eval("2 == 2"), h.boolean(true)));
     assert!(h.eq(h.eval("5!"), h.i(120)));
@@ -138,7 +138,7 @@ fn parse_equal_and_factorial() {
 fn parse_big_integer() {
     let n = parse_number_literal("99999999999999999999").unwrap();
     let w = parse_mathematica("99999999999999999999").unwrap();
-    assert_eq!(w, WExpr::number(n));
+    assert_eq!(w, WolframForm::number(n));
 }
 
 #[test]
@@ -146,7 +146,14 @@ fn parse_if_call_shape() {
     let w = parse_mathematica("If[1==1,7,8]").unwrap();
     assert_eq!(
         w,
-        WExpr::call("If", vec![WExpr::call("Equal", vec![WExpr::int(1), WExpr::int(1)]), WExpr::int(7), WExpr::int(8),])
+        WolframForm::call(
+            "If",
+            vec![
+                WolframForm::call("Equal", vec![WolframForm::int(1), WolframForm::int(1)]),
+                WolframForm::int(7),
+                WolframForm::int(8),
+            ]
+        )
     );
     let h = H::new();
     assert!(h.eq(h.eval("If[1==1,7,8]"), h.i(7)));
@@ -155,7 +162,7 @@ fn parse_if_call_shape() {
 #[test]
 fn parse_hold_keeps_args() {
     let w = parse_mathematica("Hold[1+1]").unwrap();
-    assert_eq!(w, WExpr::call("Hold", vec![WExpr::call("Plus", vec![WExpr::int(1), WExpr::int(1)])]));
+    assert_eq!(w, WolframForm::call("Hold", vec![WolframForm::call("Plus", vec![WolframForm::int(1), WolframForm::int(1)])]));
     let h = H::new();
     let e = h.eval("Hold[1+1]");
     assert!(h.eq(e, h.ap("Hold", vec![h.ap("Plus", vec![h.i(1), h.i(1)])])));
@@ -172,13 +179,19 @@ fn parse_hold_form_keeps_args() {
 #[test]
 fn parse_import_call_shape() {
     let w = parse_mathematica("Import[\"x.csv\"]").unwrap();
-    assert_eq!(w, WExpr::call("Import", vec![WExpr::Atom(WAtom::String("x.csv".into()))]));
+    assert_eq!(w, WolframForm::call("Import", vec![WolframForm::Atom(WolframAtom::String("x.csv".into()))]));
 }
 
 #[test]
 fn parse_part_double_bracket() {
     let w = parse_mathematica("{1,2,3}[[0]]").unwrap();
-    assert_eq!(w, WExpr::call("Part", vec![WExpr::List(vec![WExpr::int(1), WExpr::int(2), WExpr::int(3)]), WExpr::int(0)]));
+    assert_eq!(
+        w,
+        WolframForm::call(
+            "Part",
+            vec![WolframForm::List(vec![WolframForm::int(1), WolframForm::int(2), WolframForm::int(3)]), WolframForm::int(0)]
+        )
+    );
     let h = H::new();
     assert!(h.eq(h.eval("{1,2,3}[[0]]"), h.lst(vec![])));
 }
@@ -191,9 +204,9 @@ fn parse_part_call_zero() {
 
 #[test]
 fn parse_true_false_null_atoms() {
-    assert_eq!(parse_mathematica("True").unwrap(), WExpr::symbol("True"));
-    assert_eq!(parse_mathematica("False").unwrap(), WExpr::symbol("False"));
-    assert_eq!(parse_mathematica("Null").unwrap(), WExpr::symbol("Null"));
+    assert_eq!(parse_mathematica("True").unwrap(), WolframForm::symbol("True"));
+    assert_eq!(parse_mathematica("False").unwrap(), WolframForm::symbol("False"));
+    assert_eq!(parse_mathematica("Null").unwrap(), WolframForm::symbol("Null"));
     let h = H::new();
     assert!(h.eq(h.eval("True"), h.boolean(true)));
     assert!(h.eq(h.eval("False"), h.boolean(false)));
@@ -223,7 +236,7 @@ fn parse_with_module_block_local_bindings() {
 #[test]
 fn parse_slot_lowers_to_slot_head() {
     let w = parse_mathematica("#").unwrap();
-    assert_eq!(w, WExpr::call("Slot", vec![WExpr::int(1)]));
+    assert_eq!(w, WolframForm::call("Slot", vec![WolframForm::int(1)]));
 }
 
 #[test]
@@ -246,11 +259,11 @@ fn parse_map_pure_function() {
 
 #[test]
 fn parse_blank_and_typed_blank() {
-    assert_eq!(parse_mathematica("_").unwrap(), WExpr::call("Blank", vec![]));
-    assert_eq!(parse_mathematica("_Integer").unwrap(), WExpr::call("Blank", vec![WExpr::symbol("Integer")]));
+    assert_eq!(parse_mathematica("_").unwrap(), WolframForm::call("Blank", vec![]));
+    assert_eq!(parse_mathematica("_Integer").unwrap(), WolframForm::call("Blank", vec![WolframForm::symbol("Integer")]));
     assert_eq!(
         parse_mathematica("x_").unwrap(),
-        WExpr::call("Pattern", vec![WExpr::symbol("x"), WExpr::call("Blank", vec![])])
+        WolframForm::call("Pattern", vec![WolframForm::symbol("x"), WolframForm::call("Blank", vec![])])
     );
 }
 

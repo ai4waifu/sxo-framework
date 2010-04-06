@@ -78,7 +78,7 @@ For services, set resource and cancellation limits before evaluation.
 
 ## 🧩 WExpr, Forms, and Lowering
 
-`WExpr` belongs to this frontend. It preserves language-facing structure and lowering choices. It is not a universal
+`WolframForm` belongs to this frontend. It preserves language-facing structure and lowering choices. It is not a universal
 expression type for other dialects. Held forms, patterns, parts, symbols, and evaluation-sensitive constructs require
 semantic support, not only parser acceptance.
 
@@ -117,7 +117,7 @@ browser workflows.
 
 Choose this package when your users think in Wolfram Language notation, when source files contain Mathematica-style
 names and expressions, or when a notebook workflow needs an SXO-backed host. The package is designed to make the
-frontend boundary visible: text is parsed into a Wolfram-oriented `WExpr`, lowered into the shared Athena
+frontend boundary visible: text is parsed into a Wolfram-oriented `WolframForm`, lowered into the shared Athena
 representation, evaluated by the common engine, and rendered back for a user or tool. This lets applications preserve
 familiar source structure while keeping mathematical semantics in the shared engine.
 
@@ -137,7 +137,7 @@ Mathematica compatibility.
 
 ## 🧩 Understand the expression model
 
-`WExpr` represents frontend structure and preserves information needed by parsing, lowering, and rendering. Constructs
+`WolframForm` represents frontend structure and preserves information needed by parsing, lowering, and rendering. Constructs
 such as names, held expressions, patterns, and parts have syntax and presentation implications that do not belong in a
 generic Simple Math frontend. The package keeps those concerns here so MATLAB and Simple Math code do not need to pass
 through Wolfram objects.
@@ -145,7 +145,7 @@ through Wolfram objects.
 | Concern                       | Owned by this package | Owned by shared Athena |
 |-------------------------------|-----------------------|------------------------|
 | Wolfram spelling and parsing  | Yes                   | No                     |
-| `WExpr` and frontend forms    | Yes                   | No                     |
+| `WolframForm` and frontend forms    | Yes                   | No                     |
 | Lowering to common IR         | Adapter boundary      | No dialect syntax      |
 | Mathematical evaluation       | No                    | Yes                    |
 | Wolfram-oriented rendering    | Yes                   | No                     |

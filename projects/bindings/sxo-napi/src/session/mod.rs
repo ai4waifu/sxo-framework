@@ -18,7 +18,7 @@ use athena::{
     },
     types::{AssumptionSet, Diagnostic, ResultId, TermId},
 };
-use sxo_dialect_mathematica::{self as mathematica, WExpr};
+use sxo_dialect_mathematica::{self as mathematica, WolframForm};
 use sxo_dialect_matlab as matlab;
 use sxo_types::{Dialect, SxoError};
 
@@ -135,18 +135,18 @@ impl Session {
         self.math_engine().simplify(&mut self.math_session.borrow_mut(), expr)
     }
 
-    /// Parse Wolfram text into MMA [`WExpr`] (no evaluate).
-    pub fn parse_mathematica(&self, input: &str) -> Result<WExpr, SxoError> {
+    /// Parse Wolfram text into MMA [`WolframForm`] (no evaluate).
+    pub fn parse_mathematica(&self, input: &str) -> Result<WolframForm, SxoError> {
         mathematica::parse_mathematica(input)
     }
 
     /// MMA form → session arena [`TermId`].
-    pub fn lower_mathematica(&self, w: &WExpr) -> TermId {
+    pub fn lower_mathematica(&self, w: &WolframForm) -> TermId {
         mathematica::lower_wexpr(&mut self.math_session.borrow_mut(), w)
     }
 
     /// Session arena [`TermId`] → MMA form.
-    pub fn to_mathematica(&self, id: TermId) -> WExpr {
+    pub fn to_mathematica(&self, id: TermId) -> WolframForm {
         mathematica::wexpr_from_session(&self.math_session.borrow(), id)
     }
 

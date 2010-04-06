@@ -7,7 +7,7 @@ use athena::{
     ir::{Atom, TermNode},
     runtime::values::arena::push_int,
 };
-use sxo_dialect_mathematica::{WExpr, parse_number_literal};
+use sxo_dialect_mathematica::{WolframForm, parse_number_literal};
 use sxo_napi::session::Session;
 use sxo_types::Dialect;
 
@@ -22,7 +22,7 @@ fn math_evaluate_arith() {
 #[test]
 fn wexpr_roundtrip_via_session() {
     let session = Session::new();
-    let w = WExpr::call("Sin", vec![WExpr::symbol("x")]);
+    let w = WolframForm::call("Sin", vec![WolframForm::symbol("x")]);
     let t = session.lower_mathematica(&w);
     assert_eq!(session.to_mathematica(t), w);
 }

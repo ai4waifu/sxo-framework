@@ -9,7 +9,7 @@ use athena::{
 
 /// Atomic Wolfram-facing value.
 #[derive(Debug, PartialEq)]
-pub enum WAtom {
+pub enum WolframAtom {
     /// Unified number (same tower as kernel).
     Number(Number),
     /// String literal.
@@ -18,7 +18,7 @@ pub enum WAtom {
     Symbol(String),
 }
 
-impl Clone for WAtom {
+impl Clone for WolframAtom {
     fn clone(&self) -> Self {
         match self {
             Self::Number(n) => Self::Number(clone_number(n)),
@@ -30,24 +30,24 @@ impl Clone for WAtom {
 
 /// Wolfram-shaped tree for the Mathematica frontend (`Head[args…]`).
 #[derive(Debug, Clone, PartialEq)]
-pub enum WExpr {
+pub enum WolframForm {
     /// Atom.
-    Atom(WAtom),
+    Atom(WolframAtom),
     /// `{a, b, …}`.
-    List(Vec<WExpr>),
+    List(Vec<WolframForm>),
     /// `head[args…]`.
     Call {
         /// Head (usually a symbol).
-        head: Box<WExpr>,
+        head: Box<WolframForm>,
         /// Arguments.
-        args: Vec<WExpr>,
+        args: Vec<WolframForm>,
     },
 }
 
-impl WExpr {
+impl WolframForm {
     /// Symbol atom.
     pub fn symbol(name: impl Into<String>) -> Self {
-        Self::Atom(WAtom::Symbol(name.into()))
+        Self::Atom(WolframAtom::Symbol(name.into()))
     }
 
     /// Small exact integer.
@@ -57,7 +57,7 @@ impl WExpr {
 
     /// Number atom.
     pub fn number(n: Number) -> Self {
-        Self::Atom(WAtom::Number(n))
+        Self::Atom(WolframAtom::Number(n))
     }
 
     /// Machine real (inexact).
@@ -66,7 +66,7 @@ impl WExpr {
     }
 
     /// `head[args…]`.
-    pub fn call(head: impl Into<String>, args: Vec<WExpr>) -> Self {
+    pub fn call(head: impl Into<String>, args: Vec<WolframForm>) -> Self {
         Self::Call { head: Box::new(Self::symbol(head)), args }
     }
 
@@ -74,11 +74,11 @@ impl WExpr {
     pub fn head_name(&self) -> Option<&str> {
         match self {
             Self::Call { head, .. } => match head.as_ref() {
-                Self::Atom(WAtom::Symbol(s)) => Some(s.as_str()),
+                Self::Atom(WolframAtom::Symbol(s)) => Some(s.as_str()),
                 _ => None,
             },
             Self::List(_) => Some("List"),
-            Self::Atom(WAtom::Symbol(s)) => Some(s.as_str()),
+            Self::Atom(WolframAtom::Symbol(s)) => Some(s.as_str()),
             _ => None,
         }
     }
@@ -86,23 +86,23 @@ impl WExpr {
     /// Lossy float — not for kernel semantics.
     pub fn as_f64_lossy(&self) -> Option<f64> {
         match self {
-            Self::Atom(WAtom::Number(n)) => to_f64_lossy(n),
+            Self::Atom(WolframAtom::Number(n)) => to_f64_lossy(n),
             _ => None,
         }
     }
 
     /// Whether this is the given symbol.
     pub fn is_symbol(&self, name: &str) -> bool {
-        matches!(self, Self::Atom(WAtom::Symbol(s)) if s == name)
+        matches!(self, Self::Atom(WolframAtom::Symbol(s)) if s == name)
     }
 
     /// Whether numeric `-1`.
     pub fn is_neg_one(&self) -> bool {
-        matches!(self, Self::Atom(WAtom::Number(n)) if n.is_neg_one())
+        matches!(self, Self::Atom(WolframAtom::Number(n)) if n.is_neg_one())
     }
 }
 
-impl fmt::Display for WExpr {
+impl fmt::Display for WolframForm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", crate::render::render(self))
     }

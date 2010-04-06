@@ -3,8 +3,10 @@
 use sxo_types::Dialect;
 use wasm_bindgen::prelude::*;
 
-use crate::dialects::{dialect_from_str, map_err, parse_to_term};
-use crate::session::Session;
+use crate::{
+    dialects::{dialect_from_str, map_err, parse_to_term},
+    session::Session,
+};
 use athena::types::TermId;
 
 /// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
