@@ -95,9 +95,7 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("*"))
         }
         "Minus" if args.len() == 1 => Some(format!("-{}", render_matlab(session, args[0]))),
-        "Power" if args.len() == 2 => {
-            Some(format!("{}^{}", power_operand(session, args[0]), power_operand(session, args[1])))
-        }
+        "Power" if args.len() == 2 => Some(format!("{}^{}", power_operand(session, args[0]), power_operand(session, args[1]))),
         "Subtract" if args.len() == 2 => {
             Some(format!("{} - {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
@@ -133,11 +131,7 @@ fn is_neg_one(session: &Session, id: TermId) -> bool {
 
 fn power_operand(session: &Session, id: TermId) -> String {
     let s = render_matlab(session, id);
-    if number_needs_power_paren(session, id) || compound_needs_power_paren(session, id) {
-        format!("({s})")
-    } else {
-        s
-    }
+    if number_needs_power_paren(session, id) || compound_needs_power_paren(session, id) { format!("({s})") } else { s }
 }
 
 fn number_needs_power_paren(session: &Session, id: TermId) -> bool {

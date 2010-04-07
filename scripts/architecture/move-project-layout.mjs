@@ -170,9 +170,7 @@ function applyEntry(entry) {
     }
 
     const targetFiles = listTrackedFiles(entry.toAbs);
-    const same =
-        sourceFiles.length === targetFiles.length &&
-        sourceFiles.every((f, i) => f === targetFiles[i]);
+    const same = sourceFiles.length === targetFiles.length && sourceFiles.every((f, i) => f === targetFiles[i]);
     if (!same) {
         return {
             ok: false,
@@ -221,7 +219,9 @@ function main() {
             }
         }
         const mark = outcome.ok ? 'ok' : 'FAIL';
-        console.log(`[${mark}] ${entry.from} → ${entry.to} (${outcome.status}${outcome.fileCount != null ? `, files=${outcome.fileCount}` : ''})`);
+        console.log(
+            `[${mark}] ${entry.from} → ${entry.to} (${outcome.status}${outcome.fileCount != null ? `, files=${outcome.fileCount}` : ''})`,
+        );
     }
 
     writeReport(opts.report, report);

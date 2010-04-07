@@ -21,12 +21,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const MANIFEST_PATH = path.join(ROOT, 'scripts/architecture/project-layout.v1.json');
 
 const RUST_MEMBER_PREFIXES = ['projects/dialects/', 'projects/bindings/', 'projects/adapters/'];
-const NPM_MEMBER_PREFIXES = [
-    'projects/packages/',
-    'projects/platforms/',
-    'projects/tooling/',
-    'projects/site/',
-];
+const NPM_MEMBER_PREFIXES = ['projects/packages/', 'projects/platforms/', 'projects/tooling/', 'projects/site/'];
 const PRODUCT_PACKAGE_DIRS = [
     'projects/packages/sxo-core',
     'projects/packages/sxo-lite',
@@ -36,11 +31,7 @@ const PRODUCT_PACKAGE_DIRS = [
     'projects/packages/sxo-simple-math',
 ];
 
-const RUST_SCAN_ROOTS = [
-    'projects/dialects',
-    'projects/bindings',
-    'projects/adapters',
-];
+const RUST_SCAN_ROOTS = ['projects/dialects', 'projects/bindings', 'projects/adapters'];
 
 function fail(msg) {
     console.error(`check-project-layout: ${msg}`);
@@ -138,11 +129,7 @@ function scanDialectCrateCrossDeps(findings) {
         'projects/dialects/sxo-dialect-matlab',
         'projects/dialects/sxo-dialect-simple-math',
     ];
-    const dialectCrates = new Set([
-        'sxo-dialect-mathematica',
-        'sxo-dialect-matlab',
-        'sxo-dialect-simple-math',
-    ]);
+    const dialectCrates = new Set(['sxo-dialect-mathematica', 'sxo-dialect-matlab', 'sxo-dialect-simple-math']);
     for (const dir of dialectDirs) {
         const cargoRel = path.join(dir, 'Cargo.toml');
         if (!exists(cargoRel)) continue;
@@ -297,9 +284,7 @@ function main() {
     if (errors.length) {
         fail(`${errors.length} error(s)`);
     }
-    console.log(
-        `check-project-layout: ${strict ? 'strict' : 'inventory'} ok (${findings.length} finding(s))`,
-    );
+    console.log(`check-project-layout: ${strict ? 'strict' : 'inventory'} ok (${findings.length} finding(s))`);
 }
 
 main();

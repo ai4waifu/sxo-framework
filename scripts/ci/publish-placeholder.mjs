@@ -68,15 +68,7 @@ function loadLocalEnv(filePath) {
 const localEnv = loadLocalEnv(ENV_PATH);
 
 /** Real-release set lives in publish-npm.mjs; placeholders may include reserved names not yet in that set. */
-const JS_STUBS = [
-    '@sxo/lite-unknown-wasm32',
-    '@sxo/lite',
-    '@sxo/core',
-    '@sxo/simple-math',
-    '@sxo/mathematica',
-    '@sxo/matlab',
-    '@sxo/sxo',
-];
+const JS_STUBS = ['@sxo/lite-unknown-wasm32', '@sxo/lite', '@sxo/core', '@sxo/simple-math', '@sxo/mathematica', '@sxo/matlab', '@sxo/sxo'];
 const NATIVE_STUBS = [
     { name: '@sxo/sxo-win32-x64', os: ['win32'], cpu: ['x64'] },
     { name: '@sxo/sxo-linux-x64', os: ['linux'], cpu: ['x64'] },

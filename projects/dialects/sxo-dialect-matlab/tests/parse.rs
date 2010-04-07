@@ -33,11 +33,9 @@ impl H {
         let request = lower_request(&mut s, &form);
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
-            Ok(result_id) => s
-                .results
-                .get(result_id)
-                .and_then(|r| r.symbolic_term)
-                .unwrap_or_else(|| form_to_term(&mut s, &form)),
+            Ok(result_id) => {
+                s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| form_to_term(&mut s, &form))
+            }
             Err(_) => form_to_term(&mut s, &form),
         }
     }

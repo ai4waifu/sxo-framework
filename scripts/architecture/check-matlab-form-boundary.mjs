@@ -42,7 +42,7 @@ function stripRustNoise(src) {
             continue;
         }
         const c = src[i];
-        if (c === '"' || c === '\'') {
+        if (c === '"' || c === "'") {
             const quote = c;
             i += 1;
             while (i < src.length) {

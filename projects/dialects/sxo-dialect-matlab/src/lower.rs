@@ -20,11 +20,16 @@ use athena::{
         },
         numeric_clone::{clone_integer, clone_number, clone_rational},
     },
-    types::{AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SourceSpan, SymbolId, TermId},
+    types::{
+        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SourceSpan, SymbolId,
+        TermId,
+    },
 };
 
-use crate::form::{MatlabAtom, MatlabForm};
-use crate::surface::{application_surface_name, push_matlab_call};
+use crate::{
+    form::{MatlabAtom, MatlabForm},
+    surface::{application_surface_name, push_matlab_call},
+};
 
 /// Materialize a [`MatlabForm`] into the session arena (transitional bridge).
 pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
@@ -191,8 +196,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         if let Some(n) = number_from_id(session, order_term).and_then(|n| n.as_exact_integer()) {
                             if n > 0 {
                                 let variable = session.arena.symbols_mut().intern(name);
-                                let order =
-                                    if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
+                                let order = if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
                                 return calculus_goal(CalculusRequest::Derivative {
                                     expression: form_to_term(session, expr),
                                     variable,

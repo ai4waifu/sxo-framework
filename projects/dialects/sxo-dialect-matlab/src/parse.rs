@@ -14,9 +14,11 @@ use oak_matlab::{
 use athena::{Session, types::TermId};
 use sxo_types::SxoError;
 
-use crate::form::{MatlabAtom, MatlabForm};
-use crate::lower::form_to_term;
-use crate::number_literal::parse_number_literal;
+use crate::{
+    form::{MatlabAtom, MatlabForm},
+    lower::form_to_term,
+    number_literal::parse_number_literal,
+};
 
 /// Parse MATLAB text into a [`MatlabForm`] (no evaluate, no arena write).
 pub fn parse_matlab_form(input: &str) -> Result<MatlabForm, SxoError> {
@@ -85,10 +87,7 @@ fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
             if header_f.head_name() == Some("Set") {
                 if let MatlabForm::Call { args, .. } = &header_f {
                     if args.len() == 2 {
-                        return Ok(MatlabForm::call(
-                            "For",
-                            vec![args[0].clone(), args[1].clone(), body_f],
-                        ));
+                        return Ok(MatlabForm::call("For", vec![args[0].clone(), args[1].clone(), body_f]));
                     }
                 }
             }

@@ -84,4 +84,3 @@ export async function reportDialectFeatures(dialect: DialectId, mode: 'markdown'
     }
     return toMarkdownTable(matrix);
 }
-
