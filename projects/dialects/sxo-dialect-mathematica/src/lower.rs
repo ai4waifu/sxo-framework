@@ -111,7 +111,7 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
     }
 }
 
-/// Structural `WExpr` → session arena [`TermId`].
+/// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
 pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
@@ -879,7 +879,7 @@ fn index_spec_of(w: &WolframForm) -> Option<IndexSpec> {
     }
 }
 
-/// Session arena [`TermId`] → structural `WExpr`.
+/// Session arena [`TermId`] → structural `WolframForm`.
 pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
     match session.arena.get(id) {
         Some(TermNode::Atom(Atom::Number(n))) => WolframForm::Atom(WolframAtom::Number(clone_number(n))),

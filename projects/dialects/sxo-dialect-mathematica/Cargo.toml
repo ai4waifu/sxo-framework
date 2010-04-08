@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Mathematica/Wolfram dialect: WExpr, oak parse, lower, render"
+description = "Mathematica/Wolfram dialect: WolframForm, oak parse, lower, render"
 publish = false
 
 [lints]

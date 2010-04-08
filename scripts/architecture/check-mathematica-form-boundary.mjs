@@ -1,8 +1,8 @@
 /**
  * Mathematica Form boundary gate (Living 14 / 05).
  *
- * - `parse.rs` builds `WExpr` only (no arena Term pushes).
- * - `WExpr` must remain in this dialect crate (no re-export from sxo-types).
+ * - `parse.rs` builds `WolframForm` only (no arena Term pushes).
+ * - `WolframForm` must remain in this dialect crate (no re-export from sxo-types).
  *
  * Usage:
  *   node scripts/architecture/check-mathematica-form-boundary.mjs
@@ -83,22 +83,28 @@ if (!fs.existsSync(PARSE) || !fs.existsSync(LIB)) {
 const parseCode = stripRustNoise(fs.readFileSync(PARSE, 'utf8'));
 for (const re of [/\bTermId\b/, /\bpush_semantic\b/, /\barena\.push\b/, /\bpush_matlab_call\b/]) {
     if (re.test(parseCode)) {
-        fail(`parse.rs must emit WExpr only (forbidden ${re})`);
+        fail(`parse.rs must emit WolframForm only (forbidden ${re})`);
     }
 }
-if (!/\bWExpr\b/.test(parseCode)) {
-    fail('parse.rs must construct WExpr');
+if (!/\bWolframForm\b/.test(parseCode)) {
+    fail('parse.rs must construct WolframForm');
+}
+if (/\bWExpr\b/.test(parseCode)) {
+    fail('parse.rs must not use legacy WExpr after WolframForm rename');
 }
 
 const libText = fs.readFileSync(LIB, 'utf8');
-if (!/\bWExpr\b/.test(libText)) {
-    fail('dialect lib must own WExpr');
+if (!/\bWolframForm\b/.test(libText)) {
+    fail('dialect lib must own WolframForm');
+}
+if (/\bWExpr\b/.test(libText)) {
+    fail('dialect lib must not re-export legacy WExpr');
 }
 
 for (const file of walkRs(SXO_TYPES)) {
     const text = fs.readFileSync(file, 'utf8');
-    if (/\bWExpr\b/.test(text)) {
-        fail(`WExpr must not appear in sxo-types (${path.relative(ROOT, file)})`);
+    if (/\bWolframForm\b/.test(text) || /\bWExpr\b/.test(text)) {
+        fail(`WolframForm/WExpr must not appear in sxo-types (${path.relative(ROOT, file)})`);
     }
 }
 

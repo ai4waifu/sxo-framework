@@ -1,4 +1,4 @@
-//! Mathematica dialect Form (`WExpr`) — Wolfram-shaped, not engine IR.
+//! Mathematica dialect Form (`WolframForm`) — Wolfram-shaped, not engine IR.
 
 use std::fmt;
 

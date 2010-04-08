@@ -1,4 +1,4 @@
-//! Mathematica / Wolfram dialect: `WExpr`, oak parse, lower, render.
+//! Mathematica / Wolfram dialect: `WolframForm`, oak parse, lower, render.
 
 #![deny(missing_docs)]
 
