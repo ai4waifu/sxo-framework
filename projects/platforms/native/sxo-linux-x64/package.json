@@ -1,6 +1,6 @@
 {
     "name": "@sxo/sxo-linux-x64",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "private": true,
     "description": "Optional SXO N-API binary for Linux x64 (linux-x64-gnu). Loaded by @sxo/core and dialect frontends.",
     "repository": {

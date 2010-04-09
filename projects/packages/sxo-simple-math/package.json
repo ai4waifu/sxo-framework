@@ -1,6 +1,6 @@
 {
     "name": "@sxo/simple-math",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "private": true,
     "type": "module",
     "description": "Simple Math dialect frontend. Adapts `@sxo/core` Session with an explicit simple-math dialect tag.",

@@ -1,6 +1,6 @@
 {
     "name": "@sxo/lite",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "private": true,
     "type": "module",
     "description": "WASM TypeScript CAS face isomorphic with `@sxo/core`: Session, opaque handles, diagnostics, and host capabilities.",

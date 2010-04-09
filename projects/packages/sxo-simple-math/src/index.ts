@@ -1,4 +1,4 @@
-import { Expression, createSession, version } from '@sxo/core';
+import { createSession, Expression, version } from '@sxo/core';
 
 export { Expression, version };
 

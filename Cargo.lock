@@ -994,7 +994,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-adapter-apollo"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "apollo",
  "athena",
@@ -1002,7 +1002,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-mathematica"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena",
  "oak-core",
@@ -1013,7 +1013,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-matlab"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena",
  "oak-core",
@@ -1024,7 +1024,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-simple-math"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena",
  "sxo-types",
@@ -1032,7 +1032,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-lite-wasm"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena",
  "console_error_panic_hook",
@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-napi"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena",
  "bytes",
@@ -1070,7 +1070,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-types"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "athena-types",
 ]

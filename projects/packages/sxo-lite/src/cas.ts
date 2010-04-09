@@ -1,5 +1,5 @@
 import { CAPABILITIES, type Capabilities } from './capabilities.js';
-import { Session, init } from './session.js';
+import { init, Session } from './session.js';
 
 export { init };
 

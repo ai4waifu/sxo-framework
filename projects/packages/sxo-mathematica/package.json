@@ -1,6 +1,6 @@
 {
     "name": "@sxo/mathematica",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "private": true,
     "type": "module",
     "description": "Mathematica / Wolfram Language frontend: parse, evaluate, and render via the SXO native addon. Includes wolframscript CLI and Jupyter kernel install helpers.",

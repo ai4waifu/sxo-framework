@@ -1,6 +1,6 @@
 {
     "name": "@sxo/sxo",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "private": true,
     "type": "module",
     "description": "Node CLI (`sxo`) for SXO package helpers. Not the CAS kernel — math evaluation lives in dialect packages.",
