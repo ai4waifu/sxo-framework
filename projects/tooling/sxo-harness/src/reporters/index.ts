@@ -1,2 +1,2 @@
-export type { FeatureGapRow } from './matrix.js';
-export { entryNames, listGaps, summarizeMatrix, toConsoleRows, toMarkdownTable } from './matrix.js';
+export type { FeatureFlaggedRow, FeatureGapRow } from './matrix.js';
+export { entryNames, listCasesByFlags, listGaps, listWrongs, summarizeMatrix, toConsoleRows, toMarkdownTable } from './matrix.js';

@@ -6,9 +6,15 @@ export type FeatureCaseOptions = {
     host?: FeatureHost;
     backend?: FeatureBackend;
     device?: string;
+    flags?: readonly string[];
 };
 
 export type GapCaseOptions = FeatureCaseOptions & {
+    expected?: string;
+};
+
+/** Known-wrong / upstream-regress contract hole (`it.todo`, does not fail CI). */
+export type WrongCaseOptions = FeatureCaseOptions & {
     expected?: string;
 };
 
@@ -32,6 +38,7 @@ function caseBase(
         host?: FeatureHost;
         backend?: FeatureBackend;
         device?: string;
+        flags?: readonly string[];
     } = {},
 ): FeatureCase {
     const out: FeatureCase = { id, kind, input };
@@ -41,6 +48,7 @@ function caseBase(
     if (extra.host !== undefined) out.host = extra.host;
     if (extra.backend !== undefined) out.backend = extra.backend;
     if (extra.device !== undefined) out.device = extra.device;
+    if (extra.flags !== undefined && extra.flags.length > 0) out.flags = [...extra.flags];
     return out;
 }
 
@@ -73,6 +81,15 @@ export function negativeCase(id: string, input: string, opts: NegativeCaseOption
 /** `gap` case: contract hole (`it.todo`). */
 export function gapCase(id: string, input: string, opts: GapCaseOptions = {}): FeatureCase {
     return caseBase(id, 'gap', input, opts);
+}
+
+/**
+ * `wrong` case: known incorrect / unevaluated result that must not fail CI.
+ * Always tagged with flag `wrong`. Add extra flags (e.g. `upstream-athena`) for retrieval.
+ */
+export function wrongCase(id: string, input: string, opts: WrongCaseOptions = {}): FeatureCase {
+    const flags = new Set<string>(['wrong', ...(opts.flags ?? [])]);
+    return caseBase(id, 'wrong', input, { ...opts, flags: [...flags] });
 }
 
 type EntryEnv = {
@@ -194,6 +211,10 @@ export class FeatureEntryBuilder {
 
     gap(id: string, input: string, opts?: GapCaseOptions): this {
         return this.cases(gapCase(id, input, opts));
+    }
+
+    wrong(id: string, input: string, opts?: WrongCaseOptions): this {
+        return this.cases(wrongCase(id, input, opts));
     }
 
     /** Freeze into a `FeatureEntry`. Throws if status / effect missing. */

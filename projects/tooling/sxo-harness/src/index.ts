@@ -2,11 +2,13 @@ export type {
     CaseKind,
     FeatureBackend,
     FeatureCase,
+    FeatureCaseFlag,
     FeatureCaseOptions,
     FeatureCaseRunFail,
     FeatureCaseRunGap,
     FeatureCaseRunOk,
     FeatureCaseRunResult,
+    FeatureCaseRunWrong,
     FeatureEffect,
     FeatureEntry,
     FeatureFixtureHooks,
@@ -18,6 +20,7 @@ export type {
     MatrixValidationResult,
     NegativeCaseOptions,
     PlotCaseOptions,
+    WrongCaseOptions,
 } from './matrix/index.js';
 export {
     assertValidFeatureMatrix,
@@ -34,11 +37,19 @@ export {
     roundtripCase,
     runFeatureCase,
     validateFeatureMatrix,
+    wrongCase,
 } from './matrix/index.js';
 export {
     loadDialectFeatureMatrix,
     reportDialectFeatures,
     resolveDialectFeatureMatrixEntry,
 } from './report-features.js';
-export type { FeatureGapRow } from './reporters/index.js';
-export { listGaps, summarizeMatrix, toConsoleRows, toMarkdownTable } from './reporters/index.js';
+export type { FeatureFlaggedRow, FeatureGapRow } from './reporters/index.js';
+export {
+    listCasesByFlags,
+    listGaps,
+    listWrongs,
+    summarizeMatrix,
+    toConsoleRows,
+    toMarkdownTable,
+} from './reporters/index.js';

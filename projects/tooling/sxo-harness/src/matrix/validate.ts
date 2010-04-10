@@ -43,24 +43,24 @@ export function validateFeatureMatrix(matrix: FeatureMatrix): MatrixValidationRe
         }
 
         if (entry.status === 'supported') {
-            const runnable = entry.cases.filter((c) => c.kind !== 'gap');
+            const runnable = entry.cases.filter((c) => c.kind !== 'gap' && c.kind !== 'wrong');
             if (runnable.length === 0) {
                 issues.push({
                     code: 'supported_without_runnable_case',
                     entry: entry.name,
-                    message: `Feature \`${entry.name}\` is \`supported\` but has no non-\`gap\` case`,
+                    message: `Feature \`${entry.name}\` is \`supported\` but has no runnable (non-\`gap\`/\`wrong\`) case`,
                 });
             }
         }
 
         if (entry.status === 'planned') {
             for (const c of entry.cases) {
-                if (c.kind !== 'gap') {
+                if (c.kind !== 'gap' && c.kind !== 'wrong') {
                     issues.push({
                         code: 'planned_non_gap_case',
                         entry: entry.name,
                         caseId: c.id,
-                        message: `Feature \`${entry.name}\` is \`planned\` but case \`${c.id}\` has kind \`${c.kind}\` (only \`gap\` allowed)`,
+                        message: `Feature \`${entry.name}\` is \`planned\` but case \`${c.id}\` has kind \`${c.kind}\` (only \`gap\`/\`wrong\` allowed)`,
                     });
                 }
             }
@@ -101,5 +101,5 @@ export function assertValidFeatureMatrix(matrix: FeatureMatrix): void {
 }
 
 export function listRunnableCases(entry: FeatureEntry): FeatureEntry['cases'] {
-    return entry.cases.filter((c) => c.kind !== 'gap');
+    return entry.cases.filter((c) => c.kind !== 'gap' && c.kind !== 'wrong');
 }

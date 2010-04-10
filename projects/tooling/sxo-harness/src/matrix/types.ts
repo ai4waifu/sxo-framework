@@ -4,7 +4,7 @@ export type FeatureStatus = 'supported' | 'partial' | 'unsupported' | 'planned';
 
 export type FeatureEffect = 'pure' | 'stateful' | 'effectful' | 'unevaluated';
 
-export type CaseKind = 'eval' | 'parse' | 'roundtrip' | 'plot' | 'negative' | 'gap';
+export type CaseKind = 'eval' | 'parse' | 'roundtrip' | 'plot' | 'negative' | 'gap' | 'wrong';
 
 /** Execution host for a matrix case or report row. */
 export type FeatureHost = 'native' | 'wasm';
@@ -14,6 +14,12 @@ export type FeatureHost = 'native' | 'wasm';
  * External reference backends are local opt-in only.
  */
 export type FeatureBackend = 'internal-athena' | 'internal-titan' | 'reference-wolfram' | 'reference-matlab' | 'reference-pari-gp';
+
+/**
+ * Retrievable case tags for triage (e.g. `wrong`, `upstream-athena`).
+ * Convention: `wrong` is always present on `kind: 'wrong'` cases.
+ */
+export type FeatureCaseFlag = string;
 
 export type FeatureCase = {
     id: string;
@@ -30,6 +36,8 @@ export type FeatureCase = {
     backend?: FeatureBackend;
     /** Optional device tag when `backend` is `internal-titan`. */
     device?: string;
+    /** Optional triage flags (`wrong`, `upstream-athena`, …). */
+    flags?: readonly FeatureCaseFlag[];
 };
 
 export type FeatureEntry = {

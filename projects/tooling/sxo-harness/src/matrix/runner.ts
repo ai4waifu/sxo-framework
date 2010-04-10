@@ -17,9 +17,10 @@ export type FeatureFixtureHooks = {
 
 export type FeatureCaseRunOk = { status: 'ok' };
 export type FeatureCaseRunGap = { status: 'gap' };
+export type FeatureCaseRunWrong = { status: 'wrong' };
 export type FeatureCaseRunFail = { status: 'fail'; message: string };
 
-export type FeatureCaseRunResult = FeatureCaseRunOk | FeatureCaseRunGap | FeatureCaseRunFail;
+export type FeatureCaseRunResult = FeatureCaseRunOk | FeatureCaseRunGap | FeatureCaseRunWrong | FeatureCaseRunFail;
 
 function fail(message: string): FeatureCaseRunFail {
     return { status: 'fail', message };
@@ -35,6 +36,7 @@ function assertExpected(_kind: CaseKind, expected: string | undefined): expected
  */
 export function runFeatureCase(hooks: FeatureFixtureHooks, c: FeatureCase): FeatureCaseRunResult {
     if (c.kind === 'gap') return { status: 'gap' };
+    if (c.kind === 'wrong') return { status: 'wrong' };
 
     if (c.kind === 'eval') {
         if (!assertExpected(c.kind, c.expected)) {

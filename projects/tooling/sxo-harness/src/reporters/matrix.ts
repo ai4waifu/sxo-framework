@@ -53,6 +53,16 @@ export type FeatureGapRow = {
     notes: string;
 };
 
+export type FeatureFlaggedRow = {
+    name: string;
+    id: string;
+    kind: string;
+    input: string;
+    expected: string;
+    flags: string;
+    notes: string;
+};
+
 /** Gap cases for upstream handoff lists. */
 export function listGaps(matrix: FeatureMatrix): FeatureGapRow[] {
     const out: FeatureGapRow[] = [];
@@ -68,6 +78,33 @@ export function listGaps(matrix: FeatureMatrix): FeatureGapRow[] {
         }
     }
     return out;
+}
+
+/** Cases carrying any of the requested flags (e.g. `wrong`, `upstream-athena`). */
+export function listCasesByFlags(matrix: FeatureMatrix, flags: readonly string[]): FeatureFlaggedRow[] {
+    const want = new Set(flags);
+    const out: FeatureFlaggedRow[] = [];
+    for (const e of matrix) {
+        for (const c of e.cases) {
+            const caseFlags = c.flags ?? [];
+            if (!caseFlags.some((f) => want.has(f))) continue;
+            out.push({
+                name: e.name,
+                id: c.id,
+                kind: c.kind,
+                input: c.input,
+                expected: c.expected ?? '',
+                flags: caseFlags.join(','),
+                notes: c.notes ?? e.notes ?? e.status,
+            });
+        }
+    }
+    return out;
+}
+
+/** Convenience: all `kind: 'wrong'` / flag `wrong` rows. */
+export function listWrongs(matrix: FeatureMatrix): FeatureFlaggedRow[] {
+    return listCasesByFlags(matrix, ['wrong']);
 }
 
 export function summarizeMatrix(matrix: FeatureMatrix): {

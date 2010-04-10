@@ -66,6 +66,23 @@ describe('feature matrix builders', () => {
         expect(gapCase('g', 'todo')).toEqual({ id: 'g', kind: 'gap', input: 'todo' });
     });
 
+    it('builds wrong cases with default wrong flag', () => {
+        const exp = feature('Exp', 'elementary')
+            .partial('upstream')
+            .pure()
+            .wrong('exp.0', 'Exp[0]', { expected: '1', flags: ['upstream-athena'], notes: 'unevaluated' })
+            .done();
+        expect(exp.cases[0]).toEqual({
+            id: 'exp.0',
+            kind: 'wrong',
+            input: 'Exp[0]',
+            expected: '1',
+            notes: 'unevaluated',
+            flags: ['wrong', 'upstream-athena'],
+        });
+        expect(validateFeatureMatrix(matrix(exp)).ok).toBe(true);
+    });
+
     it('supports entry() and matrix() assembly', () => {
         const m = matrix(
             entry('Abs', 'arithmetic', 'supported', 'pure', [evalCase('abs.neg', 'Abs[-1]', '1')]),
