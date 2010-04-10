@@ -37,9 +37,13 @@ export const calculusFeatures = [
         .gap('limit.inf', 'Limit[1/x, x -> Infinity]', { expected: '0', notes: 'pinned Athena returns Limit[x^-1, {x, Infinity}]' })
         .done(),
     feature('Series', 'calculus')
-        .partial('Exp order-2 OK as float 0.5; order-3 drops /6 (…+x^3 not …+x^3/6); Sin series wrong; Normal wrapper unevaluated')
+        .partial('Exp order-2 blocked on upstream `Exp[0]` residual; order-3 and Sin series still wrong')
         .pure()
-        .eval('series.exp', 'Series[Exp[x], {x, 0, 2}]', '1 + x + 0.5*x^2')
+        .wrong('series.exp', 'Series[Exp[x], {x, 0, 2}]', {
+            expected: '1 + x + 0.5*x^2',
+            flags: ['upstream-athena'],
+            notes: 'got `Exp[0] + x*Exp[0] + 1/2*x^2*Exp[0]` when `Exp[0]` does not fold',
+        })
         .gap('series.exp3', 'Series[Exp[x], {x, 0, 3}]', { expected: '1 + x + x^2/2 + x^3/6', notes: 'currently 1 + x + 0.5*x^2 + x^3' })
         .gap('series.sin', 'Series[Sin[x], {x, 0, 3}]', { expected: 'x - x^3/6', notes: 'currently x + -(x^3)' })
         .done(),
@@ -62,10 +66,14 @@ export const calculusFeatures = [
         .gap('inversefourier.impulse', 'InverseFourier[{1, 0, 0, 0}]', { expected: '...' })
         .done(),
     feature('Residue', 'calculus')
-        .partial('simple poles at 0 OK; shifted pole Residue[1/(z-1),{z,1}] unevaluated')
+        .partial('simple poles at 0 OK; `Exp[z]/z` blocked on upstream `Exp[0]`; shifted pole unevaluated')
         .pure()
         .eval('residue.1_z', 'Residue[1/z, {z, 0}]', '1')
-        .eval('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', '1')
+        .wrong('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', {
+            expected: '1',
+            flags: ['upstream-athena'],
+            notes: 'got `Exp[0]` when residual Exp does not fold',
+        })
         .gap('residue.shift', 'Residue[1/(z - 1), {z, 1}]', {
             expected: '1',
             notes: 'stays Residue[1/(z - 1), {z, 1}]; no longer silently returns 0',
@@ -77,9 +85,9 @@ export const calculusFeatures = [
         .gap('ilaplace.exp', 'InverseLaplaceTransform[1/(s + a), s, t]', { expected: 'Exp[-a*t]' })
         .done(),
     feature('DAbs', 'calculus')
-        .partial('D[Abs[x],x] → Abs[x]/x form (x^-1*Abs[x]); acceptable rewrite, not Sign[x]')
+        .partial('D[Abs[x],x] → Abs[x]/x form (`x^(-1)*Abs[x]`); acceptable rewrite, not `Sign[x]`')
         .pure()
-        .eval('dabs.x', 'D[Abs[x], x]', 'x^-1*Abs[x]')
+        .eval('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]')
         .done(),
     feature('Curl', 'calculus')
         .unsupported('unevaluated Curl[{-y,x},{x,y}]')

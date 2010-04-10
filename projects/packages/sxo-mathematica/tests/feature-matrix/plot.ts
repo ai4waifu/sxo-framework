@@ -9,11 +9,15 @@ export const plotFeatures = [
         .done(),
     feature('Plot', 'plot')
         .partial(
-            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no Frame, not commercial MMA axes-at-origin. Negative domain {x,-1,1} via unary-minus fold',
+            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no Frame, not commercial MMA axes-at-origin. `plot.sin` blocked when Athena sampling yields empty Apollo data',
         )
         .effectful()
         .plot('plot.square', 'Plot[x^2, {x, 0, 1}]', { expected: '<svg' })
-        .plot('plot.sin', 'Plot[Sin[x], {x, 0, 6}]', { expected: '<svg' })
+        .wrong('plot.sin', 'Plot[Sin[x], {x, 0, 6}]', {
+            expected: '<svg',
+            flags: ['upstream-athena'],
+            notes: 'APOLLO_EMPTY_DATA on pin `53a7a5dd` (cascade from specials/sampling)',
+        })
         .gap('plot.neg_domain', 'Plot[x^2, {x, -1, 1}]', { expected: '<svg', notes: 'currently not a supported 1-D plot form' })
         .done(),
     feature('ParametricPlot', 'plot')

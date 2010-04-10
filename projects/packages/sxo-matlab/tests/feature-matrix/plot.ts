@@ -3,11 +3,15 @@ import { feature } from '@sxo/harness';
 export const plotFeatures = [
     feature('plot', 'plot')
         .partial(
-            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no boxed frame, not MATLAB default blue. Negative a/b via unary-minus fold; 2-arg plot(f,[a,b]) gap',
+            'SVG→PNG visual: curve+L-axes readable; missing tick labels, no boxed frame, not MATLAB default blue. `plot.sin` blocked when Athena sampling yields empty Apollo data',
         )
         .effectful()
         .plot('plot.square', 'plot(x^2, x, 0, 1)', { expected: '<svg' })
-        .plot('plot.sin', 'plot(sin(x), x, 0, 6)', { expected: '<svg' })
+        .wrong('plot.sin', 'plot(sin(x), x, 0, 6)', {
+            expected: '<svg',
+            flags: ['upstream-athena'],
+            notes: 'APOLLO_EMPTY_DATA on pin `53a7a5dd` (cascade from specials/sampling)',
+        })
         .gap('plot.neg_domain', 'plot(x^2, x, -1, 1)', { expected: '<svg', notes: 'currently not a supported 1-D plot form' })
         .gap('plot.range_vec', 'plot(sin(x), [-pi, pi])', { expected: '<svg', notes: 'surface sugar for domain vector' })
         .done(),

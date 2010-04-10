@@ -15,8 +15,9 @@ describe('@sxo/mathematica feature matrix', () => {
     for (const entry of featureMatrix) {
         describe(`${entry.name} [${entry.status}]`, () => {
             for (const c of entry.cases) {
-                if (c.kind === 'gap') {
-                    it.todo(`${c.id}: ${c.input}`);
+                if (c.kind === 'gap' || c.kind === 'wrong') {
+                    const flagNote = c.flags?.length ? ` [${c.flags.join(',')}]` : '';
+                    it.todo(`${c.id}: ${c.input}${flagNote}`);
                     continue;
                 }
 
