@@ -29,7 +29,11 @@ const PRODUCT_PACKAGE_DIRS = [
     'projects/packages/sxo-mathematica',
     'projects/packages/sxo-matlab',
     'projects/packages/sxo-simple-math',
+    'projects/packages/sxo-pari-gp',
 ];
+
+/** Dialect product packages that must declare a self-owned Feature Matrix. */
+const DIALECT_FEATURE_MATRIX_PACKAGES = ['projects/packages/sxo-mathematica', 'projects/packages/sxo-matlab', 'projects/packages/sxo-pari-gp'];
 
 const RUST_SCAN_ROOTS = ['projects/dialects', 'projects/bindings', 'projects/adapters'];
 
@@ -254,11 +258,43 @@ function main() {
             }
         }
 
-        if (exists('projects/runtimes/sxo-pari-gp') || exists('projects/packages/sxo-pari-gp')) {
+        if (exists('projects/runtimes/sxo-pari-gp')) {
             findings.push({
                 level: 'error',
-                message: 'feasibility placeholder @sxo/pari-gp must not exist',
+                message: '`projects/runtimes/sxo-pari-gp` is retired; use `projects/packages/sxo-pari-gp`',
             });
+        }
+        if (!exists('projects/packages/sxo-pari-gp/package.json')) {
+            findings.push({
+                level: 'error',
+                message: '`projects/packages/sxo-pari-gp` product package is required (Living 03/05/13)',
+            });
+        }
+        for (const dir of DIALECT_FEATURE_MATRIX_PACKAGES) {
+            if (!exists(`${dir}/package.json`)) continue;
+            try {
+                const pkg = JSON.parse(readText(`${dir}/package.json`));
+                const rel = typeof pkg?.sxo?.featureMatrix === 'string' ? pkg.sxo.featureMatrix.trim() : '';
+                if (!rel) {
+                    findings.push({
+                        level: 'error',
+                        message: `${dir}/package.json must declare sxo.featureMatrix (dialect-owned Feature Matrix)`,
+                    });
+                    continue;
+                }
+                const matrixPath = path.posix.join(dir, rel.replace(/\\/g, '/'));
+                if (!exists(matrixPath)) {
+                    findings.push({
+                        level: 'error',
+                        message: `${dir} sxo.featureMatrix points to missing file: ${rel}`,
+                    });
+                }
+            } catch (err) {
+                findings.push({
+                    level: 'error',
+                    message: `${dir}/package.json is not valid JSON (${err instanceof Error ? err.message : String(err)})`,
+                });
+            }
         }
 
         if (exists('projects/bindings/sxo-engine') || exists('projects/packages/sxo-engine')) {
