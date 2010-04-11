@@ -6,7 +6,7 @@ import type { FeatureMatrix } from './matrix/types.js';
 import { validateFeatureMatrix } from './matrix/validate.js';
 import { toConsoleRows, toMarkdownTable } from './reporters/matrix.js';
 
-type DialectId = 'mathematica' | 'matlab';
+type DialectId = 'mathematica' | 'matlab' | 'pari-gp';
 
 const require = createRequire(import.meta.url);
 
@@ -14,6 +14,7 @@ const require = createRequire(import.meta.url);
 const DIALECT_PACKAGE: Record<DialectId, string> = {
     mathematica: '@sxo/mathematica',
     matlab: '@sxo/matlab',
+    'pari-gp': '@sxo/pari-gp',
 };
 
 type SxoPackageConfig = {

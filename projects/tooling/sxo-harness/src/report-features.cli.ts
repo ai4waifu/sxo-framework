@@ -1,10 +1,10 @@
 import { loadDialectFeatureMatrix, reportDialectFeatures } from './report-features.js';
 import { listCasesByFlags } from './reporters/matrix.js';
 
-type DialectId = 'mathematica' | 'matlab';
+type DialectId = 'mathematica' | 'matlab' | 'pari-gp';
 
 function isDialectId(value: string | undefined): value is DialectId {
-    return value === 'mathematica' || value === 'matlab';
+    return value === 'mathematica' || value === 'matlab' || value === 'pari-gp';
 }
 
 function parseFlagArgs(argv: string[]): { dialect?: string; mode: string; flags: string[] } {
@@ -51,8 +51,8 @@ function parseFlagArgs(argv: string[]): { dialect?: string; mode: string; flags:
 async function main(argv: string[] = process.argv): Promise<number> {
     const { dialect: dialectArg, mode, flags } = parseFlagArgs(argv);
     if (!isDialectId(dialectArg)) {
-        console.error('Usage: report-features <mathematica|matlab> [markdown|table|wrongs]');
-        console.error('       report-features <mathematica|matlab> --flag=wrong[,upstream-athena]');
+        console.error('Usage: report-features <mathematica|matlab|pari-gp> [markdown|table|wrongs]');
+        console.error('       report-features <mathematica|matlab|pari-gp> --flag=wrong[,upstream-athena]');
         console.error('Prefer: pnpm --filter @sxo/<dialect> report:features');
         return 1;
     }
