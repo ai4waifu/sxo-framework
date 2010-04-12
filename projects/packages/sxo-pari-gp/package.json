@@ -1,0 +1,51 @@
+{
+    "name": "@sxo/pari-gp",
+    "version": "0.0.4",
+    "private": true,
+    "type": "module",
+    "description": "PARI/GP dialect frontend for SXO. Publishable product package; parser/evaluator land incrementally behind this package's Feature Matrix.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
+        "directory": "projects/packages/sxo-pari-gp"
+    },
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/packages/sxo-pari-gp",
+    "bugs": {
+        "url": "https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs"
+    },
+    "keywords": [
+        "sxo",
+        "pari",
+        "pari-gp",
+        "computer-algebra",
+        "symbolic-computation"
+    ],
+    "license": "Apache-2.0",
+    "sxo": {
+        "featureMatrix": "./tests/feature-matrix/index.ts"
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "test": "vitest run",
+        "report:features": "vite-node ./tests/feature-matrix/report.ts"
+    },
+    "devDependencies": {
+        "@sxo/harness": "workspace:*",
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3",
+        "vite-node": "^3.2.4",
+        "vitest": "^3.2.4"
+    }
+}

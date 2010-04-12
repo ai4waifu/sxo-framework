@@ -151,6 +151,24 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
 
+  projects/packages/sxo-pari-gp:
+    devDependencies:
+      '@sxo/harness':
+        specifier: workspace:*
+        version: link:../../tooling/sxo-harness
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vite-node:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
+
   projects/packages/sxo-simple-math:
     dependencies:
       '@sxo/core':

@@ -35,6 +35,7 @@ const JS_PACKAGES = [
     { dir: 'projects/packages/sxo-simple-math', publishName: '@sxo/simple-math' },
     { dir: 'projects/packages/sxo-mathematica', publishName: '@sxo/mathematica' },
     { dir: 'projects/packages/sxo-matlab', publishName: '@sxo/matlab' },
+    { dir: 'projects/packages/sxo-pari-gp', publishName: '@sxo/pari-gp' },
     { dir: 'projects/packages/sxo', publishName: '@sxo/sxo' },
 ];
 
