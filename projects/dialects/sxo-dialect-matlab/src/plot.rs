@@ -62,6 +62,6 @@ fn term_as_f64(session: &mut Session, id: TermId) -> Option<f64> {
     if let Some(n) = number_from_id(session, id) {
         return to_f64_lossy(n);
     }
-    let folded = session.evaluate(id);
+    let folded = session.evaluate(id).ok()?;
     to_f64_lossy(number_from_id(session, folded)?)
 }
