@@ -31,11 +31,31 @@ export class Expression {
         return new Expression(this.#inner.simplify());
     }
 
+    /** Evaluate via dialect `lower_request` (preserves Athena status / coverage). */
+    evaluate(): Expression {
+        return new Expression(this.#inner.evaluate());
+    }
+
     toString(): string {
         return this.#inner.toString();
     }
 
     isEqual(other: Expression): boolean {
         return this.#inner.isEqual(other.#inner);
+    }
+
+    /** Athena computation status name from the last evaluate. */
+    get status(): string {
+        return this.#inner.status;
+    }
+
+    /** Coverage name from the last evaluate. */
+    get coverage(): string {
+        return this.#inner.coverage;
+    }
+
+    /** Diagnostic summaries from the last evaluate. */
+    get diagnostics(): string[] {
+        return this.#inner.diagnostics;
     }
 }

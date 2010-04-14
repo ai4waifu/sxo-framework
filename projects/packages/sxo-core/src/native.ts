@@ -15,6 +15,12 @@ export type NativeExpression = {
     isEqual(other: NativeExpression): boolean;
     plotSvg(): string;
     dialect: string;
+    /** Athena `ComputationStatus` name from the last evaluate (`Exact`, `Candidate`, …). */
+    status: string;
+    /** Coverage name (`Full`, `Partial`, `Unknown`, `Unsupported`). */
+    coverage: string;
+    /** Diagnostic summaries from the last evaluate. */
+    diagnostics: string[];
 };
 
 /** Full native host ABI used by `@sxo/core` and dialect adapters. */
