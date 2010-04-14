@@ -28,7 +28,14 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, &input, d)?;
     let root = session.differentiate_term(term, &var);
-    Ok(Expression { session, root, dialect: resolved })
+    Ok(Expression {
+        session,
+        root,
+        dialect: resolved,
+        status: "Unknown".into(),
+        coverage: "Unknown".into(),
+        diagnostics: Vec::new(),
+    })
 }
 
 /// Top-level `evaluate(expr, dialect?)` — parse + dialect `lower_request` path.
@@ -36,8 +43,15 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
 pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
-    let root = session.evaluate_input(&input, d).map_err(map_err)?;
-    Ok(Expression { session, root, dialect: d })
+    let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
+    Ok(Expression {
+        session,
+        root: outcome.term,
+        dialect: d,
+        status: outcome.status,
+        coverage: outcome.coverage,
+        diagnostics: outcome.diagnostics,
+    })
 }
 
 /// Top-level `simplify(expr, dialect?)`.
@@ -45,9 +59,16 @@ pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
-    let evaluated = session.evaluate_input(&input, d).map_err(map_err)?;
-    let root = session.simplify_term(evaluated);
-    Ok(Expression { session, root, dialect: d })
+    let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
+    let root = session.simplify_term(outcome.term);
+    Ok(Expression {
+        session,
+        root,
+        dialect: d,
+        status: outcome.status,
+        coverage: outcome.coverage,
+        diagnostics: outcome.diagnostics,
+    })
 }
 
 /// Top-level `expression(input, dialect?)` — parse only (no evaluate).

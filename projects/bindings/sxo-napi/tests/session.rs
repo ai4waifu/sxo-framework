@@ -15,8 +15,10 @@ use sxo_types::Dialect;
 fn math_evaluate_arith() {
     let session = Session::new();
     let e = session.evaluate_mathematica("1 + 2 * 3").unwrap();
+    assert_eq!(e.status, "Exact");
+    assert_eq!(e.coverage, "Full");
     let seven = session.with_math_mut(|s| push_int(s, 7));
-    assert!(session.structural_eq(e, seven));
+    assert!(session.structural_eq(e.term, seven));
 }
 
 #[test]
@@ -31,6 +33,8 @@ fn wexpr_roundtrip_via_session() {
 fn big_integer_arithmetic() {
     let session = Session::new();
     let e = session.evaluate_mathematica("99999999999999999999 + 1").unwrap();
+    assert_eq!(e.status, "Exact");
+    assert_eq!(e.coverage, "Full");
     let expected_n = parse_number_literal("100000000000000000000").unwrap();
     let expected = session.with_math_mut(|s| {
         s.arena.push(
@@ -38,7 +42,7 @@ fn big_integer_arithmetic() {
             athena::types::SourceSpan::default(),
         )
     });
-    assert!(session.structural_eq(e, expected));
+    assert!(session.structural_eq(e.term, expected));
 }
 
 #[test]
@@ -61,8 +65,22 @@ fn dialect_d_limit_series_lower_to_domain() {
         AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative { .. })))
     ));
     let d_out = session.evaluate_mathematica("D[x^3, x]").unwrap();
-    let d_s = session.render_as_wolfram(d_out);
+    let d_s = session.render_as_wolfram(d_out.term);
     assert!(d_s.contains('x'), "got {d_s}");
+    // Domain Goal → IR → Result：微积分未准入时为 Candidate，不得静默落成原式成功。
+    assert!(
+        matches!(d_out.status.as_str(), "Candidate" | "Exact"),
+        "unexpected status {}",
+        d_out.status
+    );
+}
+
+#[test]
+fn residual_unevaluated_is_not_exact_full() {
+    let session = Session::new();
+    let out = session.evaluate_mathematica("Cos[x]").unwrap();
+    assert_ne!(out.status, "Exact", "unevaluated Cos[x] must not claim Exact");
+    assert_ne!(out.coverage, "Full", "unevaluated Cos[x] must not claim Full coverage");
 }
 
 #[test]
@@ -70,11 +88,11 @@ fn session_set_persists_across_mathematica_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let six = session.with_math_mut(|s| push_int(s, 6));
-    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap(), five));
-    assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap(), six));
+    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap().term, five));
+    assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap().term, six));
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
-    let text = session.with_math(|s| term_debug(s, cleared));
+    let text = session.with_math(|s| term_debug(s, cleared.term));
     assert!(text.contains("Plus") || text.contains("Add") || text.contains('+'), "expected free Plus after clear, got {text}");
 }
 
@@ -83,8 +101,8 @@ fn session_set_persists_across_matlab_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let six = session.with_math_mut(|s| push_int(s, 6));
-    assert!(session.structural_eq(session.evaluate_matlab("x = 5").unwrap(), five));
-    assert!(session.structural_eq(session.evaluate_matlab("x + 1").unwrap(), six));
+    assert!(session.structural_eq(session.evaluate_matlab("x = 5").unwrap().term, five));
+    assert!(session.structural_eq(session.evaluate_matlab("x + 1").unwrap().term, six));
 }
 
 #[test]
@@ -92,10 +110,10 @@ fn session_setdelayed_evaluates_on_use() {
     let session = Session::new();
     let null = session.evaluate_mathematica("a := 1 + 1").unwrap();
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(null), Some(TermNode::Atom(Atom::Null))));
+        assert!(matches!(s.arena.get(null.term), Some(TermNode::Atom(Atom::Null))));
     });
     let two = session.with_math_mut(|s| push_int(s, 2));
-    assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap(), two));
+    assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap().term, two));
 }
 
 #[test]
@@ -103,9 +121,9 @@ fn module_does_not_clobber_session_binding() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let two = session.with_math_mut(|s| push_int(s, 2));
-    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap(), five));
-    assert!(session.structural_eq(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap(), two));
-    assert!(session.structural_eq(session.evaluate_mathematica("x").unwrap(), five));
+    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap().term, five));
+    assert!(session.structural_eq(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().term, two));
+    assert!(session.structural_eq(session.evaluate_mathematica("x").unwrap().term, five));
 }
 
 #[test]
@@ -141,10 +159,10 @@ fn probe_eval_forms() {
         });
         let out = session.evaluate_form(root, dialect).unwrap();
         let rendered = match dialect {
-            Dialect::Matlab => session.render_as_matlab(out),
-            _ => session.render_as_wolfram(out),
+            Dialect::Matlab => session.render_as_matlab(out.term),
+            _ => session.render_as_wolfram(out.term),
         };
-        eprintln!("IN={input} kind={kind} out={rendered}");
+        eprintln!("IN={input} kind={kind} status={} coverage={} out={rendered}", out.status, out.coverage);
     }
 }
 

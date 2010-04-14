@@ -17,6 +17,34 @@ pub struct Expression {
     pub(crate) session: Session,
     pub(crate) root: TermId,
     pub(crate) dialect: Dialect,
+    /// Athena [`ComputationStatus`] name from the last evaluate (or `Unknown` if not evaluated).
+    pub(crate) status: String,
+    /// Coverage name from the last evaluate (or `Unknown` if not evaluated).
+    pub(crate) coverage: String,
+    /// Diagnostic summaries from the last evaluate.
+    pub(crate) diagnostics: Vec<String>,
+}
+
+fn with_outcome(session: Session, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
+    Expression {
+        session,
+        root: outcome.term,
+        dialect,
+        status: outcome.status,
+        coverage: outcome.coverage,
+        diagnostics: outcome.diagnostics,
+    }
+}
+
+fn unevaluated(session: Session, root: TermId, dialect: Dialect) -> Expression {
+    Expression {
+        session,
+        root,
+        dialect,
+        status: "Unknown".into(),
+        coverage: "Unknown".into(),
+        diagnostics: Vec::new(),
+    }
 }
 
 /// Fork `root` into a fresh host [`Session`] via dialect-native round-trip.
@@ -35,7 +63,7 @@ fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<
             fresh.lower_mathematica(&w)
         }
     };
-    Ok(Expression { session: fresh, root, dialect })
+    Ok(unevaluated(fresh, root, dialect))
 }
 
 #[napi]
@@ -46,7 +74,7 @@ impl Expression {
         let d = dialect_from_str(dialect)?;
         let session = Session::new();
         let (root, resolved) = parse_to_term(&session, &input, d)?;
-        Ok(Self { session, root, dialect: resolved })
+        Ok(unevaluated(session, root, resolved))
     }
 
     /// Differentiate with respect to `var`.
@@ -72,15 +100,33 @@ impl Expression {
             Dialect::Matlab => {
                 let text = self.session.render_as_matlab(self.root);
                 let session = Session::new();
-                let root = session.evaluate_matlab(&text).map_err(map_err)?;
-                Ok(Expression { session, root, dialect: Dialect::Matlab })
+                let outcome = session.evaluate_matlab(&text).map_err(map_err)?;
+                Ok(with_outcome(session, Dialect::Matlab, outcome))
             }
             Dialect::Mathematica | Dialect::SimpleMath => {
-                let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-                out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
-                Ok(out)
+                let out = fork_expression(&self.session, self.root, self.dialect)?;
+                let outcome = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
+                Ok(with_outcome(out.session, out.dialect, outcome))
             }
         }
+    }
+
+    /// Athena computation status name (`Exact`, `Candidate`, `Unknown`, …).
+    #[napi(getter)]
+    pub fn status(&self) -> String {
+        self.status.clone()
+    }
+
+    /// Coverage name (`Full`, `Partial`, `Unknown`, `Unsupported`).
+    #[napi(getter)]
+    pub fn coverage(&self) -> String {
+        self.coverage.clone()
+    }
+
+    /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
+    #[napi(getter)]
+    pub fn diagnostics(&self) -> Vec<String> {
+        self.diagnostics.clone()
     }
 
     /// Render as string in the expression's dialect.
