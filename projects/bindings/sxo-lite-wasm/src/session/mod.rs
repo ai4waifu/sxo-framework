@@ -40,14 +40,14 @@ impl Session {
     /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
     /// Prefer [`Self::evaluate_form`] for dialect surface that needs `lower_request`.
     #[allow(dead_code)]
-    pub fn evaluate(&self, expr: TermId) -> TermId {
-        self.math_session.borrow_mut().evaluate(expr)
+    pub fn evaluate(&self, expr: TermId) -> Result<TermId, SxoError> {
+        self.math_session.borrow_mut().evaluate(expr).map_err(SxoError::from_diagnostic)
     }
 
-    /// Dialect Form → `lower_request` → `execute_request` → symbolic term.
+    /// Arena root → dialect request → execute on **this** session (no display-text round-trip).
     ///
     /// Prefer [`Self::evaluate_input`] / [`Self::evaluate_matlab`] for source text.
-    /// MATLAB `TermId` entry uses `lower_term_request` and must not grow new heads.
+    /// MATLAB reconstructs Form via [`matlab::lower_term_request`].
     pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
         match dialect {
             Dialect::Matlab => {
@@ -95,9 +95,9 @@ impl Session {
         ) {
             Ok(DomainResult::Calculus(r)) => {
                 let mut dc = DomainExecutionContext::new(&mut ms);
-                materialize_calculus_result_term(&mut dc, &r)
+                materialize_calculus_result_term(&mut dc, &r).unwrap_or(expr)
             }
-            _ => self.math_engine().differentiate(&mut ms, expr, var),
+            _ => self.math_engine().differentiate(&mut ms, expr, var).unwrap_or(expr),
         }
     }
 

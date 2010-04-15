@@ -174,3 +174,34 @@ fn try_plot_svg_mathematica() {
     let svg = session.try_plot_svg(id, Dialect::Mathematica).expect("extract").expect("render");
     assert!(svg.contains("<svg"), "{svg}");
 }
+
+/// Direct string evaluate and parse→`evaluate_form` must agree (R-2.11 / Living 17).
+///
+/// These cases previously diverged when MATLAB handles re-parsed display text.
+#[test]
+fn matlab_direct_and_handle_evaluate_parity() {
+    let cases = [
+        ("(1+2)*3", "9"),
+        ("1/(2+3)", "1/5"),
+        ("1-(2-3)", "2"),
+        ("[1,2].*(3+4)", "[7, 14]"),
+    ];
+    for (input, expected) in cases {
+        let direct_session = Session::new();
+        let direct = direct_session.evaluate_matlab(input).unwrap();
+        let direct_text = direct_session.render_as_matlab(direct.term);
+
+        let handle_session = Session::new();
+        let root = handle_session.parse_matlab(input).unwrap();
+        let via_handle = handle_session.evaluate_form(root, Dialect::Matlab).unwrap();
+        let handle_text = handle_session.render_as_matlab(via_handle.term);
+
+        assert_eq!(
+            direct_text, handle_text,
+            "parity failed for {input}: direct={direct_text} handle={handle_text}"
+        );
+        assert_eq!(direct_text, expected, "expected value for {input}");
+        assert_eq!(direct.status, via_handle.status, "status parity for {input}");
+        assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
+    }
+}

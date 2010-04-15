@@ -1,5 +1,7 @@
 //! Opaque WASM expression handles.
 
+use std::rc::Rc;
+
 use sxo_types::Dialect;
 use wasm_bindgen::prelude::*;
 
@@ -9,28 +11,16 @@ use crate::{
 };
 use athena::types::TermId;
 
-/// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
+/// Opaque expression handle backed by a shared host [`Session`] arena [`TermId`].
+///
+/// Evaluate / `d` / `simplify` stay on the same session. Display renderers are never
+/// used as an execution serialization format.
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Expression {
-    pub(crate) session: Session,
+    pub(crate) session: Rc<Session>,
     pub(crate) root: TermId,
     pub(crate) dialect: Dialect,
-}
-
-fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<Expression, JsValue> {
-    let fresh = Session::new();
-    let root = match dialect {
-        Dialect::Matlab => {
-            let text = session.render_as_matlab(root);
-            fresh.parse_matlab(&text).map_err(map_err)?
-        }
-        Dialect::Mathematica | Dialect::SimpleMath => {
-            let w = session.to_mathematica(root);
-            fresh.lower_mathematica(&w)
-        }
-    };
-    Ok(Expression { session: fresh, root, dialect })
 }
 
 #[wasm_bindgen]
@@ -39,40 +29,27 @@ impl Expression {
     #[wasm_bindgen(constructor)]
     pub fn new(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
         let d = dialect_from_str(dialect)?;
-        let session = Session::new();
+        let session = Rc::new(Session::new());
         let (root, resolved) = parse_to_term(&session, input, d)?;
         Ok(Self { session, root, dialect: resolved })
     }
 
-    /// Differentiate with respect to `var`.
+    /// Differentiate with respect to `var` on the same session.
     pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-        out.root = out.session.differentiate_term(out.root, var);
-        Ok(out)
+        let root = self.session.differentiate_term(self.root, var);
+        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
     }
 
-    /// Simplify via `Session`.
+    /// Simplify via `Session` on the same session.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-        out.root = out.session.simplify_term(out.root);
-        Ok(out)
+        let root = self.session.simplify_term(self.root);
+        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
     }
 
-    /// Evaluate via dialect `lower_request` (Session / Control / Domain Goals).
+    /// Evaluate via dialect `lower_request` on the same session (no display-text round-trip).
     pub fn evaluate(&self) -> Result<Expression, JsValue> {
-        match self.dialect {
-            Dialect::Matlab => {
-                let text = self.session.render_as_matlab(self.root);
-                let session = Session::new();
-                let root = session.evaluate_matlab(&text).map_err(map_err)?;
-                Ok(Expression { session, root, dialect: Dialect::Matlab })
-            }
-            Dialect::Mathematica | Dialect::SimpleMath => {
-                let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-                out.root = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
-                Ok(out)
-            }
-        }
+        let root = self.session.evaluate_form(self.root, self.dialect).map_err(map_err)?;
+        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
     }
 
     /// Render as string in the expression's dialect.

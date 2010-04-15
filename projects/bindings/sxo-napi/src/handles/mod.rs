@@ -1,5 +1,7 @@
 //! Opaque N-API expression handles.
 
+use std::rc::Rc;
+
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use sxo_types::Dialect;
@@ -10,11 +12,14 @@ use crate::{
 };
 use athena::types::TermId;
 
-/// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
+/// Opaque expression handle backed by a shared host [`Session`] arena [`TermId`].
+///
+/// Evaluate / `d` / `simplify` stay on the same session. Display renderers are never
+/// used as an execution serialization format.
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
-    pub(crate) session: Session,
+    pub(crate) session: Rc<Session>,
     pub(crate) root: TermId,
     pub(crate) dialect: Dialect,
     /// Athena [`ComputationStatus`] name from the last evaluate (or `Unknown` if not evaluated).
@@ -25,7 +30,7 @@ pub struct Expression {
     pub(crate) diagnostics: Vec<String>,
 }
 
-fn with_outcome(session: Session, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
+fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
     Expression {
         session,
         root: outcome.term,
@@ -36,7 +41,7 @@ fn with_outcome(session: Session, dialect: Dialect, outcome: sxo_types::EvalOutc
     }
 }
 
-fn unevaluated(session: Session, root: TermId, dialect: Dialect) -> Expression {
+fn unevaluated(session: Rc<Session>, root: TermId, dialect: Dialect) -> Expression {
     Expression {
         session,
         root,
@@ -47,68 +52,36 @@ fn unevaluated(session: Session, root: TermId, dialect: Dialect) -> Expression {
     }
 }
 
-/// Fork `root` into a fresh host [`Session`] via dialect-native round-trip.
-///
-/// MATLAB must **not** go through Mathematica Form — that rewrites surface heads
-/// (`diff` / `eye` / …) and breaks MATLAB `lower_request`.
-fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Result<Expression> {
-    let fresh = Session::new();
-    let root = match dialect {
-        Dialect::Matlab => {
-            let text = session.render_as_matlab(root);
-            fresh.parse_matlab(&text).map_err(map_err)?
-        }
-        Dialect::Mathematica | Dialect::SimpleMath => {
-            let w = session.to_mathematica(root);
-            fresh.lower_mathematica(&w)
-        }
-    };
-    Ok(unevaluated(fresh, root, dialect))
-}
-
 #[napi]
 impl Expression {
     /// Parse `input` with an explicit dialect (`mathematica` | `matlab` | `simple-math`).
     #[napi(factory)]
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
-        let session = Session::new();
+        let session = Rc::new(Session::new());
         let (root, resolved) = parse_to_term(&session, &input, d)?;
         Ok(unevaluated(session, root, resolved))
     }
 
-    /// Differentiate with respect to `var`.
+    /// Differentiate with respect to `var` on the same session.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-        out.root = out.session.differentiate_term(out.root, &var);
-        Ok(out)
+        let root = self.session.differentiate_term(self.root, &var);
+        Ok(unevaluated(Rc::clone(&self.session), root, self.dialect))
     }
 
-    /// Simplify via the engine (`Simplify` head).
+    /// Simplify via the engine (`Simplify` head) on the same session.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let mut out = fork_expression(&self.session, self.root, self.dialect)?;
-        out.root = out.session.simplify_term(out.root);
-        Ok(out)
+        let root = self.session.simplify_term(self.root);
+        Ok(unevaluated(Rc::clone(&self.session), root, self.dialect))
     }
 
-    /// Evaluate via dialect `lower_request` (Session / Control / Domain Goals).
+    /// Evaluate via dialect `lower_request` on the same session (no display-text round-trip).
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        match self.dialect {
-            Dialect::Matlab => {
-                let text = self.session.render_as_matlab(self.root);
-                let session = Session::new();
-                let outcome = session.evaluate_matlab(&text).map_err(map_err)?;
-                Ok(with_outcome(session, Dialect::Matlab, outcome))
-            }
-            Dialect::Mathematica | Dialect::SimpleMath => {
-                let out = fork_expression(&self.session, self.root, self.dialect)?;
-                let outcome = out.session.evaluate_form(out.root, out.dialect).map_err(map_err)?;
-                Ok(with_outcome(out.session, out.dialect, outcome))
-            }
-        }
+        let outcome = self.session.evaluate_form(self.root, self.dialect).map_err(map_err)?;
+        Ok(with_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
     /// Athena computation status name (`Exact`, `Candidate`, `Unknown`, …).

@@ -58,11 +58,11 @@ impl Session {
         self.math_session.borrow_mut().evaluate(expr).map_err(SxoError::from_diagnostic)
     }
 
-    /// Dialect Form → [`lower_request`] → execute → [`EvalOutcome`].
+    /// Arena root → dialect request → execute → [`EvalOutcome`] on **this** session.
     ///
     /// Prefer [`Self::evaluate_input`] / [`Self::evaluate_matlab`] for source text.
-    /// This `TermId` entry is transitional: MATLAB uses [`matlab::lower_term_request`]
-    /// and must not grow new request-shaped heads (add those on `MatlabForm` instead).
+    /// MATLAB reconstructs [`MatlabForm`] via [`matlab::lower_term_request`] (no display-text
+    /// round-trip). New request-shaped heads belong on `MatlabForm` / [`matlab::lower_request`].
     pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<EvalOutcome, SxoError> {
         match dialect {
             Dialect::Matlab => {

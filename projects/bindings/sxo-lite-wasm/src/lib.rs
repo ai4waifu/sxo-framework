@@ -6,6 +6,8 @@ mod dialects;
 mod handles;
 mod session;
 
+use std::rc::Rc;
+
 use handles::Expression;
 use session::Session;
 use sxo_types::VERSION as CORE_VERSION;
@@ -23,7 +25,7 @@ pub fn version() -> String {
 #[wasm_bindgen]
 pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let root = session.evaluate_input(input, d).map_err(map_err)?;
     Ok(Expression { session, root, dialect: d })
 }
@@ -32,7 +34,7 @@ pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
 #[wasm_bindgen]
 pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let (term, resolved) = parse_to_term(&session, input, d)?;
     let root = session.differentiate_term(term, var);
     Ok(Expression { session, root, dialect: resolved })
@@ -42,7 +44,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
 #[wasm_bindgen]
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let evaluated = session.evaluate_input(input, d).map_err(map_err)?;
     let root = session.simplify_term(evaluated);
     Ok(Expression { session, root, dialect: d })

@@ -34,6 +34,9 @@ jobs:
       - name: Mathematica Form boundary gate
         run: node scripts/architecture/check-mathematica-form-boundary.mjs
 
+      - name: Structured execute gate
+        run: node scripts/architecture/check-structured-execute.mjs
+
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy

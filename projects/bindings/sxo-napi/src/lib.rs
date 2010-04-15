@@ -7,6 +7,8 @@ mod handles;
 mod jupyter;
 pub mod session;
 
+use std::rc::Rc;
+
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use session::Session;
@@ -25,7 +27,7 @@ pub fn version() -> String {
 #[napi]
 pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let (term, resolved) = parse_to_term(&session, &input, d)?;
     let root = session.differentiate_term(term, &var);
     Ok(Expression {
@@ -42,7 +44,7 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
 #[napi]
 pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
     Ok(Expression {
         session,
@@ -58,7 +60,7 @@ pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
 #[napi]
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let session = Session::new();
+    let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
     let root = session.simplify_term(outcome.term);
     Ok(Expression {
