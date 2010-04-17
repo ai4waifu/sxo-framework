@@ -23,6 +23,32 @@ describe('runFeatureCase', () => {
         expect(runFeatureCase(hooks, { id: 'g', kind: 'gap', input: 'Todo[]' })).toEqual({ status: 'gap' });
     });
 
+    it('executes wrong and records actual when still incorrect', () => {
+        expect(runFeatureCase(hooks, { id: 'w', kind: 'wrong', input: '1+1', expected: '3', flags: ['wrong'] })).toEqual({
+            status: 'wrong',
+            actual: '2',
+            expected: '3',
+            threw: false,
+        });
+    });
+
+    it('fails wrong when actual matches expected so it can be promoted', () => {
+        const result = runFeatureCase(hooks, { id: 'w', kind: 'wrong', input: '1+1', expected: '2', flags: ['wrong'] });
+        expect(result.status).toBe('fail');
+        if (result.status === 'fail') {
+            expect(result.message).toContain('promote to eval');
+        }
+    });
+
+    it('records throw on wrong cases', () => {
+        expect(runFeatureCase(hooks, { id: 'w', kind: 'wrong', input: 'boom', expected: '0', flags: ['wrong'] })).toEqual({
+            status: 'wrong',
+            actual: 'boom',
+            expected: '0',
+            threw: true,
+        });
+    });
+
     it('fails eval on mismatch', () => {
         const result = runFeatureCase(hooks, { id: 'e', kind: 'eval', input: '1+1', expected: '3' });
         expect(result.status).toBe('fail');

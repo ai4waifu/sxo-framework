@@ -2,6 +2,15 @@ import { feature } from '@sxo/harness';
 
 export const arithmeticFeatures = [
     feature('plus', 'arithmetic').supported().pure().eval('plus.basic', '2 + 3', '5').done(),
+    feature('parens', 'arithmetic')
+        .supported()
+        .pure()
+        .notes('R-2.11: string and handle paths must preserve grouping (no display-text fork)')
+        .eval('parens.mul', '(1+2)*3', '9')
+        .eval('parens.div', '1/(2+3)', '1/5')
+        .eval('parens.sub', '1-(2-3)', '2')
+        .eval('parens.dottimes', '[1,2].*(3+4)', '[7, 14]')
+        .done(),
     feature('mtimes', 'arithmetic')
         .partial('scalar * and numeric nested-list matmul work; symbolic matrix * stays Times')
         .pure()

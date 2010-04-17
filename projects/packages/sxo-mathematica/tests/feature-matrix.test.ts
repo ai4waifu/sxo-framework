@@ -5,6 +5,13 @@ import { featureMatrix } from './feature-matrix/index.js';
 
 const mma = Mathematica.create({ autoSimplify: true });
 
+const hooks = {
+    evaluate: (input: string) => mma.evaluate(input).toWolfram(),
+    parse: (input: string) => mathematica.parse(input).toWolfram(),
+    plot: (input: string) => mma.plot(input),
+    isNegativeSuccess: (input: string, out: string, threw: boolean) => threw || out.includes(input.split('[')[0] ?? input),
+};
+
 describe('@sxo/mathematica feature matrix', () => {
     it('passes shared harness status rules', () => {
         const result = validateFeatureMatrix(featureMatrix);
@@ -15,22 +22,28 @@ describe('@sxo/mathematica feature matrix', () => {
     for (const entry of featureMatrix) {
         describe(`${entry.name} [${entry.status}]`, () => {
             for (const c of entry.cases) {
-                if (c.kind === 'gap' || c.kind === 'wrong') {
+                if (c.kind === 'gap') {
                     const flagNote = c.flags?.length ? ` [${c.flags.join(',')}]` : '';
                     it.todo(`${c.id}: ${c.input}${flagNote}`);
                     continue;
                 }
 
+                if (c.kind === 'wrong') {
+                    it(`${c.id} (wrong diagnostic)`, () => {
+                        const result = runFeatureCase(hooks, c);
+                        if (result.status === 'fail') {
+                            expect.fail(result.message);
+                        }
+                        expect(result.status).toBe('wrong');
+                        if (result.status === 'wrong') {
+                            expect.soft(result.actual, `expected=${JSON.stringify(result.expected)} threw=${result.threw}`).toBeDefined();
+                        }
+                    });
+                    continue;
+                }
+
                 it(`${c.id} (${c.kind})`, () => {
-                    const result = runFeatureCase(
-                        {
-                            evaluate: (input) => mma.evaluate(input).toWolfram(),
-                            parse: (input) => mathematica.parse(input).toWolfram(),
-                            plot: (input) => mma.plot(input),
-                            isNegativeSuccess: (input, out, threw) => threw || out.includes(input.split('[')[0] ?? input),
-                        },
-                        c,
-                    );
+                    const result = runFeatureCase(hooks, c);
                     expect(result.status, result.status === 'fail' ? result.message : undefined).toBe('ok');
                 });
             }

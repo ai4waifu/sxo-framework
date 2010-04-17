@@ -13,7 +13,7 @@ export type GapCaseOptions = FeatureCaseOptions & {
     expected?: string;
 };
 
-/** Known-wrong / upstream-regress contract hole (`it.todo`, does not fail CI). */
+/** Known-wrong observation: runner executes and records actual vs expected (non-blocking while still wrong). */
 export type WrongCaseOptions = FeatureCaseOptions & {
     expected?: string;
 };
@@ -84,8 +84,9 @@ export function gapCase(id: string, input: string, opts: GapCaseOptions = {}): F
 }
 
 /**
- * `wrong` case: known incorrect / unevaluated result that must not fail CI.
- * Always tagged with flag `wrong`. Add extra flags (e.g. `upstream-athena`) for retrieval.
+ * `wrong` case: observed incorrect answer or request. Runner always executes.
+ * Stays non-blocking while `actual !== expected`. Matching expected fails so the
+ * case can be promoted to `eval`. Always tagged with flag `wrong`.
  */
 export function wrongCase(id: string, input: string, opts: WrongCaseOptions = {}): FeatureCase {
     const flags = new Set<string>(['wrong', ...(opts.flags ?? [])]);

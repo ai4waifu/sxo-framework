@@ -17,7 +17,13 @@ export type FeatureFixtureHooks = {
 
 export type FeatureCaseRunOk = { status: 'ok' };
 export type FeatureCaseRunGap = { status: 'gap' };
-export type FeatureCaseRunWrong = { status: 'wrong' };
+/** Observed wrong: executed, still disagrees with expected (or threw). */
+export type FeatureCaseRunWrong = {
+    status: 'wrong';
+    actual: string;
+    expected?: string;
+    threw: boolean;
+};
 export type FeatureCaseRunFail = { status: 'fail'; message: string };
 
 export type FeatureCaseRunResult = FeatureCaseRunOk | FeatureCaseRunGap | FeatureCaseRunWrong | FeatureCaseRunFail;
@@ -33,10 +39,28 @@ function assertExpected(_kind: CaseKind, expected: string | undefined): expected
 /**
  * Run one matrix case against dialect hooks.
  * Does not talk to Vitest — callers map results to `expect` / `it.todo`.
+ *
+ * `gap` stays declarative (no execute). `wrong` always executes and records
+ * `actual` / `expected` / `threw`. Matching `expected` fails so the case can
+ * be promoted to `eval`.
  */
 export function runFeatureCase(hooks: FeatureFixtureHooks, c: FeatureCase): FeatureCaseRunResult {
     if (c.kind === 'gap') return { status: 'gap' };
-    if (c.kind === 'wrong') return { status: 'wrong' };
+
+    if (c.kind === 'wrong') {
+        let actual = '';
+        let threw = false;
+        try {
+            actual = hooks.evaluate(c.input);
+        } catch (e) {
+            threw = true;
+            actual = e instanceof Error ? e.message : String(e);
+        }
+        if (c.expected !== undefined && !threw && actual === c.expected) {
+            return fail(`wrong case \`${c.id}\` now matches expected ${JSON.stringify(c.expected)} — promote to eval`);
+        }
+        return { status: 'wrong', actual, expected: c.expected, threw };
+    }
 
     if (c.kind === 'eval') {
         if (!assertExpected(c.kind, c.expected)) {

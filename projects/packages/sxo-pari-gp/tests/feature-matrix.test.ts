@@ -20,6 +20,7 @@ describe('@sxo/pari-gp', () => {
             for (const c of entry.cases) {
                 if (c.kind === 'gap' || c.kind === 'wrong') {
                     const flagNote = c.flags?.length ? ` [${c.flags.join(',')}]` : '';
+                    // PARI/GP has no GpForm evaluate hooks yet — keep declarative until R-2.17+.
                     it.todo(`${c.id}: ${c.input}${flagNote}`);
                     continue;
                 }
