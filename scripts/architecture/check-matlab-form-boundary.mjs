@@ -1,8 +1,8 @@
 /**
- * MATLAB Form boundary gate (Living 14).
+ * MATLAB Form boundary gate (Living 14 / 17).
  *
  * - `parse.rs` must not push arena terms directly (only via `form_to_term`).
- * - `lower_term_request` must keep the transitional "do not add new heads" banner.
+ * - `lower_term_request` must not exist (hosts retain Form; no Term→Form reconstruct).
  *
  * Usage:
  *   node scripts/architecture/check-matlab-form-boundary.mjs
@@ -15,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const PARSE = path.join(ROOT, 'projects/dialects/sxo-dialect-matlab/src/parse.rs');
 const LOWER = path.join(ROOT, 'projects/dialects/sxo-dialect-matlab/src/lower.rs');
+const NAPI_SESSION = path.join(ROOT, 'projects/bindings/sxo-napi/src/session/mod.rs');
+const WASM_SESSION = path.join(ROOT, 'projects/bindings/sxo-lite-wasm/src/session/mod.rs');
 
 function fail(msg) {
     console.error(`check-matlab-form-boundary: ${msg}`);
@@ -88,9 +90,23 @@ if (!/\bform_to_term\b/.test(parseCode)) {
     fail('parse.rs must call form_to_term for the TermId bridge');
 }
 
-const lowerText = fs.readFileSync(LOWER, 'utf8');
-if (!/Do \*\*not\*\* add new request-shaped heads here/.test(lowerText)) {
-    fail('lower_term_request must keep the transitional "Do **not** add new request-shaped heads here" banner');
+const lowerCode = stripRustNoise(fs.readFileSync(LOWER, 'utf8'));
+if (/\blower_term_request\b/.test(lowerCode)) {
+    fail('lower_term_request must be deleted; hosts retain MatlabForm');
+}
+if (/\bfn term_to_form\b/.test(lowerCode)) {
+    fail('term_to_form reconstruct must be deleted; do not reverse arena Terms into Form');
+}
+
+for (const [label, file] of [
+    ['sxo-napi session', NAPI_SESSION],
+    ['sxo-lite-wasm session', WASM_SESSION],
+]) {
+    if (!fs.existsSync(file)) fail(`missing ${label}`);
+    const code = stripRustNoise(fs.readFileSync(file, 'utf8'));
+    if (/\blower_term_request\b/.test(code)) {
+        fail(`${label}: must not call lower_term_request`);
+    }
 }
 
 console.log('check-matlab-form-boundary: ok');

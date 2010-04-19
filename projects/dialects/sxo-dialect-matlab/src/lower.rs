@@ -1,7 +1,7 @@
 //! MATLAB Form → session terms / neutral [`AthenaRequest`] (Living `14`).
 //!
-//! Formal entry: [`lower_request`] on [`MatlabForm`].
-//! [`lower_term_request`] remains for hosts that already hold arena `TermId`s.
+//! Formal entry: [`lower_request`] on [`MatlabForm`]. Hosts must keep Form on
+//! parse objects; do not reconstruct Form from arena [`TermId`]s.
 
 use athena::{
     Session,
@@ -69,8 +69,7 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
 /// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
 ///
 /// Request-shaped heads match on Form. Ordinary expressions become
-/// [`AthenaRequest::Term`] via [`form_to_term`]. [`lower_term_request`] remains for
-/// hosts that already hold arena `TermId`s.
+/// [`AthenaRequest::Term`] via [`form_to_term`].
 pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
     match form {
         MatlabForm::Call { head, args } if head == "Set" => {
@@ -246,77 +245,6 @@ fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
         MatlabForm::Atom(MatlabAtom::Symbol(name)) => Some(name.as_str()),
         _ => None,
     }
-}
-
-fn is_form_request_head(head: &str) -> bool {
-    matches!(
-        head,
-        "Set"
-            | "CompoundExpression"
-            | "If"
-            | "Branch"
-            | "While"
-            | "LoopWhile"
-            | "For"
-            | "CountedLoop"
-            | "Try"
-            | "Recover"
-            | "error"
-            | "Error"
-            | "Reject"
-            | "LinearSolve"
-            | "Mldivide"
-            | "Part"
-            | "Span"
-            | "diff"
-            | "Diff"
-            | "D"
-            | "int"
-            | "Int"
-            | "integral"
-            | "Integrate"
-    )
-}
-
-/// Reconstruct a [`MatlabForm`] from an arena term (transitional Term→Form bridge).
-fn term_to_form(session: &Session, term: TermId) -> Option<MatlabForm> {
-    match session.arena.get(term)? {
-        TermNode::Atom(Atom::Number(n)) => Some(MatlabForm::number(clone_number(n))),
-        TermNode::Atom(Atom::String(s)) => Some(MatlabForm::string(s.clone())),
-        TermNode::Atom(Atom::Symbol(_)) => {
-            let name = symbol_name(session, term)?;
-            Some(MatlabForm::symbol(name))
-        }
-        TermNode::Atom(Atom::Boolean(b)) => Some(MatlabForm::bool(*b)),
-        TermNode::Atom(Atom::Null) => Some(MatlabForm::null()),
-        TermNode::Collection { elements, .. } => {
-            let items: Option<Vec<MatlabForm>> = elements.iter().map(|e| term_to_form(session, *e)).collect();
-            Some(MatlabForm::list(items?))
-        }
-        TermNode::Application { .. } => {
-            let head = application_surface_name(session, term)?;
-            let args = application_arguments(session, term)?;
-            let form_args: Option<Vec<MatlabForm>> = args.iter().map(|a| term_to_form(session, *a)).collect();
-            Some(MatlabForm::call(head, form_args?))
-        }
-        _ => None,
-    }
-}
-
-/// Lift an arena term produced by MATLAB Form materialization into a neutral [`AthenaRequest`].
-///
-/// **Transitional compatibility only** for hosts that already hold arena [`TermId`]s
-/// (`evaluate_form(TermId)`). Do **not** add new request-shaped heads here.
-/// New session / control / domain heads belong on [`lower_request`] (`MatlabForm` match).
-pub fn lower_term_request(session: &mut Session, term: TermId) -> AthenaRequest {
-    if let Some(form) = term_to_form(session, term) {
-        if let MatlabForm::Call { head, .. } = &form {
-            if is_form_request_head(head) {
-                return lower_request(session, &form);
-            }
-        }
-    }
-    AthenaRequest::Term(term)
 }
 
 fn calculus_goal(request: CalculusRequest) -> AthenaRequest {

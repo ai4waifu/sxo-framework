@@ -38,39 +38,48 @@ impl Session {
     }
 
     /// Evaluate a term through Athena (no Athena-term reverse-parse into calculus Goal).
-    /// Prefer [`Self::evaluate_form`] for dialect surface that needs `lower_request`.
+    /// Prefer Form evaluate helpers for dialect surface that needs `lower_request`.
     #[allow(dead_code)]
     pub fn evaluate(&self, expr: TermId) -> Result<TermId, SxoError> {
         self.math_session.borrow_mut().evaluate(expr).map_err(SxoError::from_diagnostic)
     }
 
-    /// Arena root → dialect request → execute on **this** session (no display-text round-trip).
-    ///
-    /// Prefer [`Self::evaluate_input`] / [`Self::evaluate_matlab`] for source text.
-    /// MATLAB reconstructs Form via [`matlab::lower_term_request`].
-    pub fn evaluate_form(&self, root: TermId, dialect: Dialect) -> Result<TermId, SxoError> {
-        match dialect {
-            Dialect::Matlab => {
-                let mut ms = self.math_session.borrow_mut();
-                let request = matlab::lower_term_request(&mut ms, root);
-                match self.math_engine().execute_request(&mut ms, request) {
-                    Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(root)),
-                    Err(d) => Err(SxoError::from_diagnostic(d)),
-                }
-            }
-            Dialect::Mathematica | Dialect::SimpleMath => {
-                let w = self.to_mathematica(root);
-                let mut ms = self.math_session.borrow_mut();
-                let request = mathematica::lower_request(&mut ms, &w);
-                match self.math_engine().execute_request(&mut ms, request) {
-                    Ok(result_id) => Ok(ms
-                        .results
-                        .get(result_id)
-                        .and_then(|r| r.symbolic_term)
-                        .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
-                    Err(d) => Err(SxoError::from_diagnostic(d)),
-                }
-            }
+    /// Evaluate a held MATLAB Form via [`matlab::lower_request`] on this session.
+    pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<TermId, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        let request = matlab::lower_request(&mut ms, form);
+        let fallback = match &request {
+            athena::api::AthenaRequest::Term(term) => *term,
+            _ => matlab::form_to_term(&mut ms, form),
+        };
+        match self.math_engine().execute_request(&mut ms, request) {
+            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
+    }
+
+    /// Evaluate a held Wolfram Form via [`mathematica::lower_request`] on this session.
+    pub fn evaluate_wolfram_form(&self, form: &WolframForm) -> Result<TermId, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        let request = mathematica::lower_request(&mut ms, form);
+        let fallback = mathematica::lower_wexpr(&mut ms, form);
+        match self.math_engine().execute_request(&mut ms, request) {
+            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
+    }
+
+    /// Re-evaluate an arena term already owned by this session.
+    pub fn evaluate_term(&self, root: TermId) -> Result<TermId, SxoError> {
+        match self.math_engine().execute_request(&mut self.math_session.borrow_mut(), athena::api::AthenaRequest::Term(root)) {
+            Ok(result_id) => Ok(self
+                .math_session
+                .borrow()
+                .results
+                .get(result_id)
+                .and_then(|r| r.symbolic_term)
+                .unwrap_or(root)),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
 
@@ -131,8 +140,7 @@ impl Session {
     #[allow(dead_code)]
     pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        let root = self.lower_mathematica(&w);
-        self.evaluate_form(root, Dialect::Mathematica)
+        self.evaluate_wolfram_form(&w)
     }
 
     /// Differentiate Wolfram input.
@@ -152,39 +160,28 @@ impl Session {
         matlab::parse_matlab(&mut self.math_session.borrow_mut(), input)
     }
 
+    /// Parse MATLAB text into [`matlab::MatlabForm`] (no evaluate).
+    pub fn parse_matlab_form(&self, input: &str) -> Result<matlab::MatlabForm, SxoError> {
+        matlab::parse_matlab_form(input)
+    }
+
+    /// Materialize a MATLAB Form into this session arena.
+    pub fn lower_matlab(&self, form: &matlab::MatlabForm) -> TermId {
+        matlab::form_to_term(&mut self.math_session.borrow_mut(), form)
+    }
+
     /// Parse MATLAB, lift via Form → Athena request, execute.
     #[allow(dead_code)]
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
-        let form = matlab::parse_matlab_form(input)?;
-        let mut ms = self.math_session.borrow_mut();
-        let request = matlab::lower_request(&mut ms, &form);
-        let fallback = match &request {
-            athena::api::AthenaRequest::Term(term) => *term,
-            _ => matlab::form_to_term(&mut ms, &form),
-        };
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        let form = self.parse_matlab_form(input)?;
+        self.evaluate_matlab_form(&form)
     }
 
     /// Parse + dialect Form request path for an explicit dialect tag.
     pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<TermId, SxoError> {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
-            Dialect::Mathematica | Dialect::SimpleMath => {
-                let w = self.parse_mathematica(input)?;
-                let mut ms = self.math_session.borrow_mut();
-                let request = mathematica::lower_request(&mut ms, &w);
-                match self.math_engine().execute_request(&mut ms, request) {
-                    Ok(result_id) => Ok(ms
-                        .results
-                        .get(result_id)
-                        .and_then(|r| r.symbolic_term)
-                        .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
-                    Err(d) => Err(SxoError::from_diagnostic(d)),
-                }
-            }
+            Dialect::Mathematica | Dialect::SimpleMath => self.evaluate_mathematica(input),
         }
     }
 

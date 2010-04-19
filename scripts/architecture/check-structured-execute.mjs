@@ -46,6 +46,12 @@ for (const rel of TARGETS) {
   if (/\bevaluate_matlab\s*\(\s*&?\s*text\b/.test(body)) {
     fail(`${rel}: evaluate must not re-parse MATLAB display text`);
   }
+  if (/\blower_term_request\b/.test(code)) {
+    fail(`${rel}: must not call lower_term_request`);
+  }
+  if (!/\bHeldForm\b/.test(code)) {
+    fail(`${rel}: Expression must retain HeldForm on parse objects`);
+  }
 }
 
 console.log('check-structured-execute: ok');

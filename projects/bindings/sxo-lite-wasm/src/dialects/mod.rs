@@ -1,10 +1,19 @@
 //! Explicit dialect tags for the WASM surface (no auto detection).
 
+use sxo_dialect_mathematica::WolframForm;
+use sxo_dialect_matlab::MatlabForm;
 use sxo_types::{Dialect, SxoError};
 use wasm_bindgen::prelude::*;
 
 use crate::session::Session;
 use athena::types::TermId;
+
+/// Dialect Form retained on parse objects (Living 17 / R-2.11).
+#[derive(Debug, Clone)]
+pub(crate) enum HeldForm {
+    Matlab(MatlabForm),
+    Wolfram(WolframForm),
+}
 
 pub(crate) fn map_err(err: SxoError) -> JsValue {
     JsValue::from_str(&err.message)
@@ -21,16 +30,23 @@ pub(crate) fn dialect_from_str(s: Option<String>) -> Result<Dialect, JsValue> {
     }
 }
 
-pub(crate) fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect), JsValue> {
-    let term = match dialect {
+pub(crate) fn parse_held(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, HeldForm, Dialect), JsValue> {
+    match dialect {
         Dialect::Mathematica => {
             let w = session.parse_mathematica(input).map_err(map_err)?;
-            session.lower_mathematica(&w)
+            let term = session.lower_mathematica(&w);
+            Ok((term, HeldForm::Wolfram(w), dialect))
         }
-        Dialect::Matlab => session.parse_matlab(input).map_err(map_err)?,
-        Dialect::SimpleMath => {
-            return Err(JsValue::from_str("simple-math dialect is off the current delivery route"));
+        Dialect::Matlab => {
+            let form = session.parse_matlab_form(input).map_err(map_err)?;
+            let term = session.lower_matlab(&form);
+            Ok((term, HeldForm::Matlab(form), dialect))
         }
-    };
-    Ok((term, dialect))
+        Dialect::SimpleMath => Err(JsValue::from_str("simple-math dialect is off the current delivery route")),
+    }
+}
+
+pub(crate) fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect), JsValue> {
+    let (term, _, resolved) = parse_held(session, input, dialect)?;
+    Ok((term, resolved))
 }

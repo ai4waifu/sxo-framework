@@ -8,8 +8,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_matlab::{
-    MatlabAtom, MatlabForm, application_surface_name, form_to_term, lower_request, lower_term_request, parse_matlab,
-    parse_matlab_form, push_matlab_call, render_matlab, try_plot_svg,
+    MatlabAtom, MatlabForm, application_surface_name, form_to_term, lower_request, parse_matlab, parse_matlab_form,
+    push_matlab_call, render_matlab, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -40,13 +40,15 @@ impl H {
         }
     }
 
-    fn eval_id(&self, id: Tid) -> Tid {
+    fn eval_form(&self, form: &MatlabForm) -> Tid {
         let mut s = self.s.borrow_mut();
-        let request = lower_term_request(&mut s, id);
+        let request = lower_request(&mut s, form);
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
-            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(id),
-            Err(_) => id,
+            Ok(result_id) => {
+                s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| form_to_term(&mut s, form))
+            }
+            Err(_) => form_to_term(&mut s, form),
         }
     }
 
@@ -122,9 +124,9 @@ fn parse_root_semicolon_returns_last() {
 #[test]
 fn parse_pythagorean() {
     let h = H::new();
-    let t = h.parse("sin(x)^2 + cos(x)^2");
-    let wrapped = h.ap("Simplify", vec![t]);
-    assert!(h.eq(h.eval_id(wrapped), h.i(1)));
+    let body = parse_matlab_form("sin(x)^2 + cos(x)^2").unwrap();
+    let wrapped = MatlabForm::call("Simplify", vec![body]);
+    assert!(h.eq(h.eval_form(&wrapped), h.i(1)));
 }
 
 #[test]
@@ -191,10 +193,11 @@ fn parse_colon_step_flattens() {
 #[test]
 fn parse_mldivide_keeps_head() {
     let h = H::new();
-    let t = h.parse(r"A\b");
+    let form = parse_matlab_form(r"A\b").unwrap();
+    let t = form_to_term(&mut h.s.borrow_mut(), &form);
     assert_eq!(application_surface_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
     // Symbolic operands stay residual under `LinearSolve`.
-    let folded = h.eval_id(t);
+    let folded = h.eval_form(&form);
     assert_eq!(application_surface_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
     assert!(h.render(t).contains('\\'));
 }

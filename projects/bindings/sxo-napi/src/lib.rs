@@ -33,6 +33,7 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     Ok(Expression {
         session,
         root,
+        form: None,
         dialect: resolved,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
@@ -49,6 +50,7 @@ pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
     Ok(Expression {
         session,
         root: outcome.term,
+        form: None,
         dialect: d,
         status: outcome.status,
         coverage: outcome.coverage,
@@ -66,6 +68,7 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     Ok(Expression {
         session,
         root,
+        form: None,
         dialect: d,
         status: outcome.status,
         coverage: outcome.coverage,

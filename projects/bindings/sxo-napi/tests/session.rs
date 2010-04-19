@@ -140,24 +140,17 @@ fn probe_eval_forms() {
         ("x^2 == 1", Dialect::Mathematica),
         ("Equal[Power[x, 2], 1]", Dialect::Mathematica),
     ] {
-        let root = match dialect {
-            Dialect::Matlab => session.parse_matlab(input).unwrap(),
+        let out = session.evaluate_input(input, dialect).unwrap();
+        let kind = match dialect {
+            Dialect::Matlab => {
+                let form = session.parse_matlab_form(input).unwrap();
+                session.with_math_mut(|s| sxo_dialect_matlab::lower_request(s, &form).kind_name().to_string())
+            }
             _ => {
                 let w = session.parse_mathematica(input).unwrap();
-                session.lower_mathematica(&w)
+                session.with_math_mut(|s| sxo_dialect_mathematica::lower_request(s, &w).kind_name().to_string())
             }
         };
-        let kind = session.with_math_mut(|s| {
-            let req = match dialect {
-                Dialect::Matlab => sxo_dialect_matlab::lower_term_request(s, root),
-                _ => {
-                    let w = sxo_dialect_mathematica::wexpr_from_session(s, root);
-                    sxo_dialect_mathematica::lower_request(s, &w)
-                }
-            };
-            req.kind_name().to_string()
-        });
-        let out = session.evaluate_form(root, dialect).unwrap();
         let rendered = match dialect {
             Dialect::Matlab => session.render_as_matlab(out.term),
             _ => session.render_as_wolfram(out.term),
@@ -175,7 +168,7 @@ fn try_plot_svg_mathematica() {
     assert!(svg.contains("<svg"), "{svg}");
 }
 
-/// Direct string evaluate and parse→`evaluate_form` must agree (R-2.11 / Living 17).
+/// Direct string evaluate and parse→Form→evaluate must agree (R-2.11 / Living 17).
 ///
 /// These cases previously diverged when MATLAB handles re-parsed display text.
 #[test]
@@ -192,8 +185,8 @@ fn matlab_direct_and_handle_evaluate_parity() {
         let direct_text = direct_session.render_as_matlab(direct.term);
 
         let handle_session = Session::new();
-        let root = handle_session.parse_matlab(input).unwrap();
-        let via_handle = handle_session.evaluate_form(root, Dialect::Matlab).unwrap();
+        let form = handle_session.parse_matlab_form(input).unwrap();
+        let via_handle = handle_session.evaluate_matlab_form(&form).unwrap();
         let handle_text = handle_session.render_as_matlab(via_handle.term);
 
         assert_eq!(

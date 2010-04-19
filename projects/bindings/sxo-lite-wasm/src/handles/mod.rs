@@ -6,20 +6,21 @@ use sxo_types::Dialect;
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    dialects::{dialect_from_str, map_err, parse_to_term},
+    dialects::{HeldForm, dialect_from_str, map_err, parse_held},
     session::Session,
 };
 use athena::types::TermId;
 
-/// Opaque expression handle backed by a shared host [`Session`] arena [`TermId`].
+/// Opaque expression handle backed by a shared host [`Session`].
 ///
-/// Evaluate / `d` / `simplify` stay on the same session. Display renderers are never
-/// used as an execution serialization format.
+/// Parse objects retain a dialect Form. Evaluate / `d` / `simplify` stay on the same
+/// session. Display renderers are never used as an execution serialization format.
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
     pub(crate) root: TermId,
+    pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
 }
 
@@ -30,26 +31,51 @@ impl Expression {
     pub fn new(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
         let d = dialect_from_str(dialect)?;
         let session = Rc::new(Session::new());
-        let (root, resolved) = parse_to_term(&session, input, d)?;
-        Ok(Self { session, root, dialect: resolved })
+        let (root, form, resolved) = parse_held(&session, input, d)?;
+        Ok(Self {
+            session,
+            root,
+            form: Some(form),
+            dialect: resolved,
+        })
     }
 
     /// Differentiate with respect to `var` on the same session.
     pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
         let root = self.session.differentiate_term(self.root, var);
-        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
+        Ok(Expression {
+            session: Rc::clone(&self.session),
+            root,
+            form: None,
+            dialect: self.dialect,
+        })
     }
 
     /// Simplify via `Session` on the same session.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
         let root = self.session.simplify_term(self.root);
-        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
+        Ok(Expression {
+            session: Rc::clone(&self.session),
+            root,
+            form: None,
+            dialect: self.dialect,
+        })
     }
 
-    /// Evaluate via dialect `lower_request` on the same session (no display-text round-trip).
+    /// Evaluate from retained Form (parse objects) or arena term (result objects).
     pub fn evaluate(&self) -> Result<Expression, JsValue> {
-        let root = self.session.evaluate_form(self.root, self.dialect).map_err(map_err)?;
-        Ok(Expression { session: Rc::clone(&self.session), root, dialect: self.dialect })
+        let root = match &self.form {
+            Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
+            Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
+            None => self.session.evaluate_term(self.root),
+        }
+        .map_err(map_err)?;
+        Ok(Expression {
+            session: Rc::clone(&self.session),
+            root,
+            form: None,
+            dialect: self.dialect,
+        })
     }
 
     /// Render as string in the expression's dialect.

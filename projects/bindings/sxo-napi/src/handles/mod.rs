@@ -7,20 +7,22 @@ use napi_derive::napi;
 use sxo_types::Dialect;
 
 use crate::{
-    dialects::{dialect_from_str, dialect_to_str, map_err, parse_to_term},
+    dialects::{HeldForm, dialect_from_str, dialect_to_str, map_err, parse_held},
     session::Session,
 };
 use athena::types::TermId;
 
-/// Opaque expression handle backed by a shared host [`Session`] arena [`TermId`].
+/// Opaque expression handle backed by a shared host [`Session`].
 ///
-/// Evaluate / `d` / `simplify` stay on the same session. Display renderers are never
-/// used as an execution serialization format.
+/// Parse objects retain a dialect [`HeldForm`]. Evaluate / `d` / `simplify` stay on the
+/// same session. Display renderers are never used as an execution serialization format.
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
     pub(crate) root: TermId,
+    /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
+    pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
     /// Athena [`ComputationStatus`] name from the last evaluate (or `Unknown` if not evaluated).
     pub(crate) status: String,
@@ -34,6 +36,7 @@ fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::Eval
     Expression {
         session,
         root: outcome.term,
+        form: None,
         dialect,
         status: outcome.status,
         coverage: outcome.coverage,
@@ -41,10 +44,11 @@ fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::Eval
     }
 }
 
-fn unevaluated(session: Rc<Session>, root: TermId, dialect: Dialect) -> Expression {
+fn unevaluated(session: Rc<Session>, root: TermId, form: Option<HeldForm>, dialect: Dialect) -> Expression {
     Expression {
         session,
         root,
+        form,
         dialect,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
@@ -59,28 +63,33 @@ impl Expression {
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
         let session = Rc::new(Session::new());
-        let (root, resolved) = parse_to_term(&session, &input, d)?;
-        Ok(unevaluated(session, root, resolved))
+        let (root, form, resolved) = parse_held(&session, &input, d)?;
+        Ok(unevaluated(session, root, Some(form), resolved))
     }
 
     /// Differentiate with respect to `var` on the same session.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
         let root = self.session.differentiate_term(self.root, &var);
-        Ok(unevaluated(Rc::clone(&self.session), root, self.dialect))
+        Ok(unevaluated(Rc::clone(&self.session), root, None, self.dialect))
     }
 
     /// Simplify via the engine (`Simplify` head) on the same session.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
         let root = self.session.simplify_term(self.root);
-        Ok(unevaluated(Rc::clone(&self.session), root, self.dialect))
+        Ok(unevaluated(Rc::clone(&self.session), root, None, self.dialect))
     }
 
-    /// Evaluate via dialect `lower_request` on the same session (no display-text round-trip).
+    /// Evaluate from retained Form (parse objects) or arena term (result objects).
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        let outcome = self.session.evaluate_form(self.root, self.dialect).map_err(map_err)?;
+        let outcome = match &self.form {
+            Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
+            Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
+            None => self.session.evaluate_term_outcome(self.root),
+        }
+        .map_err(map_err)?;
         Ok(with_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
