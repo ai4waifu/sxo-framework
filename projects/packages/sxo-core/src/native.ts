@@ -1,8 +1,19 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
+
+/** Absolute path and fingerprint of the loaded N-API addon (acceptance identity). */
+export type NativeBinaryIdentity = {
+    path: string;
+    packageName: string;
+    triple: string;
+    /** Binding `version()` string. */
+    version: string;
+    size: number;
+    mtimeMs: number;
+};
 
 /** Opaque N-API expression handle (methods only; no arena identity). */
 export type NativeExpression = {
@@ -53,10 +64,9 @@ function platformPackage(): { name: string; triple: string } {
 }
 
 let cached: NativeBinding | null = null;
+let cachedIdentity: NativeBinaryIdentity | null = null;
 
-/** Load the platform N-API addon (cached). */
-export function loadNative(): NativeBinding {
-    if (cached) return cached;
+function resolveBinaryPath(): { name: string; triple: string; binary: string } {
     const { name, triple } = platformPackage();
     const pkgJson = require.resolve(`${name}/package.json`);
     const dir = path.dirname(pkgJson);
@@ -64,6 +74,30 @@ export function loadNative(): NativeBinding {
     if (!existsSync(binary)) {
         throw new Error(`native addon missing: ${binary} (run pnpm build:native)`);
     }
+    return { name, triple, binary };
+}
+
+/** Load the platform N-API addon (cached). */
+export function loadNative(): NativeBinding {
+    if (cached) return cached;
+    const { binary } = resolveBinaryPath();
     cached = require(binary) as NativeBinding;
     return cached;
+}
+
+/** Identity of the loaded native addon (path, size, mtime, version). */
+export function nativeBinaryIdentity(): NativeBinaryIdentity {
+    if (cachedIdentity) return cachedIdentity;
+    const { name, triple, binary } = resolveBinaryPath();
+    const binding = loadNative();
+    const st = statSync(binary);
+    cachedIdentity = {
+        path: binary,
+        packageName: name,
+        triple,
+        version: binding.version(),
+        size: st.size,
+        mtimeMs: st.mtimeMs,
+    };
+    return cachedIdentity;
 }

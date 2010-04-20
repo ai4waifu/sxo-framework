@@ -38,6 +38,23 @@ export type FeatureCase = {
     device?: string;
     /** Optional triage flags (`wrong`, `upstream-athena`, …). */
     flags?: readonly FeatureCaseFlag[];
+    /**
+     * Run evaluate in an isolated child process (native crash containment).
+     * Requires `hooks.evaluateIsolated`.
+     */
+    isolate?: boolean;
+    /** Isolation timeout in ms (default 8000). */
+    isolateTimeoutMs?: number;
+};
+
+/** Native / WASM binary fingerprint attached to executed case results. */
+export type FeatureBinaryIdentity = {
+    path: string;
+    packageName?: string;
+    triple?: string;
+    version: string;
+    size: number;
+    mtimeMs: number;
 };
 
 export type FeatureEntry = {

@@ -16,6 +16,9 @@ export type GapCaseOptions = FeatureCaseOptions & {
 /** Known-wrong observation: runner executes and records actual vs expected (non-blocking while still wrong). */
 export type WrongCaseOptions = FeatureCaseOptions & {
     expected?: string;
+    /** Child-process evaluate (crash containment). */
+    isolate?: boolean;
+    isolateTimeoutMs?: number;
 };
 
 export type NegativeCaseOptions = FeatureCaseOptions & {
@@ -39,6 +42,8 @@ function caseBase(
         backend?: FeatureBackend;
         device?: string;
         flags?: readonly string[];
+        isolate?: boolean;
+        isolateTimeoutMs?: number;
     } = {},
 ): FeatureCase {
     const out: FeatureCase = { id, kind, input };
@@ -49,6 +54,8 @@ function caseBase(
     if (extra.backend !== undefined) out.backend = extra.backend;
     if (extra.device !== undefined) out.device = extra.device;
     if (extra.flags !== undefined && extra.flags.length > 0) out.flags = [...extra.flags];
+    if (extra.isolate === true) out.isolate = true;
+    if (extra.isolateTimeoutMs !== undefined) out.isolateTimeoutMs = extra.isolateTimeoutMs;
     return out;
 }
 

@@ -22,14 +22,18 @@ export type {
     FeatureCaseRunFail,
     FeatureCaseRunGap,
     FeatureCaseRunOk,
+    FeatureCaseRunOptions,
     FeatureCaseRunResult,
     FeatureCaseRunWrong,
     FeatureFixtureHooks,
+    IsolatedEvalResult,
+    IsolatedEvalSpec,
 } from './runner.js';
-export { runFeatureCase } from './runner.js';
+export { runFeatureCase, runIsolatedEval } from './runner.js';
 export type {
     CaseKind,
     FeatureBackend,
+    FeatureBinaryIdentity,
     FeatureCase,
     FeatureCaseFlag,
     FeatureEffect,
