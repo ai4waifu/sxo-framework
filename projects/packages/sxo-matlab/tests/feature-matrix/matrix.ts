@@ -8,13 +8,15 @@ export const matrixFeatures = [
         .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
         .done(),
     feature('transpose', 'matrix')
-        .unsupported("oak rejects ' transpose literal")
+        .partial("Form distinguishes `.'` as Transpose; evaluate via MatrixValue still pending; oak may reject `'` on some literals")
         .pure()
-        .gap('transpose.vec', "[1; 2]'", { expected: '[1, 2]' })
+        .roundtrip('transpose.dot', "[1, 2].'", ".'")
+        .gap('transpose.vec', "[1; 2].'", { expected: '[1, 2]' })
         .done(),
     feature('ctranspose', 'matrix')
-        .unsupported("depends on complex literal + '")
+        .partial("Form keeps ConjugateTranspose for `'`; complex evaluate pending")
         .pure()
+        .roundtrip('ctranspose.sym', "x'", "'")
         .gap('ctranspose.basic', "[1+1i]'", { expected: '1-1i' })
         .done(),
     feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),

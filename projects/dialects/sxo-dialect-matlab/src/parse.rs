@@ -255,7 +255,8 @@ fn lower_prefix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
 fn lower_postfix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
     let e = lower_expr(&u.operand)?;
     Ok(match u.operator {
-        MatlabTokenType::Transpose | MatlabTokenType::DotTranspose => MatlabForm::call("Transpose", vec![e]),
+        MatlabTokenType::DotTranspose => MatlabForm::call("Transpose", vec![e]),
+        MatlabTokenType::Transpose => MatlabForm::call("ConjugateTranspose", vec![e]),
         other => return Err(SxoError::new(format!("matlab(ast): unsupported postfix {other:?}"))),
     })
 }

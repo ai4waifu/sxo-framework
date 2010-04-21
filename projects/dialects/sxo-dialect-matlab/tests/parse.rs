@@ -211,6 +211,17 @@ fn parse_dot_times_distinct_head() {
 }
 
 #[test]
+fn parse_transpose_forms_distinct() {
+    let nonconj = parse_matlab_form("[1, 2].'").unwrap();
+    assert_eq!(
+        nonconj,
+        MatlabForm::call("Transpose", vec![MatlabForm::list(vec![MatlabForm::int(1), MatlabForm::int(2)])])
+    );
+    let conj = parse_matlab_form("x'").unwrap();
+    assert_eq!(conj, MatlabForm::call("ConjugateTranspose", vec![MatlabForm::symbol("x")]));
+}
+
+#[test]
 fn parse_elementwise_ops_evaluate() {
     let h = H::new();
     assert!(h.eq(h.eval("[1, 2].*[3, 4]"), h.lst(vec![h.i(3), h.i(8)])));
@@ -242,6 +253,17 @@ fn parse_matrix_linear_algebra() {
 fn parse_end_index() {
     let h = H::new();
     assert!(h.eq(h.eval("[1, 2, 3](end)"), h.i(3)));
+}
+
+#[test]
+fn parse_matrix_linear_index_column_major() {
+    let h = H::new();
+    // [1,2; 3,4] column-major linear: 1,3,2,4
+    assert!(h.eq(h.eval("[1, 2; 3, 4](1)"), h.i(1)));
+    assert!(h.eq(h.eval("[1, 2; 3, 4](2)"), h.i(3)));
+    assert!(h.eq(h.eval("[1, 2; 3, 4](3)"), h.i(2)));
+    assert!(h.eq(h.eval("[1, 2; 3, 4](4)"), h.i(4)));
+    assert!(h.eq(h.eval("[1, 2; 3, 4](1, 2)"), h.i(2)));
 }
 
 #[test]

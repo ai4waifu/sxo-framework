@@ -11,8 +11,11 @@ export const indexingFeatures = [
     feature('subsref', 'indexing')
         .supported()
         .pure()
+        .notes('1-based; matrix A(k) is column-major linear index')
         .eval('subsref.vec', '[1, 2, 3](2)', '2')
         .eval('subsref.matrix', '[1, 2; 3, 4](1, 2)', '2')
+        .eval('subsref.linear', '[1, 2; 3, 4](2)', '3')
+        .eval('subsref.linear4', '[1, 2; 3, 4](4)', '4')
         .eval('subsref.slice', '[1, 2, 3](1:2)', '[1, 2]')
         .done(),
     feature('end', 'indexing').supported().pure().eval('end.index', '[1, 2, 3](end)', '3').done(),

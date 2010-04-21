@@ -112,6 +112,8 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
         "DotPower" if args.len() == 2 => {
             Some(format!("{}.^{}", power_operand(session, args[0]), power_operand(session, args[1])))
         }
+        "Transpose" if args.len() == 1 => Some(format!("{}.'", render_matlab(session, args[0]))),
+        "ConjugateTranspose" if args.len() == 1 => Some(format!("{}'", render_matlab(session, args[0]))),
         "Span" | "Range" if args.len() == 2 => {
             Some(format!("{}:{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
