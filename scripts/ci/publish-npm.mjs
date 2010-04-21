@@ -37,6 +37,7 @@ const JS_PACKAGES = [
     { dir: 'projects/packages/sxo-matlab', publishName: '@sxo/matlab' },
     { dir: 'projects/packages/sxo-pari-gp', publishName: '@sxo/pari-gp' },
     { dir: 'projects/packages/sxo', publishName: '@sxo/sxo' },
+    { dir: 'projects/tooling/sxo-skills', publishName: '@sxo/skills' },
 ];
 
 function fail(msg) {

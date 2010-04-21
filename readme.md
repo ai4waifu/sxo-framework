@@ -2,41 +2,88 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ai4waifu/sxo-framework/ci.yml?label=CI)](https://github.com/ai4waifu/sxo-framework/actions) [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/ai4waifu/sxo-framework/blob/dev/License.md) [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-339933)](https://nodejs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-first-3178C6)](https://www.typescriptlang.org/)
 
-SXO is a TypeScript-first symbolic-computation product layer for JavaScript applications. It provides dialect-aware
-parsing, symbolic forms, lowering, rendering, structured diagnostics, and dependable symbolic execution. The repository
-contains public packages, browser WebAssembly distribution, platform-selected native artifacts, command-line tools,
-notebook adapters, and development workflows.
+SXO is an open-source path for Mathematica and MATLAB users who want familiar symbolic and numerical workflows without a
+proprietary kernel. Bring Wolfram-style or MATLAB-style source into Node.js, notebooks, and TypeScript applications.
+SXO keeps the dialect frontend honest: it parses, forms, lowers, renders, and reports coverage through feature matrices
+while Athena supplies the mathematical execution behind the packages.
 
-SXO is not a replacement for Mathematica, MATLAB, or another complete commercial environment. Dialect packages
-understand a defined language surface and translate it into SXO forms. The SXO runtime provides the computation
-boundary. This separation lets applications use familiar syntax without turning partial syntax support into an incorrect
-compatibility promise.
+SXO aims to be useful as an open alternative, not a silent clone. A familiar name can parse today and still be partial,
+unsupported, or not yet executable. Prefer structured diagnostics and feature reports over compatibility slogans.
+
+## 🤖 Start with an AI coding agent
+
+Install the SXO skill first:
+
+```bash
+npx @sxo/skills
+```
+
+Then talk to your agent like a Mathematica or MATLAB user adopting an open-source alternative:
+
+```text
+I want to run my project with the open-source Mathematica alternative @sxo/mathematica.
+Help me get the workflow working in Node.js.
+If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
+SXO does not use GitHub Issues.
+```
+
+```text
+I want to implement my project with the open-source MATLAB alternative @sxo/matlab.
+Help me migrate and run the MATLAB-style parts on SXO.
+If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
+SXO does not use GitHub Issues.
+```
+
+When you later embed the same workflow in a TypeScript service or browser app, reach for `@sxo/core` or `@sxo/lite`.
+Bug and unsupported-feature reports still go to Discussions:
+
+https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs
 
 ## 🧭 Choose a Package
 
 | Goal                            | Package            | Audience                                          |
 |---------------------------------|--------------------|---------------------------------------------------|
-| Shell, CI, or scripted commands | `@sxo/sxo`         | Node.js automation users                          |
-| TypeScript integration          | `@sxo/core`        | Library and application authors                   |
-| Small predictable grammar       | `@sxo/simple-math` | Examples, education, tests                        |
-| Wolfram-style source            | `@sxo/mathematica` | Wolfram and notebook users                        |
+| Wolfram-style source            | `@sxo/mathematica` | Mathematica and notebook users                    |
 | MATLAB-style source             | `@sxo/matlab`      | MATLAB users and tooling authors                  |
+| TypeScript integration          | `@sxo/core`        | Library and application authors                   |
 | Browser or worker execution     | `@sxo/lite`        | Frontend and bundler users                        |
+| Small predictable grammar       | `@sxo/simple-math` | Examples, education, tests                        |
+| Shell, CI, or scripted commands | `@sxo/sxo`         | Node.js automation users                          |
 
 Platform packages are optional native artifacts selected by npm. The internal WASM artifact is consumed by `@sxo/lite`,
 not installed directly. The homepage is a private site application.
 
-## ⚡ First Result
+## ⚡ Traditional Install
+
+Mathematica users:
 
 ```bash
-pnpm add @sxo/simple-math
+pnpm add @sxo/mathematica
 ```
 
 ```ts
-import {d, simplify} from '@sxo/simple-math';
+import {parse} from '@sxo/mathematica';
 
-console.log(d('x^3 + sin(x)', 'x').toString());
-console.log(simplify('sin(x)^2 + cos(x)^2').toString());
+const form = parse('Hold[x^2 + 1]');
+console.log(form.toString());
+```
+
+MATLAB users:
+
+```bash
+pnpm add @sxo/matlab
+```
+
+TypeScript authors who need the shared session and handle layer:
+
+```bash
+pnpm add @sxo/core
+```
+
+Browser or Worker deployments:
+
+```bash
+pnpm add @sxo/lite
 ```
 
 Results are symbolic values, not JavaScript `number` values. Preserve their structure or cross to machine numbers
@@ -47,8 +94,9 @@ npm install --global @sxo/sxo
 sxo --help
 ```
 
-Use the CLI for pipelines and automation. Use TypeScript when you need structured results, stable diagnostics, or
-application-controlled lifetime management.
+Use the dialect package that matches your source language. Use `@sxo/core` when you need structured results, stable
+diagnostics, or application-controlled lifetime management. Use `@sxo/lite` when the deployment cannot load native
+addons.
 
 ## 🛠️ Workspace Development
 
@@ -83,14 +131,16 @@ package.
 
 ## 🌐 Dialects
 
-`@sxo/simple-math` is the smallest entry point for examples, teaching tools, tests, and lightweight applications. Its
-narrow grammar is deliberate.
+`@sxo/mathematica` is the front door for Mathematica users. It supports a defined Wolfram-style frontend surface,
+rendering, feature reporting, the `wolframscript` command, and Jupyter helpers. It is an open alternative path, not a
+bundled Wolfram kernel and not a silent promise of complete Mathematica compatibility.
 
-`@sxo/mathematica` supports a defined Wolfram-style frontend surface, rendering, feature reporting, the `wolframscript`
-command, and Jupyter helpers. It does not promise complete Mathematica compatibility or provide a Wolfram kernel.
+`@sxo/matlab` is the front door for MATLAB users. It parses supported source, lowers it to SXO/Athena forms, renders it,
+and reports unsupported or partial features. It is an open alternative frontend, not a MATLAB runtime or toolbox
+replacement.
 
-`@sxo/matlab` is a MATLAB syntax frontend. It parses supported source, lowers it to SXO/Athena forms, renders it, and
-reports unsupported or partial features. It is not a MATLAB runtime or toolbox implementation.
+`@sxo/simple-math` remains available for examples, teaching tools, tests, and lightweight applications with a
+deliberately narrow grammar.
 
 ## 🚀 Native, WASM, and Jupyter
 
@@ -148,8 +198,17 @@ Keep syntax, lowering, rendering, and runtime changes in their owning package. W
 form, lowering behavior, rendering expectation, diagnostics, and feature matrix. When adding a runtime feature, document
 Node and WASM availability, resource behavior, and session lifetime.
 
-Report the package, version, runtime, operating system, dialect, input category, and diagnostic code with bug reports.
-Keep examples runnable and avoid claiming compatibility that tests do not establish.
+## 🐞 Report a Bug or Unsupported Feature
+
+SXO does not use GitHub Issues. If a bug, unsupported feature, or unsatisfactory result blocks your Mathematica or
+MATLAB project on SXO, open a Discussion:
+
+https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs
+
+Include a short analysis, a minimal reproduction, package name and version, Node.js version, operating system and CPU,
+dialect, expected Mathematica or MATLAB behavior, and the actual SXO result or unsupported status. Desensitize all user
+data before posting: remove secrets, credentials, personal information, proprietary formulas, and confidential notebook
+content. Prefer placeholders over raw project files.
 
 ## 🔒 Security and License
 
@@ -183,24 +242,26 @@ accidental native fallback.
 
 ## ✅ What SXO Guarantees
 
-SXO guarantees package-level contracts, not universal language compatibility. A package documents the input forms it
-accepts, the result categories it returns, its runtime requirements, and the diagnostics it can produce. The common
-TypeScript layer keeps these contracts consistent across dialects. Athena supplies the mathematical runtime behind the
-supported operations.
+SXO guarantees an open, package-level path for Mathematica and MATLAB users, not universal commercial-kernel
+equivalence. A package documents the input forms it accepts, the result categories it returns, its runtime
+requirements, and the diagnostics it can produce. Feature matrices make supported, partial, and unsupported states
+visible so migration can proceed without hidden gaps. Athena supplies the mathematical runtime behind the supported
+operations.
 
-SXO also guarantees that package boundaries are explicit. Simple Math syntax is not silently interpreted as Wolfram
-Language. MATLAB frontend behavior is not presented as MATLAB execution. Native and WASM packages identify their
-different operational constraints. This makes it possible to build reliable tooling even while feature coverage expands.
+SXO also guarantees that package boundaries are explicit. Wolfram-style input stays in `@sxo/mathematica`. MATLAB-style
+input stays in `@sxo/matlab`. Native and WASM packages identify their different operational constraints. This makes it
+possible to grow into a stronger open alternative while keeping each capability honest.
 
 ## 🚧 What SXO Does Not Guarantee
 
-SXO does not guarantee that every expression accepted by a dialect is executable, that every renderer is reversible, or
-that a familiar function name has identical semantics across languages. It does not guarantee the performance profile of
-native and WASM on every workload. It does not provide a general sandbox for arbitrary untrusted programs. It does not
-replace authentication, authorization, cancellation, request limits, or deployment observability.
+SXO does not yet guarantee that every expression accepted by a dialect is executable, that every renderer is reversible,
+or that a familiar function name has identical semantics to Mathematica or MATLAB in every case. It does not guarantee
+the performance profile of native and WASM on every workload. It does not provide a general sandbox for arbitrary
+untrusted programs. It does not replace authentication, authorization, cancellation, request limits, or deployment
+observability.
 
-These limits are intentional. Honest boundaries let users compose SXO with their own application policies and let the
-project improve individual dialect features without changing the identity of the underlying mathematical result.
+These limits are intentional during growth. Honest boundaries let Mathematica and MATLAB users migrate piece by piece
+and let the project expand coverage without turning partial support into a false compatibility promise.
 
 ## 🧯 Troubleshooting Checklist
 
@@ -212,16 +273,17 @@ WASM URL, worker path, CSP, and bundler asset configuration.
 When parsing fails, confirm that the input belongs to the selected dialect and consult its feature matrix. When
 evaluation returns a partial result, preserve the status and diagnostic code. When a handle becomes invalid, check
 whether its session or worker was restarted. When output differs after an upgrade, compare package versions, dialect
-selection, runtime mode, and feature-report status before comparing display strings.
+selection, runtime mode, and feature-report status before comparing display strings. When the failure is deterministic
+and contradicts documented behavior, open a Bug discussion rather than a GitHub Issue.
 
 ## 🗂️ Repository Layout
 
 The repository keeps product packages under `projects/packages`, native and WASM artifacts under `projects/platforms`,
 Rust dialects and bindings under `projects/dialects` / `projects/bindings` / `projects/adapters`, private R&D tooling
-under `projects/tooling`, and the marketing site under `projects/site`. Build, test, and release automation live under
-`scripts`. Package READMEs live next to their manifests so npm users see the same guidance as repository contributors.
-Native artifacts are intentionally separated from TypeScript sources. The root manifest is a private workspace manifest
-and is not itself an installable SXO product.
+under `projects/tooling` (including `@sxo/harness` and `@sxo/skills`), and the marketing site under `projects/site`.
+Build, test, and release automation live under `scripts`. Package READMEs live next to their manifests so npm users see
+the same guidance as repository contributors. Native artifacts are intentionally separated from TypeScript sources. The
+root manifest is a private workspace manifest and is not itself an installable SXO product.
 
 ## 🔭 Related Projects
 
@@ -322,11 +384,10 @@ is part of the compatibility contract because users make package and deployment 
 
 ## 🗺️ Final Orientation
 
-If you need the smallest successful symbolic expression, begin with `@sxo/simple-math`. If you need a familiar language
-surface, choose the dialect package that matches the source and read its feature report. If you need a shared
-integration layer, use `@sxo/core`. If you need a shell or notebook workflow, use the CLI or Jupyter helper with the
-documented Node.js requirements. If you need browser execution, choose `@sxo/lite` and plan for asynchronous WASM
-initialization. If npm is selecting a platform artifact, let the high-level package own that decision.
+If you come from Mathematica, start with `@sxo/mathematica`. If you come from MATLAB, start with `@sxo/matlab`. Ask your
+agent to run or implement your project on that open alternative first. Read the matching feature report, migrate a small
+workflow, and grow coverage from there. Add `@sxo/core` or `@sxo/lite` only when you need TypeScript or browser
+embedding. When a bug or unsupported feature blocks the project, open a Discussion rather than a GitHub Issue.
 
 This repository is designed to grow by making each boundary more useful without making the boundaries less truthful.
 Syntax can become richer, Athena can execute more domains, diagnostics can become more actionable, and native or WASM
@@ -334,11 +395,11 @@ packaging can improve independently. The user-facing promise remains simple: cho
 workflow, inspect the documented capability, keep runtime lifetime explicit, and treat partial behavior as information
 rather than as silent success.
 
-The same rule applies to examples in issues, pull requests, blog posts, and application documentation. Name the package,
-dialect, runtime, and feature status. A compact example is valuable when a reader can run it and understand why it
-works. A large compatibility claim is harmful when it hides the exact input forms, backend capabilities, or deployment
-assumptions behind it. SXO documentation therefore favors reproducible paths, explicit limits, and links to the package
-that owns the next decision.
+The same rule applies to examples in discussions, pull requests, blog posts, and application documentation. Name the
+package, dialect, runtime, and feature status. A compact example is valuable when a reader can run it and understand why
+it works. A large compatibility claim is harmful when it hides the exact input forms, backend capabilities, or
+deployment assumptions behind it. SXO documentation therefore favors reproducible paths, explicit limits, and links to
+the package that owns the next decision.
 
 Maintainers should also keep the npm page useful to someone who has never opened the repository. Package descriptions
 should be searchable but precise, exports should match the files actually shipped, and badges should communicate CI,

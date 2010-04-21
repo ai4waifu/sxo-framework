@@ -233,6 +233,8 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)
 
+  projects/tooling/sxo-skills: {}
+
 packages:
 
   '@biomejs/biome@2.5.10':

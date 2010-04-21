@@ -1,0 +1,38 @@
+{
+    "name": "@sxo/skills",
+    "version": "0.0.4",
+    "private": true,
+    "type": "module",
+    "description": "Agent Skills for building TypeScript applications with SXO. Install with npx @sxo/skills.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/sxo-framework.git",
+        "directory": "projects/tooling/sxo-skills"
+    },
+    "homepage": "https://github.com/ai4waifu/sxo-framework/tree/dev/projects/tooling/sxo-skills",
+    "bugs": {
+        "url": "https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs"
+    },
+    "keywords": [
+        "sxo",
+        "skills",
+        "agent-skills",
+        "typescript",
+        "symbolic-computation"
+    ],
+    "license": "Apache-2.0",
+    "bin": {
+        "sxo-skills": "./bin/sxo-skills.mjs"
+    },
+    "files": [
+        "bin",
+        "skills",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=20"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}
