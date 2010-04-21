@@ -2,13 +2,13 @@ import { feature } from '@sxo/harness';
 
 export const calculusFeatures = [
     feature('D', 'calculus')
-        .partial('poly/trig/chain and D[x*y,x] OK; bare juxtaposition D[x y,x]→D[x,y,x]; D[f[x],x]/compose crash host')
+        .partial('poly/trig/chain and juxtaposition OK; D[f[x],x]/compose crash host')
         .pure()
         .eval('d.poly', 'D[x^3, x]', '3*x^2')
         .eval('d.sin2', 'D[Sin[x], {x, 2}]', '-Sin[x]')
         .eval('d.chain', 'D[Sin[x^2], x]', '2*x*Cos[x^2]')
-        .eval('d.juxtapose', 'D[x*y, x]', 'y', { notes: 'bare D[x y,x] currently D[x, y, x]' })
-        .gap('d.bare_juxtapose', 'D[x y, x]', { expected: 'y', notes: 'SILENT WRONG: currently D[x, y, x]' })
+        .eval('d.juxtapose', 'D[x*y, x]', 'y')
+        .eval('d.bare_juxtapose', 'D[x y, x]', 'y')
         .gap('d.symbolic_head', 'D[f[x], x]', {
             expected: "f'[x]",
             notes: 'host crash (stack overflow) observed — keep as gap, do not promote to eval',
@@ -53,7 +53,7 @@ export const calculusFeatures = [
         .gap('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', { expected: '1/(a + s)' })
         .done(),
     feature('FourierTransform', 'calculus')
-        .unsupported('SILENT WRONG: Exp[-x^2] becomes Exp[x^2] in residual form')
+        .unsupported('FourierTransform kernel still incomplete; unary-minus/Power parse is fixed')
         .pure()
         .gap('fourier.gauss', 'FourierTransform[Exp[-x^2], x, k]', { expected: 'Sqrt[Pi]*Exp[-k^2/4]' })
         .done(),

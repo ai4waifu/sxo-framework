@@ -401,10 +401,56 @@ fn hold_preserves_plus() {
 }
 
 #[test]
-fn sameq_infix_symbols_and_numbers() {
+fn unary_minus_binds_looser_than_power() {
     let h = H::new();
-    assert_eq!(h.wolfram(h.eval("1 === 1")), "True");
-    assert_eq!(h.wolfram(h.eval("x === x")), "True");
+    let w = h.parse_w("-x^2");
+    assert_eq!(
+        w,
+        WolframForm::call(
+            "Times",
+            vec![
+                WolframForm::int(-1),
+                WolframForm::call("Power", vec![WolframForm::symbol("x"), WolframForm::int(2)]),
+            ]
+        )
+    );
+    let paren = h.parse_w("(-x)^2");
+    assert_eq!(
+        paren,
+        WolframForm::call(
+            "Power",
+            vec![
+                WolframForm::call("Times", vec![WolframForm::int(-1), WolframForm::symbol("x")]),
+                WolframForm::int(2),
+            ]
+        )
+    );
+    assert_eq!(h.wolfram(h.eval("Exp[-x^2]")), "Exp[-(x^2)]");
+}
+
+#[test]
+fn implicit_times_keeps_d_arity() {
+    let h = H::new();
+    let w = h.parse_w("D[x y, x]");
+    assert_eq!(
+        w,
+        WolframForm::call(
+            "D",
+            vec![
+                WolframForm::call("Times", vec![WolframForm::symbol("x"), WolframForm::symbol("y")]),
+                WolframForm::symbol("x"),
+            ]
+        )
+    );
+    assert_eq!(h.wolfram(h.eval("D[x y, x]")), "y");
+    assert_eq!(h.wolfram(h.eval("D[x*y, x]")), "y");
+}
+
+#[test]
+fn exp_0_and_log_1_fold_exactly() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Exp[0]")), "1");
+    assert_eq!(h.wolfram(h.eval("Log[1]")), "0");
 }
 
 #[test]

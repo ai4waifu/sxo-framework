@@ -37,9 +37,9 @@ export const solveFeatures = [
         .gap('dsolvevalue.strip', "DSolveValue[y'[x] == y[x], y[x], x]", { expected: 'C[1]*Exp[x]', notes: 'currently returns x' })
         .done(),
     feature('Maximize', 'solve')
-        .planned('SILENT WRONG: Maximize[-x^2,x] → Maximize[x^2, x] (unary minus stripped)')
+        .planned('Maximize kernel incomplete; unary-minus/Power parse is fixed (`-x^2` keeps sign)')
         .pure()
-        .gap('maximize.neg_quad', 'Maximize[-x^2, x]', { expected: '{0, {x -> 0}}', notes: 'currently Maximize[x^2, x]' })
+        .gap('maximize.neg_quad', 'Maximize[-x^2, x]', { expected: '{0, {x -> 0}}' })
         .done(),
     feature('Minimize', 'solve').planned().pure().gap('minimize.quad', 'Minimize[x^2 + 1, x]', { expected: '{1, {x -> 0}}' }).done(),
 ];

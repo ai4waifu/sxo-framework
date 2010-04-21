@@ -28,9 +28,10 @@ sxo-adapter-apollo = { path = "projects/adapters/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
-oak-core = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
-oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
-oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", branch = "dev", default-features = false }
+# Local workspace pins while parser / result-contract work lands. CI tip: switch back to git rev after push.
+oak-core = { path = "../oaks/projects/oak-core", default-features = false }
+oak-wolfram = { path = "../oaks/examples/oak-wolfram", default-features = false }
+oak-matlab = { path = "../oaks/examples/oak-matlab", default-features = false }
 # Local workspace pin while Athena result-contract work lands. CI tip: replace with git rev after push.
 athena = { path = "../athena.rs/projects/athena", package = "athena" }
 athena-types = { path = "../athena.rs/projects/athena-types", package = "athena-types" }
