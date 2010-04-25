@@ -165,12 +165,13 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             if args.len() >= 2 {
                 let target = form_to_term(session, &args[0]);
                 let axis_terms: Vec<TermId> = args[1..].iter().map(|a| form_to_term(session, a)).collect();
-                if let Some(mut axes) = axis_terms.iter().copied().map(|a| index_spec_of(session, a)).collect::<Option<Vec<_>>>() {
-                    // MATLAB `A(k)` on an m×n matrix is 1-based column-major linear index,
-                    // not nested-list row pick. Rewrite to `A(r,c)` when shape is known.
-                    if let Some(rewritten) = rewrite_linear_matrix_index(session, target, &axes) {
-                        axes = rewritten;
-                    }
+                if let Some(axes) = axis_terms
+                    .iter()
+                    .copied()
+                    .enumerate()
+                    .map(|(i, a)| index_spec_of(session, a, axis_terms.len() == 1 && i == 0))
+                    .collect::<Option<Vec<_>>>()
+                {
                     return AthenaRequest::Control(ControlPlan::Index { target, axes });
                 }
             }
@@ -349,8 +350,12 @@ fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValu
     }
 }
 
-fn index_spec_of(session: &Session, term: TermId) -> Option<IndexSpec> {
+fn index_spec_of(session: &Session, term: TermId, single_axis: bool) -> Option<IndexSpec> {
     if let Some(n) = number_from_id(session, term).and_then(|n| n.as_exact_integer()) {
+        // MATLAB `A(k)` is column-major linear on matrices; Athena rewrites at Index time.
+        if single_axis {
+            return Some(IndexSpec::LinearColumnMajor(IntegerIndex(n)));
+        }
         return Some(IndexSpec::Scalar(IntegerIndex(n)));
     }
     match symbol_name(session, term).as_deref() {
@@ -386,46 +391,4 @@ fn index_spec_of(session: &Session, term: TermId) -> Option<IndexSpec> {
         }
         _ => None,
     }
-}
-
-/// Nested-list matrix shape `(nrows, ncols)` when every row is a same-length collection.
-fn nested_matrix_shape(session: &Session, term: TermId) -> Option<(usize, usize)> {
-    let rows = match session.arena.get(term)? {
-        TermNode::Collection { elements, .. } => elements.clone(),
-        _ => return None,
-    };
-    if rows.is_empty() {
-        return None;
-    }
-    let first = match session.arena.get(rows[0])? {
-        TermNode::Collection { elements, .. } => elements.clone(),
-        _ => return None,
-    };
-    let ncols = first.len();
-    for row in &rows {
-        match session.arena.get(*row)? {
-            TermNode::Collection { elements, .. } if elements.len() == ncols => {}
-            _ => return None,
-        }
-    }
-    Some((rows.len(), ncols))
-}
-
-/// Map single-axis MATLAB linear index on a rectangular nested matrix to `(row, col)`.
-fn rewrite_linear_matrix_index(session: &Session, target: TermId, axes: &[IndexSpec]) -> Option<Vec<IndexSpec>> {
-    let [IndexSpec::Scalar(IntegerIndex(k))] = axes else {
-        return None;
-    };
-    let (nrows, ncols) = nested_matrix_shape(session, target)?;
-    if nrows == 0 || ncols == 0 {
-        return None;
-    }
-    let _n = (nrows as i64).checked_mul(ncols as i64)?;
-    if *k < 1 {
-        return None;
-    }
-    // Column-major: k = (c-1)*nrows + r (including k > m*n so Athena reports OOB).
-    let r = ((*k - 1).rem_euclid(nrows as i64)) + 1;
-    let c = ((*k - 1) / nrows as i64) + 1;
-    Some(vec![IndexSpec::Scalar(IntegerIndex(r)), IndexSpec::Scalar(IntegerIndex(c))])
 }

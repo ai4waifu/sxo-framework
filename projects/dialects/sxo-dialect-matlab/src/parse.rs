@@ -184,7 +184,16 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
                 Ok(MatlabForm::call("Part", part_args))
             }
             else if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &head_f {
-                Ok(MatlabForm::call(name.clone(), args))
+                // MATLAB `()` is shared by calls and subsref. Unmapped heads with
+                // index-shaped args become `Part` so `A=[10,20]; A(2)` indexes Own.
+                if !is_known_call_head(name) && args_look_like_subsref(&args) {
+                    let mut part_args = vec![MatlabForm::symbol(name.clone())];
+                    part_args.extend(args);
+                    Ok(MatlabForm::call("Part", part_args))
+                }
+                else {
+                    Ok(MatlabForm::call(name.clone(), args))
+                }
             }
             else {
                 // Non-symbol head → Application[head, args…] (form_to_term → ApplyHead).
@@ -284,5 +293,57 @@ fn map_matlab_head(name: &str) -> String {
         "sum" => "Sum".to_string(),
         "linsolve" => "LinearSolve".to_string(),
         other => other.to_string(),
+    }
+}
+
+fn is_known_call_head(name: &str) -> bool {
+    if crate::surface::surface_to_semantic(name).is_some() {
+        return true;
+    }
+    matches!(
+        name,
+        "LinearSolve"
+            | "Mldivide"
+            | "Part"
+            | "Application"
+            | "Set"
+            | "CompoundExpression"
+            | "If"
+            | "Branch"
+            | "While"
+            | "For"
+            | "Try"
+            | "Recover"
+            | "Span"
+            | "Range"
+            | "D"
+            | "Integrate"
+            | "Diff"
+            | "Int"
+            | "integral"
+            | "plot"
+            | "Plot"
+            | "Hold"
+            | "HoldForm"
+            | "Transpose"
+            | "ConjugateTranspose"
+            | "error"
+            | "Error"
+            | "Reject"
+    )
+}
+
+/// Arguments that look like MATLAB subsref indices (`2`, `:`, `end`, `1:2`, …).
+fn args_look_like_subsref(args: &[MatlabForm]) -> bool {
+    !args.is_empty() && args.iter().all(form_looks_like_index)
+}
+
+fn form_looks_like_index(form: &MatlabForm) -> bool {
+    match form {
+        MatlabForm::Atom(MatlabAtom::Number(_)) | MatlabForm::Atom(MatlabAtom::Null) | MatlabForm::Atom(MatlabAtom::Bool(_)) => true,
+        MatlabForm::Atom(MatlabAtom::Symbol(name)) => matches!(name.as_str(), "end" | ":" | "All" | "true" | "false"),
+        MatlabForm::List(_) => true,
+        MatlabForm::Call { head, .. } => matches!(head.as_str(), "Span" | "Range" | "Colon" | "Plus" | "Add" | "Subtract"),
+        _ => false,
     }
 }

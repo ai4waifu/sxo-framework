@@ -267,6 +267,18 @@ fn parse_matrix_linear_index_column_major() {
 }
 
 #[test]
+fn parse_assign_then_index_own_binding() {
+    let h = H::new();
+    let form = parse_matlab_form("A(2)").unwrap();
+    assert_eq!(
+        form,
+        MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)])
+    );
+    assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));
+    assert!(h.eq(h.eval("M = [1, 2; 3, 4]; M(2)"), h.i(3)));
+}
+
+#[test]
 fn parse_assign_persists_in_sequence() {
     let h = H::new();
     assert!(h.eq(h.eval("x = 5; x + 1"), h.i(6)));
