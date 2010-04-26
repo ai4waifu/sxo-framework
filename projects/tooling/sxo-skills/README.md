@@ -1,10 +1,13 @@
 # 🤖 @sxo/skills
 
-## Give your AI coding agent an SXO toolkit
+## AI4Science · agentic-friendly · TypeScript-first
 
-`@sxo/skills` is for Mathematica and MATLAB users who want an open-source alternative. Install it, then ask your agent
-to run or implement your project on `@sxo/mathematica` or `@sxo/matlab`. When something is wrong or unsupported, the
-agent should help you open a GitHub Discussion. SXO does not use GitHub Issues.
+`@sxo/skills` helps research agents and scientists use SXO for AI4Science work. Install once; the skill then handles
+package choice, honest coverage, Discussion reporting, and data redaction automatically. Your prompts only need to
+state the scientific goal.
+
+Mathematica and MATLAB dialects are optional. Use them when you already know those languages and want to keep working
+in a familiar syntax. They are not required for every project.
 
 ## Start in seconds
 
@@ -22,53 +25,42 @@ npx @sxo/skills -a cursor -y
 ## Copy your first prompt
 
 ```text
-I want to run my project with the open-source Mathematica alternative @sxo/mathematica.
-Help me get the workflow working in Node.js.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
-SXO does not use GitHub Issues.
+I am doing AI4Science work. Help me implement this scientific workflow with SXO in Node.js.
 ```
 
 ```text
-I want to implement my project with the open-source MATLAB alternative @sxo/matlab.
-Help me migrate and run the MATLAB-style parts on SXO.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
-SXO does not use GitHub Issues.
-```
-
-## Later embedding prompts
-
-```text
-I already use @sxo/mathematica or @sxo/matlab for my project.
-Help me embed the same workflow in a TypeScript service with @sxo/core.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
+I am doing AI4Science work. I already know MATLAB, so use @sxo/matlab where it helps.
+Help me run this scientific project on SXO.
 ```
 
 ```text
-I already use @sxo/mathematica or @sxo/matlab for my project.
-Help me run the same workflow in the browser with @sxo/lite.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
+I am doing AI4Science work. I already know Mathematica, so use @sxo/mathematica where it helps.
+Help me run this scientific project on SXO.
 ```
 
-## What the skill helps your agent do
+## Embedding prompts
 
-- Treat Mathematica and MATLAB users as the primary audience.
-- Prefer `@sxo/mathematica` or `@sxo/matlab` before `@sxo/core` or `@sxo/lite`.
-- Help the user run or implement a real project, not only a demo snippet.
-- Keep coverage honest through feature reports and structured diagnostics.
-- Open a Discussion for bugs, unsupported features, and unsatisfactory results. Never use GitHub Issues.
-- Before posting: analyze the failure, reduce it to a minimal reproduction, and desensitize all user data.
-- Never publish secrets, credentials, personal data, proprietary formulas, or confidential notebook content.
+```text
+Help me embed this SXO scientific workflow in a TypeScript service with @sxo/core.
+```
+
+```text
+Help me run this SXO scientific workflow in the browser with @sxo/lite.
+```
+
+## What the skill does automatically
+
+After installation, the agent should:
+
+- Optimize for the scientific outcome first.
+- Use Mathematica/MATLAB dialects only when the user is familiar with them or asks for that syntax.
+- Prefer `@sxo/core` / `@sxo/lite` for TypeScript-native embedding.
+- On bugs, unsupported features, or unsatisfactory results: analyze, minimize, redact, and open a Discussion.
+- Never use GitHub Issues for SXO bugs.
+- Never publish secrets, personal data, proprietary formulas, unpublished results, or confidential notebooks.
+
+You do not need to repeat those instructions in every prompt.
 
 ## Open a Discussion
 
 https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs
-
-Required content:
-
-- short analysis
-- package, version, Node.js, OS/CPU, dialect
-- minimal **redacted** reproduction
-- expected Mathematica / MATLAB behavior
-- actual SXO result, unsupported status, or why the result is unsatisfactory
-
-Do not paste the user’s raw project. Replace secrets and private values with placeholders before publishing.

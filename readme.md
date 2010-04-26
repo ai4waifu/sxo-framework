@@ -1,14 +1,18 @@
 # SXO
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ai4waifu/sxo-framework/ci.yml?label=CI)](https://github.com/ai4waifu/sxo-framework/actions) [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/ai4waifu/sxo-framework/blob/dev/License.md) [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-339933)](https://nodejs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-first-3178C6)](https://www.typescriptlang.org/)
+## AI4Science · agentic-friendly · TypeScript-first
 
-SXO is an open-source path for Mathematica and MATLAB users who want familiar symbolic and numerical workflows without a
-proprietary kernel. Bring Wolfram-style or MATLAB-style source into Node.js, notebooks, and TypeScript applications.
-SXO keeps the dialect frontend honest: it parses, forms, lowers, renders, and reports coverage through feature matrices
-while Athena supplies the mathematical execution behind the packages.
+[![CI](https://img.shields.io/github/actions/workflow/status/ai4waifu/sxo-framework/ci.yml?label=CI)](https://github.com/ai4waifu/sxo-framework/actions) [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/ai4waifu/sxo-framework/blob/dev/License.md) [![AI4Science](https://img.shields.io/badge/AI4Science-ready-0B6E4F)](https://github.com/ai4waifu/sxo-framework) [![Agentic](https://img.shields.io/badge/agentic-friendly-6B5B95)](https://www.npmjs.com/package/@sxo/skills) [![TypeScript](https://img.shields.io/badge/TypeScript-first-3178C6)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-339933)](https://nodejs.org/)
 
-SXO aims to be useful as an open alternative, not a silent clone. A familiar name can parse today and still be partial,
-unsupported, or not yet executable. Prefer structured diagnostics and feature reports over compatibility slogans.
+SXO is built for **AI4Science**: scientific computing that research agents and scientists can run, automate, and embed
+without a proprietary kernel wall. It is **agentic-friendly** (`npx @sxo/skills`) and **TypeScript-first**
+(`@sxo/core`, `@sxo/lite`), so the same workflow can move from an agent session into services, CLIs, notebooks, and
+browsers.
+
+If you already know Mathematica or MATLAB, you can keep working in those familiar languages through `@sxo/mathematica`
+or `@sxo/matlab`. That is an option, not the only door. Dialect packages stay honest about coverage through feature
+matrices and structured diagnostics: a familiar name may parse today and still be partial, unsupported, or not yet
+executable.
 
 ## 🤖 Start with an AI coding agent
 
@@ -18,35 +22,34 @@ Install the SXO skill first:
 npx @sxo/skills
 ```
 
-Then talk to your agent like a Mathematica or MATLAB user adopting an open-source alternative:
+Then ask for the scientific outcome. After installation, package choice, honest coverage, Discussion reporting, and
+secret redaction are handled by the skill automatically — you do not need to repeat them in the prompt.
 
 ```text
-I want to run my project with the open-source Mathematica alternative @sxo/mathematica.
-Help me get the workflow working in Node.js.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
-SXO does not use GitHub Issues.
+I am doing AI4Science work. Help me implement this scientific workflow with SXO in Node.js.
 ```
 
 ```text
-I want to implement my project with the open-source MATLAB alternative @sxo/matlab.
-Help me migrate and run the MATLAB-style parts on SXO.
-If you hit any bugs or unsupported features, please open a GitHub Discussion for me.
-SXO does not use GitHub Issues.
+I am doing AI4Science work. I already know MATLAB, so use @sxo/matlab where it helps.
+Help me run this scientific project on SXO.
 ```
 
-When you later embed the same workflow in a TypeScript service or browser app, reach for `@sxo/core` or `@sxo/lite`.
-Bug and unsupported-feature reports still go to Discussions:
+```text
+I am doing AI4Science work. I already know Mathematica, so use @sxo/mathematica where it helps.
+Help me run this scientific project on SXO.
+```
 
-https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs
+When you later embed the same scientific workflow in a TypeScript service or browser app, reach for `@sxo/core` or
+`@sxo/lite`.
 
 ## 🧭 Choose a Package
 
 | Goal                            | Package            | Audience                                          |
 |---------------------------------|--------------------|---------------------------------------------------|
-| Wolfram-style source            | `@sxo/mathematica` | Mathematica and notebook users                    |
-| MATLAB-style source             | `@sxo/matlab`      | MATLAB users and tooling authors                  |
-| TypeScript integration          | `@sxo/core`        | Library and application authors                   |
+| TypeScript integration          | `@sxo/core`        | AI4Science apps and library authors               |
 | Browser or worker execution     | `@sxo/lite`        | Frontend and bundler users                        |
+| Familiar Wolfram-style source   | `@sxo/mathematica` | Optional if you already know Mathematica          |
+| Familiar MATLAB-style source    | `@sxo/matlab`      | Optional if you already know MATLAB               |
 | Small predictable grammar       | `@sxo/simple-math` | Examples, education, tests                        |
 | Shell, CI, or scripted commands | `@sxo/sxo`         | Node.js automation users                          |
 
@@ -55,7 +58,13 @@ not installed directly. The homepage is a private site application.
 
 ## ⚡ Traditional Install
 
-Mathematica users:
+TypeScript-first:
+
+```bash
+pnpm add @sxo/core
+```
+
+If you already know Mathematica:
 
 ```bash
 pnpm add @sxo/mathematica
@@ -68,16 +77,10 @@ const form = parse('Hold[x^2 + 1]');
 console.log(form.toString());
 ```
 
-MATLAB users:
+If you already know MATLAB:
 
 ```bash
 pnpm add @sxo/matlab
-```
-
-TypeScript authors who need the shared session and handle layer:
-
-```bash
-pnpm add @sxo/core
 ```
 
 Browser or Worker deployments:
@@ -94,9 +97,9 @@ npm install --global @sxo/sxo
 sxo --help
 ```
 
-Use the dialect package that matches your source language. Use `@sxo/core` when you need structured results, stable
-diagnostics, or application-controlled lifetime management. Use `@sxo/lite` when the deployment cannot load native
-addons.
+Start from the scientific goal. Use a familiar dialect only when that language helps you move faster. Use `@sxo/core`
+when you need structured results, stable diagnostics, or application-controlled lifetime management. Use `@sxo/lite`
+when the deployment cannot load native addons.
 
 ## 🛠️ Workspace Development
 
@@ -131,13 +134,15 @@ package.
 
 ## 🌐 Dialects
 
-`@sxo/mathematica` is the front door for Mathematica users. It supports a defined Wolfram-style frontend surface,
-rendering, feature reporting, the `wolframscript` command, and Jupyter helpers. It is an open alternative path, not a
-bundled Wolfram kernel and not a silent promise of complete Mathematica compatibility.
+Dialect packages are optional familiar-language surfaces. If you already know Mathematica or MATLAB, you can keep using
+that syntax on SXO. If you do not, you can stay on TypeScript with `@sxo/core` / `@sxo/lite`.
 
-`@sxo/matlab` is the front door for MATLAB users. It parses supported source, lowers it to SXO/Athena forms, renders it,
-and reports unsupported or partial features. It is an open alternative frontend, not a MATLAB runtime or toolbox
-replacement.
+`@sxo/mathematica` supports a defined Wolfram-style frontend surface, rendering, feature reporting, the `wolframscript`
+command, and Jupyter helpers. It is not a bundled Wolfram kernel and not a silent promise of complete Mathematica
+compatibility.
+
+`@sxo/matlab` parses supported MATLAB-style source, lowers it to SXO/Athena forms, renders it, and reports unsupported
+or partial features. It is not a MATLAB runtime or toolbox replacement.
 
 `@sxo/simple-math` remains available for examples, teaching tools, tests, and lightweight applications with a
 deliberately narrow grammar.
@@ -242,15 +247,16 @@ accidental native fallback.
 
 ## ✅ What SXO Guarantees
 
-SXO guarantees an open, package-level path for Mathematica and MATLAB users, not universal commercial-kernel
-equivalence. A package documents the input forms it accepts, the result categories it returns, its runtime
-requirements, and the diagnostics it can produce. Feature matrices make supported, partial, and unsupported states
-visible so migration can proceed without hidden gaps. Athena supplies the mathematical runtime behind the supported
-operations.
+SXO guarantees an open, package-level path for AI4Science workflows, not universal commercial-kernel equivalence. A
+package documents the input forms it accepts, the result categories it returns, its runtime requirements, and the
+diagnostics it can produce. Feature matrices make supported, partial, and unsupported states visible so work can proceed
+without hidden gaps. Athena supplies the mathematical runtime behind the supported operations.
 
-SXO also guarantees that package boundaries are explicit. Wolfram-style input stays in `@sxo/mathematica`. MATLAB-style
-input stays in `@sxo/matlab`. Native and WASM packages identify their different operational constraints. This makes it
-possible to grow into a stronger open alternative while keeping each capability honest.
+SXO also guarantees agentic-friendly and TypeScript-first product surfaces. `@sxo/skills` teaches coding agents the
+package map and reporting rules. `@sxo/core` and `@sxo/lite` keep scientific workflows embeddable in services and
+browsers. Mathematica and MATLAB dialects remain optional familiar-language choices with explicit boundaries. Native and
+WASM packages identify their different operational constraints. This makes it possible to grow AI4Science capability
+while keeping each surface honest.
 
 ## 🚧 What SXO Does Not Guarantee
 
@@ -260,8 +266,8 @@ the performance profile of native and WASM on every workload. It does not provid
 untrusted programs. It does not replace authentication, authorization, cancellation, request limits, or deployment
 observability.
 
-These limits are intentional during growth. Honest boundaries let Mathematica and MATLAB users migrate piece by piece
-and let the project expand coverage without turning partial support into a false compatibility promise.
+These limits are intentional during growth. Honest boundaries let AI4Science work proceed package by package and let
+familiar dialects expand without turning partial support into a false compatibility promise.
 
 ## 🧯 Troubleshooting Checklist
 
@@ -384,10 +390,11 @@ is part of the compatibility contract because users make package and deployment 
 
 ## 🗺️ Final Orientation
 
-If you come from Mathematica, start with `@sxo/mathematica`. If you come from MATLAB, start with `@sxo/matlab`. Ask your
-agent to run or implement your project on that open alternative first. Read the matching feature report, migrate a small
-workflow, and grow coverage from there. Add `@sxo/core` or `@sxo/lite` only when you need TypeScript or browser
-embedding. When a bug or unsupported feature blocks the project, open a Discussion rather than a GitHub Issue.
+SXO is for AI4Science first, then agentic workflows, then TypeScript embedding. Prefer `npx @sxo/skills` when a coding
+agent will help. Start from the scientific goal. If you already know Mathematica or MATLAB, you may keep using that
+familiar language through `@sxo/mathematica` or `@sxo/matlab`; otherwise stay on `@sxo/core` / `@sxo/lite`. Read the
+matching feature report when a dialect is involved, grow coverage from a small workflow, and let the installed skill
+open a Discussion for bugs, unsupported features, or unsatisfactory results.
 
 This repository is designed to grow by making each boundary more useful without making the boundaries less truthful.
 Syntax can become richer, Athena can execute more domains, diagnostics can become more actionable, and native or WASM

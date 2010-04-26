@@ -3,7 +3,7 @@
     "version": "0.0.4",
     "private": true,
     "type": "module",
-    "description": "Agent Skills for building TypeScript applications with SXO. Install with npx @sxo/skills.",
+    "description": "Agent skills for AI4Science on SXO. Agentic-friendly and TypeScript-first, with optional Mathematica or MATLAB dialects. Install with npx @sxo/skills.",
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/sxo-framework.git",
@@ -14,11 +14,18 @@
         "url": "https://github.com/ai4waifu/sxo-framework/discussions/new?category=bugs"
     },
     "keywords": [
+        "ai4science",
         "sxo",
-        "skills",
+        "agentic",
         "agent-skills",
+        "skills",
         "typescript",
-        "symbolic-computation"
+        "scientific-computing",
+        "symbolic-computation",
+        "cas",
+        "mathematica",
+        "matlab",
+        "wolfram"
     ],
     "license": "Apache-2.0",
     "bin": {
