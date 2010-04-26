@@ -359,7 +359,13 @@ fn index_spec_of(session: &Session, term: TermId, single_axis: bool) -> Option<I
         return Some(IndexSpec::Scalar(IntegerIndex(n)));
     }
     match symbol_name(session, term).as_deref() {
-        Some("All") | Some(":") => return Some(IndexSpec::All),
+        Some("All") | Some(":") => {
+            // MATLAB `A(:)` flattens column-major; `A(1,:)` keeps axis `All`.
+            if single_axis {
+                return Some(IndexSpec::ColumnMajorFlatten);
+            }
+            return Some(IndexSpec::All);
+        }
         Some("end") => return Some(IndexSpec::EndRelative(IntegerOffset(0))),
         _ => {}
     }

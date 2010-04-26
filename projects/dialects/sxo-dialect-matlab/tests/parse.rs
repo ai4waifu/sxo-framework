@@ -279,6 +279,35 @@ fn parse_assign_then_index_own_binding() {
 }
 
 #[test]
+fn parse_matrix_colon_all_column_major_flatten() {
+    let h = H::new();
+    let form = parse_matlab_form("[1, 2; 3, 4](:)").unwrap();
+    assert_eq!(
+        form,
+        MatlabForm::call(
+            "Part",
+            vec![
+                MatlabForm::list(vec![
+                    MatlabForm::list(vec![MatlabForm::int(1), MatlabForm::int(2)]),
+                    MatlabForm::list(vec![MatlabForm::int(3), MatlabForm::int(4)]),
+                ]),
+                MatlabForm::symbol(":"),
+            ]
+        )
+    );
+    // Column-major flatten → 4×1 nested column vector.
+    let expected = h.lst(vec![
+        h.lst(vec![h.i(1)]),
+        h.lst(vec![h.i(3)]),
+        h.lst(vec![h.i(2)]),
+        h.lst(vec![h.i(4)]),
+    ]);
+    assert!(h.eq(h.eval("[1, 2; 3, 4](:)"), expected.clone()));
+    assert!(h.eq(h.eval("A = [1, 2; 3, 4]; A(:)"), expected));
+    assert_eq!(h.render(h.eval("[1, 2; 3, 4](:)")), "[1; 3; 2; 4]");
+}
+
+#[test]
 fn parse_assign_persists_in_sequence() {
     let h = H::new();
     assert!(h.eq(h.eval("x = 5; x + 1"), h.i(6)));

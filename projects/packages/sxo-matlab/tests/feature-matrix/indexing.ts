@@ -28,9 +28,11 @@ export const indexingFeatures = [
         .done(),
     feature('logical_index', 'indexing').unsupported().pure().gap('logical.gt', 'A=[1,2,3]; A(A>1)', { expected: '[2, 3]' }).done(),
     feature('colon_all', 'indexing')
-        .unsupported('SILENT WRONG: A(:) → A()')
+        .supported()
         .pure()
-        .gap('colon.all', 'A=[1, 2; 3, 4]; A(:)', { expected: '[1; 3; 2; 4]', notes: 'currently A()' })
+        .notes('A(:) flattens rectangular matrices column-major')
+        .eval('colon.all', '[1, 2; 3, 4](:)', '[1; 3; 2; 4]')
+        .eval('colon.all_own', 'A=[1, 2; 3, 4]; A(:)', '[1; 3; 2; 4]')
         .done(),
     feature('end_minus', 'indexing')
         .unsupported('oak error on A(end-1) and A(1:2:end)')
