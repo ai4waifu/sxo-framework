@@ -222,6 +222,19 @@ fn parse_transpose_forms_distinct() {
 }
 
 #[test]
+fn parse_transpose_evaluates_nested_lists() {
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2].'"), h.lst(vec![h.lst(vec![h.i(1)]), h.lst(vec![h.i(2)])])));
+    assert!(h.eq(h.eval("[1; 2].'"), h.lst(vec![h.i(1), h.i(2)])));
+    assert!(h.eq(
+        h.eval("[1, 2; 3, 4].'"),
+        h.lst(vec![h.lst(vec![h.i(1), h.i(3)]), h.lst(vec![h.i(2), h.i(4)])])
+    ));
+    // Real conjugate transpose matches transpose on literals.
+    assert!(h.eq(h.eval("[1, 2; 3, 4]'"), h.lst(vec![h.lst(vec![h.i(1), h.i(3)]), h.lst(vec![h.i(2), h.i(4)])])));
+}
+
+#[test]
 fn parse_elementwise_ops_evaluate() {
     let h = H::new();
     assert!(h.eq(h.eval("[1, 2].*[3, 4]"), h.lst(vec![h.i(3), h.i(8)])));

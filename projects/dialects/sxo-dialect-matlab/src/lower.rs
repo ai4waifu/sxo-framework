@@ -176,6 +176,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Transpose" || head == "ConjugateTranspose" => {
+            // Real matrices: conjugate transpose equals transpose. Complex ctranspose is later.
+            if let [arg] = args.as_slice() {
+                let term = form_to_term(session, arg);
+                if let Some(transposed) = transpose_nested_or_vector(session, term) {
+                    return AthenaRequest::Term(transposed);
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Span" => {
             let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
             return AthenaRequest::Term(rewritten);
@@ -396,5 +405,53 @@ fn index_spec_of(session: &Session, term: TermId, single_axis: bool) -> Option<I
             None
         }
         _ => None,
+    }
+}
+
+/// Transpose nested-list matrices and flat row/column vectors (MATLAB `.'` / real `'`).
+fn transpose_nested_or_vector(session: &mut Session, term: TermId) -> Option<TermId> {
+    let rows = match session.arena.get(term)? {
+        TermNode::Collection { elements, .. } => elements.clone(),
+        _ => return None,
+    };
+    if rows.is_empty() {
+        return Some(term);
+    }
+    if matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. })) {
+        let row_vecs: Option<Vec<Vec<TermId>>> = rows
+            .iter()
+            .map(|r| match session.arena.get(*r) {
+                Some(TermNode::Collection { elements, .. }) => Some(elements.clone()),
+                _ => None,
+            })
+            .collect();
+        let row_vecs = row_vecs?;
+        let nrows = row_vecs.len();
+        let ncols = row_vecs.first()?.len();
+        if row_vecs.iter().any(|r| r.len() != ncols) {
+            return None;
+        }
+        if ncols == 1 {
+            // Column vector → flat row.
+            let flat: Vec<TermId> = row_vecs.into_iter().map(|r| r[0]).collect();
+            return Some(push_list(session, flat));
+        }
+        let mut out_rows = Vec::with_capacity(ncols);
+        for c in 0..ncols {
+            let mut row = Vec::with_capacity(nrows);
+            for r in 0..nrows {
+                row.push(row_vecs[r][c]);
+            }
+            out_rows.push(push_list(session, row));
+        }
+        Some(push_list(session, out_rows))
+    }
+    else {
+        // Flat row → column of singleton rows.
+        let mut out_rows = Vec::with_capacity(rows.len());
+        for e in rows {
+            out_rows.push(push_list(session, vec![e]));
+        }
+        Some(push_list(session, out_rows))
     }
 }

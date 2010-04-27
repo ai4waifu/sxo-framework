@@ -8,15 +8,17 @@ export const matrixFeatures = [
         .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
         .done(),
     feature('transpose', 'matrix')
-        .partial("Form distinguishes `.'` as Transpose; evaluate via MatrixValue still pending; oak may reject `'` on some literals")
+        .supported()
         .pure()
-        .roundtrip('transpose.dot', "[1, 2].'", ".'")
-        .gap('transpose.vec', "[1; 2].'", { expected: '[1, 2]' })
+        .notes("`.'` Transpose on nested-list matrices and row/column vectors")
+        .eval('transpose.row', "[1, 2].'", '[1; 2]')
+        .eval('transpose.col', "[1; 2].'", '[1, 2]')
+        .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
-        .partial("Form keeps ConjugateTranspose for `'`; complex evaluate pending")
+        .partial('real arrays match Transpose; complex conjugate pending')
         .pure()
-        .roundtrip('ctranspose.sym', "x'", "'")
+        .eval('ctranspose.real', "[1, 2; 3, 4]'", '[1, 3; 2, 4]')
         .gap('ctranspose.basic', "[1+1i]'", { expected: '1-1i' })
         .done(),
     feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
