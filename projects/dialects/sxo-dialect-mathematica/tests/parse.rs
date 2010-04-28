@@ -234,6 +234,22 @@ fn parse_with_module_block_local_bindings() {
 }
 
 #[test]
+fn parse_module_fresh_symbols_ignore_session_own() {
+    let h = H::new();
+    let bare = h.eval("Module[{x}, x]");
+    let rendered = h.wolfram(bare);
+    assert!(rendered.contains('$'), "Module[{{x}}, x] should yield fresh x$n, got {rendered}");
+    assert_ne!(rendered, "5");
+
+    let shadowed = h.eval("x = 5; Module[{x}, x]");
+    let rendered = h.wolfram(shadowed);
+    assert!(rendered.contains('$'), "x=5; Module[{{x}}, x] must not return 5, got {rendered}");
+    assert_ne!(rendered, "5");
+
+    assert!(h.eq(h.eval("Module[{x = 1}, x + 1]"), h.i(2)));
+}
+
+#[test]
 fn parse_slot_lowers_to_slot_head() {
     let w = parse_mathematica("#").unwrap();
     assert_eq!(w, WolframForm::call("Slot", vec![WolframForm::int(1)]));

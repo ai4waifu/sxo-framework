@@ -447,7 +447,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
-                ("With" | "Module" | "Block", [bindings, body]) => {
+                ("Module", [bindings, body]) => {
+                    return lower_module(session, bindings, body);
+                }
+                ("With" | "Block", [bindings, body]) => {
                     let mut steps = Vec::new();
                     push_binding_defines(session, bindings, &mut steps);
                     steps.push(lower_request(session, body));
@@ -508,6 +511,88 @@ fn push_binding_defines(session: &mut Session, bindings: &WolframForm, steps: &m
                 }
             }
         }
+    }
+}
+
+/// Mathematica `Module`: rename locals to fresh `name$n`, then LocalScope.
+///
+/// Bare `Module[{x}, x]` must not read session OwnValues of `x`.
+fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+    let items = match list_items(bindings) {
+        Some(items) => items,
+        None => {
+            return AthenaRequest::Term(lower_wexpr(
+                session,
+                &WolframForm::call("Module", vec![bindings.clone(), body.clone()]),
+            ));
+        }
+    };
+
+    let mut renames: Vec<(String, String)> = Vec::new();
+    let mut inits: Vec<(String, WolframForm)> = Vec::new();
+    for item in items {
+        match item {
+            WolframForm::Atom(WolframAtom::Symbol(name)) => {
+                renames.push((name.clone(), alloc_module_local(session, name)));
+            }
+            WolframForm::Call { head, args }
+                if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") =>
+            {
+                if let [lhs, rhs] = args.as_slice() {
+                    if let WolframForm::Atom(WolframAtom::Symbol(name)) = lhs {
+                        renames.push((name.clone(), alloc_module_local(session, name)));
+                        inits.push((name.clone(), rhs.clone()));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let mut steps = Vec::new();
+    for (name, rhs) in &inits {
+        let Some((_, fresh)) = renames.iter().find(|(n, _)| n == name)
+        else {
+            continue;
+        };
+        let rhs_r = rename_symbols(rhs, &renames);
+        let symbol = session.arena.symbols_mut().intern(fresh);
+        let value = lower_wexpr(session, &rhs_r);
+        steps.push(AthenaRequest::Command(SessionCommand::Define {
+            symbol,
+            value,
+            kind: BindingKind::Lexical,
+            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+        }));
+    }
+    let body_r = rename_symbols(body, &renames);
+    steps.push(lower_request(session, &body_r));
+    AthenaRequest::Control(ControlPlan::LocalScope {
+        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
+    })
+}
+
+fn alloc_module_local(session: &mut Session, base: &str) -> String {
+    session.module_counter = session.module_counter.saturating_add(1);
+    format!("{base}${}", session.module_counter)
+}
+
+fn rename_symbols(form: &WolframForm, renames: &[(String, String)]) -> WolframForm {
+    match form {
+        WolframForm::Atom(WolframAtom::Symbol(name)) => {
+            if let Some((_, fresh)) = renames.iter().find(|(n, _)| n == name) {
+                WolframForm::symbol(fresh.clone())
+            }
+            else {
+                form.clone()
+            }
+        }
+        WolframForm::Atom(_) => form.clone(),
+        WolframForm::List(items) => WolframForm::List(items.iter().map(|i| rename_symbols(i, renames)).collect()),
+        WolframForm::Call { head, args } => WolframForm::Call {
+            head: Box::new(rename_symbols(head, renames)),
+            args: args.iter().map(|a| rename_symbols(a, renames)).collect(),
+        },
     }
 }
 

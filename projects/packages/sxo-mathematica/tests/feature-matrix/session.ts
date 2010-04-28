@@ -23,7 +23,7 @@ export const sessionFeatures = [
     feature('Module', 'session')
         .supported()
         .stateful()
-        .notes('local Set bind with $n unique rename')
+        .notes('local Set bind with $n unique rename; bare Module[{x},x] ignores session Own (dialect regression)')
         .eval('module.bind', 'Module[{x = 1}, x + 1]', '2')
         .done(),
     feature('With', 'session').supported().pure().notes('lexical local Set bind').eval('with.bind', 'With[{x = 1}, x + 1]', '2').done(),
