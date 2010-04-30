@@ -250,6 +250,17 @@ fn parse_module_fresh_symbols_ignore_session_own() {
 }
 
 #[test]
+fn parse_block_dynamic_shadow_and_restore() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("x = 5; Block[{x}, x]")), "x");
+    assert_eq!(h.wolfram(h.eval("x = 5; Block[{x = 1}, x]")), "1");
+    // Outer Own restored after Block.
+    assert_eq!(h.wolfram(h.eval("x = 5; Block[{x}, x]; x")), "5");
+    assert_eq!(h.wolfram(h.eval("x = 5; Block[{x = 1}, x]; x")), "5");
+    assert!(h.eq(h.eval("Block[{x = 1}, x + 1]"), h.i(2)));
+}
+
+#[test]
 fn parse_slot_lowers_to_slot_head() {
     let w = parse_mathematica("#").unwrap();
     assert_eq!(w, WolframForm::call("Slot", vec![WolframForm::int(1)]));

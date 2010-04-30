@@ -30,8 +30,10 @@ export const sessionFeatures = [
     feature('Block', 'session')
         .supported()
         .stateful()
-        .notes('local Set bind for this slice')
+        .notes('dynamic shadow under DynamicScope; bare Block[{x},x] clears Own and restores')
         .eval('block.bind', 'Block[{x = 1}, x + 1]', '2')
+        .eval('block.clear', 'x = 5; Block[{x}, x]', 'x')
+        .eval('block.restore', 'x = 5; Block[{x = 1}, x]; x', '5')
         .done(),
     feature('Clear', 'session')
         .supported()

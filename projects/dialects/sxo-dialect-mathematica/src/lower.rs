@@ -450,7 +450,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("Module", [bindings, body]) => {
                     return lower_module(session, bindings, body);
                 }
-                ("With" | "Block", [bindings, body]) => {
+                ("Block", [bindings, body]) => {
+                    return lower_block(session, bindings, body);
+                }
+                ("With", [bindings, body]) => {
                     let mut steps = Vec::new();
                     push_binding_defines(session, bindings, &mut steps);
                     steps.push(lower_request(session, body));
@@ -575,6 +578,52 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
 fn alloc_module_local(session: &mut Session, base: &str) -> String {
     session.module_counter = session.module_counter.saturating_add(1);
     format!("{base}${}", session.module_counter)
+}
+
+/// Mathematica `Block`: dynamic shadowing under [`ControlPlan::DynamicScope`].
+///
+/// Bare `Block[{x}, x]` clears Own for `x` inside the scope (restored on exit).
+/// `Block[{x = v}, …]` defines dynamically and restores the prior Own.
+fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+    let items = match list_items(bindings) {
+        Some(items) => items,
+        None => {
+            return AthenaRequest::Term(lower_wexpr(
+                session,
+                &WolframForm::call("Block", vec![bindings.clone(), body.clone()]),
+            ));
+        }
+    };
+
+    let mut steps = Vec::new();
+    for item in items {
+        match item {
+            WolframForm::Atom(WolframAtom::Symbol(name)) => {
+                let symbol = session.arena.symbols_mut().intern(name);
+                steps.push(AthenaRequest::Command(SessionCommand::ClearDefinition { symbol }));
+            }
+            WolframForm::Call { head, args }
+                if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") =>
+            {
+                if let [lhs, rhs] = args.as_slice() {
+                    if let Some(symbol) = symbol_of(session, lhs) {
+                        let value = lower_wexpr(session, rhs);
+                        steps.push(AthenaRequest::Command(SessionCommand::Define {
+                            symbol,
+                            value,
+                            kind: BindingKind::Dynamic,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    steps.push(lower_request(session, body));
+    AthenaRequest::Control(ControlPlan::DynamicScope {
+        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
+    })
 }
 
 fn rename_symbols(form: &WolframForm, renames: &[(String, String)]) -> WolframForm {
