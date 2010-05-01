@@ -261,6 +261,17 @@ fn parse_block_dynamic_shadow_and_restore() {
 }
 
 #[test]
+fn parse_with_simultaneous_lexical_substitution() {
+    let h = H::new();
+    assert!(h.eq(h.eval("With[{x = 1}, x + 1]"), h.i(2)));
+    // Simultaneous: RHS of y sees outer x, not With's x=1.
+    assert_eq!(h.wolfram(h.eval("With[{x = 1, y = x}, y]")), "x");
+    // With does not leave Own bindings.
+    assert_eq!(h.wolfram(h.eval("With[{x = 1}, x]; x")), "x");
+    assert_eq!(h.wolfram(h.eval("x = 5; With[{x = 1, y = x}, y]")), "5");
+}
+
+#[test]
 fn parse_slot_lowers_to_slot_head() {
     let w = parse_mathematica("#").unwrap();
     assert_eq!(w, WolframForm::call("Slot", vec![WolframForm::int(1)]));

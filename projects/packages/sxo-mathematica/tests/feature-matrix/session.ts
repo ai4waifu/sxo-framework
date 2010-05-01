@@ -26,7 +26,14 @@ export const sessionFeatures = [
         .notes('local Set bind with $n unique rename; bare Module[{x},x] ignores session Own (dialect regression)')
         .eval('module.bind', 'Module[{x = 1}, x + 1]', '2')
         .done(),
-    feature('With', 'session').supported().pure().notes('lexical local Set bind').eval('with.bind', 'With[{x = 1}, x + 1]', '2').done(),
+    feature('With', 'session')
+        .supported()
+        .pure()
+        .notes('simultaneous lexical RHS substitution; With[{x=1,y=x},y] keeps outer x')
+        .eval('with.bind', 'With[{x = 1}, x + 1]', '2')
+        .eval('with.simultaneous', 'With[{x = 1, y = x}, y]', 'x')
+        .eval('with.outer', 'x = 5; With[{x = 1, y = x}, y]', '5')
+        .done(),
     feature('Block', 'session')
         .supported()
         .stateful()

@@ -454,12 +454,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     return lower_block(session, bindings, body);
                 }
                 ("With", [bindings, body]) => {
-                    let mut steps = Vec::new();
-                    push_binding_defines(session, bindings, &mut steps);
-                    steps.push(lower_request(session, body));
-                    return AthenaRequest::Control(ControlPlan::LocalScope {
-                        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
-                    });
+                    return lower_with(session, bindings, body);
                 }
                 ("Part", args) if args.len() >= 2 => {
                     if let Some(axes) = args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
@@ -624,6 +619,56 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
     AthenaRequest::Control(ControlPlan::DynamicScope {
         body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
     })
+}
+
+/// Mathematica `With`: simultaneous lexical replacement of locals by RHS forms.
+///
+/// RHS are not bound into the session. `With[{x=1,y=x},y]` substitutes `y` → `x`
+/// using the outer `x` (not the With local), matching simultaneous semantics.
+fn lower_with(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+    let items = match list_items(bindings) {
+        Some(items) => items,
+        None => {
+            return AthenaRequest::Term(lower_wexpr(
+                session,
+                &WolframForm::call("With", vec![bindings.clone(), body.clone()]),
+            ));
+        }
+    };
+
+    let mut subst: Vec<(String, WolframForm)> = Vec::new();
+    for item in items {
+        if let WolframForm::Call { head, args } = item {
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") {
+                if let [lhs, rhs] = args.as_slice() {
+                    if let WolframForm::Atom(WolframAtom::Symbol(name)) = lhs {
+                        subst.push((name.clone(), rhs.clone()));
+                    }
+                }
+            }
+        }
+    }
+    let body_r = substitute_with_locals(body, &subst);
+    lower_request(session, &body_r)
+}
+
+fn substitute_with_locals(form: &WolframForm, subst: &[(String, WolframForm)]) -> WolframForm {
+    match form {
+        WolframForm::Atom(WolframAtom::Symbol(name)) => {
+            if let Some((_, rhs)) = subst.iter().find(|(n, _)| n == name) {
+                rhs.clone()
+            }
+            else {
+                form.clone()
+            }
+        }
+        WolframForm::Atom(_) => form.clone(),
+        WolframForm::List(items) => WolframForm::List(items.iter().map(|i| substitute_with_locals(i, subst)).collect()),
+        WolframForm::Call { head, args } => WolframForm::Call {
+            head: Box::new(substitute_with_locals(head, subst)),
+            args: args.iter().map(|a| substitute_with_locals(a, subst)).collect(),
+        },
+    }
 }
 
 fn rename_symbols(form: &WolframForm, renames: &[(String, String)]) -> WolframForm {
