@@ -6,21 +6,23 @@ export const logicFeatures = [
     feature('not', 'logic').supported().pure().eval('not.1', '~1', 'false').eval('not.0', '~0', 'true').done(),
     feature('xor', 'logic').unsupported().pure().gap('xor.10', 'xor(1, 0)', { expected: '1' }).done(),
     feature('bitor_op', 'logic')
-        .unsupported('SILENT WRONG: 1|0 → 0 (expect 1); [1,0]|[0,1] → [0,1] (expect [1,1])')
+        .supported()
         .pure()
-        .gap('bitor.scalar', '1 | 0', { expected: '1', notes: 'currently 0' })
-        .gap('bitor.vec', '[1, 0] | [0, 1]', { expected: '[1, 1]', notes: 'currently [0, 1]' })
+        .notes('`|` lowers to ElementwiseOr (not short-circuit Or)')
+        .eval('bitor.scalar', '1 | 0', 'true')
+        .eval('bitor.vec', '[1, 0] | [0, 1]', '[true, true]')
         .done(),
     feature('bitand_op', 'logic')
-        .partial('scalar 1&0 → false OK; vector [1,0]&[1,1] → [1,1] SILENT WRONG (expect [1,0])')
+        .supported()
         .pure()
+        .notes('`&` lowers to ElementwiseAnd (not short-circuit And)')
         .eval('bitand.scalar', '1 & 0', 'false')
-        .gap('bitand.vec', '[1, 0] & [1, 1]', { expected: '[1, 0]', notes: 'currently [1, 1]' })
+        .eval('bitand.vec', '[1, 0] & [1, 1]', '[true, false]')
         .done(),
     feature('true_bitor', 'logic')
-        .unsupported('SILENT WRONG: true | false → false (same bug as 1|0)')
+        .supported()
         .pure()
-        .gap('true.bitor', 'true | false', { expected: '1', notes: 'currently false' })
+        .eval('true.bitor', 'true | false', 'true')
         .done(),
     feature('true_bitand', 'logic')
         .partial('true & false → false OK; true && false stays And(true,false) unevaluated')

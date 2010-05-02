@@ -230,8 +230,10 @@ fn lower_binary(bin: &BinaryExpr) -> Result<MatlabForm, SxoError> {
         MatlabTokenType::Greater => MatlabForm::call("Greater", vec![l, r]),
         MatlabTokenType::LessEqual => MatlabForm::call("LessEqual", vec![l, r]),
         MatlabTokenType::GreaterEqual => MatlabForm::call("GreaterEqual", vec![l, r]),
-        MatlabTokenType::AndAnd | MatlabTokenType::And => MatlabForm::call("And", vec![l, r]),
-        MatlabTokenType::OrOr | MatlabTokenType::Or => MatlabForm::call("Or", vec![l, r]),
+        MatlabTokenType::AndAnd => MatlabForm::call("And", vec![l, r]),
+        MatlabTokenType::And => MatlabForm::call("ElementwiseAnd", vec![l, r]),
+        MatlabTokenType::OrOr => MatlabForm::call("Or", vec![l, r]),
+        MatlabTokenType::Or => MatlabForm::call("ElementwiseOr", vec![l, r]),
         MatlabTokenType::Colon => flatten_range(l, r),
         other => {
             return Err(SxoError::new(format!("matlab(ast): unsupported binary {other:?}")));

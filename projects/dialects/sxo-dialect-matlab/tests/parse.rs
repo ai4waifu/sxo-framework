@@ -411,6 +411,31 @@ fn elementwise_less_vector_scalar() {
 }
 
 #[test]
+fn scalar_or_and_short_circuit_ops() {
+    let h = H::new();
+    assert_eq!(parse_matlab_form("1 | 0").unwrap().head_name(), Some("ElementwiseOr"));
+    assert_eq!(parse_matlab_form("1 & 0").unwrap().head_name(), Some("ElementwiseAnd"));
+    assert_eq!(parse_matlab_form("1 || 0").unwrap().head_name(), Some("Or"));
+    assert_eq!(parse_matlab_form("1 && 0").unwrap().head_name(), Some("And"));
+    assert_eq!(h.render(h.eval("1 | 0")), "true", "got {}", h.render(h.eval("1 | 0")));
+    assert_eq!(h.render(h.eval("1 & 0")), "false");
+    assert_eq!(h.render(h.eval("1 || 0")), "true");
+    assert_eq!(h.render(h.eval("1 && 0")), "false");
+    assert_eq!(
+        h.render(h.eval("[1, 0] | [0, 1]")),
+        "[true, true]",
+        "got {}",
+        h.render(h.eval("[1, 0] | [0, 1]"))
+    );
+    assert_eq!(
+        h.render(h.eval("[1, 0] & [1, 1]")),
+        "[true, false]",
+        "got {}",
+        h.render(h.eval("[1, 0] & [1, 1]"))
+    );
+}
+
+#[test]
 fn parse_matlab_form_without_session() {
     let form = parse_matlab_form("1 + 2 * 3").unwrap();
     assert_eq!(form.head_name(), Some("Plus"));
