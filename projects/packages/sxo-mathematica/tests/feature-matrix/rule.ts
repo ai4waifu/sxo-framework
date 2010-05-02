@@ -2,12 +2,17 @@ import { feature } from '@sxo/harness';
 
 export const ruleFeatures = [
     feature('Rule', 'rule')
-        .partial('head ReplaceAll[expr, lhs->rhs] works for simple symbols; RuleDelayed / infix /. fragile')
+        .partial('head ReplaceAll[expr, Rule[lhs,rhs]] and infix -> work for simple symbols; infix /. still fragile')
         .pure()
         .eval('rule.replaceall_pow', 'ReplaceAll[x^2, x -> 3]', '9')
-        .gap('rule.replaceall_named', 'ReplaceAll[x^2, Rule[x, 3]]', { expected: '9', notes: 'Rule[…] may flatten args' })
+        .eval('rule.replaceall_named', 'ReplaceAll[x^2, Rule[x, 3]]', '9')
         .done(),
-    feature('RuleDelayed', 'rule').planned().pure().gap('ruledelayed.basic', 'x /. x :> 1 + 1', { expected: '2' }).done(),
+    feature('RuleDelayed', 'rule')
+        .partial('head ReplaceAll + RuleDelayed holds RHS until replace; infix /. / :> still fragile')
+        .pure()
+        .eval('ruledelayed.head', 'ReplaceAll[x, RuleDelayed[x, 1 + 1]]', '2')
+        .gap('ruledelayed.infix', 'x /. x :> 1 + 1', { expected: '2' })
+        .done(),
     feature('Replace', 'rule').unsupported().pure().gap('replace.basic', 'Replace[a, a -> 1]', { expected: '1' }).done(),
     feature('ReplaceAll', 'rule')
         .partial(

@@ -387,6 +387,31 @@ fn patterned_set_delayed_dispatches() {
 }
 
 #[test]
+fn symbol_set_delayed_evaluates_on_use() {
+    let h = H::new();
+    // `:=` stores residual; use-time evaluation yields 2, not unevaluated Plus.
+    assert!(h.eq(h.eval("a := 1 + 1; a"), h.i(2)), "got {}", h.wolfram(h.eval("a := 1 + 1; a")));
+    assert_eq!(h.wolfram(h.eval("b := 1 + 1")), "Null");
+}
+
+#[test]
+fn rule_delayed_rhs_held_until_replace_all() {
+    let h = H::new();
+    // Head-form ReplaceAll + RuleDelayed: RHS evaluates after substitution.
+    assert!(
+        h.eq(h.eval("ReplaceAll[x, RuleDelayed[x, 1 + 1]]"), h.i(2)),
+        "got {}",
+        h.wolfram(h.eval("ReplaceAll[x, RuleDelayed[x, 1 + 1]]"))
+    );
+    // Rule evaluates RHS at construction (same numeric result here).
+    assert!(
+        h.eq(h.eval("ReplaceAll[x, Rule[x, 1 + 1]]"), h.i(2)),
+        "got {}",
+        h.wolfram(h.eval("ReplaceAll[x, Rule[x, 1 + 1]]"))
+    );
+}
+
+#[test]
 fn clear_definition_returns_null_and_unbinds() {
     let h = H::new();
     assert!(h.eq(h.eval("x = 5; Clear[x]; x"), h.sym("x")), "got {}", h.wolfram(h.eval("x = 5; Clear[x]; x")));

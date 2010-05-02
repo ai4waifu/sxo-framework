@@ -16,8 +16,9 @@ export const sessionFeatures = [
     feature('SetDelayed', 'session')
         .supported()
         .stateful()
-        .notes('symbol := stores residual; patterned f[x_]:= dispatches via TermPattern')
+        .notes('symbol := stores residual and evaluates on use; patterned f[x_]:= dispatches via TermPattern')
         .eval('setdelayed.symbol', 'a := 1 + 1', 'Null')
+        .eval('setdelayed.use', 'a := 1 + 1; a', '2')
         .eval('setdelayed.def', 'f[x_] := x^2; f[3]', '9')
         .done(),
     feature('Module', 'session')
