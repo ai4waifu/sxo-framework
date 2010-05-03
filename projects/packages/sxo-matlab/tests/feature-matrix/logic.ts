@@ -25,9 +25,10 @@ export const logicFeatures = [
         .eval('true.bitor', 'true | false', 'true')
         .done(),
     feature('true_bitand', 'logic')
-        .partial('true & false → false OK; true && false stays And(true,false) unevaluated')
+        .supported()
         .pure()
+        .notes('bool atoms work for `&` and short-circuit `&&`')
         .eval('true.bitand', 'true & false', 'false')
-        .gap('true.and_sc', 'true && false', { expected: '0', notes: 'currently And(true, false)' })
+        .eval('true.and_sc', 'true && false', 'false')
         .done(),
 ];

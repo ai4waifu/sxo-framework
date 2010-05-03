@@ -418,6 +418,14 @@ fn elementwise_unequal_vector_mask() {
 }
 
 #[test]
+fn bool_atoms_short_circuit_and_or() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("true && false")), "false", "got {}", h.render(h.eval("true && false")));
+    assert_eq!(h.render(h.eval("true || false")), "true");
+    assert_eq!(h.render(h.eval("false && 1")), "false");
+}
+
+#[test]
 fn scalar_or_and_short_circuit_ops() {
     let h = H::new();
     assert_eq!(parse_matlab_form("1 | 0").unwrap().head_name(), Some("ElementwiseOr"));
