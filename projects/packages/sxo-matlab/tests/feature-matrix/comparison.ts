@@ -3,15 +3,12 @@ import { feature } from '@sxo/harness';
 export const comparisonFeatures = [
     feature('eq', 'comparison').supported().pure().eval('eq.true', '3 == 3', 'true').done(),
     feature('ne', 'comparison')
-        .partial('scalar ~= OK; vector Unequal mask blocked on pinned Athena (Less/Greater still mask)')
+        .supported()
         .pure()
+        .notes('scalar ~= and vector Unequal boolean mask')
         .eval('ne.true', '3 ~= 2', 'true')
         .eval('ne.false', '1 ~= 1', 'false')
-        .wrong('ne.vec', '[1, 2] ~= [1, 3]', {
-            expected: '[false, true]',
-            flags: ['upstream-athena'],
-            notes: 'got residual `Unequal([1, 2], [1, 3])` on pin `53a7a5dd`',
-        })
+        .eval('ne.vec', '[1, 2] ~= [1, 3]', '[false, true]')
         .done(),
     feature('le', 'comparison')
         .partial('scalar <= OK; vector mask OK; functional le(…) still open')
