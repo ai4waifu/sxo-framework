@@ -1020,6 +1020,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sxo-dialect-pari-gp"
+version = "0.0.4"
+dependencies = [
+ "sxo-types",
+]
+
+[[package]]
 name = "sxo-dialect-simple-math"
 version = "0.0.4"
 dependencies = [
