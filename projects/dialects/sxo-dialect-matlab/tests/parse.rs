@@ -292,6 +292,19 @@ fn parse_assign_then_index_own_binding() {
 }
 
 #[test]
+fn parse_call_vs_part_disambiguation() {
+    // Known math heads stay calls even with index-shaped args.
+    assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));
+    // Unknown head + numeric args → Part (subsref), not a free call.
+    assert_eq!(
+        parse_matlab_form("A(2)").unwrap(),
+        MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)])
+    );
+    // Symbol args do not look like subsref → stay as call head.
+    assert_eq!(parse_matlab_form("f(x)").unwrap().head_name(), Some("f"));
+}
+
+#[test]
 fn parse_matrix_colon_all_column_major_flatten() {
     let h = H::new();
     let form = parse_matlab_form("[1, 2; 3, 4](:)").unwrap();
