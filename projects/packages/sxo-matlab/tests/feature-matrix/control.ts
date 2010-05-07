@@ -16,9 +16,11 @@ export const controlFeatures = [
         .eval('while.false', 'while 0, 1, end', '[]')
         .done(),
     feature('switch', 'control')
-        .unsupported('SILENT WRONG: switch 1, case 1, 2, otherwise, 3, end → 3')
+        .supported()
         .pure()
-        .gap('switch.case1', 'switch 1, case 1, 2, otherwise, 3, end', { expected: '2', notes: 'currently returns 3' })
+        .notes('oak Statement::Switch → nested If[Equal[disc,case],…] without fall-through')
+        .eval('switch.case1', 'switch 1, case 1, 2, otherwise, 3, end', '2')
+        .eval('switch.otherwise', 'switch 2, case 1, 2, otherwise, 3, end', '3')
         .done(),
     feature('try_catch', 'control')
         .supported()

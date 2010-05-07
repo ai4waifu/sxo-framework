@@ -93,6 +93,19 @@ fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
             }
             Ok(MatlabForm::call("For", vec![MatlabForm::symbol("_"), header_f, body_f]))
         }
+        Statement::Switch { discriminant, cases, otherwise, .. } => {
+            // Lower to nested `If[Equal[disc, case], …]` (MATLAB has no fall-through).
+            // Literal discriminants are duplicated per arm. Side-effecting discs need a later bind-once rewrite.
+            let disc = lower_expr(discriminant)?;
+            let mut else_form = compound_stmts(otherwise)?;
+            for (value, body) in cases.iter().rev() {
+                let then_f = compound_stmts(body)?;
+                let val_f = lower_expr(value)?;
+                let cond = MatlabForm::call("Equal", vec![disc.clone(), val_f]);
+                else_form = MatlabForm::call("If", vec![cond, then_f, else_form]);
+            }
+            Ok(else_form)
+        }
         Statement::Try { body, catch_body, .. } => {
             let body_f = compound_stmts(body)?;
             let catch_f = compound_stmts(catch_body)?;

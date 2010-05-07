@@ -167,6 +167,14 @@ fn parse_if_else_end() {
 }
 
 #[test]
+fn parse_switch_case_otherwise() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("switch 1, case 1, 2, otherwise, 3, end")), "2");
+    assert_eq!(h.render(h.eval("switch 2, case 1, 2, otherwise, 3, end")), "3");
+    assert_eq!(h.render(h.eval("switch 1, case 2, 9, case 1, 4, otherwise, 0, end")), "4");
+}
+
+#[test]
 fn parse_while_false_skips_body() {
     let h = H::new();
     assert!(h.eq(h.eval("while 0, 1, end"), h.null()));
