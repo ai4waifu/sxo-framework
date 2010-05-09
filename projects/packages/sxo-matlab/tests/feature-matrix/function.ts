@@ -2,9 +2,9 @@ import { feature } from '@sxo/harness';
 
 export const functionFeatures = [
     feature('function_handle', 'function')
-        .unsupported('oak error on @(x); feval(@sin,0) strips @')
+        .partial('anonymous `@(x)…` binds and calls via Part→Function ApplyHead; named `@sin` / feval still open')
         .pure()
-        .gap('fh.basic', 'f=@(x)x^2; f(4)', { expected: '16' })
-        .gap('fh.feval', 'feval(@sin, 0)', { expected: '0', notes: 'currently feval(sin, 0)' })
+        .eval('fh.basic', 'f=@(x)x^2; f(4)', '16')
+        .gap('fh.feval', 'feval(@sin, 0)', { expected: '0', notes: 'FunctionHandle[Sin] not yet applied by feval' })
         .done(),
 ];

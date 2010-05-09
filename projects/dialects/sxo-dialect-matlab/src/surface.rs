@@ -32,6 +32,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "ElementwiseAnd" => SemanticOperator::ElementwiseAnd,
         "ElementwiseOr" => SemanticOperator::ElementwiseOr,
         "Not" => SemanticOperator::Not,
+        "Function" => SemanticOperator::Function,
         "Range" => SemanticOperator::Range,
         "Simplify" => SemanticOperator::Simplify,
         "Factorial" => SemanticOperator::Factorial,

@@ -313,6 +313,16 @@ fn parse_call_vs_part_disambiguation() {
 }
 
 #[test]
+fn parse_anonymous_function_handle_and_call() {
+    let form = parse_matlab_form("@(x) x^2").unwrap();
+    assert_eq!(form.head_name(), Some("Function"));
+    let handle = parse_matlab_form("@sin").unwrap();
+    assert_eq!(handle.head_name(), Some("FunctionHandle"));
+    let h = H::new();
+    assert_eq!(h.render(h.eval("f = @(x) x^2; f(4)")), "16");
+}
+
+#[test]
 fn parse_matrix_colon_all_column_major_flatten() {
     let h = H::new();
     let form = parse_matlab_form("[1, 2; 3, 4](:)").unwrap();

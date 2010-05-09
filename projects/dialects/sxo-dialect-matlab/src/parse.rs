@@ -219,6 +219,24 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
         Expression::Prefix(u) => lower_prefix(u),
         Expression::Postfix(u) => lower_postfix(u),
         Expression::Grouped { expression, .. } => lower_expr(expression),
+        Expression::AnonymousFunction { parameters, body, .. } => {
+            let body_f = lower_expr(body)?;
+            match parameters.as_slice() {
+                [p] => Ok(MatlabForm::call("Function", vec![lower_expr(p)?, body_f])),
+                _ => {
+                    let mut args = Vec::with_capacity(parameters.len() + 1);
+                    for p in parameters {
+                        args.push(lower_expr(p)?);
+                    }
+                    args.push(body_f);
+                    Ok(MatlabForm::call("Function", args))
+                }
+            }
+        }
+        Expression::FunctionHandle { target, .. } => {
+            // `@sin` → FunctionHandle[Sin] (named handle; feval applies later).
+            Ok(MatlabForm::call("FunctionHandle", vec![lower_expr(target)?]))
+        }
     }
 }
 
@@ -345,6 +363,8 @@ fn is_known_call_head(name: &str) -> bool {
             | "error"
             | "Error"
             | "Reject"
+            | "Function"
+            | "FunctionHandle"
     )
 }
 
