@@ -317,9 +317,10 @@ fn parse_anonymous_function_handle_and_call() {
     let form = parse_matlab_form("@(x) x^2").unwrap();
     assert_eq!(form.head_name(), Some("Function"));
     let handle = parse_matlab_form("@sin").unwrap();
-    assert_eq!(handle.head_name(), Some("FunctionHandle"));
+    assert_eq!(handle, MatlabForm::call("FunctionHandle", vec![MatlabForm::symbol("Sin")]));
     let h = H::new();
     assert_eq!(h.render(h.eval("f = @(x) x^2; f(4)")), "16");
+    assert_eq!(h.render(h.eval("feval(@sin, 0)")), "0");
 }
 
 #[test]

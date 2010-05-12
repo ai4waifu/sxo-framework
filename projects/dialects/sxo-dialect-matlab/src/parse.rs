@@ -234,8 +234,11 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
             }
         }
         Expression::FunctionHandle { target, .. } => {
-            // `@sin` → FunctionHandle[Sin] (named handle; feval applies later).
-            Ok(MatlabForm::call("FunctionHandle", vec![lower_expr(target)?]))
+            let mut t = lower_expr(target)?;
+            if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &t {
+                t = MatlabForm::symbol(map_matlab_head(name));
+            }
+            Ok(MatlabForm::call("FunctionHandle", vec![t]))
         }
     }
 }
@@ -365,6 +368,7 @@ fn is_known_call_head(name: &str) -> bool {
             | "Reject"
             | "Function"
             | "FunctionHandle"
+            | "feval"
     )
 }
 

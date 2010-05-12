@@ -58,6 +58,24 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
                 wrapped.extend(ids);
                 push_semantic(session, SemanticOperator::ApplyHead, wrapped)
             }
+            else if head == "feval" {
+                // feval(@sin, 0) → Sin(0) via mapped FunctionHandle target.
+                if let Some(MatlabForm::Call { head: h, args: handle_args }) = args.first() {
+                    if h == "FunctionHandle" {
+                        if let Some(target) = handle_args.first() {
+                            if let Some(name) = form_symbol_name(target) {
+                                let rest: Vec<MatlabForm> = args.iter().skip(1).cloned().collect();
+                                return form_to_term(session, &MatlabForm::call(name, rest));
+                            }
+                            let mut wrapped = vec![target.clone()];
+                            wrapped.extend(args.iter().skip(1).cloned());
+                            return form_to_term(session, &MatlabForm::call("Application", wrapped));
+                        }
+                    }
+                }
+                let ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
+                push_matlab_call(session, head, ids)
+            }
             else {
                 let ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
                 push_matlab_call(session, head, ids)
