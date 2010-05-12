@@ -9,7 +9,7 @@ use athena::{
 };
 use sxo_dialect_matlab::{
     MatlabAtom, MatlabForm, application_surface_name, form_to_term, lower_request, parse_matlab, parse_matlab_form,
-    push_matlab_call, render_matlab, try_plot_svg,
+    push_matlab_call, render_matlab, render_matlab_form, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -493,6 +493,18 @@ fn parse_matlab_form_without_session() {
         }
         other => panic!("expected Plus call, got {other:?}"),
     }
+}
+
+#[test]
+fn render_matlab_form_without_arena() {
+    let sum = parse_matlab_form("1 + 2 * 3").unwrap();
+    assert_eq!(render_matlab_form(&sum), "1 + 2*3");
+    let part = parse_matlab_form("A(2)").unwrap();
+    assert_eq!(render_matlab_form(&part), "A(2)");
+    let anon = parse_matlab_form("@(x) x^2").unwrap();
+    assert_eq!(render_matlab_form(&anon), "@(x) x^2");
+    let handle = parse_matlab_form("@sin").unwrap();
+    assert_eq!(render_matlab_form(&handle), "@Sin");
 }
 
 #[test]
