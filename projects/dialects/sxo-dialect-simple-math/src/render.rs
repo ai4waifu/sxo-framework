@@ -1,8 +1,8 @@
-//! Simple Math dialect rendering.
+//! Simple Math dialect rendering (lowercase surface).
 
-use crate::form::Expr;
+use crate::form::{DictKey, Expr};
 
-/// Render as simple-math text.
+/// Render as Simple Math text (`sin(x)`, `[…]`, `{k:v}`).
 pub fn render(expr: &Expr) -> String {
     render_styled(expr, Style::SimpleMath)
 }
@@ -22,8 +22,29 @@ fn render_styled(expr: &Expr, style: Style) -> String {
         Expr::Mul(a, b) => format!("{}*{}", maybe_paren(a, Prec::Mul, style), maybe_paren(b, Prec::Mul, style)),
         Expr::Div(a, b) => format!("{}/{}", maybe_paren(a, Prec::Mul, style), maybe_paren(b, Prec::Pow, style)),
         Expr::Pow(a, b) => format!("{}^{}", maybe_paren(a, Prec::Pow, style), maybe_paren(b, Prec::Pow, style)),
-        Expr::Sin(a) => format!("sin({})", render_styled(a, style)),
-        Expr::Cos(a) => format!("cos({})", render_styled(a, style)),
+        Expr::Call { head, args } => {
+            let body = args.iter().map(|a| render_styled(a, style)).collect::<Vec<_>>().join(", ");
+            format!("{head}({body})")
+        }
+        Expr::List(items) => {
+            let body = items.iter().map(|a| render_styled(a, style)).collect::<Vec<_>>().join(", ");
+            format!("[{body}]")
+        }
+        Expr::Dict(entries) => {
+            let body = entries
+                .iter()
+                .map(|(k, v)| format!("{}: {}", render_key(k), render_styled(v, style)))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{{{body}}}")
+        }
+    }
+}
+
+fn render_key(key: &DictKey) -> String {
+    match key {
+        DictKey::Ident(s) => s.clone(),
+        DictKey::String(s) => format!("\"{s}\""),
     }
 }
 
@@ -38,7 +59,7 @@ enum Prec {
 
 fn prec(expr: &Expr) -> Prec {
     match expr {
-        Expr::Num(_) | Expr::Var(_) | Expr::Sin(_) | Expr::Cos(_) => Prec::Atom,
+        Expr::Num(_) | Expr::Var(_) | Expr::Call { .. } | Expr::List(_) | Expr::Dict(_) => Prec::Atom,
         Expr::Neg(_) => Prec::Unary,
         Expr::Add(_, _) | Expr::Sub(_, _) => Prec::Add,
         Expr::Mul(_, _) | Expr::Div(_, _) => Prec::Mul,
@@ -48,9 +69,17 @@ fn prec(expr: &Expr) -> Prec {
 
 fn maybe_paren(expr: &Expr, parent: Prec, style: Style) -> String {
     let s = render_styled(expr, style);
-    if prec(expr) < parent { format!("({s})") } else { s }
+    if prec(expr) < parent {
+        format!("({s})")
+    } else {
+        s
+    }
 }
 
 fn format_num(n: f64) -> String {
-    if n.fract() == 0.0 && n.abs() < 1e15 { format!("{}", n as i64) } else { format!("{n}") }
+    if n.fract() == 0.0 && n.abs() < 1e15 {
+        format!("{}", n as i64)
+    } else {
+        format!("{n}")
+    }
 }

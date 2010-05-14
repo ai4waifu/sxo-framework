@@ -1,16 +1,26 @@
 //! Simple Math dialect Form (`Expr`) — flat owned tree, not Athena IR and not `WExpr`.
 //!
-//! Off current delivery route. Living `05`/`14`: when re-enabled, keep
-//! `parse → Expr → lower_request` and do not push arena terms from `parse.rs`.
+//! Surface intent (Living `05`): lowercase calls, `[…]` list, `{k:v}` dict.
+//! oak language: `oak-athena`. SXO product tags: `simple-math` / `sm` (optional `sxo`).
+//! Off current delivery route. When re-enabled: `oak-athena` → `Expr` → lower only.
 
 use std::fmt;
 
-/// Symbolic expression tree.
+/// Dict key in `{ k: v }` literals (identifier or string).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DictKey {
+    /// Bare identifier key: `{ a: 1 }`.
+    Ident(String),
+    /// String key: `{ "a": 1 }`.
+    String(String),
+}
+
+/// Symbolic expression tree (Simple Math surface shape).
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     /// Numeric literal.
     Num(f64),
-    /// Variable name.
+    /// Variable / identifier name (lowercase preferred for builtins).
     Var(String),
     /// Unary negation.
     Neg(Box<Expr>),
@@ -24,10 +34,17 @@ pub enum Expr {
     Div(Box<Expr>, Box<Expr>),
     /// Exponentiation.
     Pow(Box<Expr>, Box<Expr>),
-    /// Sine.
-    Sin(Box<Expr>),
-    /// Cosine.
-    Cos(Box<Expr>),
+    /// Lowercase call: `sin(x)`, `diff(f, x)`, …
+    Call {
+        /// Surface head (must be lowercase for builtins).
+        head: String,
+        /// Arguments.
+        args: Vec<Expr>,
+    },
+    /// List literal: `[a, b, c]`.
+    List(Vec<Expr>),
+    /// Dict literal: `{ a: 1, "b": 2 }`.
+    Dict(Vec<(DictKey, Expr)>),
 }
 
 impl Expr {
@@ -76,14 +93,32 @@ impl Expr {
         Self::Neg(Box::new(a))
     }
 
-    /// `sin(a)`
-    pub fn sin(a: Expr) -> Self {
-        Self::Sin(Box::new(a))
+    /// Lowercase call `head(args…)`.
+    pub fn call(head: impl Into<String>, args: Vec<Expr>) -> Self {
+        Self::Call {
+            head: head.into(),
+            args,
+        }
     }
 
-    /// `cos(a)`
+    /// `sin(a)` sugar → lowercase [`Self::Call`].
+    pub fn sin(a: Expr) -> Self {
+        Self::call("sin", vec![a])
+    }
+
+    /// `cos(a)` sugar → lowercase [`Self::Call`].
     pub fn cos(a: Expr) -> Self {
-        Self::Cos(Box::new(a))
+        Self::call("cos", vec![a])
+    }
+
+    /// List literal.
+    pub fn list(items: Vec<Expr>) -> Self {
+        Self::List(items)
+    }
+
+    /// Dict literal.
+    pub fn dict(entries: Vec<(DictKey, Expr)>) -> Self {
+        Self::Dict(entries)
     }
 
     /// Whether this node is exactly numeric zero.

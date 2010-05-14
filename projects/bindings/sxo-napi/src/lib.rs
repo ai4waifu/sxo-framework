@@ -32,7 +32,7 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     let root = session.differentiate_term(term, &var);
     Ok(Expression {
         session,
-        root,
+        root: Some(root),
         form: None,
         dialect: resolved,
         status: "Unknown".into(),
@@ -49,7 +49,7 @@ pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
     Ok(Expression {
         session,
-        root: outcome.term,
+        root: Some(outcome.term),
         form: None,
         dialect: d,
         status: outcome.status,
@@ -67,7 +67,7 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let root = session.simplify_term(outcome.term);
     Ok(Expression {
         session,
-        root,
+        root: Some(root),
         form: None,
         dialect: d,
         status: outcome.status,

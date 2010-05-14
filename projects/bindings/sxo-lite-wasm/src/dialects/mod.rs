@@ -21,32 +21,43 @@ pub(crate) fn map_err(err: SxoError) -> JsValue {
 
 pub(crate) fn dialect_from_str(s: Option<String>) -> Result<Dialect, JsValue> {
     match s.as_deref() {
-        None => Err(JsValue::from_str("dialect is required (mathematica | matlab | simple-math)")),
+        None => Err(JsValue::from_str("dialect is required (mathematica | matlab | simple-math | sm | sxo)")),
         Some("auto") => Err(JsValue::from_str("dialect auto is removed. pass an explicit dialect")),
-        Some("simple-math") | Some("sm") => Ok(Dialect::SimpleMath),
+        Some("simple-math") | Some("sm") | Some("sxo") => Ok(Dialect::SimpleMath),
         Some("mathematica") => Ok(Dialect::Mathematica),
         Some("matlab") => Ok(Dialect::Matlab),
         Some(other) => Err(JsValue::from_str(&format!("unknown dialect: {other}"))),
     }
 }
 
-pub(crate) fn parse_held(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, HeldForm, Dialect), JsValue> {
+/// Parse source into a retained dialect Form only (no arena materialization).
+pub(crate) fn parse_held(session: &Session, input: &str, dialect: Dialect) -> Result<(HeldForm, Dialect), JsValue> {
     match dialect {
         Dialect::Mathematica => {
             let w = session.parse_mathematica(input).map_err(map_err)?;
-            let term = session.lower_mathematica(&w);
-            Ok((term, HeldForm::Wolfram(w), dialect))
+            Ok((HeldForm::Wolfram(w), dialect))
         }
         Dialect::Matlab => {
             let form = session.parse_matlab_form(input).map_err(map_err)?;
-            let term = session.lower_matlab(&form);
-            Ok((term, HeldForm::Matlab(form), dialect))
+            Ok((HeldForm::Matlab(form), dialect))
         }
         Dialect::SimpleMath => Err(JsValue::from_str("simple-math dialect is off the current delivery route")),
     }
 }
 
+/// Parse + materialize once for APIs that still need a [`TermId`].
 pub(crate) fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect), JsValue> {
-    let (term, _, resolved) = parse_held(session, input, dialect)?;
+    let (form, resolved) = parse_held(session, input, dialect)?;
+    let term = match &form {
+        HeldForm::Matlab(f) => session.lower_matlab(f),
+        HeldForm::Wolfram(w) => session.lower_mathematica(w),
+    };
     Ok((term, resolved))
+}
+
+pub(crate) fn render_held(form: &HeldForm) -> String {
+    match form {
+        HeldForm::Matlab(f) => sxo_dialect_matlab::render_matlab_form(f),
+        HeldForm::Wolfram(w) => sxo_dialect_mathematica::render(w),
+    }
 }

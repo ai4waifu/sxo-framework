@@ -6,7 +6,7 @@
 /// heuristic detection of dialect from source text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Dialect {
-    /// Simple-math / SM (not on current delivery route).
+    /// Simple Math / SM / optional `sxo` tag (oak language: `oak-athena`; off current delivery route).
     #[default]
     SimpleMath,
     /// Mathematica / Wolfram forms.

@@ -7,20 +7,21 @@ use napi_derive::napi;
 use sxo_types::Dialect;
 
 use crate::{
-    dialects::{HeldForm, dialect_from_str, dialect_to_str, map_err, parse_held},
+    dialects::{HeldForm, dialect_from_str, dialect_to_str, map_err, parse_held, render_held},
     session::Session,
 };
 use athena::types::TermId;
 
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
-/// Parse objects retain a dialect [`HeldForm`]. Evaluate / `d` / `simplify` stay on the
-/// same session. Display renderers are never used as an execution serialization format.
+/// Parse objects retain a dialect [`HeldForm`] and do not materialize arena terms until
+/// evaluate / `d` / `simplify` / plot needs them. Display uses Form renderers when present.
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
-    pub(crate) root: TermId,
+    /// Present after evaluate / `d` / `simplify` (or string-entry helpers that materialize).
+    pub(crate) root: Option<TermId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
@@ -35,7 +36,7 @@ pub struct Expression {
 fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
     Expression {
         session,
-        root: outcome.term,
+        root: Some(outcome.term),
         form: None,
         dialect,
         status: outcome.status,
@@ -44,15 +45,41 @@ fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::Eval
     }
 }
 
-fn unevaluated(session: Rc<Session>, root: TermId, form: Option<HeldForm>, dialect: Dialect) -> Expression {
+fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> Expression {
     Expression {
         session,
-        root,
-        form,
+        root: None,
+        form: Some(form),
         dialect,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
         diagnostics: Vec::new(),
+    }
+}
+
+fn unevaluated_term(session: Rc<Session>, root: TermId, dialect: Dialect) -> Expression {
+    Expression {
+        session,
+        root: Some(root),
+        form: None,
+        dialect,
+        status: "Unknown".into(),
+        coverage: "Unknown".into(),
+        diagnostics: Vec::new(),
+    }
+}
+
+impl Expression {
+    /// Materialize a Term once when an API still requires [`TermId`].
+    fn materialize_root(&self) -> Result<TermId> {
+        if let Some(root) = self.root {
+            return Ok(root);
+        }
+        match &self.form {
+            Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
+            Some(HeldForm::Wolfram(form)) => Ok(self.session.lower_mathematica(form)),
+            None => Err(Error::from_reason("expression has neither Form nor Term root")),
+        }
     }
 }
 
@@ -63,22 +90,24 @@ impl Expression {
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
         let session = Rc::new(Session::new());
-        let (root, form, resolved) = parse_held(&session, &input, d)?;
-        Ok(unevaluated(session, root, Some(form), resolved))
+        let (form, resolved) = parse_held(&session, &input, d)?;
+        Ok(unevaluated_form(session, form, resolved))
     }
 
     /// Differentiate with respect to `var` on the same session.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let root = self.session.differentiate_term(self.root, &var);
-        Ok(unevaluated(Rc::clone(&self.session), root, None, self.dialect))
+        let term = self.materialize_root()?;
+        let root = self.session.differentiate_term(term, &var);
+        Ok(unevaluated_term(Rc::clone(&self.session), root, self.dialect))
     }
 
     /// Simplify via the engine (`Simplify` head) on the same session.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let root = self.session.simplify_term(self.root);
-        Ok(unevaluated(Rc::clone(&self.session), root, None, self.dialect))
+        let term = self.materialize_root()?;
+        let root = self.session.simplify_term(term);
+        Ok(unevaluated_term(Rc::clone(&self.session), root, self.dialect))
     }
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
@@ -87,7 +116,10 @@ impl Expression {
         let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
-            None => self.session.evaluate_term_outcome(self.root),
+            None => {
+                let root = self.root.ok_or_else(|| Error::from_reason("expression has neither Form nor Term root"))?;
+                self.session.evaluate_term_outcome(root)
+            }
         }
         .map_err(map_err)?;
         Ok(with_outcome(Rc::clone(&self.session), self.dialect, outcome))
@@ -114,34 +146,55 @@ impl Expression {
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
+        if let Some(form) = &self.form {
+            return Ok(render_held(form));
+        }
+        let root = self.root.ok_or_else(|| Error::from_reason("expression has neither Form nor Term root"))?;
         Ok(match self.dialect {
-            Dialect::Matlab => self.session.render_as_matlab(self.root),
-            _ => self.session.render_as_wolfram(self.root),
+            Dialect::Matlab => self.session.render_as_matlab(root),
+            _ => self.session.render_as_wolfram(root),
         })
     }
 
     /// Render as Mathematica / Wolfram text.
     #[napi(js_name = "toWolfram")]
     pub fn to_wolfram(&self) -> Result<String> {
-        Ok(self.session.render_as_wolfram(self.root))
+        if let Some(HeldForm::Wolfram(w)) = &self.form {
+            return Ok(sxo_dialect_mathematica::render(w));
+        }
+        let root = self.materialize_root()?;
+        Ok(self.session.render_as_wolfram(root))
     }
 
     /// Render as MATLAB text.
     #[napi(js_name = "toMatlab")]
     pub fn to_matlab(&self) -> Result<String> {
-        Ok(self.session.render_as_matlab(self.root))
+        if let Some(HeldForm::Matlab(f)) = &self.form {
+            return Ok(sxo_dialect_matlab::render_matlab_form(f));
+        }
+        let root = self.materialize_root()?;
+        Ok(self.session.render_as_matlab(root))
     }
 
-    /// Structural equality (Form round-trip compare).
+    /// Structural equality (Form compare when both held; else Term via Mathematica projection).
     #[napi(js_name = "isEqual")]
     pub fn is_equal(&self, other: &Expression) -> Result<bool> {
-        Ok(self.session.to_mathematica(self.root) == other.session.to_mathematica(other.root))
+        match (&self.form, &other.form) {
+            (Some(HeldForm::Matlab(a)), Some(HeldForm::Matlab(b))) => Ok(a == b),
+            (Some(HeldForm::Wolfram(a)), Some(HeldForm::Wolfram(b))) => Ok(a == b),
+            _ => {
+                let a = self.materialize_root()?;
+                let b = other.materialize_root()?;
+                Ok(self.session.to_mathematica(a) == other.session.to_mathematica(b))
+            }
+        }
     }
 
     /// Render 1-D `Plot` / `plot` as SVG when the term matches a known form.
     #[napi(js_name = "plotSvg")]
     pub fn plot_svg(&self) -> Result<String> {
-        match self.session.try_plot_svg(self.root, self.dialect) {
+        let root = self.materialize_root()?;
+        match self.session.try_plot_svg(root, self.dialect) {
             Some(Ok(svg)) => Ok(svg),
             Some(Err(e)) => Err(map_err(e)),
             None => Err(Error::from_reason("not a supported 1-D plot form")),

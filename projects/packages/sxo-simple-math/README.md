@@ -33,9 +33,12 @@ Many applications do not need a complete Wolfram or MATLAB frontend. They need a
 test, and embed. Simple Math keeps that promise by avoiding implicit dialect guessing and by using the shared SXO core
 for values, diagnostics, and runtime integration.
 
-The package is a facade over the common API. It does not introduce a second mathematical engine and it does not silently
-enable Mathematica syntax. If your product needs Wolfram names, held forms, patterns, parts, or notebook integration,
-move to `@sxo/mathematica`. If it needs MATLAB source analysis, use `@sxo/matlab`.
+The package is a facade over the common API. It does not introduce a second mathematical engine and it does not
+silently enable Mathematica syntax. Simple Math uses **lowercase** calls (`sin(x)`), **`[…]` lists**, and **`{k:v}`
+dicts** — not CapCase, not `f[x]`, and not Mathematica `{…}` lists. The oak language for this surface is
+**`oak-athena`**; in SXO the product tags stay **`simple-math` / `sm`** (optional `sxo`), never a package named
+`@sxo/athena`. If your product needs Wolfram names, held forms, patterns, parts, or notebook integration, move to
+`@sxo/mathematica`. If it needs MATLAB source analysis, use `@sxo/matlab`.
 
 ## 🧭 User Journey
 

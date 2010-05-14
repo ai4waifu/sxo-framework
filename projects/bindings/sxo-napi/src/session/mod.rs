@@ -62,31 +62,26 @@ impl Session {
     pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = matlab::lower_request(&mut ms, form);
-        let fallback = match &request {
-            AthenaRequest::Term(term) => *term,
-            _ => matlab::form_to_term(&mut ms, form),
-        };
-        self.execute_lowered(&mut ms, request, fallback)
+        self.execute_lowered(&mut ms, request)
     }
 
     /// Evaluate a held [`WolframForm`] via [`mathematica::lower_request`] on this session.
     pub fn evaluate_wolfram_form(&self, form: &WolframForm) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = mathematica::lower_request(&mut ms, form);
-        let fallback = mathematica::lower_wexpr(&mut ms, form);
-        self.execute_lowered(&mut ms, request, fallback)
+        self.execute_lowered(&mut ms, request)
     }
 
     /// Re-evaluate an arena term already owned by this session (result objects without Form).
     pub fn evaluate_term_outcome(&self, root: TermId) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
-        self.execute_lowered(&mut ms, AthenaRequest::Term(root), root)
+        self.execute_lowered(&mut ms, AthenaRequest::Term(root))
     }
 
-    fn execute_lowered(&self, ms: &mut AthenaSession, request: AthenaRequest, fallback: TermId) -> Result<EvalOutcome, SxoError> {
+    fn execute_lowered(&self, ms: &mut AthenaSession, request: AthenaRequest) -> Result<EvalOutcome, SxoError> {
         // Unify Goal / Term / Control through `execute_request` so status / coverage / diagnostics survive.
         match self.math_engine().execute_request(ms, request) {
-            Ok(result_id) => Ok(outcome_from_result(ms, result_id, fallback)),
+            Ok(result_id) => Ok(outcome_from_result(ms, result_id)),
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
@@ -184,7 +179,10 @@ impl Session {
     pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<EvalOutcome, SxoError> {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
-            Dialect::Mathematica | Dialect::SimpleMath => self.evaluate_mathematica(input),
+            Dialect::Mathematica => self.evaluate_mathematica(input),
+            Dialect::SimpleMath => Err(SxoError::new(
+                "simple-math dialect is off the current delivery route (lowercase Form, not Mathematica)",
+            )),
         }
     }
 
@@ -237,12 +235,21 @@ impl Session {
     }
 }
 
-fn outcome_from_result(ms: &AthenaSession, result_id: ResultId, fallback: TermId) -> EvalOutcome {
-    let Some(result) = ms.results.get(result_id)
+fn outcome_from_result(ms: &mut AthenaSession, result_id: ResultId) -> EvalOutcome {
+    use athena::runtime::values::arena::push_null;
+
+    let Some((status, coverage, diagnostics, symbolic)) = ms.results.get(result_id).map(|result| {
+        (
+            result.status.name().to_string(),
+            result.coverage.name().to_string(),
+            result.diagnostics.iter().map(|d| d.to_string()).collect::<Vec<_>>(),
+            result.symbolic_term,
+        )
+    })
     else {
-        return EvalOutcome::new(fallback, ComputationStatus::Unknown.name(), CoverageStatus::Unknown.name(), Vec::new());
+        let null = push_null(ms);
+        return EvalOutcome::new(null, ComputationStatus::Unknown.name(), CoverageStatus::Unknown.name(), Vec::new());
     };
-    let term = result.symbolic_term.unwrap_or(fallback);
-    let diagnostics = result.diagnostics.iter().map(|d| d.to_string()).collect();
-    EvalOutcome::new(term, result.status.name(), result.coverage.name(), diagnostics)
+    let term = symbolic.unwrap_or_else(|| push_null(ms));
+    EvalOutcome::new(term, status, coverage, diagnostics)
 }

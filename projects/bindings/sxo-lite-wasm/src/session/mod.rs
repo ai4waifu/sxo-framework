@@ -181,7 +181,10 @@ impl Session {
     pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<TermId, SxoError> {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
-            Dialect::Mathematica | Dialect::SimpleMath => self.evaluate_mathematica(input),
+            Dialect::Mathematica => self.evaluate_mathematica(input),
+            Dialect::SimpleMath => Err(SxoError::new(
+                "simple-math dialect is off the current delivery route (lowercase Form, not Mathematica)",
+            )),
         }
     }
 
