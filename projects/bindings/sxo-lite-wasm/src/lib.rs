@@ -29,7 +29,7 @@ pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
     let root = session.evaluate_input(input, d).map_err(map_err)?;
     Ok(Expression {
         session,
-        root,
+        root: Some(root),
         form: None,
         dialect: d,
     })
@@ -44,7 +44,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
     let root = session.differentiate_term(term, var);
     Ok(Expression {
         session,
-        root,
+        root: Some(root),
         form: None,
         dialect: resolved,
     })
@@ -59,7 +59,7 @@ pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
     let root = session.simplify_term(evaluated);
     Ok(Expression {
         session,
-        root,
+        root: Some(root),
         form: None,
         dialect: d,
     })

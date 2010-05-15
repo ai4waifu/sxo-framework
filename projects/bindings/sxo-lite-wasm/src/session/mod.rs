@@ -48,12 +48,15 @@ impl Session {
     pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<TermId, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = matlab::lower_request(&mut ms, form);
-        let fallback = match &request {
-            athena::api::AthenaRequest::Term(term) => *term,
-            _ => matlab::form_to_term(&mut ms, form),
-        };
         match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
+            Ok(result_id) => {
+                let term = ms
+                    .results
+                    .get(result_id)
+                    .and_then(|r| r.symbolic_term)
+                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
+                Ok(term)
+            }
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
@@ -62,23 +65,31 @@ impl Session {
     pub fn evaluate_wolfram_form(&self, form: &WolframForm) -> Result<TermId, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = mathematica::lower_request(&mut ms, form);
-        let fallback = mathematica::lower_wexpr(&mut ms, form);
         match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(fallback)),
+            Ok(result_id) => {
+                let term = ms
+                    .results
+                    .get(result_id)
+                    .and_then(|r| r.symbolic_term)
+                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
+                Ok(term)
+            }
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
 
     /// Re-evaluate an arena term already owned by this session.
     pub fn evaluate_term(&self, root: TermId) -> Result<TermId, SxoError> {
-        match self.math_engine().execute_request(&mut self.math_session.borrow_mut(), athena::api::AthenaRequest::Term(root)) {
-            Ok(result_id) => Ok(self
-                .math_session
-                .borrow()
-                .results
-                .get(result_id)
-                .and_then(|r| r.symbolic_term)
-                .unwrap_or(root)),
+        let mut ms = self.math_session.borrow_mut();
+        match self.math_engine().execute_request(&mut ms, athena::api::AthenaRequest::Term(root)) {
+            Ok(result_id) => {
+                let term = ms
+                    .results
+                    .get(result_id)
+                    .and_then(|r| r.symbolic_term)
+                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
+                Ok(term)
+            }
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
