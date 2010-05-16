@@ -13,9 +13,14 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-const TARGETS = [
+const HANDLE_TARGETS = [
   'projects/bindings/sxo-napi/src/handles/mod.rs',
   'projects/bindings/sxo-lite-wasm/src/handles/mod.rs',
+];
+
+const SESSION_TARGETS = [
+  'projects/bindings/sxo-napi/src/session/mod.rs',
+  'projects/bindings/sxo-lite-wasm/src/session/mod.rs',
 ];
 
 function fail(msg) {
@@ -29,7 +34,7 @@ function stripRustComments(src) {
     .replace(/\/\/[^\n]*/g, '');
 }
 
-for (const rel of TARGETS) {
+for (const rel of HANDLE_TARGETS) {
   const file = path.join(ROOT, rel);
   if (!fs.existsSync(file)) fail(`missing ${rel}`);
   const code = stripRustComments(fs.readFileSync(file, 'utf8'));
@@ -51,6 +56,21 @@ for (const rel of TARGETS) {
   }
   if (!/\bHeldForm\b/.test(code)) {
     fail(`${rel}: Expression must retain HeldForm on parse objects`);
+  }
+}
+
+for (const rel of SESSION_TARGETS) {
+  const file = path.join(ROOT, rel);
+  if (!fs.existsSync(file)) fail(`missing ${rel}`);
+  const code = stripRustComments(fs.readFileSync(file, 'utf8'));
+  for (const name of ['evaluate_matlab_form', 'evaluate_wolfram_form']) {
+    const re = new RegExp(`fn ${name}\\([\\s\\S]*?\\n\\s*\\}`);
+    const m = code.match(re);
+    if (!m) fail(`${rel}: ${name} missing`);
+    const body = m[0];
+    if (/\bform_to_term\b/.test(body) || /\blower_wexpr\b/.test(body)) {
+      fail(`${rel}: ${name} must not eager-fallback via form_to_term / lower_wexpr`);
+    }
   }
 }
 

@@ -198,3 +198,18 @@ fn matlab_direct_and_handle_evaluate_parity() {
         assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
     }
 }
+
+#[test]
+fn matlab_form_display_without_arena_materialize() {
+    use sxo_dialect_matlab::render_matlab_form;
+
+    let form = sxo_dialect_matlab::parse_matlab_form("1/(2+3)").unwrap();
+    let text = render_matlab_form(&form);
+    assert!(text.contains('2') && text.contains('3'), "got {text}");
+    // Display path must not require Session arena writes.
+    let session = Session::new();
+    let before = session.with_math(|ms| ms.arena.len());
+    let _ = render_matlab_form(&form);
+    let after = session.with_math(|ms| ms.arena.len());
+    assert_eq!(before, after, "Form renderer must not grow the arena");
+}
