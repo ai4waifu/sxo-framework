@@ -233,23 +233,36 @@ impl Session {
     pub fn structural_eq(&self, a: TermId, b: TermId) -> bool {
         self.math_session.borrow().arena.structural_eq(a, b)
     }
+
+    /// Project a Session-local [`ResultId`] to a symbolic [`TermId`] (or `Null`).
+    pub fn project_result(&self, result_id: ResultId) -> TermId {
+        let mut ms = self.math_session.borrow_mut();
+        project_result_term(&mut ms, result_id)
+    }
 }
 
-fn outcome_from_result(ms: &mut AthenaSession, result_id: ResultId) -> EvalOutcome {
+fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
+    let Some(result) = ms.results.get(result_id) else {
+        return EvalOutcome::new(
+            result_id,
+            ComputationStatus::Unknown.name(),
+            CoverageStatus::Unknown.name(),
+            Vec::new(),
+        );
+    };
+    EvalOutcome::new(
+        result_id,
+        result.status.name().to_string(),
+        result.coverage.name().to_string(),
+        result.diagnostics.iter().map(|d| d.to_string()).collect(),
+    )
+}
+
+fn project_result_term(ms: &mut AthenaSession, result_id: ResultId) -> TermId {
     use athena::runtime::values::arena::push_null;
 
-    let Some((status, coverage, diagnostics, symbolic)) = ms.results.get(result_id).map(|result| {
-        (
-            result.status.name().to_string(),
-            result.coverage.name().to_string(),
-            result.diagnostics.iter().map(|d| d.to_string()).collect::<Vec<_>>(),
-            result.symbolic_term,
-        )
-    })
-    else {
-        let null = push_null(ms);
-        return EvalOutcome::new(null, ComputationStatus::Unknown.name(), CoverageStatus::Unknown.name(), Vec::new());
-    };
-    let term = symbolic.unwrap_or_else(|| push_null(ms));
-    EvalOutcome::new(term, status, coverage, diagnostics)
+    ms.results
+        .get(result_id)
+        .and_then(|r| r.symbolic_term)
+        .unwrap_or_else(|| push_null(ms))
 }

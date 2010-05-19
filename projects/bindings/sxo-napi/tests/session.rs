@@ -18,7 +18,7 @@ fn math_evaluate_arith() {
     assert_eq!(e.status, "Exact");
     assert_eq!(e.coverage, "Full");
     let seven = session.with_math_mut(|s| push_int(s, 7));
-    assert!(session.structural_eq(e.term, seven));
+    assert!(session.structural_eq(session.project_result(e.result_id), seven));
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn big_integer_arithmetic() {
             athena::types::SourceSpan::default(),
         )
     });
-    assert!(session.structural_eq(e.term, expected));
+    assert!(session.structural_eq(session.project_result(e.result_id), expected));
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn dialect_d_limit_series_lower_to_domain() {
         AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative { .. })))
     ));
     let d_out = session.evaluate_mathematica("D[x^3, x]").unwrap();
-    let d_s = session.render_as_wolfram(d_out.term);
+    let d_s = session.render_as_wolfram(session.project_result(d_out.result_id));
     assert!(d_s.contains('x'), "got {d_s}");
     // Domain Goal → IR → Result：微积分未准入时为 Candidate，不得静默落成原式成功。
     assert!(
@@ -88,11 +88,12 @@ fn session_set_persists_across_mathematica_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let six = session.with_math_mut(|s| push_int(s, 6));
-    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap().term, five));
-    assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap().term, six));
+    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id), five));
+    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x + 1").unwrap().result_id), six));
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
-    let text = session.with_math(|s| term_debug(s, cleared.term));
+    let cleared_term = session.project_result(cleared.result_id);
+    let text = session.with_math(|s| term_debug(s, cleared_term));
     assert!(text.contains("Plus") || text.contains("Add") || text.contains('+'), "expected free Plus after clear, got {text}");
 }
 
@@ -101,19 +102,20 @@ fn session_set_persists_across_matlab_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let six = session.with_math_mut(|s| push_int(s, 6));
-    assert!(session.structural_eq(session.evaluate_matlab("x = 5").unwrap().term, five));
-    assert!(session.structural_eq(session.evaluate_matlab("x + 1").unwrap().term, six));
+    assert!(session.structural_eq(session.project_result(session.evaluate_matlab("x = 5").unwrap().result_id), five));
+    assert!(session.structural_eq(session.project_result(session.evaluate_matlab("x + 1").unwrap().result_id), six));
 }
 
 #[test]
 fn session_setdelayed_evaluates_on_use() {
     let session = Session::new();
     let null = session.evaluate_mathematica("a := 1 + 1").unwrap();
+    let null_term = session.project_result(null.result_id);
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(null.term), Some(TermNode::Atom(Atom::Null))));
+        assert!(matches!(s.arena.get(null_term), Some(TermNode::Atom(Atom::Null))));
     });
     let two = session.with_math_mut(|s| push_int(s, 2));
-    assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap().term, two));
+    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("a").unwrap().result_id), two));
 }
 
 #[test]
@@ -121,9 +123,12 @@ fn module_does_not_clobber_session_binding() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let two = session.with_math_mut(|s| push_int(s, 2));
-    assert!(session.structural_eq(session.evaluate_mathematica("x = 5").unwrap().term, five));
-    assert!(session.structural_eq(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().term, two));
-    assert!(session.structural_eq(session.evaluate_mathematica("x").unwrap().term, five));
+    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id), five));
+    assert!(session.structural_eq(
+        session.project_result(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().result_id),
+        two
+    ));
+    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x").unwrap().result_id), five));
 }
 
 #[test]
@@ -152,8 +157,8 @@ fn probe_eval_forms() {
             }
         };
         let rendered = match dialect {
-            Dialect::Matlab => session.render_as_matlab(out.term),
-            _ => session.render_as_wolfram(out.term),
+            Dialect::Matlab => session.render_as_matlab(session.project_result(out.result_id)),
+            _ => session.render_as_wolfram(session.project_result(out.result_id)),
         };
         eprintln!("IN={input} kind={kind} status={} coverage={} out={rendered}", out.status, out.coverage);
     }
@@ -182,12 +187,12 @@ fn matlab_direct_and_handle_evaluate_parity() {
     for (input, expected) in cases {
         let direct_session = Session::new();
         let direct = direct_session.evaluate_matlab(input).unwrap();
-        let direct_text = direct_session.render_as_matlab(direct.term);
+        let direct_text = direct_session.render_as_matlab(direct_session.project_result(direct.result_id));
 
         let handle_session = Session::new();
         let form = handle_session.parse_matlab_form(input).unwrap();
         let via_handle = handle_session.evaluate_matlab_form(&form).unwrap();
-        let handle_text = handle_session.render_as_matlab(via_handle.term);
+        let handle_text = handle_session.render_as_matlab(handle_session.project_result(via_handle.result_id));
 
         assert_eq!(
             direct_text, handle_text,
@@ -197,6 +202,15 @@ fn matlab_direct_and_handle_evaluate_parity() {
         assert_eq!(direct.status, via_handle.status, "status parity for {input}");
         assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
     }
+}
+
+#[test]
+fn evaluate_keeps_result_id_and_projects_on_demand() {
+    let session = Session::new();
+    let out = session.evaluate_matlab("1+1").unwrap();
+    assert_eq!(out.status, "Exact");
+    let two = session.with_math_mut(|s| push_int(s, 2));
+    assert!(session.structural_eq(session.project_result(out.result_id), two));
 }
 
 #[test]

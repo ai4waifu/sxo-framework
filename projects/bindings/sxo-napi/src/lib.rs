@@ -33,6 +33,7 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     Ok(Expression {
         session,
         root: Some(root),
+        result_id: None,
         form: None,
         dialect: resolved,
         status: "Unknown".into(),
@@ -49,7 +50,8 @@ pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
     Ok(Expression {
         session,
-        root: Some(outcome.term),
+        root: None,
+        result_id: Some(outcome.result_id),
         form: None,
         dialect: d,
         status: outcome.status,
@@ -64,10 +66,11 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
-    let root = session.simplify_term(outcome.term);
+    let root = session.simplify_term(session.project_result(outcome.result_id));
     Ok(Expression {
         session,
         root: Some(root),
+        result_id: None,
         form: None,
         dialect: d,
         status: outcome.status,

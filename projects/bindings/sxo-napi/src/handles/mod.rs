@@ -10,18 +10,21 @@ use crate::{
     dialects::{HeldForm, dialect_from_str, dialect_to_str, map_err, parse_held, render_held},
     session::Session,
 };
-use athena::types::TermId;
+use athena::types::{ResultId, TermId};
 
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
 /// Parse objects retain a dialect [`HeldForm`] and do not materialize arena terms until
 /// evaluate / `d` / `simplify` / plot needs them. Display uses Form renderers when present.
+/// Evaluate results retain a Session-local [`ResultId`] and project [`TermId`] on demand.
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
-    /// Present after evaluate / `d` / `simplify` (or string-entry helpers that materialize).
+    /// Present after `d` / `simplify` (or string-entry helpers that materialize a bare term).
     pub(crate) root: Option<TermId>,
+    /// Present after evaluate. Prefer over `root` when projecting symbolic results.
+    pub(crate) result_id: Option<ResultId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
@@ -36,7 +39,8 @@ pub struct Expression {
 fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
     Expression {
         session,
-        root: Some(outcome.term),
+        root: None,
+        result_id: Some(outcome.result_id),
         form: None,
         dialect,
         status: outcome.status,
@@ -49,6 +53,7 @@ fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> E
     Expression {
         session,
         root: None,
+        result_id: None,
         form: Some(form),
         dialect,
         status: "Unknown".into(),
@@ -61,6 +66,7 @@ fn unevaluated_term(session: Rc<Session>, root: TermId, dialect: Dialect) -> Exp
     Expression {
         session,
         root: Some(root),
+        result_id: None,
         form: None,
         dialect,
         status: "Unknown".into(),
@@ -72,13 +78,16 @@ fn unevaluated_term(session: Rc<Session>, root: TermId, dialect: Dialect) -> Exp
 impl Expression {
     /// Materialize a Term once when an API still requires [`TermId`].
     fn materialize_root(&self) -> Result<TermId> {
+        if let Some(result_id) = self.result_id {
+            return Ok(self.session.project_result(result_id));
+        }
         if let Some(root) = self.root {
             return Ok(root);
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
             Some(HeldForm::Wolfram(form)) => Ok(self.session.lower_mathematica(form)),
-            None => Err(Error::from_reason("expression has neither Form nor Term root")),
+            None => Err(Error::from_reason("expression has neither Form, ResultId, nor Term root")),
         }
     }
 }
@@ -117,7 +126,7 @@ impl Expression {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
             None => {
-                let root = self.root.ok_or_else(|| Error::from_reason("expression has neither Form nor Term root"))?;
+                let root = self.materialize_root()?;
                 self.session.evaluate_term_outcome(root)
             }
         }
@@ -149,7 +158,7 @@ impl Expression {
         if let Some(form) = &self.form {
             return Ok(render_held(form));
         }
-        let root = self.root.ok_or_else(|| Error::from_reason("expression has neither Form nor Term root"))?;
+        let root = self.materialize_root()?;
         Ok(match self.dialect {
             Dialect::Matlab => self.session.render_as_matlab(root),
             _ => self.session.render_as_wolfram(root),

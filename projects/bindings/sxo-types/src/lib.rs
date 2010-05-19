@@ -8,7 +8,7 @@ mod dialect;
 mod error;
 mod eval_outcome;
 
-pub use athena_types::{Diagnostic, DiagnosticCode, Severity, SourceSpan, TermId};
+pub use athena_types::{Diagnostic, DiagnosticCode, ResultId, Severity, SourceSpan, TermId};
 pub use dialect::Dialect;
 pub use error::SxoError;
 pub use eval_outcome::EvalOutcome;
