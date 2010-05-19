@@ -26,10 +26,11 @@ pub fn version() -> String {
 pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
-    let root = session.evaluate_input(input, d).map_err(map_err)?;
+    let outcome = session.evaluate_input(input, d).map_err(map_err)?;
     Ok(Expression {
         session,
-        root: Some(root),
+        root: None,
+        result_id: Some(outcome.result_id),
         form: None,
         dialect: d,
     })
@@ -45,6 +46,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
     Ok(Expression {
         session,
         root: Some(root),
+        result_id: None,
         form: None,
         dialect: resolved,
     })
@@ -55,11 +57,12 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
-    let evaluated = session.evaluate_input(input, d).map_err(map_err)?;
-    let root = session.simplify_term(evaluated);
+    let outcome = session.evaluate_input(input, d).map_err(map_err)?;
+    let root = session.simplify_term(session.project_result(outcome.result_id));
     Ok(Expression {
         session,
         root: Some(root),
+        result_id: None,
         form: None,
         dialect: d,
     })

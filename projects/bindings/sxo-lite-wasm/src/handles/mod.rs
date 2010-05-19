@@ -9,18 +9,21 @@ use crate::{
     dialects::{HeldForm, dialect_from_str, map_err, parse_held, render_held},
     session::Session,
 };
-use athena::types::TermId;
+use athena::types::{ResultId, TermId};
 
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
 /// Parse objects retain a dialect Form and do not materialize arena terms until
 /// evaluate / `d` / `simplify` / plot needs them. Display uses Form renderers when present.
+/// Evaluate results retain a Session-local [`ResultId`] and project [`TermId`] on demand.
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
-    /// Present after evaluate / `d` / `simplify` (or string-entry helpers that materialize).
+    /// Present after `d` / `simplify` (or string-entry helpers that materialize a bare term).
     pub(crate) root: Option<TermId>,
+    /// Present after evaluate. Prefer over `root` when projecting symbolic results.
+    pub(crate) result_id: Option<ResultId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
@@ -28,13 +31,16 @@ pub struct Expression {
 
 impl Expression {
     fn materialize_root(&self) -> Result<TermId, JsValue> {
+        if let Some(result_id) = self.result_id {
+            return Ok(self.session.project_result(result_id));
+        }
         if let Some(root) = self.root {
             return Ok(root);
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
             Some(HeldForm::Wolfram(form)) => Ok(self.session.lower_mathematica(form)),
-            None => Err(JsValue::from_str("expression has neither Form nor Term root")),
+            None => Err(JsValue::from_str("expression has neither Form, ResultId, nor Term root")),
         }
     }
 }
@@ -50,6 +56,7 @@ impl Expression {
         Ok(Self {
             session,
             root: None,
+            result_id: None,
             form: Some(form),
             dialect: resolved,
         })
@@ -62,6 +69,7 @@ impl Expression {
         Ok(Expression {
             session: Rc::clone(&self.session),
             root: Some(root),
+            result_id: None,
             form: None,
             dialect: self.dialect,
         })
@@ -74,6 +82,7 @@ impl Expression {
         Ok(Expression {
             session: Rc::clone(&self.session),
             root: Some(root),
+            result_id: None,
             form: None,
             dialect: self.dialect,
         })
@@ -81,18 +90,19 @@ impl Expression {
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
     pub fn evaluate(&self) -> Result<Expression, JsValue> {
-        let root = match &self.form {
+        let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
             None => {
-                let root = self.root.ok_or_else(|| JsValue::from_str("expression has neither Form nor Term root"))?;
-                self.session.evaluate_term(root)
+                let root = self.materialize_root()?;
+                self.session.evaluate_term_outcome(root)
             }
         }
         .map_err(map_err)?;
         Ok(Expression {
             session: Rc::clone(&self.session),
-            root: Some(root),
+            root: None,
+            result_id: Some(outcome.result_id),
             form: None,
             dialect: self.dialect,
         })
@@ -104,7 +114,7 @@ impl Expression {
         if let Some(form) = &self.form {
             return Ok(render_held(form));
         }
-        let root = self.root.ok_or_else(|| JsValue::from_str("expression has neither Form nor Term root"))?;
+        let root = self.materialize_root()?;
         Ok(match self.dialect {
             Dialect::Matlab => self.session.render_as_matlab(root),
             _ => self.session.render_as_wolfram(root),

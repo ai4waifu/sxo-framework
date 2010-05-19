@@ -8,11 +8,11 @@ use athena::{
         DomainExecutionContext, DomainRequest, DomainResult,
         calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, materialize_calculus_result_term},
     },
-    types::{AssumptionSet, Diagnostic, TermId},
+    types::{AssumptionSet, Diagnostic, ResultId, TermId},
 };
 use sxo_dialect_mathematica::{self as mathematica, WolframForm};
 use sxo_dialect_matlab as matlab;
-use sxo_types::{Dialect, SxoError};
+use sxo_types::{Dialect, EvalOutcome, SxoError};
 
 /// SXO host session: dialect crates + Athena math with persistent Own `Set` defs.
 #[derive(Debug, Default)]
@@ -45,53 +45,40 @@ impl Session {
     }
 
     /// Evaluate a held MATLAB Form via [`matlab::lower_request`] on this session.
-    pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<TermId, SxoError> {
+    pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = matlab::lower_request(&mut ms, form);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => {
-                let term = ms
-                    .results
-                    .get(result_id)
-                    .and_then(|r| r.symbolic_term)
-                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
-                Ok(term)
-            }
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        self.execute_lowered(&mut ms, request)
     }
 
     /// Evaluate a held Wolfram Form via [`mathematica::lower_request`] on this session.
-    pub fn evaluate_wolfram_form(&self, form: &WolframForm) -> Result<TermId, SxoError> {
+    pub fn evaluate_wolfram_form(&self, form: &WolframForm) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let request = mathematica::lower_request(&mut ms, form);
-        match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => {
-                let term = ms
-                    .results
-                    .get(result_id)
-                    .and_then(|r| r.symbolic_term)
-                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
-                Ok(term)
-            }
+        self.execute_lowered(&mut ms, request)
+    }
+
+    /// Re-evaluate an arena term already owned by this session.
+    pub fn evaluate_term_outcome(&self, root: TermId) -> Result<EvalOutcome, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        self.execute_lowered(&mut ms, athena::api::AthenaRequest::Term(root))
+    }
+
+    fn execute_lowered(
+        &self,
+        ms: &mut AthenaSession,
+        request: athena::api::AthenaRequest,
+    ) -> Result<EvalOutcome, SxoError> {
+        match self.math_engine().execute_request(ms, request) {
+            Ok(result_id) => Ok(outcome_from_result(ms, result_id)),
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }
 
-    /// Re-evaluate an arena term already owned by this session.
-    pub fn evaluate_term(&self, root: TermId) -> Result<TermId, SxoError> {
+    /// Project a Session-local [`ResultId`] to a symbolic [`TermId`] (or `Null`).
+    pub fn project_result(&self, result_id: ResultId) -> TermId {
         let mut ms = self.math_session.borrow_mut();
-        match self.math_engine().execute_request(&mut ms, athena::api::AthenaRequest::Term(root)) {
-            Ok(result_id) => {
-                let term = ms
-                    .results
-                    .get(result_id)
-                    .and_then(|r| r.symbolic_term)
-                    .unwrap_or_else(|| athena::runtime::values::arena::push_null(&mut ms));
-                Ok(term)
-            }
-            Err(d) => Err(SxoError::from_diagnostic(d)),
-        }
+        project_result_term(&mut ms, result_id)
     }
 
     /// Clear Athena Own symbol definitions for this host session.
@@ -149,7 +136,7 @@ impl Session {
 
     /// Parse Wolfram, lower via [`mathematica::lower_request`], execute.
     #[allow(dead_code)]
-    pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
+    pub fn evaluate_mathematica(&self, input: &str) -> Result<EvalOutcome, SxoError> {
         let w = self.parse_mathematica(input)?;
         self.evaluate_wolfram_form(&w)
     }
@@ -183,13 +170,13 @@ impl Session {
 
     /// Parse MATLAB, lift via Form → Athena request, execute.
     #[allow(dead_code)]
-    pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
+    pub fn evaluate_matlab(&self, input: &str) -> Result<EvalOutcome, SxoError> {
         let form = self.parse_matlab_form(input)?;
         self.evaluate_matlab_form(&form)
     }
 
     /// Parse + dialect Form request path for an explicit dialect tag.
-    pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<TermId, SxoError> {
+    pub fn evaluate_input(&self, input: &str, dialect: Dialect) -> Result<EvalOutcome, SxoError> {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
             Dialect::Mathematica => self.evaluate_mathematica(input),
@@ -241,4 +228,33 @@ impl Session {
             other => panic!("expected Calculus domain result, got {other:?}"),
         }
     }
+}
+
+fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
+    use athena::runtime::CoverageStatus;
+    use athena::types::ComputationStatus;
+
+    let Some(result) = ms.results.get(result_id) else {
+        return EvalOutcome::new(
+            result_id,
+            ComputationStatus::Unknown.name(),
+            CoverageStatus::Unknown.name(),
+            Vec::new(),
+        );
+    };
+    EvalOutcome::new(
+        result_id,
+        result.status.name().to_string(),
+        result.coverage.name().to_string(),
+        result.diagnostics.iter().map(|d| d.to_string()).collect(),
+    )
+}
+
+fn project_result_term(ms: &mut AthenaSession, result_id: ResultId) -> TermId {
+    use athena::runtime::values::arena::push_null;
+
+    ms.results
+        .get(result_id)
+        .and_then(|r| r.symbolic_term)
+        .unwrap_or_else(|| push_null(ms))
 }
