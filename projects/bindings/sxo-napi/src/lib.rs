@@ -5,6 +5,7 @@
 mod dialects;
 mod handles;
 mod jupyter;
+mod options;
 pub mod session;
 
 use std::rc::Rc;
@@ -16,6 +17,7 @@ use sxo_types::VERSION as CORE_VERSION;
 
 use dialects::{dialect_from_str, map_err, parse_to_term};
 use handles::Expression;
+use options::{EvaluateOptions, parse_strategy};
 
 /// Return the SXO engine version string.
 #[napi]
@@ -42,41 +44,22 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     })
 }
 
-/// Top-level `evaluate(expr, dialect?)` — parse + dialect `lower_request` path.
+/// Top-level `evaluate(expr, dialect?, options?)` — parse + `lower_request` in one host call.
+///
+/// `options.strategy`: `"none"` (default) or `"simplify"` (engine Simplify after evaluate).
 #[napi]
-pub fn evaluate(input: String, dialect: Option<String>) -> Result<Expression> {
+pub fn evaluate(input: String, dialect: Option<String>, options: Option<EvaluateOptions>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
+    let strategy = parse_strategy(&options)?;
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
-    Ok(Expression {
-        session,
-        root: None,
-        result_id: Some(outcome.result_id),
-        form: None,
-        dialect: d,
-        status: outcome.status,
-        coverage: outcome.coverage,
-        diagnostics: outcome.diagnostics,
-    })
+    Ok(handles::from_outcome(session, d, outcome, strategy))
 }
 
 /// Top-level `simplify(expr, dialect?)`.
 #[napi]
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
-    let d = dialect_from_str(dialect)?;
-    let session = Rc::new(Session::new());
-    let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
-    let root = session.simplify_term(session.project_result(outcome.result_id));
-    Ok(Expression {
-        session,
-        root: Some(root),
-        result_id: None,
-        form: None,
-        dialect: d,
-        status: outcome.status,
-        coverage: outcome.coverage,
-        diagnostics: outcome.diagnostics,
-    })
+    evaluate(input, dialect, Some(EvaluateOptions { strategy: Some("simplify".into()) }))
 }
 
 /// Top-level `expression(input, dialect?)` — parse only (no evaluate).

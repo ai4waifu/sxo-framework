@@ -8,6 +8,7 @@ use sxo_types::Dialect;
 
 use crate::{
     dialects::{HeldForm, dialect_from_str, dialect_to_str, map_err, parse_held, render_held},
+    options::{EvalStrategy, EvaluateOptions, parse_strategy},
     session::Session,
 };
 use athena::types::{ResultId, TermId};
@@ -36,16 +37,37 @@ pub struct Expression {
     pub(crate) diagnostics: Vec<String>,
 }
 
-fn with_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
-    Expression {
-        session,
-        root: None,
-        result_id: Some(outcome.result_id),
-        form: None,
-        dialect,
-        status: outcome.status,
-        coverage: outcome.coverage,
-        diagnostics: outcome.diagnostics,
+/// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
+pub(crate) fn from_outcome(
+    session: Rc<Session>,
+    dialect: Dialect,
+    outcome: sxo_types::EvalOutcome,
+    strategy: EvalStrategy,
+) -> Expression {
+    match strategy {
+        EvalStrategy::None => Expression {
+            session,
+            root: None,
+            result_id: Some(outcome.result_id),
+            form: None,
+            dialect,
+            status: outcome.status,
+            coverage: outcome.coverage,
+            diagnostics: outcome.diagnostics,
+        },
+        EvalStrategy::Simplify => {
+            let root = session.simplify_term(session.project_result(outcome.result_id));
+            Expression {
+                session,
+                root: Some(root),
+                result_id: None,
+                form: None,
+                dialect,
+                status: outcome.status,
+                coverage: outcome.coverage,
+                diagnostics: outcome.diagnostics,
+            }
+        }
     }
 }
 
@@ -120,8 +142,11 @@ impl Expression {
     }
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
+    ///
+    /// `options.strategy`: `"none"` (default) or `"simplify"`.
     #[napi]
-    pub fn evaluate(&self) -> Result<Expression> {
+    pub fn evaluate(&self, options: Option<EvaluateOptions>) -> Result<Expression> {
+        let strategy = parse_strategy(&options)?;
         let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
@@ -131,7 +156,7 @@ impl Expression {
             }
         }
         .map_err(map_err)?;
-        Ok(with_outcome(Rc::clone(&self.session), self.dialect, outcome))
+        Ok(from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy))
     }
 
     /// Athena computation status name (`Exact`, `Candidate`, `Unknown`, …).

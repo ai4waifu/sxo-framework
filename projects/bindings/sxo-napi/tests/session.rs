@@ -214,6 +214,14 @@ fn evaluate_keeps_result_id_and_projects_on_demand() {
 }
 
 #[test]
+fn evaluate_then_simplify_trig_identity_in_one_session() {
+    let session = Session::new();
+    let out = session.evaluate_matlab("sin(x)^2 + cos(x)^2").unwrap();
+    let simplified = session.simplify_term(session.project_result(out.result_id));
+    assert_eq!(session.render_as_matlab(simplified), "1");
+}
+
+#[test]
 fn matlab_form_display_without_arena_materialize() {
     use sxo_dialect_matlab::render_matlab_form;
 
