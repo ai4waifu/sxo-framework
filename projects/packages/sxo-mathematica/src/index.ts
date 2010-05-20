@@ -131,16 +131,15 @@ export class Mathematica {
 
     /**
      * Parse, evaluate through the kernel, then optionally simplify
-     * (`autoSimplify`, default true).
+     * (`autoSimplify`, default true) in **one** native crossing when possible.
      */
     evaluate(input: ExprInput): Expression {
+        const strategy = this.#autoSimplify ? 'simplify' : 'none';
         if (typeof input === 'string') {
-            const evaluated = Expression.fromNative(this, loadNative().evaluate(input, MATH_DIALECT));
-            return this.#autoSimplify ? this.simplify(evaluated) : evaluated;
+            return Expression.fromNative(this, loadNative().evaluate(input, MATH_DIALECT, { strategy }));
         }
         const parsed = this.parse(input);
-        const evaluated = Expression.fromNative(this, parsed.native.evaluate());
-        return this.#autoSimplify ? this.simplify(evaluated) : evaluated;
+        return Expression.fromNative(this, parsed.native.evaluate({ strategy }));
     }
 
     /**

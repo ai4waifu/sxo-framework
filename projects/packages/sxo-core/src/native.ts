@@ -15,11 +15,17 @@ export type NativeBinaryIdentity = {
     mtimeMs: number;
 };
 
+/** Options for host `evaluate` (strategy applied in one N-API crossing). */
+export type EvaluateOptions = {
+    /** `"none"` (default) or `"simplify"`. */
+    strategy?: 'none' | 'simplify';
+};
+
 /** Opaque N-API expression handle (methods only; no arena identity). */
 export type NativeExpression = {
     d(varName: string): NativeExpression;
     simplify(): NativeExpression;
-    evaluate(): NativeExpression;
+    evaluate(options?: EvaluateOptions | null): NativeExpression;
     toString(): string;
     toWolfram(): string;
     toMatlab(): string;
@@ -38,7 +44,7 @@ export type NativeExpression = {
 export type NativeBinding = {
     version(): string;
     expression(input: string, dialect?: string | null): NativeExpression;
-    evaluate(input: string, dialect?: string | null): NativeExpression;
+    evaluate(input: string, dialect?: string | null, options?: EvaluateOptions | null): NativeExpression;
     d(input: string, varName: string, dialect?: string | null): NativeExpression;
     simplify(input: string, dialect?: string | null): NativeExpression;
     plotSvg(input: string, dialect?: string | null): string;

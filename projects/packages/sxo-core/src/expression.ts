@@ -1,4 +1,4 @@
-import type { NativeExpression } from './native.js';
+import type { EvaluateOptions, NativeExpression } from './native.js';
 
 /**
  * Opaque expression value owned by a {@link Session}.
@@ -32,8 +32,8 @@ export class Expression {
     }
 
     /** Evaluate via dialect `lower_request` (preserves Athena status / coverage). */
-    evaluate(): Expression {
-        return new Expression(this.#inner.evaluate());
+    evaluate(options?: EvaluateOptions): Expression {
+        return new Expression(this.#inner.evaluate(options));
     }
 
     toString(): string {
