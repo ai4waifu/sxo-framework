@@ -4,16 +4,18 @@
 
 mod dialects;
 mod handles;
+mod options;
 mod session;
 
 use std::rc::Rc;
 
-use handles::Expression;
 use session::Session;
 use sxo_types::VERSION as CORE_VERSION;
 use wasm_bindgen::prelude::*;
 
 use dialects::{dialect_from_str, map_err, parse_to_term};
+use handles::{Expression, from_outcome};
+use options::parse_strategy;
 
 /// Return the SXO engine version string.
 #[wasm_bindgen]
@@ -22,18 +24,15 @@ pub fn version() -> String {
 }
 
 /// Top-level `evaluate` — parse + dialect `lower_request` path.
+///
+/// `strategy`: `"none"` (default) or `"simplify"`.
 #[wasm_bindgen]
-pub fn evaluate(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
+pub fn evaluate(input: &str, dialect: Option<String>, strategy: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
+    let strategy = parse_strategy(strategy.as_deref())?;
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(input, d).map_err(map_err)?;
-    Ok(Expression {
-        session,
-        root: None,
-        result_id: Some(outcome.result_id),
-        form: None,
-        dialect: d,
-    })
+    Ok(from_outcome(session, d, outcome, strategy))
 }
 
 /// Top-level `d`.

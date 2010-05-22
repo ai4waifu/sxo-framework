@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     dialects::{HeldForm, dialect_from_str, map_err, parse_held, render_held},
+    options::{EvalStrategy, parse_strategy},
     session::Session,
 };
 use athena::types::{ResultId, TermId};
@@ -27,6 +28,34 @@ pub struct Expression {
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
+}
+
+/// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
+pub(crate) fn from_outcome(
+    session: Rc<Session>,
+    dialect: Dialect,
+    outcome: sxo_types::EvalOutcome,
+    strategy: EvalStrategy,
+) -> Expression {
+    match strategy {
+        EvalStrategy::None => Expression {
+            session,
+            root: None,
+            result_id: Some(outcome.result_id),
+            form: None,
+            dialect,
+        },
+        EvalStrategy::Simplify => {
+            let root = session.simplify_term(session.project_result(outcome.result_id));
+            Expression {
+                session,
+                root: Some(root),
+                result_id: None,
+                form: None,
+                dialect,
+            }
+        }
+    }
 }
 
 impl Expression {
@@ -89,7 +118,10 @@ impl Expression {
     }
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
-    pub fn evaluate(&self) -> Result<Expression, JsValue> {
+    ///
+    /// `strategy`: `"none"` (default) or `"simplify"` — applied in this crossing.
+    pub fn evaluate(&self, strategy: Option<String>) -> Result<Expression, JsValue> {
+        let strategy = parse_strategy(strategy.as_deref())?;
         let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
@@ -99,13 +131,7 @@ impl Expression {
             }
         }
         .map_err(map_err)?;
-        Ok(Expression {
-            session: Rc::clone(&self.session),
-            root: None,
-            result_id: Some(outcome.result_id),
-            form: None,
-            dialect: self.dialect,
-        })
+        Ok(from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy))
     }
 
     /// Render as string in the expression's dialect.
