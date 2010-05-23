@@ -418,6 +418,12 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, true)))),
                     });
                 }
+                ("And", args) => {
+                    return lower_short_circuit_and(session, args);
+                }
+                ("Or", args) => {
+                    return lower_short_circuit_or(session, args);
+                }
                 ("Xor", [left, right]) => {
                     let right_term = lower_wexpr(session, right);
                     return AthenaRequest::Control(ControlPlan::Branch {
@@ -479,6 +485,32 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
         }
     }
     AthenaRequest::Term(lower_wexpr(session, w))
+}
+
+/// `And` as CFG short-circuit: later arms run only when earlier conditions are true.
+fn lower_short_circuit_and(session: &mut Session, args: &[WolframForm]) -> AthenaRequest {
+    match args {
+        [] => AthenaRequest::Term(push_bool(session, true)),
+        [only] => lower_request(session, only),
+        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: lower_wexpr(session, first),
+            then_branch: Box::new(lower_short_circuit_and(session, rest)),
+            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+        }),
+    }
+}
+
+/// `Or` as CFG short-circuit: later arms run only when earlier conditions are false.
+fn lower_short_circuit_or(session: &mut Session, args: &[WolframForm]) -> AthenaRequest {
+    match args {
+        [] => AthenaRequest::Term(push_bool(session, false)),
+        [only] => lower_request(session, only),
+        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: lower_wexpr(session, first),
+            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(lower_short_circuit_or(session, rest))),
+        }),
+    }
 }
 
 fn push_binding_defines(session: &mut Session, bindings: &WolframForm, steps: &mut Vec<AthenaRequest>) {

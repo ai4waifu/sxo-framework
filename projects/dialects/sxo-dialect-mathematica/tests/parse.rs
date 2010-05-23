@@ -226,6 +226,22 @@ fn parse_and_or_not_bool_atoms() {
 }
 
 #[test]
+fn and_or_short_circuit_skips_rhs_side_effects() {
+    let h = H::new();
+    // False && (x=1) must not bind x (avoid CompoundExpression-in-then until Sequence rewrite is scoped).
+    assert_eq!(h.wolfram(h.eval("And[False, x = 1]")), "False");
+    assert_eq!(h.wolfram(h.eval("x")), "x");
+
+    // True || (y=1) must not bind y.
+    assert_eq!(h.wolfram(h.eval("Or[True, y = 1]")), "True");
+    assert_eq!(h.wolfram(h.eval("y")), "y");
+
+    // When the leading arm allows, later Set still runs (Define yields the stored value).
+    assert_eq!(h.wolfram(h.eval("And[True, z = 7]")), "7");
+    assert_eq!(h.wolfram(h.eval("z")), "7");
+}
+
+#[test]
 fn parse_with_module_block_local_bindings() {
     let h = H::new();
     for src in ["With[{x = 1}, x + 1]", "Module[{x = 1}, x + 1]", "Block[{x = 1}, x + 1]"] {
