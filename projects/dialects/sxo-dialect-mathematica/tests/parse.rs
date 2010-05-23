@@ -242,6 +242,15 @@ fn and_or_short_circuit_skips_rhs_side_effects() {
 }
 
 #[test]
+fn and_or_short_circuit_compound_expression_then() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("And[True, CompoundExpression[z = 7, True]]")), "True");
+    assert_eq!(h.wolfram(h.eval("z")), "7");
+    assert_eq!(h.wolfram(h.eval("And[False, CompoundExpression[x = 1, True]]")), "False");
+    assert_eq!(h.wolfram(h.eval("x")), "x");
+}
+
+#[test]
 fn parse_with_module_block_local_bindings() {
     let h = H::new();
     for src in ["With[{x = 1}, x + 1]", "Module[{x = 1}, x + 1]", "Block[{x = 1}, x + 1]"] {
