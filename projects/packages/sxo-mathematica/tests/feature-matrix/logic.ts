@@ -4,13 +4,14 @@ export const logicFeatures = [
     feature('And', 'logic')
         .supported()
         .pure()
-        .notes('typed Boolean atoms; And over Equal and True/False')
+        .notes('short-circuit via ControlPlan::Branch; And over Equal and True/False')
         .eval('and.equal', 'And[1 == 1, 2 == 2]', 'True')
         .eval('and.bool_atoms', 'And[True, False]', 'False')
         .done(),
     feature('Or', 'logic')
         .supported()
         .pure()
+        .notes('short-circuit via ControlPlan::Branch')
         .eval('or.equal', 'Or[1 == 2, 2 == 2]', 'True')
         .eval('or.bool_atoms', 'Or[False, True]', 'True')
         .done(),
