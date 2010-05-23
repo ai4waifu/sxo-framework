@@ -17,14 +17,15 @@ use athena::types::{ResultId, TermId};
 ///
 /// Parse objects retain a dialect [`HeldForm`] and do not materialize arena terms until
 /// evaluate / `d` / `simplify` / plot needs them. Display uses Form renderers when present.
-/// Evaluate results retain a Session-local [`ResultId`] and project [`TermId`] on demand.
+/// Evaluate results retain a Session-local [`ResultId`] and project [`TermId`] / diagnostics on demand.
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
     /// Present after `d` / `simplify` (or string-entry helpers that materialize a bare term).
+    /// When both `root` and `result_id` exist (evaluate + in-process simplify), prefer `root`.
     pub(crate) root: Option<TermId>,
-    /// Present after evaluate. Prefer over `root` when projecting symbolic results.
+    /// Present after evaluate. Prefer over Form for projecting symbolic results when `root` is absent.
     pub(crate) result_id: Option<ResultId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
@@ -33,8 +34,6 @@ pub struct Expression {
     pub(crate) status: String,
     /// Coverage name from the last evaluate (or `Unknown` if not evaluated).
     pub(crate) coverage: String,
-    /// Diagnostic summaries from the last evaluate.
-    pub(crate) diagnostics: Vec<String>,
 }
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
@@ -53,19 +52,18 @@ pub(crate) fn from_outcome(
             dialect,
             status: outcome.status,
             coverage: outcome.coverage,
-            diagnostics: outcome.diagnostics,
         },
         EvalStrategy::Simplify => {
             let root = session.simplify_term(session.project_result(outcome.result_id));
             Expression {
                 session,
                 root: Some(root),
-                result_id: None,
+                // Keep ResultId so diagnostics stay lazy after in-process simplify.
+                result_id: Some(outcome.result_id),
                 form: None,
                 dialect,
                 status: outcome.status,
                 coverage: outcome.coverage,
-                diagnostics: outcome.diagnostics,
             }
         }
     }
@@ -80,7 +78,6 @@ fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> E
         dialect,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
-        diagnostics: Vec::new(),
     }
 }
 
@@ -93,18 +90,18 @@ fn unevaluated_term(session: Rc<Session>, root: TermId, dialect: Dialect) -> Exp
         dialect,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
-        diagnostics: Vec::new(),
     }
 }
 
 impl Expression {
     /// Materialize a Term once when an API still requires [`TermId`].
+    /// Prefer an explicit `root` (e.g. post-simplify) over projecting `result_id`.
     fn materialize_root(&self) -> Result<TermId> {
-        if let Some(result_id) = self.result_id {
-            return Ok(self.session.project_result(result_id));
-        }
         if let Some(root) = self.root {
             return Ok(root);
+        }
+        if let Some(result_id) = self.result_id {
+            return Ok(self.session.project_result(result_id));
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
@@ -172,9 +169,14 @@ impl Expression {
     }
 
     /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
+    ///
+    /// Projected from the Session [`ResultId`] on demand — not copied at evaluate time.
     #[napi(getter)]
     pub fn diagnostics(&self) -> Vec<String> {
-        self.diagnostics.clone()
+        match self.result_id {
+            Some(id) => self.session.project_diagnostics(id),
+            None => Vec::new(),
+        }
     }
 
     /// Render as string in the expression's dialect.
@@ -224,7 +226,13 @@ impl Expression {
         }
     }
 
-    /// Render 1-D `Plot` / `plot` as SVG when the term matches a known form.
+    /// Dialect tag used when this expression was created.
+    #[napi(getter)]
+    pub fn dialect(&self) -> String {
+        dialect_to_str(self.dialect).into()
+    }
+
+    /// Render 1-D plot as SVG when the term matches a known form.
     #[napi(js_name = "plotSvg")]
     pub fn plot_svg(&self) -> Result<String> {
         let root = self.materialize_root()?;
@@ -233,11 +241,5 @@ impl Expression {
             Some(Err(e)) => Err(map_err(e)),
             None => Err(Error::from_reason("not a supported 1-D plot form")),
         }
-    }
-
-    /// Dialect tag used for default rendering.
-    #[napi(getter)]
-    pub fn dialect(&self) -> String {
-        dialect_to_str(self.dialect).to_string()
     }
 }

@@ -40,7 +40,6 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
         dialect: resolved,
         status: "Unknown".into(),
         coverage: "Unknown".into(),
-        diagnostics: Vec::new(),
     })
 }
 

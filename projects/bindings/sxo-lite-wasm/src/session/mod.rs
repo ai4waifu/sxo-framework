@@ -81,6 +81,15 @@ impl Session {
         project_result_term(&mut ms, result_id)
     }
 
+    /// Project diagnostic summaries for a Session-local [`ResultId`] (empty if missing).
+    pub fn project_diagnostics(&self, result_id: ResultId) -> Vec<String> {
+        let ms = self.math_session.borrow();
+        ms.results
+            .get(result_id)
+            .map(|r| r.diagnostics.iter().map(|d| d.to_string()).collect())
+            .unwrap_or_default()
+    }
+
     /// Clear Athena Own symbol definitions for this host session.
     #[allow(dead_code)]
     pub fn clear_definitions(&self) {
@@ -239,14 +248,12 @@ fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
             result_id,
             ComputationStatus::Unknown.name(),
             CoverageStatus::Unknown.name(),
-            Vec::new(),
         );
     };
     EvalOutcome::new(
         result_id,
         result.status.name().to_string(),
         result.coverage.name().to_string(),
-        result.diagnostics.iter().map(|d| d.to_string()).collect(),
     )
 }
 

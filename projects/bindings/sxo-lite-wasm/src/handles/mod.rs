@@ -50,7 +50,8 @@ pub(crate) fn from_outcome(
             Expression {
                 session,
                 root: Some(root),
-                result_id: None,
+                // Keep ResultId so diagnostics can stay lazy after in-process simplify.
+                result_id: Some(outcome.result_id),
                 form: None,
                 dialect,
             }
@@ -59,12 +60,13 @@ pub(crate) fn from_outcome(
 }
 
 impl Expression {
+    /// Prefer an explicit `root` (e.g. post-simplify) over projecting `result_id`.
     fn materialize_root(&self) -> Result<TermId, JsValue> {
-        if let Some(result_id) = self.result_id {
-            return Ok(self.session.project_result(result_id));
-        }
         if let Some(root) = self.root {
             return Ok(root);
+        }
+        if let Some(result_id) = self.result_id {
+            return Ok(self.session.project_result(result_id));
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
@@ -132,6 +134,17 @@ impl Expression {
         }
         .map_err(map_err)?;
         Ok(from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy))
+    }
+
+    /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
+    ///
+    /// Projected from the Session [`ResultId`] on demand — not copied at evaluate time.
+    #[wasm_bindgen(getter)]
+    pub fn diagnostics(&self) -> Vec<String> {
+        match self.result_id {
+            Some(id) => self.session.project_diagnostics(id),
+            None => Vec::new(),
+        }
     }
 
     /// Render as string in the expression's dialect.
