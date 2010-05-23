@@ -125,6 +125,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             }
             _ => {}
         },
+        MatlabForm::Call { head, args } if head == "And" => {
+            return lower_short_circuit_and(session, args);
+        }
+        MatlabForm::Call { head, args } if head == "Or" => {
+            return lower_short_circuit_or(session, args);
+        }
         MatlabForm::Call { head, args } if head == "While" || head == "LoopWhile" => {
             if let [cond, body] = args.as_slice() {
                 return AthenaRequest::Control(ControlPlan::LoopWhile {
@@ -271,6 +277,52 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
     }
     // Ordinary expression Forms materialize once. Request-shaped heads above already returned.
     AthenaRequest::Term(form_to_term(session, form))
+}
+
+/// Short-circuit `&&` (`And`): later arms run only when earlier conditions are true.
+///
+/// Scalar MATLAB `&&` yields a logical. Pure last arms are coerced via nested
+/// `Branch`. Assignment / compound last arms keep `lower_request` so side effects run.
+fn lower_short_circuit_and(session: &mut Session, args: &[MatlabForm]) -> AthenaRequest {
+    match args {
+        [] => AthenaRequest::Term(push_bool(session, true)),
+        [only] if form_is_effectful_arm(only) => lower_request(session, only),
+        [only] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: form_to_term(session, only),
+            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+        }),
+        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: form_to_term(session, first),
+            then_branch: Box::new(lower_short_circuit_and(session, rest)),
+            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+        }),
+    }
+}
+
+/// Short-circuit `||` (`Or`): later arms run only when earlier conditions are false.
+fn lower_short_circuit_or(session: &mut Session, args: &[MatlabForm]) -> AthenaRequest {
+    match args {
+        [] => AthenaRequest::Term(push_bool(session, false)),
+        [only] if form_is_effectful_arm(only) => lower_request(session, only),
+        [only] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: form_to_term(session, only),
+            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+        }),
+        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+            condition: form_to_term(session, first),
+            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(lower_short_circuit_or(session, rest))),
+        }),
+    }
+}
+
+fn form_is_effectful_arm(form: &MatlabForm) -> bool {
+    match form {
+        MatlabForm::Call { head, .. } if head == "Set" || head == "CompoundExpression" => true,
+        _ => false,
+    }
 }
 
 fn form_symbol_name(form: &MatlabForm) -> Option<&str> {

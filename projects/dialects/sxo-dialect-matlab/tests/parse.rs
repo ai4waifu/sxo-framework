@@ -458,6 +458,22 @@ fn bool_atoms_short_circuit_and_or() {
 }
 
 #[test]
+fn and_or_short_circuit_skips_rhs_assignment() {
+    let h = H::new();
+    // false && (x=1) must not define x.
+    assert_eq!(h.render(h.eval("false && (x = 1)")), "false");
+    assert_eq!(h.render(h.eval("x")), "x");
+
+    // true || (y=1) must not define y.
+    assert_eq!(h.render(h.eval("true || (y = 1)")), "true");
+    assert_eq!(h.render(h.eval("y")), "y");
+
+    // When the leading arm allows, assignment still runs.
+    assert_eq!(h.render(h.eval("true && (z = 7)")), "7");
+    assert_eq!(h.render(h.eval("z")), "7");
+}
+
+#[test]
 fn scalar_or_and_short_circuit_ops() {
     let h = H::new();
     assert_eq!(parse_matlab_form("1 | 0").unwrap().head_name(), Some("ElementwiseOr"));
