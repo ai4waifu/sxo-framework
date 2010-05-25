@@ -204,6 +204,16 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             // Real matrices: conjugate transpose equals transpose. Complex ctranspose is later.
             if let [arg] = args.as_slice() {
                 let term = form_to_term(session, arg);
+                // True 2-D MatrixValue path; row/column vectors keep Term reshape for MATLAB layout.
+                if let Some(mat) = matrix_from_nested_list(session, term) {
+                    let shape = mat.shape();
+                    if shape.rows > 1 && shape.cols > 1 {
+                        let matrix = session.matrix_objects.intern(mat);
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix },
+                        )));
+                    }
+                }
                 if let Some(transposed) = transpose_nested_or_vector(session, term) {
                     return AthenaRequest::Term(transposed);
                 }
