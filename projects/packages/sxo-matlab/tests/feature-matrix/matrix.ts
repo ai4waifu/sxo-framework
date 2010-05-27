@@ -10,7 +10,7 @@ export const matrixFeatures = [
     feature('transpose', 'matrix')
         .supported()
         .pure()
-        .notes("`.'` Transpose on nested-list matrices and row/column vectors")
+        .notes("`.'` Transpose: 2-D via MatrixValue Goal; row/column vectors keep Term reshape")
         .eval('transpose.row', "[1, 2].'", '[1; 2]')
         .eval('transpose.col', "[1; 2].'", '[1, 2]')
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
