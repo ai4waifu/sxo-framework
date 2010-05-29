@@ -16,9 +16,10 @@ export const linearAlgebraFeatures = [
         .gap('inverse.eye', 'Inverse[{{1, 0}, {0, 1}}]', { expected: '{{1, 0}, {0, 1}}' })
         .done(),
     feature('Transpose', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', { expected: '{{1, 3}, {2, 4}}' })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose')
+        .eval('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
         .done(),
     feature('Dot', 'linear_algebra').unsupported().pure().gap('dot.mv', 'Dot[{{1, 2}, {3, 4}}, {1, 1}]', { expected: '{3, 7}' }).done(),
     feature('RowReduce', 'linear_algebra')
