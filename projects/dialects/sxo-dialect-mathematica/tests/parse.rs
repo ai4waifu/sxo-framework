@@ -375,6 +375,14 @@ fn parse_linear_solve_nested_lists() {
 }
 
 #[test]
+fn transpose_nested_list_via_matrix_value_goal() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Transpose[{{1, 2}, {3, 4}}]")), "{{1, 3}, {2, 4}}");
+    // Real ConjugateTranspose matches Transpose on exact integer matrices.
+    assert_eq!(h.wolfram(h.eval("ConjugateTranspose[{{1, 2}, {3, 4}}]")), "{{1, 3}, {2, 4}}");
+}
+
+#[test]
 fn parse_solve_quadratic_x2_eq_1() {
     let h = H::new();
     // Solve stays Extension surface until DomainGoal lowering (Living `14`).

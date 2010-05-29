@@ -6,12 +6,17 @@ use athena::{
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
+        linear_algebra::MatrixValue,
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
+    numeric::{Integer, Rational},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::{
-        arena::{push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name},
-        numeric_clone::clone_number,
+        arena::{
+            number_from_id, push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic,
+            push_symbol_name,
+        },
+        numeric_clone::{clone_integer, clone_number, clone_rational},
     },
     types::{
         AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
@@ -467,6 +472,19 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         return AthenaRequest::Control(ControlPlan::Index { target: lower_wexpr(session, &args[0]), axes });
                     }
                 }
+                ("Transpose" | "ConjugateTranspose", [arg]) => {
+                    // Real matrices: ConjugateTranspose equals Transpose. Complex path later.
+                    let term = lower_wexpr(session, arg);
+                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                        let shape = mat.shape();
+                        if shape.rows >= 1 && shape.cols >= 1 {
+                            let matrix = session.matrix_objects.intern(mat);
+                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix },
+                            )));
+                        }
+                    }
+                }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
                         return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
@@ -731,6 +749,55 @@ fn symbol_of(session: &mut Session, w: &WolframForm) -> Option<SymbolId> {
 
 fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
     AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
+}
+
+fn term_scalar_rational(session: &Session, term: TermId) -> Option<Rational> {
+    let n = number_from_id(session, term)?;
+    if let Some(i) = n.as_exact_integer() {
+        return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+    }
+    if let Some(i) = n.as_integer() {
+        return Some(Rational::from_integer(clone_integer(i)));
+    }
+    n.as_rational().map(clone_rational)
+}
+
+fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValue> {
+    match session.arena.get(term) {
+        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
+            if matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. })) {
+                let mut data = Vec::new();
+                let mut cols: Option<u64> = None;
+                for row in rows {
+                    let cells = match session.arena.get(*row) {
+                        Some(TermNode::Collection { elements: cells, .. }) => cells.clone(),
+                        _ => return None,
+                    };
+                    let c = cells.len() as u64;
+                    match cols {
+                        Some(prev) if prev != c => return None,
+                        None => cols = Some(c),
+                        _ => {}
+                    }
+                    for cell in cells {
+                        data.push(term_scalar_rational(session, cell)?);
+                    }
+                }
+                MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+            }
+            else {
+                let mut data = Vec::with_capacity(rows.len());
+                for cell in rows {
+                    data.push(term_scalar_rational(session, *cell)?);
+                }
+                MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+            }
+        }
+        _ => {
+            let r = term_scalar_rational(session, term)?;
+            MatrixValue::from_rationals_row_major(1, 1, vec![r]).ok()
+        }
+    }
 }
 
 fn list_items(w: &WolframForm) -> Option<&[WolframForm]> {
