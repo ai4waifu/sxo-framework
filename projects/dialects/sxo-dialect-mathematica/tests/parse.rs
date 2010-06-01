@@ -365,13 +365,8 @@ fn parse_limit_sinc_and_definite_integrate_sin() {
 #[test]
 fn parse_linear_solve_nested_lists() {
     let h = H::new();
-    // Det is Semantic. LinearSolve is Extension until DomainGoal lowering.
     assert!(h.eq(h.eval("Det[{{1, 2}, {3, 4}}]"), h.i(-2)));
-    let ls = h.lower(&h.parse_w("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]"));
-    assert!(matches!(
-        h.s.borrow().arena.get(ls),
-        Some(TermNode::Application { head: athena::ir::ApplicationHead::Extension(_), .. })
-    ));
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]")), "{{-4}, {9/2}}");
 }
 
 #[test]
