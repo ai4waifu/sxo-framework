@@ -2,12 +2,10 @@ import { feature } from '@sxo/harness';
 
 export const linearAlgebraFeatures = [
     feature('LinearSolve', 'linear_algebra')
-        .unsupported('unevaluated echo; exact solve bridge not wired for this surface')
+        .supported()
         .pure()
-        .gap('linearsolve.2x2', 'LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]', {
-            expected: '{{-4}, {9/2}}',
-            notes: 'currently LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]',
-        })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Solve')
+        .eval('linearsolve.2x2', 'LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]', '{{-4}, {9/2}}')
         .done(),
     feature('Det', 'linear_algebra').supported().pure().eval('det.2x2', 'Det[{{1, 2}, {3, 4}}]', '-2').done(),
     feature('Inverse', 'linear_algebra')
