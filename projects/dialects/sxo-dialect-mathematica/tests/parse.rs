@@ -378,6 +378,18 @@ fn transpose_nested_list_via_matrix_value_goal() {
 }
 
 #[test]
+fn integrate_reciprocal_is_log() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
+}
+
+#[test]
+fn limit_reciprocal_at_infinity_is_zero() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Limit[1/x, x -> Infinity]")), "0");
+}
+
+#[test]
 fn parse_solve_quadratic_x2_eq_1() {
     let h = H::new();
     // Solve stays Extension surface until DomainGoal lowering (Living `14`).
