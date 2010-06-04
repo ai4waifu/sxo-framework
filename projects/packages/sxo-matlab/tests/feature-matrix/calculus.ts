@@ -2,11 +2,12 @@ import { feature } from '@sxo/harness';
 
 export const calculusFeatures = [
     feature('diff', 'calculus')
-        .partial('first derivative works; higher-order diff(f,x,2) unevaluated')
+        .supported()
         .pure()
+        .notes('symbolic diff(f,x) and higher-order diff(f,x,n)')
         .eval('diff.poly', 'diff(x^3, x)', '3*x^2')
         .eval('diff.sin', 'diff(sin(x), x)', 'cos(x)')
-        .gap('diff.order2', 'diff(x^2, x, 2)', { expected: '2' })
+        .eval('diff.order2', 'diff(x^2, x, 2)', '2')
         .done(),
     feature('int', 'calculus')
         .supported()
