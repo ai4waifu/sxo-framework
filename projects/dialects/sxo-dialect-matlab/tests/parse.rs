@@ -135,6 +135,7 @@ fn parse_diff() {
     let e = h.eval("diff(x^3, x)");
     let s = h.render(e);
     assert!(s.contains('x'), "got {s}");
+    assert_eq!(h.render(h.eval("diff(x^2, x, 2)")), "2");
 }
 
 #[test]
