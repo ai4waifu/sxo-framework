@@ -378,6 +378,18 @@ fn transpose_nested_list_via_matrix_value_goal() {
 }
 
 #[test]
+fn integrate_x_sin_x_by_parts() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Integrate[x*Sin[x], x]")), "-1*x*Cos[x] + Sin[x]");
+}
+
+#[test]
+fn limit_one_plus_x_to_reciprocal_is_e() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Limit[(1 + x)^(1/x), x -> 0]")), "E");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
