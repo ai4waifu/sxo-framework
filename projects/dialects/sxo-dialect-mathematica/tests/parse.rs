@@ -378,6 +378,12 @@ fn transpose_nested_list_via_matrix_value_goal() {
 }
 
 #[test]
+fn series_exp_order_two_renders_polynomial() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Series[Exp[x], {x, 0, 2}]")), "1 + x + 1/2*x^2");
+}
+
+#[test]
 fn integrate_x_sin_x_by_parts() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[x*Sin[x], x]")), "-1*x*Cos[x] + Sin[x]");
