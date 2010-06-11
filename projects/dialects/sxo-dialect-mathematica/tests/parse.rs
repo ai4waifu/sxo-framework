@@ -384,6 +384,18 @@ fn series_exp_order_two_renders_polynomial() {
 }
 
 #[test]
+fn series_exp_order_three_renders_polynomial() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Series[Exp[x], {x, 0, 3}]")), "1 + x + 1/2*x^2 + 1/6*x^3");
+}
+
+#[test]
+fn series_sin_order_three_renders_polynomial() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Series[Sin[x], {x, 0, 3}]")), "x + -1/6*x^3");
+}
+
+#[test]
 fn integrate_x_sin_x_by_parts() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[x*Sin[x], x]")), "-1*x*Cos[x] + Sin[x]");
