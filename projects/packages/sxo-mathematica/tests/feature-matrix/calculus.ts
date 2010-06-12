@@ -37,11 +37,11 @@ export const calculusFeatures = [
         .eval('limit.exp', 'Limit[(1 + x)^(1/x), x -> 0]', 'E')
         .done(),
     feature('Series', 'calculus')
-        .partial('Exp order-2 polynomial truncation OK; order-3 and Sin series still wrong')
+        .partial('Exp/Sin Taylor polynomial truncation through order-3 OK')
         .pure()
         .eval('series.exp', 'Series[Exp[x], {x, 0, 2}]', '1 + x + 1/2*x^2')
-        .gap('series.exp3', 'Series[Exp[x], {x, 0, 3}]', { expected: '1 + x + x^2/2 + x^3/6', notes: 'currently 1 + x + 0.5*x^2 + x^3' })
-        .gap('series.sin', 'Series[Sin[x], {x, 0, 3}]', { expected: 'x - x^3/6', notes: 'currently x + -(x^3)' })
+        .eval('series.exp3', 'Series[Exp[x], {x, 0, 3}]', '1 + x + 1/2*x^2 + 1/6*x^3')
+        .eval('series.sin', 'Series[Sin[x], {x, 0, 3}]', 'x + -1/6*x^3')
         .done(),
     feature('LaplaceTransform', 'calculus')
         .unsupported('nested/garbage ROCUnknown re-wrapping')
