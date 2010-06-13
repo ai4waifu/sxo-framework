@@ -396,6 +396,12 @@ fn series_sin_order_three_renders_polynomial() {
 }
 
 #[test]
+fn residue_exp_over_z_at_zero_is_one() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Residue[Exp[z]/z, {z, 0}]")), "1");
+}
+
+#[test]
 fn definite_gaussian_exp_neg_square_is_sqrt_pi() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[Exp[-x^2], {x, -Infinity, Infinity}]")), "Sqrt[Pi]");
