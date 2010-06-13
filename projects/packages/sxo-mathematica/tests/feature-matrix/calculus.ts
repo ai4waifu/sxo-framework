@@ -17,17 +17,14 @@ export const calculusFeatures = [
         .gap('d.compose_crash', 'D[f[g[x]], x]', { expected: "f'[g[x]]*g'[x]", notes: 'host crash (stack overflow) — keep as gap only' })
         .done(),
     feature('Integrate', 'calculus')
-        .partial('indefinite poly/sin/log/parts ok; definite Sin to Pi exact; Exp[-x^2] gap remains')
+        .partial('indefinite poly/sin/log/parts ok; definite Sin to Pi and Gaussian Exp[-x^2] exact')
         .pure()
         .eval('integrate.poly', 'Integrate[x^2, x]', '1/3*x^3')
         .eval('integrate.sin', 'Integrate[Sin[x], x]', '-Cos[x]')
         .eval('integrate.definite_sin', 'Integrate[Sin[x], {x, 0, Pi}]', '2')
         .eval('integrate.log', 'Integrate[1/x, x]', 'Log[x]')
         .eval('integrate.parts_juxtapose', 'Integrate[x*Sin[x], x]', '-1*x*Cos[x] + Sin[x]')
-        .gap('integrate.gauss_sign', 'Integrate[Exp[-x^2], {x, -Infinity, Infinity}]', {
-            expected: 'Sqrt[Pi]',
-            notes: 'currently Integrate[Exp[x^2], …]',
-        })
+        .eval('integrate.gauss_sign', 'Integrate[Exp[-x^2], {x, -Infinity, Infinity}]', 'Sqrt[Pi]')
         .done(),
     feature('Limit', 'calculus')
         .partial('sinc, 1/x→Infinity, and (1+x)^(1/x)→E OK')
