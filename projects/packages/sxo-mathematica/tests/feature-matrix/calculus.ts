@@ -59,17 +59,13 @@ export const calculusFeatures = [
         .gap('inversefourier.impulse', 'InverseFourier[{1, 0, 0, 0}]', { expected: '...' })
         .done(),
     feature('Residue', 'calculus')
-        .partial('simple poles at 0 OK; `Exp[z]/z` blocked on upstream `Exp[0]`; shifted pole unevaluated')
+        .partial('simple poles at 0 OK including Exp[z]/z; shifted pole still wrong (returns 0)')
         .pure()
         .eval('residue.1_z', 'Residue[1/z, {z, 0}]', '1')
-        .wrong('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', {
+        .eval('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', '1')
+        .wrong('residue.shift', 'Residue[1/(z - 1), {z, 1}]', {
             expected: '1',
-            flags: ['upstream-athena'],
-            notes: 'got `Exp[0]` when residual Exp does not fold',
-        })
-        .gap('residue.shift', 'Residue[1/(z - 1), {z, 1}]', {
-            expected: '1',
-            notes: 'stays Residue[1/(z - 1), {z, 1}]; no longer silently returns 0',
+            notes: 'currently returns 0 instead of unevaluated or 1',
         })
         .done(),
     feature('InverseLaplaceTransform', 'calculus')
