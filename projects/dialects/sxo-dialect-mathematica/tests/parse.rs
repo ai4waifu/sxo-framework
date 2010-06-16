@@ -396,6 +396,12 @@ fn series_sin_order_three_renders_polynomial() {
 }
 
 #[test]
+fn residue_shifted_simple_pole_is_one() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Residue[1/(z - 1), {z, 1}]")), "1");
+}
+
+#[test]
 fn residue_exp_over_z_at_zero_is_one() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Residue[Exp[z]/z, {z, 0}]")), "1");
