@@ -269,6 +269,25 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("Grad", [expr, vars]) => {
+                    if let Some(variables) = symbol_list(session, vars) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Gradient {
+                            expression,
+                            variables,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("Div", [field, vars]) => {
+                    if let (Some(components), Some(variables)) = (term_list(session, field), symbol_list(session, vars)) {
+                        return calculus_goal(CalculusRequest::Divergence {
+                            components,
+                            variables,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);
@@ -821,6 +840,20 @@ fn list_items(w: &WolframForm) -> Option<&[WolframForm]> {
         }
         _ => None,
     }
+}
+
+fn symbol_list(session: &mut Session, w: &WolframForm) -> Option<Vec<SymbolId>> {
+    let items = list_items(w)?;
+    let mut out = Vec::with_capacity(items.len());
+    for item in items {
+        out.push(symbol_of(session, item)?);
+    }
+    Some(out)
+}
+
+fn term_list(session: &mut Session, w: &WolframForm) -> Option<Vec<TermId>> {
+    let items = list_items(w)?;
+    Some(items.iter().map(|item| lower_wexpr(session, item)).collect())
 }
 
 /// Unwrap a single held argument from `Hold` / `HoldForm` / `HoldComplete`.

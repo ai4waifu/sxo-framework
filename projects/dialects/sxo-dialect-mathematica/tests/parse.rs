@@ -426,6 +426,18 @@ fn limit_one_plus_x_to_reciprocal_is_e() {
 }
 
 #[test]
+fn grad_xy_product() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Grad[x*y, {x, y}]")), "{y, x}");
+}
+
+#[test]
+fn div_identity_field() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Div[{x, y}, {x, y}]")), "2");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
