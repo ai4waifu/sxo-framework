@@ -288,6 +288,15 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("Curl", [field, vars]) => {
+                    if let (Some(components), Some(variables)) = (term_list(session, field), symbol_list(session, vars)) {
+                        return calculus_goal(CalculusRequest::Curl {
+                            components,
+                            variables,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);

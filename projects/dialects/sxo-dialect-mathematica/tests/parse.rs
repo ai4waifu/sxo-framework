@@ -438,6 +438,12 @@ fn div_identity_field() {
 }
 
 #[test]
+fn curl_2d_rotation_field() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Curl[{-y, x}, {x, y}]")), "2");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
