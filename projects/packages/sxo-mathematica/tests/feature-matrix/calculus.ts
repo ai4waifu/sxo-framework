@@ -83,8 +83,16 @@ export const calculusFeatures = [
             notes: 'stays Curl[…]; no longer silently returns {}',
         })
         .done(),
-    feature('Grad', 'calculus').unsupported().pure().gap('grad.xy', 'Grad[x*y, {x, y}]', { expected: '{y, x}' }).done(),
-    feature('Div', 'calculus').unsupported().pure().gap('div.xy', 'Div[{x, y}, {x, y}]', { expected: '2' }).done(),
+    feature('Grad', 'calculus')
+        .supported()
+        .pure()
+        .eval('grad.xy', 'Grad[x*y, {x, y}]', '{y, x}')
+        .done(),
+    feature('Div', 'calculus')
+        .supported()
+        .pure()
+        .eval('div.xy', 'Div[{x, y}, {x, y}]', '2')
+        .done(),
     feature('ZTransform', 'calculus')
         .unsupported('unevaluated ZTransform[n,n,z]')
         .pure()
