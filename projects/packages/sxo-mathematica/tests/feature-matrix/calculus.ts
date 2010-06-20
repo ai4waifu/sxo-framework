@@ -76,12 +76,9 @@ export const calculusFeatures = [
         .eval('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]')
         .done(),
     feature('Curl', 'calculus')
-        .unsupported('unevaluated Curl[{-y,x},{x,y}]')
+        .supported()
         .pure()
-        .gap('curl.2d', 'Curl[{-y, x}, {x, y}]', {
-            expected: '2',
-            notes: 'stays Curl[…]; no longer silently returns {}',
-        })
+        .eval('curl.2d', 'Curl[{-y, x}, {x, y}]', '2')
         .done(),
     feature('Grad', 'calculus')
         .supported()
