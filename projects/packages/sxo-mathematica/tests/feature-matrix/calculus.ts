@@ -41,9 +41,9 @@ export const calculusFeatures = [
         .eval('series.sin', 'Series[Sin[x], {x, 0, 3}]', 'x + -1/6*x^3')
         .done(),
     feature('LaplaceTransform', 'calculus')
-        .unsupported('nested/garbage ROCUnknown re-wrapping')
+        .supported()
         .pure()
-        .gap('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', { expected: '1/(a + s)' })
+        .eval('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', '(s + a)^(-1)')
         .done(),
     feature('FourierTransform', 'calculus')
         .unsupported('FourierTransform kernel still incomplete; unary-minus/Power parse is fixed')
