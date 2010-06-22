@@ -5,7 +5,7 @@ use athena::{
     api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
     domains::{
         DomainRequest,
-        calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
+        calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection, TransformKind},
         linear_algebra::MatrixValue,
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
@@ -293,6 +293,18 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         return calculus_goal(CalculusRequest::Curl {
                             components,
                             variables,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("LaplaceTransform", [expr, time, transform]) => {
+                    if let (Some(time_variable), Some(transform_variable)) = (symbol_of(session, time), symbol_of(session, transform)) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Transform {
+                            kind: TransformKind::Laplace,
+                            expression,
+                            time_variable,
+                            transform_variable,
                             assumptions: AssumptionSet::empty(),
                         });
                     }

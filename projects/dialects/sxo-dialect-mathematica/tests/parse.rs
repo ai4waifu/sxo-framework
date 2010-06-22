@@ -444,6 +444,12 @@ fn curl_2d_rotation_field() {
 }
 
 #[test]
+fn laplace_exp_neg_a_t() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("LaplaceTransform[Exp[-a*t], t, s]")), "(s + a)^(-1)");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
