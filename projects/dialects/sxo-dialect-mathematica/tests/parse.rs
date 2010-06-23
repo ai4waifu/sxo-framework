@@ -450,6 +450,12 @@ fn laplace_exp_neg_a_t() {
 }
 
 #[test]
+fn fourier_exp_neg_x_squared() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("FourierTransform[Exp[-x^2], x, k]")), "Sqrt[Pi]*Exp[-1/4*k^2]");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
