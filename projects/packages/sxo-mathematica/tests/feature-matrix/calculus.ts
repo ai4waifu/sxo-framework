@@ -46,9 +46,9 @@ export const calculusFeatures = [
         .eval('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', '(s + a)^(-1)')
         .done(),
     feature('FourierTransform', 'calculus')
-        .unsupported('FourierTransform kernel still incomplete; unary-minus/Power parse is fixed')
+        .supported()
         .pure()
-        .gap('fourier.gauss', 'FourierTransform[Exp[-x^2], x, k]', { expected: 'Sqrt[Pi]*Exp[-k^2/4]' })
+        .eval('fourier.gauss', 'FourierTransform[Exp[-x^2], x, k]', 'Sqrt[Pi]*Exp[-1/4*k^2]')
         .done(),
     feature('Dt', 'calculus').unsupported().pure().gap('dt.x2', 'Dt[x^2]', { expected: '2*x*Dt[x]' }).done(),
     feature('Derivative', 'calculus').unsupported().pure().gap('derivative.sin', 'Derivative[1][Sin][x]', { expected: 'Cos[x]' }).done(),
