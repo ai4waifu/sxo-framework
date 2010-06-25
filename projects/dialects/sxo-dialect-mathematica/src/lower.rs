@@ -321,6 +321,18 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("ZTransform", [expr, time, transform]) => {
+                    if let (Some(time_variable), Some(transform_variable)) = (symbol_of(session, time), symbol_of(session, transform)) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Transform {
+                            kind: TransformKind::Z,
+                            expression,
+                            time_variable,
+                            transform_variable,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);

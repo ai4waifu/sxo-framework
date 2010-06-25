@@ -456,6 +456,12 @@ fn fourier_exp_neg_x_squared() {
 }
 
 #[test]
+fn z_transform_of_n() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ZTransform[n, n, z]")), "z*(-1 + z)^(-2)");
+}
+
+#[test]
 fn integrate_reciprocal_is_log() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Integrate[1/x, x]")), "Log[x]");
