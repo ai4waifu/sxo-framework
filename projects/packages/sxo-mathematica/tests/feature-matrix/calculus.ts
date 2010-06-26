@@ -91,12 +91,9 @@ export const calculusFeatures = [
         .eval('div.xy', 'Div[{x, y}, {x, y}]', '2')
         .done(),
     feature('ZTransform', 'calculus')
-        .unsupported('unevaluated ZTransform[n,n,z]')
+        .supported()
         .pure()
-        .gap('ztransform.n', 'ZTransform[n, n, z]', {
-            expected: 'z/(-1 + z)^2',
-            notes: 'stays ZTransform[n, n, z]; no nested ROCUnknown re-wrap',
-        })
+        .eval('ztransform.n', 'ZTransform[n, n, z]', 'z*(-1 + z)^(-2)')
         .done(),
     feature('InverseZTransform', 'calculus')
         .unsupported()
