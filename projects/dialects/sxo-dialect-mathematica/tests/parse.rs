@@ -4,7 +4,6 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session,
-    ir::TermNode,
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
