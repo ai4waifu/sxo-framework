@@ -333,6 +333,14 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("Solve", [equation, unknown]) => {
+                    if let Some(unknown) = symbol_of(session, unknown) {
+                        let equation = lower_wexpr(session, equation);
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
+                            athena::domains::solve::SolveRequest::UnivariateEquation { equation, unknown },
+                        )));
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);

@@ -474,15 +474,9 @@ fn limit_reciprocal_at_infinity_is_zero() {
 }
 
 #[test]
-fn parse_solve_quadratic_x2_eq_1() {
+fn solve_x_squared_eq_one() {
     let h = H::new();
-    // Solve stays Extension surface until DomainGoal lowering (Living `14`).
-    let e = h.lower(&h.parse_w("Solve[x^2 == 1, x]"));
-    assert!(matches!(
-        h.s.borrow().arena.get(e),
-        Some(TermNode::Application { head: athena::ir::ApplicationHead::Extension(_), .. })
-    ));
-    assert!(h.wolfram(e).starts_with("Solve["));
+    assert_eq!(h.wolfram(h.eval("Solve[x^2 == 1, x]")), "{{x -> -1}, {x -> 1}}");
 }
 
 #[test]
