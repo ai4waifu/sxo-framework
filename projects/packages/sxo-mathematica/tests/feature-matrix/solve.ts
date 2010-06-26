@@ -2,10 +2,10 @@ import { feature } from '@sxo/harness';
 
 export const solveFeatures = [
     feature('Solve', 'solve')
-        .partial('Equal residual fixed; univariate SolveGoal / SolutionSet bridge still pending')
+        .supported()
         .pure()
-        .notes('must lower to Athena SolveGoal — not Extension residual')
-        .gap('solve.quad', 'Solve[x^2 == 1, x]', { expected: '{{x -> -1}, {x -> 1}}' })
+        .notes('univariate polynomial equations lower to Athena SolveGoal')
+        .eval('solve.quad', 'Solve[x^2 == 1, x]', '{{x -> -1}, {x -> 1}}')
         .done(),
     feature('NSolve', 'solve').planned().pure().gap('nsolve.quad', 'NSolve[x^2 == 1, x]', { expected: '{{x -> -1.}, {x -> 1.}}' }).done(),
     feature('Reduce', 'solve').planned().pure().gap('reduce.basic', 'Reduce[x^2 > 0, x]', { expected: 'x < 0 || x > 0' }).done(),
