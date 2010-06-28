@@ -377,6 +377,18 @@ fn transpose_nested_list_via_matrix_value_goal() {
 }
 
 #[test]
+fn matrix_rank_rank1() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("MatrixRank[{{1, 2}, {2, 4}}]")), "1");
+}
+
+#[test]
+fn row_reduce_to_identity() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
+}
+
+#[test]
 fn series_exp_order_two_renders_polynomial() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Series[Exp[x], {x, 0, 2}]")), "1 + x + 1/2*x^2");
