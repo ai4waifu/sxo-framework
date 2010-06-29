@@ -491,12 +491,6 @@ fn solve_x_squared_eq_one() {
 }
 
 #[test]
-fn full_simplify_trig_identity() {
-    let h = H::new();
-    assert_eq!(h.wolfram(h.eval("FullSimplify[Sin[x]^2 + Cos[x]^2]")), "1");
-}
-
-#[test]
 fn parse_plot_negative_domain_renders_svg() {
     let h = H::new();
     let w = h.parse_w("Plot[x^2, {x, -1, 1}]");

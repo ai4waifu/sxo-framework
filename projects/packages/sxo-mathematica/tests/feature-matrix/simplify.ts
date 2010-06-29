@@ -3,9 +3,9 @@ import { feature } from '@sxo/harness';
 export const simplifyFeatures = [
     feature('Simplify', 'simplify').supported().pure().eval('simplify.trig', 'Simplify[Sin[x]^2 + Cos[x]^2]', '1').done(),
     feature('FullSimplify', 'simplify')
-        .supported('aliases to Simplify for current trig identities')
+        .unsupported('distinct from Simplify; must not alias')
         .pure()
-        .eval('fullsimplify.trig', 'FullSimplify[Sin[x]^2 + Cos[x]^2]', '1')
+        .gap('fullsimplify.trig', 'FullSimplify[Sin[x]^2 + Cos[x]^2]', { expected: '1' })
         .done(),
     feature('TrigExpand', 'simplify')
         .unsupported()

@@ -54,7 +54,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Rule" => SemanticOperator::Rule,
         "RuleDelayed" => SemanticOperator::RuleDeferred,
         "ReplaceAll" => SemanticOperator::ReplaceAll,
-        "Simplify" | "FullSimplify" => SemanticOperator::Simplify,
+        "Simplify" => SemanticOperator::Simplify,
         "Hold" | "HoldForm" => SemanticOperator::Hold,
         "Function" => SemanticOperator::Function,
         "Factorial" => SemanticOperator::Factorial,
