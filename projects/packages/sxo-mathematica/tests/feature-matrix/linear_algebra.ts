@@ -21,9 +21,10 @@ export const linearAlgebraFeatures = [
         .done(),
     feature('Dot', 'linear_algebra').unsupported().pure().gap('dot.mv', 'Dot[{{1, 2}, {3, 4}}, {1, 1}]', { expected: '{3, 7}' }).done(),
     feature('RowReduce', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('rowreduce.basic', 'RowReduce[{{1, 2}, {3, 4}}]', { expected: '{{1, 0}, {0, 1}}' })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Rref')
+        .eval('rowreduce.basic', 'RowReduce[{{1, 2}, {3, 4}}]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('IdentityMatrix', 'linear_algebra')
         .unsupported()
@@ -32,9 +33,10 @@ export const linearAlgebraFeatures = [
         .done(),
     feature('Dimensions', 'linear_algebra').unsupported().pure().gap('dims.2x2', 'Dimensions[{{1, 2}, {3, 4}}]', { expected: '{2, 2}' }).done(),
     feature('MatrixRank', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('matrixrank.rank1', 'MatrixRank[{{1, 2}, {2, 4}}]', { expected: '1' })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Rank')
+        .eval('matrixrank.rank1', 'MatrixRank[{{1, 2}, {2, 4}}]', '1')
         .done(),
     feature('Eigenvalues', 'linear_algebra')
         .unsupported()
