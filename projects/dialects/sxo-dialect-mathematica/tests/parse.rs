@@ -389,6 +389,12 @@ fn row_reduce_to_identity() {
 }
 
 #[test]
+fn inverse_identity_matrix() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Inverse[{{1, 0}, {0, 1}}]")), "{{1, 0}, {0, 1}}");
+}
+
+#[test]
 fn series_exp_order_two_renders_polynomial() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Series[Exp[x], {x, 0, 2}]")), "1 + x + 1/2*x^2");

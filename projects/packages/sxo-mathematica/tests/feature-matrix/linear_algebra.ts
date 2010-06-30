@@ -9,9 +9,10 @@ export const linearAlgebraFeatures = [
         .done(),
     feature('Det', 'linear_algebra').supported().pure().eval('det.2x2', 'Det[{{1, 2}, {3, 4}}]', '-2').done(),
     feature('Inverse', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('inverse.eye', 'Inverse[{{1, 0}, {0, 1}}]', { expected: '{{1, 0}, {0, 1}}' })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Inverse')
+        .eval('inverse.eye', 'Inverse[{{1, 0}, {0, 1}}]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('Transpose', 'linear_algebra')
         .supported()

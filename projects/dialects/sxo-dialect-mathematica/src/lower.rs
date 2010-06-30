@@ -588,6 +588,15 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("Inverse", [arg]) => {
+                    let term = lower_wexpr(session, arg);
+                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                        let matrix = session.matrix_objects.intern(mat);
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
+                        )));
+                    }
+                }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
                         return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
