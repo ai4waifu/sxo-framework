@@ -28,11 +28,17 @@ export const linearAlgebraFeatures = [
         .eval('rowreduce.basic', 'RowReduce[{{1, 2}, {3, 4}}]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('IdentityMatrix', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('idmat.2', 'IdentityMatrix[2]', { expected: '{{1, 0}, {0, 1}}' })
+        .notes('surface → SemanticOperator::Eye')
+        .eval('idmat.2', 'IdentityMatrix[2]', '{{1, 0}, {0, 1}}')
         .done(),
-    feature('Dimensions', 'linear_algebra').unsupported().pure().gap('dims.2x2', 'Dimensions[{{1, 2}, {3, 4}}]', { expected: '{2, 2}' }).done(),
+    feature('Dimensions', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('surface → SemanticOperator::Size')
+        .eval('dims.2x2', 'Dimensions[{{1, 2}, {3, 4}}]', '{2, 2}')
+        .done(),
     feature('MatrixRank', 'linear_algebra')
         .supported()
         .pure()

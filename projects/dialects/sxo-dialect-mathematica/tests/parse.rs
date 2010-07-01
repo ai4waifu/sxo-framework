@@ -383,6 +383,18 @@ fn matrix_rank_rank1() {
 }
 
 #[test]
+fn identity_matrix_two() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("IdentityMatrix[2]")), "{{1, 0}, {0, 1}}");
+}
+
+#[test]
+fn dimensions_of_nested_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Dimensions[{{1, 2}, {3, 4}}]")), "{2, 2}");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
