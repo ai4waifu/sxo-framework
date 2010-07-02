@@ -55,7 +55,12 @@ export const linearAlgebraFeatures = [
         .pure()
         .gap('diagmat.12', 'DiagonalMatrix[{1, 2}]', { expected: '{{1, 0}, {0, 2}}' })
         .done(),
-    feature('Tr', 'linear_algebra').unsupported().pure().gap('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', { expected: '5' }).done(),
+    feature('Tr', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Trace')
+        .eval('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', '5')
+        .done(),
     feature('Norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'Norm[{3, 4}]', { expected: '5' }).done(),
     feature('Cross', 'linear_algebra').unsupported().pure().gap('cross.ijk', 'Cross[{1, 0, 0}, {0, 1, 0}]', { expected: '{0, 0, 1}' }).done(),
     feature('Eigenvectors', 'linear_algebra')

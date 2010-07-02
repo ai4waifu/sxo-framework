@@ -395,6 +395,12 @@ fn dimensions_of_nested_list() {
 }
 
 #[test]
+fn tr_of_2x2() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Tr[{{1, 2}, {3, 4}}]")), "5");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
