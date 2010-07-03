@@ -20,7 +20,12 @@ export const linearAlgebraFeatures = [
         .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose')
         .eval('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
         .done(),
-    feature('Dot', 'linear_algebra').unsupported().pure().gap('dot.mv', 'Dot[{{1, 2}, {3, 4}}, {1, 1}]', { expected: '{3, 7}' }).done(),
+    feature('Dot', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Dot')
+        .eval('dot.mv', 'Dot[{{1, 2}, {3, 4}}, {1, 1}]', '{3, 7}')
+        .done(),
     feature('RowReduce', 'linear_algebra')
         .supported()
         .pure()

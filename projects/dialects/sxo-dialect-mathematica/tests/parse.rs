@@ -401,6 +401,12 @@ fn tr_of_2x2() {
 }
 
 #[test]
+fn dot_matrix_vector() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Dot[{{1, 2}, {3, 4}}, {1, 1}]")), "{3, 7}");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");

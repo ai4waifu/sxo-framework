@@ -610,6 +610,19 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("Dot", [a_form, b_form]) => {
+                    let a_term = lower_wexpr(session, a_form);
+                    let b_term = lower_wexpr(session, b_form);
+                    if let (Some(a_mat), Some(b_mat)) =
+                        (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
+                    {
+                        let lhs = session.matrix_objects.intern(a_mat);
+                        let rhs = session.matrix_objects.intern(b_mat);
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                        )));
+                    }
+                }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
                         return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
