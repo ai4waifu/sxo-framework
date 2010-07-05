@@ -56,9 +56,10 @@ export const linearAlgebraFeatures = [
         .gap('eigenvalues.diag', 'Eigenvalues[{{1, 0}, {0, 2}}]', { expected: '{2, 1}' })
         .done(),
     feature('DiagonalMatrix', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('diagmat.12', 'DiagonalMatrix[{1, 2}]', { expected: '{{1, 0}, {0, 2}}' })
+        .notes('surface → SemanticOperator::DiagonalMatrix')
+        .eval('diagmat.12', 'DiagonalMatrix[{1, 2}]', '{{1, 0}, {0, 2}}')
         .done(),
     feature('Tr', 'linear_algebra')
         .supported()

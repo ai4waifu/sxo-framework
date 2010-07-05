@@ -395,6 +395,12 @@ fn dimensions_of_nested_list() {
 }
 
 #[test]
+fn diagonal_matrix_from_vector() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
+}
+
+#[test]
 fn tr_of_2x2() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Tr[{{1, 2}, {3, 4}}]")), "5");

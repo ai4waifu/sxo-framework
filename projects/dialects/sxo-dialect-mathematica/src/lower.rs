@@ -67,6 +67,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Product" => SemanticOperator::Product,
         "Determinant" | "Det" => SemanticOperator::Determinant,
         "IdentityMatrix" => SemanticOperator::Eye,
+        "DiagonalMatrix" => SemanticOperator::DiagonalMatrix,
         "Dimensions" => SemanticOperator::Size,
         "DotTimes" => SemanticOperator::ElementwiseMultiply,
         "DotDivide" => SemanticOperator::ElementwiseDivide,
