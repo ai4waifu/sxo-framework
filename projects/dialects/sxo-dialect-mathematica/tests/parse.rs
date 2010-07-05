@@ -413,6 +413,12 @@ fn dot_matrix_vector() {
 }
 
 #[test]
+fn cross_ijk() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Cross[{1, 0, 0}, {0, 1, 0}]")), "{0, 0, 1}");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
