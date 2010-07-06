@@ -80,9 +80,10 @@ export const linearAlgebraFeatures = [
         .gap('eigenvectors.diag', 'Eigenvectors[{{1, 0}, {0, 2}}]', { expected: '{{0, 1}, {1, 0}}' })
         .done(),
     feature('NullSpace', 'linear_algebra')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('nullspace.rank1', 'NullSpace[{{1, 2}, {2, 4}}]', { expected: '{{-2}, {1}}' })
+        .notes('nested List → MatrixValue LinearAlgebraRequest::NullSpace (row basis)')
+        .eval('nullspace.rank1', 'NullSpace[{{1, 2}, {2, 4}}]', '{{-2, 1}}')
         .done(),
     feature('MatrixExp', 'linear_algebra')
         .unsupported()

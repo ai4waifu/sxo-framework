@@ -419,6 +419,12 @@ fn cross_ijk() {
 }
 
 #[test]
+fn nullspace_rank1() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("NullSpace[{{1, 2}, {2, 4}}]")), "{{-2, 1}}");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
