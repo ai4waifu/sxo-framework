@@ -425,6 +425,12 @@ fn nullspace_rank1() {
 }
 
 #[test]
+fn norm_34() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Norm[{3, 4}]")), "5");
+}
+
+#[test]
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");

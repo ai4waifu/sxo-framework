@@ -67,7 +67,12 @@ export const linearAlgebraFeatures = [
         .notes('nested List → MatrixValue LinearAlgebraRequest::Trace')
         .eval('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', '5')
         .done(),
-    feature('Norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'Norm[{3, 4}]', { expected: '5' }).done(),
+    feature('Norm', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Norm (perfect square)')
+        .eval('norm.34', 'Norm[{3, 4}]', '5')
+        .done(),
     feature('Cross', 'linear_algebra')
         .supported()
         .pure()
