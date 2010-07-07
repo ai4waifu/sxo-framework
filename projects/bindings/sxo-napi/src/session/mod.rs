@@ -180,9 +180,9 @@ impl Session {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
             Dialect::Mathematica => self.evaluate_mathematica(input),
-            Dialect::SimpleMath => Err(SxoError::new(
-                "simple-math dialect is off the current delivery route (lowercase Form, not Mathematica)",
-            )),
+            Dialect::SimpleMath => {
+                Err(SxoError::new("simple-math dialect is off the current delivery route (lowercase Form, not Mathematica)"))
+            }
         }
     }
 
@@ -243,33 +243,20 @@ impl Session {
     /// Project diagnostic summaries for a Session-local [`ResultId`] (empty if missing).
     pub fn project_diagnostics(&self, result_id: ResultId) -> Vec<String> {
         let ms = self.math_session.borrow();
-        ms.results
-            .get(result_id)
-            .map(|r| r.diagnostics.iter().map(|d| d.to_string()).collect())
-            .unwrap_or_default()
+        ms.results.get(result_id).map(|r| r.diagnostics.iter().map(|d| d.to_string()).collect()).unwrap_or_default()
     }
 }
 
 fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
-    let Some(result) = ms.results.get(result_id) else {
-        return EvalOutcome::new(
-            result_id,
-            ComputationStatus::Unknown.name(),
-            CoverageStatus::Unknown.name(),
-        );
+    let Some(result) = ms.results.get(result_id)
+    else {
+        return EvalOutcome::new(result_id, ComputationStatus::Unknown.name(), CoverageStatus::Unknown.name());
     };
-    EvalOutcome::new(
-        result_id,
-        result.status.name().to_string(),
-        result.coverage.name().to_string(),
-    )
+    EvalOutcome::new(result_id, result.status.name().to_string(), result.coverage.name().to_string())
 }
 
 fn project_result_term(ms: &mut AthenaSession, result_id: ResultId) -> TermId {
     use athena::runtime::values::arena::push_null;
 
-    ms.results
-        .get(result_id)
-        .and_then(|r| r.symbolic_term)
-        .unwrap_or_else(|| push_null(ms))
+    ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| push_null(ms))
 }

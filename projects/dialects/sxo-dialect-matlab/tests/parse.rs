@@ -222,10 +222,7 @@ fn parse_dot_times_distinct_head() {
 #[test]
 fn parse_transpose_forms_distinct() {
     let nonconj = parse_matlab_form("[1, 2].'").unwrap();
-    assert_eq!(
-        nonconj,
-        MatlabForm::call("Transpose", vec![MatlabForm::list(vec![MatlabForm::int(1), MatlabForm::int(2)])])
-    );
+    assert_eq!(nonconj, MatlabForm::call("Transpose", vec![MatlabForm::list(vec![MatlabForm::int(1), MatlabForm::int(2)])]));
     let conj = parse_matlab_form("x'").unwrap();
     assert_eq!(conj, MatlabForm::call("ConjugateTranspose", vec![MatlabForm::symbol("x")]));
 }
@@ -235,10 +232,7 @@ fn parse_transpose_evaluates_nested_lists() {
     let h = H::new();
     assert!(h.eq(h.eval("[1, 2].'"), h.lst(vec![h.lst(vec![h.i(1)]), h.lst(vec![h.i(2)])])));
     assert!(h.eq(h.eval("[1; 2].'"), h.lst(vec![h.i(1), h.i(2)])));
-    assert!(h.eq(
-        h.eval("[1, 2; 3, 4].'"),
-        h.lst(vec![h.lst(vec![h.i(1), h.i(3)]), h.lst(vec![h.i(2), h.i(4)])])
-    ));
+    assert!(h.eq(h.eval("[1, 2; 3, 4].'"), h.lst(vec![h.lst(vec![h.i(1), h.i(3)]), h.lst(vec![h.i(2), h.i(4)])])));
     // Real conjugate transpose matches transpose on literals.
     assert!(h.eq(h.eval("[1, 2; 3, 4]'"), h.lst(vec![h.lst(vec![h.i(1), h.i(3)]), h.lst(vec![h.i(2), h.i(4)])])));
 }
@@ -292,10 +286,7 @@ fn parse_matrix_linear_index_column_major() {
 fn parse_assign_then_index_own_binding() {
     let h = H::new();
     let form = parse_matlab_form("A(2)").unwrap();
-    assert_eq!(
-        form,
-        MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)])
-    );
+    assert_eq!(form, MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)]));
     assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));
     assert!(h.eq(h.eval("M = [1, 2; 3, 4]; M(2)"), h.i(3)));
 }
@@ -305,10 +296,7 @@ fn parse_call_vs_part_disambiguation() {
     // Known math heads stay calls even with index-shaped args.
     assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));
     // Unknown head + numeric args → Part (subsref), not a free call.
-    assert_eq!(
-        parse_matlab_form("A(2)").unwrap(),
-        MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)])
-    );
+    assert_eq!(parse_matlab_form("A(2)").unwrap(), MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)]));
     // Symbol args do not look like subsref → stay as call head.
     assert_eq!(parse_matlab_form("f(x)").unwrap().head_name(), Some("f"));
 }
@@ -342,12 +330,7 @@ fn parse_matrix_colon_all_column_major_flatten() {
         )
     );
     // Column-major flatten → 4×1 nested column vector.
-    let expected = h.lst(vec![
-        h.lst(vec![h.i(1)]),
-        h.lst(vec![h.i(3)]),
-        h.lst(vec![h.i(2)]),
-        h.lst(vec![h.i(4)]),
-    ]);
+    let expected = h.lst(vec![h.lst(vec![h.i(1)]), h.lst(vec![h.i(3)]), h.lst(vec![h.i(2)]), h.lst(vec![h.i(4)])]);
     assert!(h.eq(h.eval("[1, 2; 3, 4](:)"), expected.clone()));
     assert!(h.eq(h.eval("A = [1, 2; 3, 4]; A(:)"), expected));
     assert_eq!(h.render(h.eval("[1, 2; 3, 4](:)")), "[1; 3; 2; 4]");
@@ -485,18 +468,8 @@ fn scalar_or_and_short_circuit_ops() {
     assert_eq!(h.render(h.eval("1 & 0")), "false");
     assert_eq!(h.render(h.eval("1 || 0")), "true");
     assert_eq!(h.render(h.eval("1 && 0")), "false");
-    assert_eq!(
-        h.render(h.eval("[1, 0] | [0, 1]")),
-        "[true, true]",
-        "got {}",
-        h.render(h.eval("[1, 0] | [0, 1]"))
-    );
-    assert_eq!(
-        h.render(h.eval("[1, 0] & [1, 1]")),
-        "[true, false]",
-        "got {}",
-        h.render(h.eval("[1, 0] & [1, 1]"))
-    );
+    assert_eq!(h.render(h.eval("[1, 0] | [0, 1]")), "[true, true]", "got {}", h.render(h.eval("[1, 0] | [0, 1]")));
+    assert_eq!(h.render(h.eval("[1, 0] & [1, 1]")), "[true, false]", "got {}", h.render(h.eval("[1, 0] & [1, 1]")));
 }
 
 #[test]

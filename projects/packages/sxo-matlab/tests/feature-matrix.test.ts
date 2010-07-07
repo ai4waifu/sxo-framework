@@ -1,7 +1,7 @@
-import { runFeatureCase, runIsolatedEval, validateFeatureMatrix } from '@sxo/harness';
-import { nativeBinaryIdentity } from '@sxo/core';
-import { Matlab, matlab } from '@sxo/matlab';
 import { fileURLToPath } from 'node:url';
+import { nativeBinaryIdentity } from '@sxo/core';
+import { runFeatureCase, runIsolatedEval, validateFeatureMatrix } from '@sxo/harness';
+import { Matlab, matlab } from '@sxo/matlab';
 import { describe, expect, it } from 'vitest';
 import { featureMatrix } from './feature-matrix/index.js';
 

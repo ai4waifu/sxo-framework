@@ -1,6 +1,6 @@
 {
     "name": "@sxo/skills",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "private": true,
     "type": "module",
     "description": "Agent skills for AI4Science on SXO. Agentic-friendly and TypeScript-first, with optional Mathematica or MATLAB dialects. Install with npx @sxo/skills.",

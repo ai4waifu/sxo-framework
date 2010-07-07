@@ -138,22 +138,14 @@ fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {
         }
         "Minus" if args.len() == 1 => Some(format!("-{}", render_matlab_form(&args[0]))),
         "Power" if args.len() == 2 => Some(format!("{}^{}", form_power_operand(&args[0]), form_power_operand(&args[1]))),
-        "Subtract" if args.len() == 2 => {
-            Some(format!("{} - {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
+        "Subtract" if args.len() == 2 => Some(format!("{} - {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "LinearSolve" | "Mldivide" if args.len() == 2 => {
             Some(format!("{}\\{}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
         }
-        "DotTimes" if args.len() == 2 => {
-            Some(format!("{}.*{}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
-        "DotDivide" if args.len() == 2 => {
-            Some(format!("{}./{}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
-        "DotPower" if args.len() == 2 => {
-            Some(format!("{}.^{}", form_power_operand(&args[0]), form_power_operand(&args[1])))
-        }
+        "DotTimes" if args.len() == 2 => Some(format!("{}.*{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
+        "DotDivide" if args.len() == 2 => Some(format!("{}./{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
+        "DotPower" if args.len() == 2 => Some(format!("{}.^{}", form_power_operand(&args[0]), form_power_operand(&args[1]))),
         "ElementwiseAnd" if args.len() == 2 => {
             Some(format!("{} & {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
         }
@@ -163,16 +155,10 @@ fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {
         "And" if args.len() == 2 => Some(format!("{} && {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "Or" if args.len() == 2 => Some(format!("{} || {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "Equal" if args.len() == 2 => Some(format!("{} == {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
-        "Unequal" if args.len() == 2 => {
-            Some(format!("{} ~= {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
+        "Unequal" if args.len() == 2 => Some(format!("{} ~= {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "Less" if args.len() == 2 => Some(format!("{} < {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
-        "Greater" if args.len() == 2 => {
-            Some(format!("{} > {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
-        "LessEqual" if args.len() == 2 => {
-            Some(format!("{} <= {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
+        "Greater" if args.len() == 2 => Some(format!("{} > {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
+        "LessEqual" if args.len() == 2 => Some(format!("{} <= {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "GreaterEqual" if args.len() == 2 => {
             Some(format!("{} >= {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
         }
@@ -181,25 +167,18 @@ fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {
         "Span" | "Range" if args.len() == 2 => {
             Some(format!("{}:{}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
         }
-        "Span" | "Range" if args.len() == 3 => Some(format!(
-            "{}:{}:{}",
-            render_matlab_form(&args[0]),
-            render_matlab_form(&args[1]),
-            render_matlab_form(&args[2])
-        )),
+        "Span" | "Range" if args.len() == 3 => {
+            Some(format!("{}:{}:{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]), render_matlab_form(&args[2])))
+        }
         "Part" if args.len() >= 2 => {
             let base = render_matlab_form(&args[0]);
             let idxs = args[1..].iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
             Some(format!("{base}({idxs})"))
         }
         "Set" if args.len() == 2 => Some(format!("{} = {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
-        "Function" if args.len() == 2 => {
-            Some(format!("@({}) {}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
-        }
+        "Function" if args.len() == 2 => Some(format!("@({}) {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "FunctionHandle" if args.len() == 1 => Some(format!("@{}", render_matlab_form(&args[0]))),
-        "CompoundExpression" if !args.is_empty() => {
-            Some(args.iter().map(render_matlab_form).collect::<Vec<_>>().join("; "))
-        }
+        "CompoundExpression" if !args.is_empty() => Some(args.iter().map(render_matlab_form).collect::<Vec<_>>().join("; ")),
         _ => None,
     }
 }
@@ -210,12 +189,7 @@ fn is_form_neg_one(form: &MatlabForm) -> bool {
 
 fn form_power_operand(form: &MatlabForm) -> String {
     let s = render_matlab_form(form);
-    if form_number_needs_power_paren(form) || form_compound_needs_power_paren(form) {
-        format!("({s})")
-    }
-    else {
-        s
-    }
+    if form_number_needs_power_paren(form) || form_compound_needs_power_paren(form) { format!("({s})") } else { s }
 }
 
 fn form_number_needs_power_paren(form: &MatlabForm) -> bool {
@@ -229,10 +203,7 @@ fn form_number_needs_power_paren(form: &MatlabForm) -> bool {
 }
 
 fn form_compound_needs_power_paren(form: &MatlabForm) -> bool {
-    matches!(
-        form.head_name(),
-        Some("Plus" | "Subtract" | "Times" | "Divide" | "Power" | "DotPower" | "Minus")
-    )
+    matches!(form.head_name(), Some("Plus" | "Subtract" | "Times" | "Divide" | "Power" | "DotPower" | "Minus"))
 }
 
 fn is_form_matrix_rows(items: &[MatlabForm]) -> bool {
@@ -273,12 +244,8 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
         "ElementwiseOr" if args.len() == 2 => {
             Some(format!("{} | {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
-        "And" if args.len() == 2 => {
-            Some(format!("{} && {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
-        }
-        "Or" if args.len() == 2 => {
-            Some(format!("{} || {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
-        }
+        "And" if args.len() == 2 => Some(format!("{} && {}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
+        "Or" if args.len() == 2 => Some(format!("{} || {}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
         "Transpose" if args.len() == 1 => Some(format!("{}.'", render_matlab(session, args[0]))),
         "ConjugateTranspose" if args.len() == 1 => Some(format!("{}'", render_matlab(session, args[0]))),
         "Span" | "Range" if args.len() == 2 => {
@@ -300,12 +267,7 @@ fn is_neg_one(session: &Session, id: TermId) -> bool {
 
 fn power_operand(session: &Session, id: TermId) -> String {
     let s = render_matlab(session, id);
-    if number_needs_power_paren(session, id) || compound_needs_power_paren(session, id) {
-        format!("({s})")
-    }
-    else {
-        s
-    }
+    if number_needs_power_paren(session, id) || compound_needs_power_paren(session, id) { format!("({s})") } else { s }
 }
 
 fn number_needs_power_paren(session: &Session, id: TermId) -> bool {

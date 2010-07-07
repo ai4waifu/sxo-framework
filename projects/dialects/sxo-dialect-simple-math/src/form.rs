@@ -95,10 +95,7 @@ impl Expr {
 
     /// Lowercase call `head(args…)`.
     pub fn call(head: impl Into<String>, args: Vec<Expr>) -> Self {
-        Self::Call {
-            head: head.into(),
-            args,
-        }
+        Self::Call { head: head.into(), args }
     }
 
     /// `sin(a)` sugar → lowercase [`Self::Call`].

@@ -379,7 +379,9 @@ fn args_look_like_subsref(args: &[MatlabForm]) -> bool {
 
 fn form_looks_like_index(form: &MatlabForm) -> bool {
     match form {
-        MatlabForm::Atom(MatlabAtom::Number(_)) | MatlabForm::Atom(MatlabAtom::Null) | MatlabForm::Atom(MatlabAtom::Bool(_)) => true,
+        MatlabForm::Atom(MatlabAtom::Number(_))
+        | MatlabForm::Atom(MatlabAtom::Null)
+        | MatlabForm::Atom(MatlabAtom::Bool(_)) => true,
         MatlabForm::Atom(MatlabAtom::Symbol(name)) => matches!(name.as_str(), "end" | ":" | "All" | "true" | "false"),
         MatlabForm::List(_) => true,
         MatlabForm::Call { head, .. } => matches!(head.as_str(), "Span" | "Range" | "Colon" | "Plus" | "Add" | "Subtract"),

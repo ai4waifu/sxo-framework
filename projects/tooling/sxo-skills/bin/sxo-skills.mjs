@@ -11,9 +11,9 @@
  * Extra args are forwarded to `npx skills add`.
  */
 
-import {spawn} from 'node:child_process';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const userArgs = process.argv.slice(2);

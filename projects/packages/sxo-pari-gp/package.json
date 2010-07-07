@@ -1,6 +1,6 @@
 {
     "name": "@sxo/pari-gp",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "private": true,
     "type": "module",
     "description": "PARI/GP dialect frontend for SXO. Publishable product package; parser/evaluator land incrementally behind this package's Feature Matrix.",

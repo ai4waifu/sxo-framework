@@ -7,9 +7,5 @@ export const modularFeatures = [
         .pure()
         .gap('mod.basic', 'Mod(7, 5)', { expected: 'Mod(2, 5)' })
         .done(),
-    feature('lift', 'modular')
-        .planned('lift(Mod(...)) to integer')
-        .pure()
-        .gap('lift.mod', 'lift(Mod(7, 5))', { expected: '2' })
-        .done(),
+    feature('lift', 'modular').planned('lift(Mod(...)) to integer').pure().gap('lift.mod', 'lift(Mod(7, 5))', { expected: '2' }).done(),
 ];

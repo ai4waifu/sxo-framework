@@ -22,10 +22,6 @@ pub struct EvalOutcome {
 impl EvalOutcome {
     /// Build from Athena result axes (no eager term or diagnostic projection).
     pub fn new(result_id: ResultId, status: impl Into<String>, coverage: impl Into<String>) -> Self {
-        Self {
-            result_id,
-            status: status.into(),
-            coverage: coverage.into(),
-        }
+        Self { result_id, status: status.into(), coverage: coverage.into() }
     }
 }

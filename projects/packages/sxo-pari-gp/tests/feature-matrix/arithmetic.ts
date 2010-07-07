@@ -18,9 +18,5 @@ export const arithmeticFeatures = [
         .pure()
         .gap('div.rat', '1/3', { expected: '1/3', notes: 'prefer exact rational over float' })
         .done(),
-    feature('Power', 'arithmetic')
-        .planned('integer power')
-        .pure()
-        .gap('pow.int', '2^10', { expected: '1024' })
-        .done(),
+    feature('Power', 'arithmetic').planned('integer power').pure().gap('pow.int', '2^10', { expected: '1024' }).done(),
 ];

@@ -654,10 +654,7 @@ fn unary_minus_binds_looser_than_power() {
         w,
         WolframForm::call(
             "Times",
-            vec![
-                WolframForm::int(-1),
-                WolframForm::call("Power", vec![WolframForm::symbol("x"), WolframForm::int(2)]),
-            ]
+            vec![WolframForm::int(-1), WolframForm::call("Power", vec![WolframForm::symbol("x"), WolframForm::int(2)]),]
         )
     );
     let paren = h.parse_w("(-x)^2");
@@ -665,10 +662,7 @@ fn unary_minus_binds_looser_than_power() {
         paren,
         WolframForm::call(
             "Power",
-            vec![
-                WolframForm::call("Times", vec![WolframForm::int(-1), WolframForm::symbol("x")]),
-                WolframForm::int(2),
-            ]
+            vec![WolframForm::call("Times", vec![WolframForm::int(-1), WolframForm::symbol("x")]), WolframForm::int(2),]
         )
     );
     assert_eq!(h.wolfram(h.eval("Exp[-x^2]")), "Exp[-(x^2)]");

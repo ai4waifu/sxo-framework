@@ -38,13 +38,7 @@ pub(crate) fn from_outcome(
     strategy: EvalStrategy,
 ) -> Expression {
     match strategy {
-        EvalStrategy::None => Expression {
-            session,
-            root: None,
-            result_id: Some(outcome.result_id),
-            form: None,
-            dialect,
-        },
+        EvalStrategy::None => Expression { session, root: None, result_id: Some(outcome.result_id), form: None, dialect },
         EvalStrategy::Simplify => {
             let root = session.simplify_term(session.project_result(outcome.result_id));
             Expression {
@@ -84,13 +78,7 @@ impl Expression {
         let d = dialect_from_str(dialect)?;
         let session = Rc::new(Session::new());
         let (form, resolved) = parse_held(&session, input, d)?;
-        Ok(Self {
-            session,
-            root: None,
-            result_id: None,
-            form: Some(form),
-            dialect: resolved,
-        })
+        Ok(Self { session, root: None, result_id: None, form: Some(form), dialect: resolved })
     }
 
     /// Differentiate with respect to `var` on the same session.

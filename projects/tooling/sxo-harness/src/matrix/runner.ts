@@ -1,5 +1,5 @@
-import type { FeatureBinaryIdentity, FeatureCase, CaseKind } from './types.js';
-import { runIsolatedEval, type IsolatedEvalResult } from './isolate.js';
+import { type IsolatedEvalResult, runIsolatedEval } from './isolate.js';
+import type { CaseKind, FeatureBinaryIdentity, FeatureCase } from './types.js';
 
 /** Dialect-facing render hooks for internal fixture runs. */
 export type FeatureFixtureHooks = {
@@ -65,11 +65,7 @@ function assertExpected(_kind: CaseKind, expected: string | undefined): expected
  * `expected` fails so the case can be promoted to `eval`. Cases with
  * `isolate: true` require `hooks.evaluateIsolated`.
  */
-export function runFeatureCase(
-    hooks: FeatureFixtureHooks,
-    c: FeatureCase,
-    opts: FeatureCaseRunOptions = {},
-): FeatureCaseRunResult {
+export function runFeatureCase(hooks: FeatureFixtureHooks, c: FeatureCase, opts: FeatureCaseRunOptions = {}): FeatureCaseRunResult {
     const binary = opts.binary;
 
     if (c.kind === 'gap') return { status: 'gap' };
@@ -132,10 +128,7 @@ export function runFeatureCase(
         const rendered = hooks.parse(c.input);
         const needle = c.expected ?? '';
         if (!rendered.includes(needle)) {
-            return fail(
-                `${c.kind} \`${c.id}\`: render ${JSON.stringify(rendered)} does not contain ${JSON.stringify(needle)}`,
-                binary,
-            );
+            return fail(`${c.kind} \`${c.id}\`: render ${JSON.stringify(rendered)} does not contain ${JSON.stringify(needle)}`, binary);
         }
         return withBinary({ status: 'ok' }, binary);
     }
@@ -182,5 +175,5 @@ export function runFeatureCase(
     return fail(`unsupported case kind`, binary);
 }
 
-export { runIsolatedEval };
 export type { IsolatedEvalResult, IsolatedEvalSpec } from './isolate.js';
+export { runIsolatedEval };

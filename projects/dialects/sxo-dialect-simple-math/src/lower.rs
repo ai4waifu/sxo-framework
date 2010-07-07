@@ -46,11 +46,7 @@ pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError
             match *head {
                 ApplicationHead::Semantic(op) => expr_from_semantic(session, op, &args),
                 ApplicationHead::Extension(oid) => {
-                    let name = session
-                        .extensions
-                        .display_name(oid)
-                        .unwrap_or("unknown")
-                        .to_ascii_lowercase();
+                    let name = session.extensions.display_name(oid).unwrap_or("unknown").to_ascii_lowercase();
                     if name == "dict" {
                         return dict_from_flat_pairs(session, &args);
                     }
@@ -102,7 +98,8 @@ fn expr_from_semantic(session: &Session, op: SemanticOperator, args: &[TermId]) 
         SemanticOperator::Multiply if args.len() == 2 => {
             if is_neg_one(session, args[0]) {
                 Ok(Expr::neg(expr_from_session(session, args[1])?))
-            } else {
+            }
+            else {
                 Ok(Expr::mul(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
             }
         }

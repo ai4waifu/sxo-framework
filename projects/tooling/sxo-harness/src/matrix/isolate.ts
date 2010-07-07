@@ -78,7 +78,7 @@ export function runIsolatedEval(spec: IsolatedEvalSpec): IsolatedEvalResult {
             ? `process signal ${signal}`
             : exitCode != null && exitCode !== 0
               ? `exit code ${exitCode}`
-              : child.error?.message ?? 'isolated evaluate failed';
+              : (child.error?.message ?? 'isolated evaluate failed');
     return {
         actual: crashNote,
         threw: true,

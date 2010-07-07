@@ -13,7 +13,7 @@ members = [
 default-members = ["projects/dialects/sxo-dialect-mathematica"]
 
 [workspace.package]
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 license = "Apache-2.0"
 authors = ["SXO Contributors"]
@@ -30,13 +30,12 @@ sxo-adapter-apollo = { path = "projects/adapters/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
-# Local workspace pins while parser / result-contract work lands. CI tip: switch back to git rev after push.
-oak-core = { path = "../oaks/projects/oak-core", default-features = false }
-oak-wolfram = { path = "../oaks/examples/oak-wolfram", default-features = false }
-oak-matlab = { path = "../oaks/examples/oak-matlab", default-features = false }
-# Local workspace pin while Athena result-contract work lands. CI tip: replace with git rev after push.
-athena = { path = "../athena.rs/projects/athena", package = "athena" }
-athena-types = { path = "../athena.rs/projects/athena-types", package = "athena-types" }
+# CI-facing git pins (local path pins break Actions checkout).
+oak-core = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
+oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
+oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "2e04955fc1a893710725bb1ea4d56518f7b90958", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "2e04955fc1a893710725bb1ea4d56518f7b90958", package = "athena-types" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }

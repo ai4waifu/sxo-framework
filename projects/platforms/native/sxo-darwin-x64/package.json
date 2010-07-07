@@ -1,6 +1,6 @@
 {
     "name": "@sxo/sxo-darwin-x64",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "private": true,
     "description": "Optional SXO N-API binary for macOS x64 (darwin-x64). Loaded by @sxo/core and dialect frontends.",
     "repository": {

@@ -1,6 +1,6 @@
 {
     "name": "@sxo/sxo-win32-x64",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "private": true,
     "description": "SXO native N-API addon (win32-x64)",
     "repository": {

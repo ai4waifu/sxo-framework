@@ -25,8 +25,6 @@ pub(crate) fn parse_strategy(options: &Option<EvaluateOptions>) -> Result<EvalSt
     match options.as_ref().and_then(|o| o.strategy.as_deref()) {
         None | Some("none") => Ok(EvalStrategy::None),
         Some("simplify") => Ok(EvalStrategy::Simplify),
-        Some(other) => Err(Error::from_reason(format!(
-            "unknown evaluate strategy `{other}` (expected `none` or `simplify`)"
-        ))),
+        Some(other) => Err(Error::from_reason(format!("unknown evaluate strategy `{other}` (expected `none` or `simplify`)"))),
     }
 }

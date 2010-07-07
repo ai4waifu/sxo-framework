@@ -68,11 +68,7 @@ fn dialect_d_limit_series_lower_to_domain() {
     let d_s = session.render_as_wolfram(session.project_result(d_out.result_id));
     assert!(d_s.contains('x'), "got {d_s}");
     // Domain Goal → IR → Result：微积分未准入时为 Candidate，不得静默落成原式成功。
-    assert!(
-        matches!(d_out.status.as_str(), "Candidate" | "Exact"),
-        "unexpected status {}",
-        d_out.status
-    );
+    assert!(matches!(d_out.status.as_str(), "Candidate" | "Exact"), "unexpected status {}", d_out.status);
 }
 
 #[test]
@@ -124,10 +120,12 @@ fn module_does_not_clobber_session_binding() {
     let five = session.with_math_mut(|s| push_int(s, 5));
     let two = session.with_math_mut(|s| push_int(s, 2));
     assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id), five));
-    assert!(session.structural_eq(
-        session.project_result(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().result_id),
-        two
-    ));
+    assert!(
+        session.structural_eq(
+            session.project_result(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().result_id),
+            two
+        )
+    );
     assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x").unwrap().result_id), five));
 }
 
@@ -178,12 +176,7 @@ fn try_plot_svg_mathematica() {
 /// These cases previously diverged when MATLAB handles re-parsed display text.
 #[test]
 fn matlab_direct_and_handle_evaluate_parity() {
-    let cases = [
-        ("(1+2)*3", "9"),
-        ("1/(2+3)", "1/5"),
-        ("1-(2-3)", "2"),
-        ("[1,2].*(3+4)", "[7, 14]"),
-    ];
+    let cases = [("(1+2)*3", "9"), ("1/(2+3)", "1/5"), ("1-(2-3)", "2"), ("[1,2].*(3+4)", "[7, 14]")];
     for (input, expected) in cases {
         let direct_session = Session::new();
         let direct = direct_session.evaluate_matlab(input).unwrap();
@@ -194,10 +187,7 @@ fn matlab_direct_and_handle_evaluate_parity() {
         let via_handle = handle_session.evaluate_matlab_form(&form).unwrap();
         let handle_text = handle_session.render_as_matlab(handle_session.project_result(via_handle.result_id));
 
-        assert_eq!(
-            direct_text, handle_text,
-            "parity failed for {input}: direct={direct_text} handle={handle_text}"
-        );
+        assert_eq!(direct_text, handle_text, "parity failed for {input}: direct={direct_text} handle={handle_text}");
         assert_eq!(direct_text, expected, "expected value for {input}");
         assert_eq!(direct.status, via_handle.status, "status parity for {input}");
         assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");

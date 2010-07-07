@@ -69,17 +69,9 @@ fn prec(expr: &Expr) -> Prec {
 
 fn maybe_paren(expr: &Expr, parent: Prec, style: Style) -> String {
     let s = render_styled(expr, style);
-    if prec(expr) < parent {
-        format!("({s})")
-    } else {
-        s
-    }
+    if prec(expr) < parent { format!("({s})") } else { s }
 }
 
 fn format_num(n: f64) -> String {
-    if n.fract() == 0.0 && n.abs() < 1e15 {
-        format!("{}", n as i64)
-    } else {
-        format!("{n}")
-    }
+    if n.fract() == 0.0 && n.abs() < 1e15 { format!("{}", n as i64) } else { format!("{n}") }
 }

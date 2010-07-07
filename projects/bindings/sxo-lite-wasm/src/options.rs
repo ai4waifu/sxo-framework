@@ -14,8 +14,6 @@ pub(crate) fn parse_strategy(strategy: Option<&str>) -> Result<EvalStrategy, JsV
     match strategy {
         None | Some("none") => Ok(EvalStrategy::None),
         Some("simplify") => Ok(EvalStrategy::Simplify),
-        Some(other) => Err(JsValue::from_str(&format!(
-            "unknown evaluate strategy `{other}` (expected `none` or `simplify`)"
-        ))),
+        Some(other) => Err(JsValue::from_str(&format!("unknown evaluate strategy `{other}` (expected `none` or `simplify`)"))),
     }
 }

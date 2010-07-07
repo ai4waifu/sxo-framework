@@ -42,13 +42,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
     let session = Rc::new(Session::new());
     let (term, resolved) = parse_to_term(&session, input, d)?;
     let root = session.differentiate_term(term, var);
-    Ok(Expression {
-        session,
-        root: Some(root),
-        result_id: None,
-        form: None,
-        dialect: resolved,
-    })
+    Ok(Expression { session, root: Some(root), result_id: None, form: None, dialect: resolved })
 }
 
 /// Top-level `simplify`.
@@ -58,13 +52,7 @@ pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsVa
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(input, d).map_err(map_err)?;
     let root = session.simplify_term(session.project_result(outcome.result_id));
-    Ok(Expression {
-        session,
-        root: Some(root),
-        result_id: None,
-        form: None,
-        dialect: d,
-    })
+    Ok(Expression { session, root: Some(root), result_id: None, form: None, dialect: d })
 }
 
 /// Top-level `expression` — parse only (no evaluate).

@@ -1,6 +1,6 @@
 {
     "name": "@sxo/core",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "private": true,
     "type": "module",
     "description": "Native TypeScript CAS face: Session, opaque handles, diagnostics, and host capabilities. No dialect parsers and no WASM.",

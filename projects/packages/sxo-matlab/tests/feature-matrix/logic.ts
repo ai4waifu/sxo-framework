@@ -19,11 +19,7 @@ export const logicFeatures = [
         .eval('bitand.scalar', '1 & 0', 'false')
         .eval('bitand.vec', '[1, 0] & [1, 1]', '[true, false]')
         .done(),
-    feature('true_bitor', 'logic')
-        .supported()
-        .pure()
-        .eval('true.bitor', 'true | false', 'true')
-        .done(),
+    feature('true_bitor', 'logic').supported().pure().eval('true.bitor', 'true | false', 'true').done(),
     feature('true_bitand', 'logic')
         .supported()
         .pure()

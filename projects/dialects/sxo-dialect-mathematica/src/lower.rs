@@ -303,7 +303,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("LaplaceTransform", [expr, time, transform]) => {
-                    if let (Some(time_variable), Some(transform_variable)) = (symbol_of(session, time), symbol_of(session, transform)) {
+                    if let (Some(time_variable), Some(transform_variable)) =
+                        (symbol_of(session, time), symbol_of(session, transform))
+                    {
                         let expression = lower_wexpr(session, expr);
                         return calculus_goal(CalculusRequest::Transform {
                             kind: TransformKind::Laplace,
@@ -315,7 +317,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("FourierTransform", [expr, time, transform]) => {
-                    if let (Some(time_variable), Some(transform_variable)) = (symbol_of(session, time), symbol_of(session, transform)) {
+                    if let (Some(time_variable), Some(transform_variable)) =
+                        (symbol_of(session, time), symbol_of(session, transform))
+                    {
                         let expression = lower_wexpr(session, expr);
                         return calculus_goal(CalculusRequest::Transform {
                             kind: TransformKind::Fourier,
@@ -327,7 +331,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("ZTransform", [expr, time, transform]) => {
-                    if let (Some(time_variable), Some(transform_variable)) = (symbol_of(session, time), symbol_of(session, transform)) {
+                    if let (Some(time_variable), Some(transform_variable)) =
+                        (symbol_of(session, time), symbol_of(session, transform))
+                    {
                         let expression = lower_wexpr(session, expr);
                         return calculus_goal(CalculusRequest::Transform {
                             kind: TransformKind::Z,
@@ -701,37 +707,6 @@ fn lower_short_circuit_or(session: &mut Session, args: &[WolframForm]) -> Athena
     }
 }
 
-fn push_binding_defines(session: &mut Session, bindings: &WolframForm, steps: &mut Vec<AthenaRequest>) {
-    let items: Option<Vec<&WolframForm>> = match bindings {
-        WolframForm::List(items) => Some(items.iter().collect()),
-        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") => {
-            Some(args.iter().collect())
-        }
-        _ => None,
-    };
-    let Some(items) = items
-    else {
-        return;
-    };
-    for item in items {
-        if let WolframForm::Call { head, args } = item {
-            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") {
-                if let [lhs, rhs] = args.as_slice() {
-                    if let Some(symbol) = symbol_of(session, lhs) {
-                        let value = lower_wexpr(session, rhs);
-                        steps.push(AthenaRequest::Command(SessionCommand::Define {
-                            symbol,
-                            value,
-                            kind: BindingKind::Session,
-                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-                        }));
-                    }
-                }
-            }
-        }
-    }
-}
-
 /// Mathematica `Module`: rename locals to fresh `name$n`, then LocalScope.
 ///
 /// Bare `Module[{x}, x]` must not read session OwnValues of `x`.
@@ -753,14 +728,10 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
             WolframForm::Atom(WolframAtom::Symbol(name)) => {
                 renames.push((name.clone(), alloc_module_local(session, name)));
             }
-            WolframForm::Call { head, args }
-                if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") =>
-            {
-                if let [lhs, rhs] = args.as_slice() {
-                    if let WolframForm::Atom(WolframAtom::Symbol(name)) = lhs {
-                        renames.push((name.clone(), alloc_module_local(session, name)));
-                        inits.push((name.clone(), rhs.clone()));
-                    }
+            WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") => {
+                if let [WolframForm::Atom(WolframAtom::Symbol(name)), rhs] = args.as_slice() {
+                    renames.push((name.clone(), alloc_module_local(session, name)));
+                    inits.push((name.clone(), rhs.clone()));
                 }
             }
             _ => {}
@@ -785,9 +756,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
     }
     let body_r = rename_symbols(body, &renames);
     steps.push(lower_request(session, &body_r));
-    AthenaRequest::Control(ControlPlan::LocalScope {
-        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
-    })
+    AthenaRequest::Control(ControlPlan::LocalScope { body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })) })
 }
 
 fn alloc_module_local(session: &mut Session, base: &str) -> String {
@@ -817,9 +786,7 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
                 let symbol = session.arena.symbols_mut().intern(name);
                 steps.push(AthenaRequest::Command(SessionCommand::ClearDefinition { symbol }));
             }
-            WolframForm::Call { head, args }
-                if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") =>
-            {
+            WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") => {
                 if let [lhs, rhs] = args.as_slice() {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);
@@ -849,10 +816,7 @@ fn lower_with(session: &mut Session, bindings: &WolframForm, body: &WolframForm)
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return AthenaRequest::Term(lower_wexpr(
-                session,
-                &WolframForm::call("With", vec![bindings.clone(), body.clone()]),
-            ));
+            return AthenaRequest::Term(lower_wexpr(session, &WolframForm::call("With", vec![bindings.clone(), body.clone()])));
         }
     };
 
@@ -860,10 +824,8 @@ fn lower_with(session: &mut Session, bindings: &WolframForm, body: &WolframForm)
     for item in items {
         if let WolframForm::Call { head, args } = item {
             if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") {
-                if let [lhs, rhs] = args.as_slice() {
-                    if let WolframForm::Atom(WolframAtom::Symbol(name)) = lhs {
-                        subst.push((name.clone(), rhs.clone()));
-                    }
+                if let [WolframForm::Atom(WolframAtom::Symbol(name)), rhs] = args.as_slice() {
+                    subst.push((name.clone(), rhs.clone()));
                 }
             }
         }

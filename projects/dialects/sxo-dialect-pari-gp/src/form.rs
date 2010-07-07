@@ -63,10 +63,7 @@ impl GpForm {
 
     /// Surface call.
     pub fn call(head: impl Into<String>, args: Vec<GpForm>) -> Self {
-        Self::Call {
-            head: head.into(),
-            args,
-        }
+        Self::Call { head: head.into(), args }
     }
 
     /// Symbol name when this form is a symbol atom.

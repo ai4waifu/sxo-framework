@@ -4,10 +4,7 @@ use sxo_dialect_pari_gp::{GpForm, lower_request, parse_gp_form, render_gp};
 
 #[test]
 fn render_call_tree() {
-    let form = GpForm::call(
-        "factor",
-        vec![GpForm::number_literal("6")],
-    );
+    let form = GpForm::call("factor", vec![GpForm::number_literal("6")]);
     assert_eq!(render_gp(&form), "factor(6)");
 }
 

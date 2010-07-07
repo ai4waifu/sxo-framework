@@ -10,9 +10,5 @@ export const sessionFeatures = [
             notes: 'needs PariGpSession + precision policy',
         })
         .done(),
-    feature('assignment', 'session')
-        .planned('GP `=` binding in session')
-        .stateful()
-        .gap('assign.a', 'a = 3; a + 1', { expected: '4' })
-        .done(),
+    feature('assignment', 'session').planned('GP `=` binding in session').stateful().gap('assign.a', 'a = 3; a + 1', { expected: '4' }).done(),
 ];

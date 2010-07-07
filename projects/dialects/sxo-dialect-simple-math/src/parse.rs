@@ -8,7 +8,5 @@ use crate::form::Expr;
 ///
 /// Always errors until `oak-athena` lands. Do not hand-write a second parser here.
 pub fn parse(_input: &str) -> Result<Expr, SxoError> {
-    Err(SxoError::new(
-        "simple-math: parse not on delivery route (needs oak-athena → Expr)",
-    ))
+    Err(SxoError::new("simple-math: parse not on delivery route (needs oak-athena → Expr)"))
 }

@@ -18,14 +18,6 @@ export const numberTheoryFeatures = [
         .gap('isprime.17', 'isprime(17)', { expected: '1' })
         .gap('isprime.15', 'isprime(15)', { expected: '0' })
         .done(),
-    feature('nextprime', 'number_theory')
-        .planned('nextprime surface')
-        .pure()
-        .gap('nextprime.10', 'nextprime(10)', { expected: '11' })
-        .done(),
-    feature('eulerphi', 'number_theory')
-        .planned("Euler's totient")
-        .pure()
-        .gap('eulerphi.9', 'eulerphi(9)', { expected: '6' })
-        .done(),
+    feature('nextprime', 'number_theory').planned('nextprime surface').pure().gap('nextprime.10', 'nextprime(10)', { expected: '11' }).done(),
+    feature('eulerphi', 'number_theory').planned("Euler's totient").pure().gap('eulerphi.9', 'eulerphi(9)', { expected: '6' }).done(),
 ];
