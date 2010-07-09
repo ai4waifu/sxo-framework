@@ -22,51 +22,45 @@ use athena::types::{ResultId, TermId};
 #[napi]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
-    /// Present after `d` / `simplify` (or string-entry helpers that materialize a bare term).
-    /// When both `root` and `result_id` exist (evaluate + in-process simplify), prefer `root`.
+    /// Present only when a bare term was materialized without a Session result (should be rare).
     pub(crate) root: Option<TermId>,
-    /// Present after evaluate. Prefer over Form for projecting symbolic results when `root` is absent.
+    /// Present after evaluate / `d` / `simplify`. Owns status, coverage, and diagnostics.
     pub(crate) result_id: Option<ResultId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
-    /// Athena [`ComputationStatus`] name from the last evaluate (or `Unknown` if not evaluated).
+    /// Athena [`ComputationStatus`] name from the owning result (or `Unknown` if not evaluated).
     pub(crate) status: String,
-    /// Coverage name from the last evaluate (or `Unknown` if not evaluated).
+    /// Coverage name from the owning result (or `Unknown` if not evaluated).
     pub(crate) coverage: String,
 }
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
+///
+/// `simplify` replaces the outcome with the Simplify request's final [`ResultId`] — value and
+/// status/coverage/diagnostics come from the same computation.
 pub(crate) fn from_outcome(
     session: Rc<Session>,
     dialect: Dialect,
     outcome: sxo_types::EvalOutcome,
     strategy: EvalStrategy,
-) -> Expression {
-    match strategy {
-        EvalStrategy::None => Expression {
-            session,
-            root: None,
-            result_id: Some(outcome.result_id),
-            form: None,
-            dialect,
-            status: outcome.status,
-            coverage: outcome.coverage,
-        },
+) -> Result<Expression> {
+    let final_outcome = match strategy {
+        EvalStrategy::None => outcome,
         EvalStrategy::Simplify => {
-            let root = session.simplify_term(session.project_result(outcome.result_id));
-            Expression {
-                session,
-                root: Some(root),
-                // Keep ResultId so diagnostics stay lazy after in-process simplify.
-                result_id: Some(outcome.result_id),
-                form: None,
-                dialect,
-                status: outcome.status,
-                coverage: outcome.coverage,
-            }
+            let term = session.try_project_symbolic(outcome.result_id).map_err(map_err)?;
+            session.simplify_outcome(term).map_err(map_err)?
         }
-    }
+    };
+    Ok(Expression {
+        session,
+        root: None,
+        result_id: Some(final_outcome.result_id),
+        form: None,
+        dialect,
+        status: final_outcome.status,
+        coverage: final_outcome.coverage,
+    })
 }
 
 fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> Expression {
@@ -81,27 +75,27 @@ fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> E
     }
 }
 
-fn unevaluated_term(session: Rc<Session>, root: TermId, dialect: Dialect) -> Expression {
+fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
     Expression {
         session,
-        root: Some(root),
-        result_id: None,
+        root: None,
+        result_id: Some(outcome.result_id),
         form: None,
         dialect,
-        status: "Unknown".into(),
-        coverage: "Unknown".into(),
+        status: outcome.status,
+        coverage: outcome.coverage,
     }
 }
 
 impl Expression {
     /// Materialize a Term once when an API still requires [`TermId`].
-    /// Prefer an explicit `root` (e.g. post-simplify) over projecting `result_id`.
+    /// Prefer projecting `result_id` when present.
     fn materialize_root(&self) -> Result<TermId> {
+        if let Some(result_id) = self.result_id {
+            return self.session.try_project_symbolic(result_id).map_err(map_err);
+        }
         if let Some(root) = self.root {
             return Ok(root);
-        }
-        if let Some(result_id) = self.result_id {
-            return Ok(self.session.project_result(result_id));
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
@@ -126,16 +120,16 @@ impl Expression {
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
         let term = self.materialize_root()?;
-        let root = self.session.differentiate_term(term, &var);
-        Ok(unevaluated_term(Rc::clone(&self.session), root, self.dialect))
+        let outcome = self.session.differentiate_outcome(term, &var).map_err(map_err)?;
+        Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
     /// Simplify via the engine (`Simplify` head) on the same session.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
         let term = self.materialize_root()?;
-        let root = self.session.simplify_term(term);
-        Ok(unevaluated_term(Rc::clone(&self.session), root, self.dialect))
+        let outcome = self.session.simplify_outcome(term).map_err(map_err)?;
+        Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
@@ -153,7 +147,7 @@ impl Expression {
             }
         }
         .map_err(map_err)?;
-        Ok(from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy))
+        from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy)
     }
 
     /// Athena computation status name (`Exact`, `Candidate`, `Unknown`, …).

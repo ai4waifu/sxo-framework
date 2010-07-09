@@ -31,15 +31,15 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
     let (term, resolved) = parse_to_term(&session, &input, d)?;
-    let root = session.differentiate_term(term, &var);
+    let outcome = session.differentiate_outcome(term, &var).map_err(map_err)?;
     Ok(Expression {
         session,
-        root: Some(root),
-        result_id: None,
+        root: None,
+        result_id: Some(outcome.result_id),
         form: None,
         dialect: resolved,
-        status: "Unknown".into(),
-        coverage: "Unknown".into(),
+        status: outcome.status,
+        coverage: outcome.coverage,
     })
 }
 
@@ -52,7 +52,7 @@ pub fn evaluate(input: String, dialect: Option<String>, options: Option<Evaluate
     let strategy = parse_strategy(&options)?;
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(&input, d).map_err(map_err)?;
-    Ok(handles::from_outcome(session, d, outcome, strategy))
+    handles::from_outcome(session, d, outcome, strategy)
 }
 
 /// Top-level `simplify(expr, dialect?)`.
