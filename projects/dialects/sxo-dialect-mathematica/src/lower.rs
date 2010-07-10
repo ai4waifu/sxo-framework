@@ -620,9 +620,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("Dot", [a_form, b_form]) => {
                     let a_term = lower_wexpr(session, a_form);
                     let b_term = lower_wexpr(session, b_form);
-                    if let (Some(a_mat), Some(b_mat)) =
-                        (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
-                    {
+                    if let Some((a_mat, b_mat)) = dot_matrices_from_nested_lists(session, a_term, b_term) {
                         let lhs = session.matrix_objects.intern(a_mat);
                         let rhs = session.matrix_objects.intern(b_mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -930,6 +928,47 @@ fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValu
             MatrixValue::from_rationals_row_major(1, 1, vec![r]).ok()
         }
     }
+}
+
+/// True when `term` is a flat `List` of scalars (Mathematica vector syntax), not nested rows.
+fn is_flat_list_vector(session: &Session, term: TermId) -> bool {
+    match session.arena.get(term) {
+        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
+            !matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. }))
+        }
+        _ => false,
+    }
+}
+
+/// Orient Mathematica flat-list vectors for `Dot` at the dialect layer.
+///
+/// Kernel `Dot` is plain matrix multiplication and must not guess `1×n` vs `n×1`.
+fn dot_matrices_from_nested_lists(session: &Session, a_term: TermId, b_term: TermId) -> Option<(MatrixValue, MatrixValue)> {
+    use athena::domains::linear_algebra::transpose;
+
+    let a_flat = is_flat_list_vector(session, a_term);
+    let b_flat = is_flat_list_vector(session, b_term);
+    let a = matrix_from_nested_list(session, a_term)?;
+    let mut b = matrix_from_nested_list(session, b_term)?;
+
+    match (a_flat, b_flat) {
+        // `Dot[m, {v…}]` → column vector on the right when lengths match `m` columns.
+        (false, true) if a.shape().cols == b.shape().cols && b.shape().rows == 1 => {
+            b = transpose(&b);
+        }
+        // `Dot[{v…}, {w…}]` → row · column inner product.
+        (true, true) if a.shape().rows == 1 && b.shape().rows == 1 && a.shape().cols == b.shape().cols => {
+            b = transpose(&b);
+        }
+        // `Dot[{v…}, m]` keeps the left operand as a `1×m` row when lengths match `m` rows.
+        (true, false) => {}
+        _ => {}
+    }
+
+    if a.shape().cols != b.shape().rows {
+        return None;
+    }
+    Some((a, b))
 }
 
 fn list_items(w: &WolframForm) -> Option<&[WolframForm]> {
