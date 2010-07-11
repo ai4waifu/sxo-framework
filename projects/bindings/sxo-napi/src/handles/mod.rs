@@ -37,8 +37,9 @@ pub struct Expression {
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
 ///
-/// `simplify` replaces the outcome with the Simplify request's final [`ResultId`] — value and
-/// status/coverage/diagnostics come from the same computation.
+/// `simplify` is an algebraic **result transform** on the projected value (Athena captures
+/// Simplify args and does not re-apply ambient Own). Final status/coverage come from that
+/// Simplify [`ResultId`].
 pub(crate) fn from_outcome(
     session: Rc<Session>,
     dialect: Dialect,
