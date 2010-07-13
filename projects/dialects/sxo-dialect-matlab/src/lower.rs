@@ -40,7 +40,13 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
         MatlabForm::Atom(MatlabAtom::String(s)) => {
             session.arena.push(TermNode::Atom(Atom::String(s.clone())), SourceSpan::default())
         }
-        MatlabForm::Atom(MatlabAtom::Symbol(name)) => push_symbol_name(session, name),
+        MatlabForm::Atom(MatlabAtom::Symbol(name)) => match name.as_str() {
+            // Dialect surface `Inf` → shared `Infinity` symbol identity (Athena fold / limit).
+            "Inf" | "inf" => push_symbol_name(session, "Infinity"),
+            // Dialect surface `NaN` → neutral `Indeterminate`.
+            "NaN" | "nan" => push_semantic(session, SemanticOperator::Indeterminate, Vec::new()),
+            _ => push_symbol_name(session, name),
+        },
         MatlabForm::Atom(MatlabAtom::Bool(b)) => push_bool(session, *b),
         MatlabForm::Atom(MatlabAtom::Null) => push_null(session),
         MatlabForm::List(items) => {
@@ -48,6 +54,10 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
             push_list(session, ids)
         }
         MatlabForm::Call { head, args } => {
+            // MATLAB exact-domain convention: literal `0^0` / `0.^0` → `1` (not Athena `Indeterminate`).
+            if (head == "Power" || head == "DotPower") && args.len() == 2 && args.iter().all(form_is_exact_zero) {
+                return session.builder().int(1, Default::default());
+            }
             if head == "Application" {
                 let mut ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
                 if ids.is_empty() {
@@ -333,6 +343,10 @@ fn form_is_effectful_arm(form: &MatlabForm) -> bool {
         MatlabForm::Call { head, .. } if head == "Set" || head == "CompoundExpression" => true,
         _ => false,
     }
+}
+
+fn form_is_exact_zero(form: &MatlabForm) -> bool {
+    matches!(form, MatlabForm::Atom(MatlabAtom::Number(n)) if n.is_zero())
 }
 
 fn form_symbol_name(form: &MatlabForm) -> Option<&str> {

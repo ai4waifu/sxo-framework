@@ -498,6 +498,14 @@ fn render_matlab_form_without_arena() {
 }
 
 #[test]
+fn ieee_edge_forms_use_nan_and_matlab_zero_pow_zero() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("0/0")), "NaN");
+    assert_eq!(h.render(h.eval("Inf - Inf")), "NaN");
+    assert_eq!(h.render(h.eval("0^0")), "1");
+}
+
+#[test]
 fn parse_matlab_form_if_without_session() {
     let form = parse_matlab_form("if true, 1, else, 2, end").unwrap();
     assert_eq!(form.head_name(), Some("If"));
