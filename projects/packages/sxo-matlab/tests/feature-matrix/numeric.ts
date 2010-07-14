@@ -18,11 +18,12 @@ export const numericFeatures = [
     feature('mod', 'numeric').unsupported().pure().gap('mod.10_3', 'mod(10, 3)', { expected: '1' }).done(),
     feature('hypot', 'numeric').unsupported().pure().gap('hypot.34', 'hypot(3, 4)', { expected: '5' }).done(),
     feature('ieee_edge', 'numeric')
-        .partial('SILENT WRONG: 0/0→0 and Inf-Inf→0 (MATLAB expects NaN); 0^0→1 matches MATLAB')
+        .supported()
         .pure()
-        .gap('ieee.0over0', '0/0', { expected: 'NaN', notes: 'currently 0' })
-        .gap('ieee.inf_minus_inf', 'Inf - Inf', { expected: 'NaN', notes: 'currently 0' })
-        .eval('ieee.0pow0', '0^0', '1', { notes: 'MATLAB-compatible' })
+        .notes('Inf/NaN dialect surface; exact 0^0 stays MATLAB 1; 0/0 and Inf-Inf render NaN from Indeterminate')
+        .eval('ieee.0over0', '0/0', 'NaN')
+        .eval('ieee.inf_minus_inf', 'Inf - Inf', 'NaN')
+        .eval('ieee.0pow0', '0^0', '1', { notes: 'MATLAB-compatible dialect lower' })
         .done(),
     feature('i_squared', 'numeric')
         .unsupported('bare i/j symbols retained; 1+2i / 1i still oak bad literal')
