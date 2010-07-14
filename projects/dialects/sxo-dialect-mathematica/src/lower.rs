@@ -1370,6 +1370,10 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
             WolframForm::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
+            // Mathematica 表层把 `Indeterminate` 当作原子符号，不是 `Indeterminate[]`。
+            if matches!(*op, ApplicationHead::Semantic(SemanticOperator::Indeterminate)) && args.is_empty() {
+                return WolframForm::Atom(WolframAtom::Symbol("Indeterminate".into()));
+            }
             let head_name = match *op {
                 ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {
                     let head = wexpr_from_session(session, args[0]);

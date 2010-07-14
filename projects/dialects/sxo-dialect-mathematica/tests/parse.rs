@@ -739,3 +739,11 @@ fn xor_and_implies_from_branch() {
     assert_eq!(h.wolfram(h.eval("Implies[True, False]")), "False");
     assert_eq!(h.wolfram(h.eval("Implies[False, False]")), "True");
 }
+
+#[test]
+fn indeterminate_forms_fold_to_indeterminate() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("0/0")), "Indeterminate");
+    assert_eq!(h.wolfram(h.eval("0^0")), "Indeterminate");
+    assert_eq!(h.wolfram(h.eval("Infinity - Infinity")), "Indeterminate");
+}
