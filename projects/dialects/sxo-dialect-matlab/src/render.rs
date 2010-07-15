@@ -2,7 +2,7 @@
 
 use athena::{
     Session,
-    ir::{Atom, TermNode},
+    ir::{Atom, MathematicalConstant, TermNode},
     numeric::Number,
     runtime::values::arena::{application_arguments, number_from_id, symbol_name},
     types::TermId,
@@ -66,6 +66,7 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             Atom::Boolean(true) => "true".into(),
             Atom::Boolean(false) => "false".into(),
             Atom::Null => "[]".into(),
+            Atom::Constant(MathematicalConstant::Infinity) => "Inf".into(),
             Atom::Constant(c) => c.debug_label().into(),
         },
         Some(TermNode::Collection { elements: items, .. }) => {
