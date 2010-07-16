@@ -498,6 +498,28 @@ fn render_matlab_form_without_arena() {
 }
 
 #[test]
+fn whitespace_juxtaposed_statements_are_rejected() {
+    for input in ["hold on", "hold on;", "syms x", "grid on", "axis equal", "close all", "colormap jet"] {
+        let err = parse_matlab_form(input).expect_err(input);
+        assert!(
+            err.to_string().contains("command syntax") || err.to_string().contains("juxtaposed"),
+            "{input:?} => {err}"
+        );
+    }
+    // Semicolon / comma statement separators remain CompoundExpression.
+    let form = parse_matlab_form("a; b").unwrap();
+    assert_eq!(form.head_name(), Some("CompoundExpression"));
+    let form = parse_matlab_form("a, b").unwrap();
+    assert_eq!(form.head_name(), Some("CompoundExpression"));
+}
+
+#[test]
+fn cell_brace_literal_is_oak_error_not_silent_last_element() {
+    let err = parse_matlab_form("{1, 2}").expect_err("cell brace");
+    assert!(err.to_string().contains("error node"), "{err}");
+}
+
+#[test]
 fn ieee_edge_forms_use_nan_and_matlab_zero_pow_zero() {
     let h = H::new();
     assert_eq!(h.render(h.eval("0/0")), "NaN");

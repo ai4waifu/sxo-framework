@@ -20,36 +20,36 @@ export const plotFeatures = [
     feature('contour', 'plot').unsupported().effectful().gap('contour.peaks', 'contour(peaks)', { expected: '<svg' }).done(),
     feature('figure', 'plot').unsupported().effectful().gap('figure.basic', 'figure', { expected: '...' }).done(),
     feature('hold_on', 'plot')
-        .unsupported('SILENT WRONG: hold on → on (command keyword stripped)')
+        .unsupported('command syntax refused until oak has command nodes (was silent: hold on → on)')
         .effectful()
-        .gap('hold.on', 'hold on', { expected: '...', notes: 'currently returns on' })
+        .gap('hold.on', 'hold on', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('grid_on', 'plot')
-        .unsupported('SILENT WRONG: grid on → on')
+        .unsupported('command syntax refused (was silent: grid on → on)')
         .effectful()
-        .gap('grid.on', 'grid on', { expected: '...', notes: 'currently returns on' })
+        .gap('grid.on', 'grid on', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('axis', 'plot')
-        .unsupported('SILENT WRONG: axis equal → equal')
+        .unsupported('command syntax refused (was silent: axis equal → equal)')
         .effectful()
-        .gap('axis.equal', 'axis equal', { expected: '...', notes: 'currently returns equal' })
+        .gap('axis.equal', 'axis equal', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('legend', 'plot').unsupported().effectful().gap('legend.a', "legend('a')", { expected: '...' }).done(),
     feature('subplot', 'plot').unsupported().effectful().gap('subplot.121', 'subplot(1, 2, 1)', { expected: '...' }).done(),
     feature('close_all', 'plot')
-        .unsupported('SILENT WRONG: close all → all')
+        .unsupported('command syntax refused (was silent: close all → all)')
         .effectful()
-        .gap('close.all', 'close all', { expected: '...', notes: 'currently returns all' })
+        .gap('close.all', 'close all', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('hold_off', 'plot')
-        .unsupported('SILENT WRONG: hold off → off')
+        .unsupported('command syntax refused (was silent: hold off → off)')
         .effectful()
-        .gap('hold.off', 'hold off', { expected: '...', notes: 'currently returns off' })
+        .gap('hold.off', 'hold off', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('colormap', 'plot')
-        .unsupported('SILENT WRONG: colormap jet → jet')
+        .unsupported('command syntax refused (was silent: colormap jet → jet)')
         .effectful()
-        .gap('colormap.jet', 'colormap jet', { expected: '...', notes: 'currently returns jet' })
+        .gap('colormap.jet', 'colormap jet', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('scatter', 'plot').unsupported().effectful().gap('scatter.basic', 'scatter([1, 2], [3, 4])', { expected: '<svg' }).done(),
     feature('bar', 'plot').unsupported().effectful().gap('bar.3', 'bar([1, 2, 3])', { expected: '<svg' }).done(),
