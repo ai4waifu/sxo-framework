@@ -685,7 +685,6 @@ dependencies = [
 [[package]]
 name = "oak-core"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?rev=508d5bae12abe8109c1abfa6b7aa6f4e742a42a0#508d5bae12abe8109c1abfa6b7aa6f4e742a42a0"
 dependencies = [
  "smallvec",
  "tracing",
@@ -696,7 +695,6 @@ dependencies = [
 [[package]]
 name = "oak-matlab"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?rev=508d5bae12abe8109c1abfa6b7aa6f4e742a42a0#508d5bae12abe8109c1abfa6b7aa6f4e742a42a0"
 dependencies = [
  "oak-core",
  "tracing",
@@ -705,7 +703,6 @@ dependencies = [
 [[package]]
 name = "oak-wolfram"
 version = "0.0.12"
-source = "git+https://github.com/ygg-lang/oaks.git?rev=508d5bae12abe8109c1abfa6b7aa6f4e742a42a0#508d5bae12abe8109c1abfa6b7aa6f4e742a42a0"
 dependencies = [
  "oak-core",
 ]
