@@ -45,6 +45,9 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
             if let Some(infix) = try_form_infix(head, args) {
                 return infix;
             }
+            if head == "Cell" {
+                return render_cell_form(args);
+            }
             let h = head_matlab_name(head);
             let inner = args.iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
             format!("{h}({inner})")
@@ -97,6 +100,9 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                 return infix;
             }
             let h = match application_surface_name(session, id) {
+                Some(n) if n == "Cell" => {
+                    return render_cell_term(session, &args);
+                }
                 Some(n) => head_matlab_name(&n),
                 None => "?".into(),
             };
@@ -135,6 +141,62 @@ fn head_matlab_name(name: &str) -> String {
         other => other,
     }
     .to_string()
+}
+
+fn render_cell_form(args: &[MatlabForm]) -> String {
+    match args {
+        [MatlabForm::List(items)] => {
+            if is_form_matrix_rows(items) {
+                let rows: Vec<String> = items
+                    .iter()
+                    .map(|row| match row {
+                        MatlabForm::List(cols) => cols.iter().map(render_matlab_form).collect::<Vec<_>>().join(", "),
+                        other => render_matlab_form(other),
+                    })
+                    .collect();
+                format!("{{{}}}", rows.join("; "))
+            }
+            else {
+                let inner = items.iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
+                format!("{{{inner}}}")
+            }
+        }
+        _ => {
+            let inner = args.iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
+            format!("{{{inner}}}")
+        }
+    }
+}
+
+fn render_cell_term(session: &Session, args: &[TermId]) -> String {
+    match args {
+        [only] => match session.arena.get(*only) {
+            Some(TermNode::Collection { elements: items, .. }) => {
+                let items = items.clone();
+                if is_matrix_rows(session, &items) {
+                    let rows: Vec<String> = items
+                        .iter()
+                        .map(|row| match session.arena.get(*row) {
+                            Some(TermNode::Collection { elements: cols, .. }) => {
+                                cols.iter().map(|c| render_matlab(session, *c)).collect::<Vec<_>>().join(", ")
+                            }
+                            _ => render_matlab(session, *row),
+                        })
+                        .collect();
+                    format!("{{{}}}", rows.join("; "))
+                }
+                else {
+                    let inner = items.iter().map(|i| render_matlab(session, *i)).collect::<Vec<_>>().join(", ");
+                    format!("{{{inner}}}")
+                }
+            }
+            _ => format!("{{{}}}", render_matlab(session, *only)),
+        },
+        _ => {
+            let inner = args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(", ");
+            format!("{{{inner}}}")
+        }
+    }
 }
 
 fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {

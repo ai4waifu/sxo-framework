@@ -2,9 +2,9 @@ import { feature } from '@sxo/harness';
 
 export const typesFeatures = [
     feature('cell', 'types')
-        .unsupported('brace cell needs oak CellArray node; `{1,2}` is oak error (no longer silent last element)')
+        .partial('parse keeps `{…}` as Form `Cell` via oak CellArray; cell runtime / cell() ctor still open')
         .pure()
-        .gap('cell.literal', '{1, 2}', { expected: '{1, 2}', notes: 'matlab(oak): error node' })
+        .eval('cell.literal', '{1, 2}', '{1, 2}')
         .gap('cell.ctor', 'cell(2, 1)', { expected: '{[]; []}' })
         .done(),
     feature('struct', 'types').unsupported().pure().gap('struct.basic', "struct('a', 1)", { expected: "struct('a',1)" }).done(),
@@ -18,12 +18,9 @@ export const typesFeatures = [
         .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'matlab(oak): error node' })
         .done(),
     feature('iscell', 'types')
-        .unsupported('iscell({1}) refused until oak CellArray (was silent iscell(1))')
+        .partial('parse keeps `iscell({1})` cell arg; iscell predicate not implemented')
         .pure()
-        .gap('iscell.brace', 'iscell({1})', {
-            expected: '1',
-            notes: 'parse error: unsupported cell brace in call/index',
-        })
+        .gap('iscell.brace', 'iscell({1})', { expected: '1', notes: 'Form is iscell(Cell({1})); predicate pending' })
         .done(),
     feature('missing', 'types')
         .partial('atom retained; ismissing/rmmissing unevaluated')

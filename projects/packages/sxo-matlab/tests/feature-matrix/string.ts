@@ -9,11 +9,11 @@ export const stringFeatures = [
     feature('strcat', 'string').unsupported().pure().gap('strcat.ab', "strcat('a', 'b')", { expected: "'ab'" }).done(),
     feature('strcmp', 'string').unsupported().pure().gap('strcmp.eq', "strcmp('a', 'a')", { expected: '1' }).done(),
     feature('strjoin', 'string')
-        .unsupported('cell brace in call args refused until oak CellArray (was silent strip)')
+        .unsupported('parse keeps cell arg via oak CellArray; strjoin execution still open')
         .pure()
         .gap('strjoin.ab', "strjoin({'a', 'b'}, ',')", {
             expected: "'a,b'",
-            notes: 'parse error: unsupported cell brace in call/index',
+            notes: 'Form keeps Cell({a,b}); runtime pending',
         })
         .done(),
     feature('char', 'string').unsupported().pure().gap('char.65', 'char(65)', { expected: "'A'" }).done(),

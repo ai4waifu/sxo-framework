@@ -18,11 +18,11 @@ export const arrayFeatures = [
         .gap('arrayfun.sin', 'arrayfun(@sin, [0, pi/2])', { expected: '[0, 1]' })
         .done(),
     feature('cellfun', 'array')
-        .unsupported('cell brace in call args refused until oak CellArray (was silent arity strip)')
+        .unsupported('parse keeps cell arg via oak CellArray; cellfun execution still open')
         .pure()
         .gap('cellfun.numel', 'cellfun(@numel, {1, 2})', {
             expected: '[1, 1]',
-            notes: 'parse error: unsupported cell brace in call/index',
+            notes: 'Form is cellfun(@numel, Cell({1,2})); runtime pending',
         })
         .done(),
     feature('all', 'array').unsupported().pure().gap('all.true', 'all([1, 1])', { expected: '1' }).done(),

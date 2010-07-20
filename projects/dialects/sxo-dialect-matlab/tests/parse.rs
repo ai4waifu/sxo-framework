@@ -514,23 +514,32 @@ fn whitespace_juxtaposed_statements_are_rejected() {
 }
 
 #[test]
-fn cell_brace_literal_is_oak_error_not_silent_last_element() {
-    let err = parse_matlab_form("{1, 2}").expect_err("cell brace");
-    assert!(err.to_string().contains("error node"), "{err}");
+fn cell_brace_literal_keeps_cell_form() {
+    let form = parse_matlab_form("{1, 2}").unwrap();
+    assert_eq!(form.head_name(), Some("Cell"));
+    assert_eq!(render_matlab_form(&form), "{1, 2}");
 }
 
 #[test]
-fn cell_brace_in_call_args_is_rejected() {
-    for input in [
-        "cellfun(@numel, {1, 2})",
-        "iscell({1})",
-        "strjoin({'a', 'b'}, ',')",
-    ] {
-        let err = parse_matlab_form(input).expect_err(input);
-        assert!(
-            err.to_string().contains("cell brace") || err.to_string().contains("CellArray"),
-            "{input:?} => {err}"
-        );
+fn cell_brace_in_call_args_stays_one_argument() {
+    let form = parse_matlab_form("cellfun(@numel, {1, 2})").unwrap();
+    match form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "cellfun");
+            assert_eq!(args.len(), 2, "got {args:?}");
+            assert_eq!(args[1].head_name(), Some("Cell"));
+            assert_eq!(render_matlab_form(&args[1]), "{1, 2}");
+        }
+        other => panic!("expected cellfun call, got {other:?}"),
+    }
+    let form = parse_matlab_form("iscell({1})").unwrap();
+    match form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "iscell");
+            assert_eq!(args.len(), 1);
+            assert_eq!(args[0].head_name(), Some("Cell"));
+        }
+        other => panic!("expected iscell call, got {other:?}"),
     }
 }
 
