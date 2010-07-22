@@ -498,14 +498,38 @@ fn render_matlab_form_without_arena() {
 }
 
 #[test]
-fn whitespace_juxtaposed_statements_are_rejected() {
-    for input in ["hold on", "hold on;", "syms x", "grid on", "axis equal", "close all", "colormap jet"] {
-        let err = parse_matlab_form(input).expect_err(input);
-        assert!(
-            err.to_string().contains("command syntax") || err.to_string().contains("juxtaposed"),
-            "{input:?} => {err}"
-        );
+fn command_syntax_lowers_to_command_form() {
+    for (input, name, arg) in [
+        ("hold on", "hold", "on"),
+        ("hold on;", "hold", "on"),
+        ("grid on", "grid", "on"),
+        ("syms x", "syms", "x"),
+        ("axis equal", "axis", "equal"),
+        ("close all", "close", "all"),
+        ("colormap jet", "colormap", "jet"),
+    ] {
+        let form = parse_matlab_form(input).unwrap_or_else(|e| panic!("{input:?}: {e}"));
+        match form {
+            MatlabForm::Call { head, args } => {
+                assert_eq!(head, "Command", "{input:?}");
+                assert_eq!(args.len(), 2, "{input:?} => {args:?}");
+                assert!(args[0].is_symbol(name), "{input:?} => {:?}", args[0]);
+                assert!(args[1].is_symbol(arg), "{input:?} => {:?}", args[1]);
+            }
+            other => panic!("{input:?}: expected Command, got {other:?}"),
+        }
+        assert_eq!(render_matlab_form(&parse_matlab_form(input).unwrap()), format!("{name} {arg}"));
     }
+}
+
+#[test]
+fn whitespace_juxtaposed_non_command_still_rejected() {
+    // `parfor` is not yet a keyword; `parfor i=…` is Symbol + assignment juxta.
+    let err = parse_matlab_form("parfor i=1:2").expect_err("parfor juxta");
+    assert!(
+        err.to_string().contains("juxtaposed"),
+        "got {err}"
+    );
     // Semicolon / comma statement separators remain CompoundExpression.
     let form = parse_matlab_form("a; b").unwrap();
     assert_eq!(form.head_name(), Some("CompoundExpression"));

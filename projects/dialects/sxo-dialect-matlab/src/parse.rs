@@ -60,8 +60,8 @@ fn lower_root(root: &MatlabRoot, source: &str) -> Result<MatlabForm, SxoError> {
 }
 
 /// Adjacent top-level statements separated only by spaces/tabs (no `;`, `,`, or newline)
-/// are MATLAB command syntax / invalid juxta that oak has not typed. Refuse rather than
-/// evaluate as `CompoundExpression` and silently return the last word (`hold on` → `on`).
+/// are invalid juxta that oak has not typed (e.g. `parfor i=…` before a `parfor` keyword).
+/// Typed command syntax (`hold on`) is a single `Statement::Command` and does not hit this gate.
 fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::ast::Span]) -> Result<(), SxoError> {
     for pair in spans.windows(2) {
         let left_end = pair[0].end;
@@ -72,7 +72,7 @@ fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::as
         let between = &source[left_end..right_start];
         if between.chars().all(|c| c == ' ' || c == '\t') {
             return Err(SxoError::new(
-                "matlab: unsupported command syntax or juxtaposed statements (need oak command/statement nodes)",
+                "matlab: unsupported juxtaposed statements (no separator)",
             ));
         }
     }
@@ -133,6 +133,14 @@ fn lower_stmt(stmt: &Statement, source: &str) -> Result<MatlabForm, SxoError> {
             let body_f = compound_stmts(body, source)?;
             let catch_f = compound_stmts(catch_body, source)?;
             Ok(MatlabForm::call("Try", vec![body_f, catch_f]))
+        }
+        Statement::Command { name, args, .. } => {
+            let mut forms = Vec::with_capacity(1 + args.len());
+            forms.push(MatlabForm::symbol(&name.name));
+            for a in args {
+                forms.push(lower_expr(a, source)?);
+            }
+            Ok(MatlabForm::call("Command", forms))
         }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }

@@ -48,6 +48,9 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
             if head == "Cell" {
                 return render_cell_form(args);
             }
+            if head == "Command" {
+                return render_command_form(args);
+            }
             let h = head_matlab_name(head);
             let inner = args.iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
             format!("{h}({inner})")
@@ -103,6 +106,9 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                 Some(n) if n == "Cell" => {
                     return render_cell_term(session, &args);
                 }
+                Some(n) if n == "Command" => {
+                    return render_command_term(session, &args);
+                }
                 Some(n) => head_matlab_name(&n),
                 None => "?".into(),
             };
@@ -141,6 +147,14 @@ fn head_matlab_name(name: &str) -> String {
         other => other,
     }
     .to_string()
+}
+
+fn render_command_form(args: &[MatlabForm]) -> String {
+    args.iter().map(render_matlab_form).collect::<Vec<_>>().join(" ")
+}
+
+fn render_command_term(session: &Session, args: &[TermId]) -> String {
+    args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(" ")
 }
 
 fn render_cell_form(args: &[MatlabForm]) -> String {
