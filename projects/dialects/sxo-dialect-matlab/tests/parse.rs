@@ -302,6 +302,38 @@ fn parse_call_vs_part_disambiguation() {
 }
 
 #[test]
+fn free_symbol_index_shaped_call_keeps_args_on_eval() {
+    let h = H::new();
+    // Parse still chooses Part for unknown+numeric (MATLAB `()` shared with subsref).
+    assert_eq!(
+        parse_matlab_form("speye(2)").unwrap(),
+        MatlabForm::call("Part", vec![MatlabForm::symbol("speye"), MatlabForm::int(2)])
+    );
+    // Athena Index residual on free symbol must not strip to bare `speye`.
+    assert_eq!(h.render(h.eval("speye(2)")), "speye(2)");
+}
+
+#[test]
+fn spfun_keeps_function_handle_and_speye_args() {
+    let form = parse_matlab_form("spfun(@sqrt, speye(2))").unwrap();
+    match form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "spfun");
+            assert_eq!(args.len(), 2, "got {args:?}");
+            assert_eq!(args[0].head_name(), Some("FunctionHandle"));
+            assert_eq!(
+                args[1],
+                MatlabForm::call("Part", vec![MatlabForm::symbol("speye"), MatlabForm::int(2)])
+            );
+        }
+        other => panic!("expected spfun call, got {other:?}"),
+    }
+    let h = H::new();
+    // Nested Part inside Extension stays residual Part; render must still show `speye(2)` and keep `@`.
+    assert_eq!(h.render(h.eval("spfun(@sqrt, speye(2))")), "spfun(@Sqrt, speye(2))");
+}
+
+#[test]
 fn parse_anonymous_function_handle_and_call() {
     let form = parse_matlab_form("@(x) x^2").unwrap();
     assert_eq!(form.head_name(), Some("Function"));
