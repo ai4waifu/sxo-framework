@@ -11,11 +11,15 @@ export const sessionFeatures = [
         .eval('assign.then_linear', 'M = [1, 2; 3, 4]; M(2)', '3')
         .done(),
     feature('sequence', 'session').supported().pure().eval('seq.last', '1; 2 + 2', '4').done(),
-    feature('global', 'session').unsupported('SILENT WRONG: global x → x').stateful().gap('global.strip', 'global x', { expected: '' }).done(),
-    feature('persistent', 'session')
-        .unsupported('SILENT WRONG: persistent y → y')
+    feature('global', 'session')
+        .unsupported('parse keeps Global Form via oak Statement::Global; workspace declaration runtime still open')
         .stateful()
-        .gap('persistent.strip', 'persistent y', { expected: '' })
+        .gap('global.strip', 'global x', { expected: '', notes: 'Form Global[x]; eval Reject (was silent → x)' })
+        .done(),
+    feature('persistent', 'session')
+        .unsupported('parse keeps Persistent Form via oak Statement::Persistent; function-local persist runtime still open')
+        .stateful()
+        .gap('persistent.strip', 'persistent y', { expected: '', notes: 'Form Persistent[y]; eval Reject (was silent → y)' })
         .done(),
     feature('subsasgn', 'session')
         .partial('1-D scalar `A(2)=9` via Athena StoreIndex; grow / end+1 / 2-D still open')

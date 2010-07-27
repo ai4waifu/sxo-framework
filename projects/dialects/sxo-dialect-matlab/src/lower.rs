@@ -216,6 +216,11 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
         }
+        MatlabForm::Call { head, args } if head == "Global" || head == "Persistent" || head == "Command" => {
+            // Typed declarations / command syntax Forms — no silent strip to last name.
+            let _ = args;
+            return AthenaRequest::Control(ControlPlan::Reject);
+        }
         MatlabForm::Call { head, args } if head == "Part" => {
             if args.len() >= 2 {
                 let target = form_to_term(session, &args[0]);

@@ -572,6 +572,28 @@ fn command_syntax_lowers_to_command_form() {
 }
 
 #[test]
+fn global_persistent_declaration_forms() {
+    let global = parse_matlab_form("global x y").unwrap();
+    assert_eq!(
+        global,
+        MatlabForm::call("Global", vec![MatlabForm::symbol("x"), MatlabForm::symbol("y")])
+    );
+    assert_eq!(render_matlab_form(&global), "global x y");
+
+    let persistent = parse_matlab_form("persistent z").unwrap();
+    assert_eq!(persistent, MatlabForm::call("Persistent", vec![MatlabForm::symbol("z")]));
+    assert_eq!(render_matlab_form(&persistent), "persistent z");
+
+    // Must not silently evaluate to bare `x` / `z`.
+    let h = H::new();
+    let g_req = {
+        let mut s = h.s.borrow_mut();
+        lower_request(&mut s, &global).kind_name().to_string()
+    };
+    assert!(g_req.contains("Reject") || g_req.contains("Control"), "got {g_req}");
+}
+
+#[test]
 fn whitespace_juxtaposed_non_command_still_rejected() {
     // `parfor` is not yet a keyword; `parfor i=…` is Symbol + assignment juxta.
     let err = parse_matlab_form("parfor i=1:2").expect_err("parfor juxta");
