@@ -1033,6 +1033,25 @@ fn unwrap_hold_form(w: &WolframForm) -> Option<&WolframForm> {
     }
 }
 
+/// Unwrap a single argument from `Unevaluated`.
+fn unwrap_unevaluated_form(w: &WolframForm) -> Option<&WolframForm> {
+    match w {
+        WolframForm::Call { head, args } => {
+            let name = match head.as_ref() {
+                WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
+                _ => return None,
+            };
+            if name == "Unevaluated" {
+                if let [inner] = args.as_slice() {
+                    return Some(inner);
+                }
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
 fn derivative_spec(session: &mut Session, spec: &WolframForm) -> Option<(SymbolId, DerivativeOrder)> {
     let items = list_items(spec)?;
     match items {
