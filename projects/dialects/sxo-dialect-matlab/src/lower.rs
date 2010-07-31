@@ -216,10 +216,16 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
         }
-        MatlabForm::Call { head, args } if head == "Global" || head == "Persistent" || head == "Command" => {
-            // Typed declarations / command syntax Forms — no silent strip to last name.
+        MatlabForm::Call { head, args } if head == "Global" || head == "Persistent" || head == "Command" || head == "Member" => {
+            // Typed declarations / command / member Forms — no silent strip to last name.
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
+        }
+        MatlabForm::Call { head, args } if head == "Application" => {
+            // Package / member calls `containers.Map(...)` — refuse until runtime exists.
+            if args.first().is_some_and(|a| a.head_name() == Some("Member")) {
+                return AthenaRequest::Control(ControlPlan::Reject);
+            }
         }
         MatlabForm::Call { head, args } if head == "Part" => {
             if args.len() >= 2 {

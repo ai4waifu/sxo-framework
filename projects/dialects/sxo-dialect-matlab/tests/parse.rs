@@ -384,19 +384,6 @@ fn function_handle_args_kept_in_bsxfun_and_arrayfun() {
 }
 
 #[test]
-fn containers_map_member_access_probe() {
-    let err = parse_matlab_form("containers.Map");
-    // Document current oak behavior until member Dot AST lands.
-    match err {
-        Ok(form) => panic!("unexpected parse ok: {} / {form:?}", render_matlab_form(&form)),
-        Err(e) => assert!(
-            e.to_string().contains("error") || e.to_string().contains("oak"),
-            "got {e}"
-        ),
-    }
-}
-
-#[test]
 fn parse_anonymous_function_handle_and_call() {
     let form = parse_matlab_form("@(x) x^2").unwrap();
     assert_eq!(form.head_name(), Some("Function"));
@@ -696,4 +683,38 @@ fn ieee_edge_forms_use_nan_and_matlab_zero_pow_zero() {
 fn parse_matlab_form_if_without_session() {
     let form = parse_matlab_form("if true, 1, else, 2, end").unwrap();
     assert_eq!(form.head_name(), Some("If"));
+}
+
+#[test]
+fn member_access_keeps_package_path() {
+    let form = parse_matlab_form("containers.Map").unwrap();
+    assert_eq!(
+        form,
+        MatlabForm::call(
+            "Member",
+            vec![MatlabForm::symbol("containers"), MatlabForm::symbol("Map")]
+        )
+    );
+    assert_eq!(render_matlab_form(&form), "containers.Map");
+
+    let call = parse_matlab_form("containers.Map('a', 1)").unwrap();
+    match call {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "Application");
+            assert_eq!(args.len(), 3);
+            assert_eq!(args[0].head_name(), Some("Member"));
+            assert_eq!(render_matlab_form(&parse_matlab_form("containers.Map('a', 1)").unwrap()), "containers.Map('a', 1)");
+        }
+        other => panic!("expected Application(Member, …), got {other:?}"),
+    }
+
+    let mut s = Session::new();
+    assert_eq!(
+        lower_request(&mut s, &parse_matlab_form("containers.Map").unwrap()).kind_name(),
+        "Control"
+    );
+    assert_eq!(
+        lower_request(&mut s, &parse_matlab_form("py.list([1, 2])").unwrap()).kind_name(),
+        "Control"
+    );
 }

@@ -236,6 +236,10 @@ fn lower_expr(expr: &Expression, source: &str) -> Result<MatlabForm, SxoError> {
                 Ok(MatlabForm::call("Application", wrapped))
             }
         }
+        Expression::Member { object, field, .. } => {
+            let obj = lower_expr(object, source)?;
+            Ok(MatlabForm::call("Member", vec![obj, MatlabForm::symbol(&field.name)]))
+        }
         Expression::Binary(bin) => lower_binary(bin, source),
         Expression::Prefix(u) => lower_prefix(u, source),
         Expression::Postfix(u) => lower_postfix(u, source),
