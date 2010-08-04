@@ -22,12 +22,12 @@ export const sessionFeatures = [
         .gap('persistent.strip', 'persistent y', { expected: '', notes: 'Form Persistent[y]; eval Reject (was silent → y)' })
         .done(),
     feature('subsasgn', 'session')
-        .partial('1-D and in-bounds 2-D scalar writes via Athena StoreIndex; grow / end+1 still open')
+        .partial('1-D / 2-D / grow / end+1 scalar writes via Athena StoreIndex')
         .stateful()
         .eval('subsasgn.vec', 'A=[1, 2, 3]; A(2)=9; A', '[1, 9, 3]')
         .eval('subsasgn.mat', 'M=[1, 2; 3, 4]; M(1, 2)=9; M', '[1, 9; 3, 4]')
-        .gap('subsasgn.grow', 'A=zeros(2); A(3, 3)=1; A', { expected: '...', notes: 'out-of-range grow not in StoreIndex slice' })
-        .gap('subsasgn.end_plus', 'B=1:4; B(end+1)=5', { expected: '[1, 2, 3, 4, 5]', notes: 'oak error or unsupported store axes' })
+        .eval('subsasgn.grow', 'A=zeros(2); A(3, 3)=1; A', '[0, 0, 0; 0, 0, 0; 0, 0, 1]')
+        .eval('subsasgn.end_plus', 'B=1:4; B(end+1)=5; B', '[1, 2, 3, 4, 5]')
         .done(),
     feature('deal', 'session')
         .unsupported('multi-assign [a,b]=deal(1,2) does not bind; [~,b]=max(...) oak error')
