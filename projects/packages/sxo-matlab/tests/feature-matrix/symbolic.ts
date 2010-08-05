@@ -22,9 +22,12 @@ export const symbolicFeatures = [
         .eval('simplify_trig.pythag', 'simplify(sin(x)^2 + cos(x)^2)', '1')
         .done(),
     feature('fourier_sym', 'symbolic')
-        .unsupported('SILENT WRONG: fourier(exp(-x^2)) → fourier(exp(x^2)) sign flip')
+        .unsupported('fourier residual kept; oak unary/power precedence no longer flips Gauss sign')
         .pure()
-        .gap('fourier.gauss_sign', 'fourier(exp(-x^2))', { expected: '...', notes: 'currently fourier(exp(x^2))' })
+        .gap('fourier.gauss_sign', 'fourier(exp(-x^2))', {
+            expected: '...',
+            notes: 'Form/render keeps fourier(exp(-x^2)); was silent → fourier(exp(x^2))',
+        })
         .done(),
     feature('latex_sym', 'symbolic').unsupported().pure().gap('latex.x2', "latex(sym('x^2'))", { expected: '...' }).done(),
 ];
