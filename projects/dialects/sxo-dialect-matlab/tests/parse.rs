@@ -617,6 +617,9 @@ fn command_syntax_lowers_to_command_form() {
         ("axis equal", "axis", "equal"),
         ("close all", "close", "all"),
         ("colormap jet", "colormap", "jet"),
+        ("which sin", "which", "sin"),
+        ("profile on", "profile", "on"),
+        ("format long", "format", "long"),
     ] {
         let form = parse_matlab_form(input).unwrap_or_else(|e| panic!("{input:?}: {e}"));
         match form {
@@ -630,6 +633,77 @@ fn command_syntax_lowers_to_command_form() {
         }
         assert_eq!(render_matlab_form(&parse_matlab_form(input).unwrap()), format!("{name} {arg}"));
     }
+}
+
+#[test]
+fn dbstop_command_keeps_three_words() {
+    let form = parse_matlab_form("dbstop if error").unwrap();
+    match &form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "Command");
+            assert_eq!(args.len(), 3, "got {args:?}");
+            assert!(args[0].is_symbol("dbstop"));
+            assert!(args[1].is_symbol("if"));
+            assert!(args[2].is_symbol("error"));
+        }
+        other => panic!("expected Command, got {other:?}"),
+    }
+    assert_eq!(render_matlab_form(&form), "dbstop if error");
+}
+
+#[test]
+fn ode45_keeps_all_call_args() {
+    let form = parse_matlab_form("ode45(@(t,y)y, [0, 1], 1)").unwrap();
+    match &form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "ode45");
+            assert_eq!(args.len(), 3, "must not strip to last arg, got {args:?}");
+            assert!(matches!(&args[0], MatlabForm::Call { head, .. } if head == "Function"));
+            assert!(matches!(args[1], MatlabForm::List(_)));
+            assert!(matches!(args[2], MatlabForm::Atom(MatlabAtom::Number(_))));
+        }
+        other => panic!("expected ode45 call, got {other:?}"),
+    }
+    let h = H::new();
+    // Unevaluated residual must keep the call shape (was silent → 1).
+    let rendered = h.render(h.eval("ode45(@(t,y)y, [0, 1], 1)"));
+    assert!(rendered.starts_with("ode45("), "got {rendered}");
+    assert_ne!(rendered, "1", "must not collapse to last arg");
+}
+
+#[test]
+fn meta_commands_lower_to_reject() {
+    let h = H::new();
+    for input in ["which sin", "profile on", "format long", "dbstop if error"] {
+        let form = parse_matlab_form(input).unwrap_or_else(|e| panic!("{input:?}: {e}"));
+        assert_eq!(form.head_name(), Some("Command"), "{input:?} => {form:?}");
+        let kind = {
+            let mut s = h.s.borrow_mut();
+            lower_request(&mut s, &form).kind_name().to_string()
+        };
+        assert!(kind.contains("Reject") || kind.contains("Control"), "{input:?} => {kind}");
+    }
+}
+
+#[test]
+fn methods_call_keeps_string_arg() {
+    let form = parse_matlab_form("methods('double')").unwrap();
+    match &form {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "methods");
+            assert_eq!(args.len(), 1, "must not strip to string alone, got {args:?}");
+            assert!(matches!(&args[0], MatlabForm::Atom(MatlabAtom::String(_))));
+        }
+        other => panic!("expected methods call, got {other:?}"),
+    }
+    let h = H::new();
+    let rendered = h.render(h.eval("methods('double')"));
+    assert!(
+        rendered.contains("methods") || rendered.contains("Reject") || rendered.contains("ATHENA") || rendered.contains("unsupported"),
+        "must not collapse to 'double', got {rendered}"
+    );
+    assert_ne!(rendered, "'double'");
+    assert_ne!(rendered, "double");
 }
 
 #[test]
