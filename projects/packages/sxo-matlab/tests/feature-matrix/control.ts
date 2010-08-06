@@ -31,8 +31,11 @@ export const controlFeatures = [
         .done(),
     feature('assert', 'control').unsupported().pure().gap('assert.true', 'assert(1)', { expected: '...' }).done(),
     feature('parfor', 'control')
-        .unsupported('parfor needs oak parallel-for node; whitespace juxta after `parfor` now parse-errors (was silent strip)')
+        .unsupported('parse keeps Parfor Form via oak Statement::Parfor; parallel for runtime still open')
         .stateful()
-        .gap('parfor.strip', 'parfor i=1:2, i, end', { expected: '2', notes: 'parse error: juxtaposed statements' })
+        .gap('parfor.strip', 'parfor i=1:2, i, end', {
+            expected: '2',
+            notes: 'Form Parfor[i, 1:2, i]; eval Reject (was juxta parse error / silent strip)',
+        })
         .done(),
 ];
