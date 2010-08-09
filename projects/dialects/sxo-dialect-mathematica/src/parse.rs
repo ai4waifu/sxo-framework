@@ -140,6 +140,8 @@ fn lower_binary(bin: &BinaryExpr) -> Result<WolframForm, SxoError> {
             WolframForm::call("Apply", vec![l, r, WolframForm::List(vec![WolframForm::int(1)])])
         }
         WolframTokenType::MapAllOperator => WolframForm::call("MapAll", vec![l, r]),
+        WolframTokenType::AtStar => WolframForm::call("Composition", vec![l, r]),
+        WolframTokenType::StarSlash => WolframForm::call("RightComposition", vec![l, r]),
         WolframTokenType::Semicolon => WolframForm::call("CompoundExpression", vec![l, r]),
         WolframTokenType::Assign | WolframTokenType::Set => WolframForm::call("Set", vec![l, r]),
         WolframTokenType::SetDelayed => WolframForm::call("SetDelayed", vec![l, r]),
