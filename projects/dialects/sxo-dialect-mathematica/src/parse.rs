@@ -103,6 +103,17 @@ fn lower_symbol_name(name: &str) -> Result<WolframForm, SxoError> {
             }
         }
     }
+    // `##` / `##n` SlotSequence (digits stay in the SlotSequence token).
+    if name == "##" || name == "##1" {
+        return Ok(WolframForm::call("SlotSequence", vec![WolframForm::int(1)]));
+    }
+    if let Some(rest) = name.strip_prefix("##") {
+        if !rest.is_empty() && rest.chars().all(|c| c.is_ascii_digit()) {
+            if let Ok(n) = rest.parse::<i64>() {
+                return Ok(WolframForm::call("SlotSequence", vec![WolframForm::int(n)]));
+            }
+        }
+    }
     Ok(WolframForm::symbol(name))
 }
 
@@ -142,6 +153,7 @@ fn lower_binary(bin: &BinaryExpr) -> Result<WolframForm, SxoError> {
         WolframTokenType::MapAllOperator => WolframForm::call("MapAll", vec![l, r]),
         WolframTokenType::AtStar => WolframForm::call("Composition", vec![l, r]),
         WolframTokenType::StarSlash => WolframForm::call("RightComposition", vec![l, r]),
+        WolframTokenType::MessageName => WolframForm::call("MessageName", vec![l, r]),
         WolframTokenType::Semicolon => WolframForm::call("CompoundExpression", vec![l, r]),
         WolframTokenType::Assign | WolframTokenType::Set => WolframForm::call("Set", vec![l, r]),
         WolframTokenType::SetDelayed => WolframForm::call("SetDelayed", vec![l, r]),
@@ -162,6 +174,7 @@ fn lower_prefix(u: &UnaryExpr) -> Result<WolframForm, SxoError> {
     Ok(match u.operator {
         WolframTokenType::Minus => WolframForm::call("Times", vec![WolframForm::int(-1), e]),
         WolframTokenType::Factorial => WolframForm::call("Not", vec![e]),
+        WolframTokenType::DoubleQuestion => WolframForm::call("Information", vec![e]),
         other => return Err(SxoError::new(format!("mathematica(ast): unsupported prefix {other:?}"))),
     })
 }

@@ -71,6 +71,24 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
                 .collect::<Vec<_>>()
                 .join("/*"),
         ),
+        "MessageName" if args.len() == 2 => Some(format!("{}::{}", render(&args[0]), render(&args[1]))),
+        "Slot" if args.len() == 1 => match exact_slot_index(&args[0]) {
+            Some(1) => Some("#".into()),
+            Some(n) => Some(format!("#{n}")),
+            None => None,
+        },
+        "SlotSequence" if args.len() == 1 => match exact_slot_index(&args[0]) {
+            Some(1) => Some("##".into()),
+            Some(n) => Some(format!("##{n}")),
+            None => None,
+        },
+        _ => None,
+    }
+}
+
+fn exact_slot_index(expr: &WolframForm) -> Option<i64> {
+    match expr {
+        WolframForm::Atom(WolframAtom::Number(n)) => n.as_exact_integer(),
         _ => None,
     }
 }
