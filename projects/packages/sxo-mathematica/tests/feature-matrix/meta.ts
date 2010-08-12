@@ -26,14 +26,20 @@ export const metaFeatures = [
         .eval('assert.equal', 'Assert[1 == 1]', 'Null')
         .done(),
     feature('MessageName', 'meta')
-        .unsupported('SILENT WRONG: Message[f::x] → Message[f, x] (:: MessageName broken)')
+        .unsupported('MessageName Form kept via ::; Message runtime not implemented')
         .pure()
-        .gap('message.colon', 'Message[f::x]', { expected: 'Null', notes: 'currently Message[f, x]' })
+        .gap('message.colon', 'Message[f::x]', {
+            expected: 'Null',
+            notes: 'parses as Message[MessageName[f, x]] / renders Message[f::x]; not Message[f, x]',
+        })
         .done(),
     feature('Information', 'meta')
-        .unsupported('SILENT WRONG: ??Plus / ?Plus → Plus')
+        .unsupported('Information Form kept via ??; no Information runtime')
         .pure()
-        .gap('info.qq', '??Plus', { expected: '...', notes: 'currently returns Plus' })
+        .gap('info.qq', '??Plus', {
+            expected: '...',
+            notes: 'parses as Information[Plus]; not silent bare Plus / error node',
+        })
         .done(),
     feature('MemoryInUse', 'meta').unsupported().effectful().gap('memoryinuse.basic', 'MemoryInUse[]', { expected: '...' }).done(),
     feature('DollarVersion', 'meta').unsupported().pure().gap('version.atom', '$Version', { expected: '...' }).done(),
