@@ -8,15 +8,21 @@ export const metaFeatures = [
         .gap('head.plus', 'Head[a + b]', { expected: 'Plus' })
         .done(),
     feature('Timing', 'meta')
-        .unsupported('SILENT WRONG: Timing[1+1] → Timing[2] (arg evaluated, no timing pair)')
+        .unsupported('HoldAll Form kept; no wall-clock Timing pair runtime')
         .effectful()
-        .gap('timing.plus', 'Timing[1 + 1]', { expected: '{0., 2}' })
+        .gap('timing.plus', 'Timing[1 + 1]', {
+            expected: '{0., 2}',
+            notes: 'must stay Timing[1 + 1], not Timing[2]; pair {time, value} still unsupported',
+        })
         .done(),
     feature('Quiet', 'meta').unsupported().pure().gap('quiet.div0', 'Quiet[1/0]', { expected: 'ComplexInfinity' }).done(),
     feature('Trace', 'meta')
-        .unsupported('SILENT WRONG: Trace[1+1] → Trace[2]')
+        .unsupported('HoldAll Form kept; no Trace step list runtime')
         .pure()
-        .gap('trace.plus', 'Trace[1 + 1]', { expected: '{{1+1,2}}' })
+        .gap('trace.plus', 'Trace[1 + 1]', {
+            expected: '{{1+1,2}}',
+            notes: 'must stay Trace[1 + 1], not Trace[2]; step-list Trace still unsupported',
+        })
         .done(),
     feature('Assert', 'meta')
         .supported()
