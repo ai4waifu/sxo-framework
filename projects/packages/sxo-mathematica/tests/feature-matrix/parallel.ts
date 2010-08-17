@@ -2,8 +2,11 @@ import { feature } from '@sxo/harness';
 
 export const parallelFeatures = [
     feature('ParallelEvaluate', 'parallel')
-        .unsupported('SILENT WRONG eval-early: ParallelEvaluate[1+1] → ParallelEvaluate[2]')
+        .unsupported('HoldAll Form kept; no parallel scheduler runtime')
         .effectful()
-        .gap('paralleleval.plus', 'ParallelEvaluate[1 + 1]', { expected: '2', notes: 'currently ParallelEvaluate[2]' })
+        .gap('paralleleval.plus', 'ParallelEvaluate[1 + 1]', {
+            expected: '2',
+            notes: 'must stay ParallelEvaluate[1 + 1], not ParallelEvaluate[2]; scheduler still unsupported',
+        })
         .done(),
 ];
