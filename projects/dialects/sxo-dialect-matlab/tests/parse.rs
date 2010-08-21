@@ -289,6 +289,16 @@ fn unary_minus_binds_looser_than_power() {
 }
 
 #[test]
+fn double_unary_plus_is_identity_not_increment() {
+    // MATLAB has no `++` operator. `++A` is unary `+` twice and equals `A`.
+    let form = parse_matlab_form("++A").unwrap();
+    assert_eq!(form, MatlabForm::symbol("A"));
+    let h = H::new();
+    assert_eq!(h.render(h.eval("++A")), "A");
+    // Postfix `A++` is not MATLAB (oak error), covered by matrix notes.
+}
+
+#[test]
 fn parse_matrix_linear_index_column_major() {
     let h = H::new();
     // [1,2; 3,4] column-major linear: 1,3,2,4
