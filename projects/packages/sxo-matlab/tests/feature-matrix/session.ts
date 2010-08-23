@@ -40,9 +40,12 @@ export const sessionFeatures = [
         .gap('pluseq.x', 'x=1; x+=1', { expected: '2' })
         .done(),
     feature('preincrement', 'session')
-        .unsupported('SILENT WRONG: ++A → A; A++ oak error')
+        .unsupported('MATLAB has no ++; ++A is double unary plus (= A). A++ is a syntax error')
         .stateful()
-        .gap('preinc.A', '++A', { expected: '...', notes: 'currently returns A' })
+        .gap('preinc.A', '++A', {
+            expected: 'A',
+            notes: 'not C/Octave increment; unary + twice collapses to A (language-correct)',
+        })
         .done(),
     feature('times_eq', 'session')
         .unsupported('oak error on A.*=3 / A./=2 / x^=2')
