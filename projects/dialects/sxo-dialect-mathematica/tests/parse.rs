@@ -836,3 +836,14 @@ fn parallel_evaluate_and_input_form_capture_args() {
     assert_eq!(h.wolfram(h.eval("InputForm[1 + 1]")), "InputForm[1 + 1]");
     assert_ne!(h.wolfram(h.eval("InputForm[1 + 1]")), "InputForm[2]");
 }
+
+#[test]
+fn cancel_keeps_input_rational_form() {
+    let h = H::new();
+    let got = h.wolfram(h.eval("Cancel[(x^2 - 1)/(x - 1)]"));
+    assert!(got.starts_with("Cancel["), "got {got}");
+    assert!(got.contains("x^2") || got.contains("x^2 - 1") || got.contains("(x^2"), "got {got}");
+    // Must not early-rewrite into Cancel[-((-1+x)^-1)+…].
+    assert!(!got.contains("^(-1)"), "got {got}");
+    assert_ne!(got, "1 + x");
+}
