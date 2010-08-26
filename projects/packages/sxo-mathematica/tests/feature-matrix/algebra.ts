@@ -4,9 +4,12 @@ export const algebraFeatures = [
     feature('Expand', 'algebra').unsupported().pure().gap('expand.bin', 'Expand[(x + 1)^2]', { expected: '1 + 2*x + x^2' }).done(),
     feature('Factor', 'algebra').unsupported().pure().gap('factor.diff', 'Factor[x^2 - 1]', { expected: '(-1 + x)*(1 + x)' }).done(),
     feature('Cancel', 'algebra')
-        .unsupported('SILENT WRONG rewrite of (x^2-1)/(x-1) into Cancel[-((-1+x)^-1)+…]')
+        .unsupported('Cancel Form kept (HoldAll capture); no Cancel kernel cancelation yet')
         .pure()
-        .gap('cancel.x2m1', 'Cancel[(x^2 - 1)/(x - 1)]', { expected: '1 + x' })
+        .gap('cancel.x2m1', 'Cancel[(x^2 - 1)/(x - 1)]', {
+            expected: '1 + x',
+            notes: 'must keep Cancel[(x^2 - 1)/(x - 1)] shape, not early Cancel[-((-1+x)^-1)+…] rewrite',
+        })
         .done(),
     feature('Variables', 'algebra').unsupported().pure().gap('variables.xyz', 'Variables[x*y + z]', { expected: '{x, y, z}' }).done(),
     feature('Numerator', 'algebra').unsupported().pure().gap('numerator.half', 'Numerator[1/2]', { expected: '1' }).done(),
