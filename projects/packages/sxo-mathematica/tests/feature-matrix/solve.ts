@@ -11,7 +11,7 @@ export const solveFeatures = [
     feature('Reduce', 'solve').planned().pure().gap('reduce.basic', 'Reduce[x^2 > 0, x]', { expected: 'x < 0 || x > 0' }).done(),
     feature('FindRoot', 'solve').planned().pure().gap('findroot.basic', 'FindRoot[x^2 - 2, {x, 1}]', { expected: '{x -> 1.41421}' }).done(),
     feature('DSolve', 'solve')
-        .planned()
+        .planned("y' sugar parses; DSolve ODE solver runtime still open")
         .pure()
         .gap('dsolve.basic', "DSolve[y'[x] == y[x], y[x], x]", { expected: '{{y[x] -> E^x C[1]}}' })
         .done(),
@@ -26,15 +26,18 @@ export const solveFeatures = [
         .gap('findinstance.circle', 'FindInstance[x^2 + y^2 == 1, {x, y}]', { expected: '{{x -> 1, y -> 0}}' })
         .done(),
     feature('NDSolve', 'solve')
-        .planned("oak error on y'[x] sugar")
+        .planned("oak parses y'[x] as Derivative; NDSolve runtime still open")
         .pure()
         .gap('ndsolve.exp', "NDSolve[{y'[x] == y[x], y[0] == 1}, y, {x, 0, 1}]", { expected: '...' })
         .done(),
     feature('FindMinimum', 'solve').planned().pure().gap('findminimum.x2', 'FindMinimum[x^2, {x, 1}]', { expected: '{0., {x -> 0.}}' }).done(),
     feature('DSolveValue', 'solve')
-        .planned("SILENT WRONG with y' sugar: DSolveValue[y'[x]==y[x],y[x],x] → x; plain form unevaluated")
+        .planned("y' sugar parses as Derivative[1][y][x]; DSolveValue residual (no ODE solver yet)")
         .pure()
-        .gap('dsolvevalue.strip', "DSolveValue[y'[x] == y[x], y[x], x]", { expected: 'C[1]*Exp[x]', notes: 'currently returns x' })
+        .gap('dsolvevalue.strip', "DSolveValue[y'[x] == y[x], y[x], x]", {
+            expected: 'C[1]*Exp[x]',
+            notes: "must not collapse to bare x; Form keeps y' / Derivative",
+        })
         .done(),
     feature('Maximize', 'solve')
         .planned('Maximize kernel incomplete; unary-minus/Power parse is fixed (`-x^2` keeps sign)')
