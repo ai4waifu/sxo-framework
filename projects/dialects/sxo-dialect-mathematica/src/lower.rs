@@ -63,6 +63,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "ParallelEvaluate" => SemanticOperator::ParallelEvaluate,
         "InputForm" => SemanticOperator::InputForm,
         "Cancel" => SemanticOperator::Cancel,
+        "Head" => SemanticOperator::Head,
         "Function" => SemanticOperator::Function,
         "Factorial" => SemanticOperator::Factorial,
         "Length" => SemanticOperator::Length,
@@ -126,6 +127,7 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
         SemanticOperator::ParallelEvaluate => "ParallelEvaluate",
         SemanticOperator::InputForm => "InputForm",
         SemanticOperator::Cancel => "Cancel",
+        SemanticOperator::Head => "Head",
         SemanticOperator::MemberOf => "Element",
         SemanticOperator::RealPart => "Re",
         SemanticOperator::Unary(f) => f.debug_label(),
@@ -1413,9 +1415,11 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
             WolframForm::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
-            // Mathematica 表层把 `Indeterminate` 当作原子符号，不是 `Indeterminate[]`。
-            if matches!(*op, ApplicationHead::Semantic(SemanticOperator::Indeterminate)) && args.is_empty() {
-                return WolframForm::Atom(WolframAtom::Symbol("Indeterminate".into()));
+            // 0-ary semantic heads (operator values / `Head` results) print as bare symbols.
+            if args.is_empty() {
+                if let ApplicationHead::Semantic(sem) = *op {
+                    return WolframForm::Atom(WolframAtom::Symbol(semantic_to_surface(sem).into()));
+                }
             }
             let head_name = match *op {
                 ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {

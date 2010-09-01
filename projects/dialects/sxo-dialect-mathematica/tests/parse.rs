@@ -689,6 +689,15 @@ fn hold_preserves_plus() {
 }
 
 #[test]
+fn head_hold_first_extracts_plus_and_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Head[{1, 2}]")), "List");
+    assert_eq!(h.wolfram(h.eval("Head[a + b]")), "Plus");
+    assert_eq!(h.wolfram(h.eval("Head[1 + 2]")), "Plus");
+    assert_ne!(h.wolfram(h.eval("Head[1 + 2]")), "Head[3]");
+}
+
+#[test]
 fn hold_complete_and_unevaluated_preserve_plus() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("HoldComplete[1 + 1]")), "HoldComplete[1 + 1]");
