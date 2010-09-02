@@ -71,6 +71,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Length" => SemanticOperator::Length,
         "First" => SemanticOperator::First,
         "Rest" => SemanticOperator::Rest,
+        "Most" => SemanticOperator::Most,
+        "Reverse" => SemanticOperator::Reverse,
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
         "Total" => SemanticOperator::Sum,

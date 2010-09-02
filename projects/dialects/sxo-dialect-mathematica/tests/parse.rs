@@ -672,6 +672,13 @@ fn rest_drops_first_element() {
 }
 
 #[test]
+fn most_and_reverse_list_structure() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Most[{1, 2, 3}]")), "{1, 2}");
+    assert_eq!(h.wolfram(h.eval("Reverse[{1, 2, 3}]")), "{3, 2, 1}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
