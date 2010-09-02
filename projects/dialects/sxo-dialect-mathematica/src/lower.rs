@@ -51,6 +51,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Range" | "Span" => SemanticOperator::Range,
         "Apply" => SemanticOperator::Apply,
         "Map" => SemanticOperator::Map,
+        "MapIndexed" => SemanticOperator::MapIndexed,
         "Rule" => SemanticOperator::Rule,
         "RuleDelayed" => SemanticOperator::RuleDeferred,
         "ReplaceAll" => SemanticOperator::ReplaceAll,
@@ -175,7 +176,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
         WolframForm::Call { head, args } => match head.as_ref() {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
-            WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Apply" || name == "Map" => {
+            WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Apply" || name == "Map" || name == "MapIndexed" => {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
                     if i == 0 {
@@ -1250,21 +1251,29 @@ fn lower_span_as_range(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_semantic(session, SemanticOperator::Range, arg_ids)
 }
 
-/// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `14`).
+/// Rewrite pure `Function[body]` with `Slot` into binder form (Living `14`).
+///
+/// - max slot 1 → `Function[$slot1, body]`
+/// - max slot ≥ 2 → `Function[{$slot1,…,$slotN}, body]`
 fn lower_function(session: &mut Session, args: &[WolframForm]) -> TermId {
     match args {
         [body] => {
             let max_slot = max_slot_index(body).unwrap_or(0);
+            if max_slot <= 0 {
+                let body_id = lower_wexpr(session, body);
+                return push_semantic(session, SemanticOperator::Function, vec![body_id]);
+            }
+            let rewritten = replace_slots(body);
+            let body_id = lower_wexpr(session, &rewritten);
             if max_slot == 1 {
-                let binder_name = "$slot1";
-                let rewritten = replace_slots(body, binder_name);
-                let binder = push_symbol_name(session, binder_name);
-                let body_id = lower_wexpr(session, &rewritten);
+                let binder = push_symbol_name(session, "$slot1");
                 return push_semantic(session, SemanticOperator::Function, vec![binder, body_id]);
             }
-            // No slots or multi-slot: keep structural Function[body] (multi-slot later).
-            let body_id = lower_wexpr(session, body);
-            push_semantic(session, SemanticOperator::Function, vec![body_id])
+            let binders: Vec<TermId> = (1..=max_slot)
+                .map(|i| push_symbol_name(session, &format!("$slot{i}")))
+                .collect();
+            let binder_list = push_list(session, binders);
+            push_semantic(session, SemanticOperator::Function, vec![binder_list, body_id])
         }
         [var, body] => {
             let var_id = lower_wexpr(session, var);
@@ -1311,16 +1320,19 @@ fn max_slot_index(w: &WolframForm) -> Option<i64> {
     }
 }
 
-fn replace_slots(w: &WolframForm, binder: &str) -> WolframForm {
+fn replace_slots(w: &WolframForm) -> WolframForm {
     match w {
-        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") => {
-            WolframForm::Atom(WolframAtom::Symbol(binder.to_string()))
+        WolframForm::Call { head, args }
+            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") =>
+        {
+            let idx = args.first().and_then(exact_i64).unwrap_or(1);
+            WolframForm::Atom(WolframAtom::Symbol(format!("$slot{idx}")))
         }
         WolframForm::Call { head, args } => WolframForm::Call {
-            head: Box::new(replace_slots(head, binder)),
-            args: args.iter().map(|a| replace_slots(a, binder)).collect(),
+            head: Box::new(replace_slots(head)),
+            args: args.iter().map(replace_slots).collect(),
         },
-        WolframForm::List(items) => WolframForm::List(items.iter().map(|a| replace_slots(a, binder)).collect()),
+        WolframForm::List(items) => WolframForm::List(items.iter().map(replace_slots).collect()),
         other => other.clone(),
     }
 }

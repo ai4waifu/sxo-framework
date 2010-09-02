@@ -651,6 +651,14 @@ fn map_sin_keeps_exact_sin_one() {
 }
 
 #[test]
+fn map_indexed_second_slot_returns_indices() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("MapIndexed[#2 &, {a, b}]")), "{{1}, {2}}");
+    // Must not rewrite #2 into Times[Slot[1], 2].
+    assert_ne!(h.wolfram(h.eval("MapIndexed[#2 &, {a, b}]")), "{2*a, 4*b}");
+}
+
+#[test]
 fn rest_drops_first_element() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Rest[{1, 2, 3}]")), "{2, 3}");
