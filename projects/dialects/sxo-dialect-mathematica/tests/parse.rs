@@ -699,6 +699,13 @@ fn cases_filters_integer_blank() {
 }
 
 #[test]
+fn delete_cases_rejects_integer_blank() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("DeleteCases[{1, a, 2}, _Integer]")), "{a}");
+    assert_eq!(h.wolfram(h.eval("DeleteCases[{1, 2, 3}, _Integer]")), "{}");
+}
+
+#[test]
 fn matchq_integer_blank() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatchQ[1, _Integer]")), "True");

@@ -91,12 +91,10 @@ export const listFeatures = [
     feature('Array', 'list').unsupported().pure().gap('array.f3', 'Array[f, 3]', { expected: '{f[1], f[2], f[3]}' }).done(),
     feature('ConstantArray', 'list').unsupported().pure().gap('constarray.0', 'ConstantArray[0, 3]', { expected: '{0, 0, 0}' }).done(),
     feature('DeleteCases', 'list')
-        .unsupported('unevaluated DeleteCases[list, Blank[Integer]] (no CollectRejects yet)')
+        .supported()
         .pure()
-        .gap('deletecases.int', 'DeleteCases[{1, a, 2}, _Integer]', {
-            expected: '{a}',
-            notes: 'Blank[Integer] preserved; not stripped to Integer',
-        })
+        .notes('CollectRejects via Blank[Integer]; inverse of Cases')
+        .eval('deletecases.int', 'DeleteCases[{1, a, 2}, _Integer]', '{a}')
         .done(),
     feature('MapIndexed', 'list')
         .supported()
