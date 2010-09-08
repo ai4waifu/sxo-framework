@@ -692,6 +692,13 @@ fn flatten_nested_lists() {
 }
 
 #[test]
+fn append_and_prepend_list_elements() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Append[{1, 2}, 3]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("Prepend[{2, 3}, 1]")), "{1, 2, 3}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
