@@ -686,6 +686,12 @@ fn take_and_drop_prefix_slices() {
 }
 
 #[test]
+fn flatten_nested_lists() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Flatten[{{1, 2}, {3}}]")), "{1, 2, 3}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
