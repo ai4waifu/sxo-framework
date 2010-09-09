@@ -699,6 +699,14 @@ fn append_and_prepend_list_elements() {
 }
 
 #[test]
+fn member_q_sort_and_delete_duplicates() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("MemberQ[{1, 2, 3}, 2]")), "True");
+    assert_eq!(h.wolfram(h.eval("Sort[{3, 1, 2}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("DeleteDuplicates[{1, 1, 2}]")), "{1, 2}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");

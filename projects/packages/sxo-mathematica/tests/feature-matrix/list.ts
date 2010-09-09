@@ -56,8 +56,13 @@ export const listFeatures = [
     feature('Take', 'list').supported().pure().eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}').done(),
     feature('Drop', 'list').supported().pure().eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}').done(),
     feature('Reverse', 'list').supported().pure().eval('reverse.3', 'Reverse[{1, 2, 3}]', '{3, 2, 1}').done(),
-    feature('Sort', 'list').unsupported().pure().gap('sort.3', 'Sort[{3, 1, 2}]', { expected: '{1, 2, 3}' }).done(),
-    feature('MemberQ', 'list').unsupported().pure().gap('memberq.2', 'MemberQ[{1, 2, 3}, 2]', { expected: 'True' }).done(),
+    feature('Sort', 'list')
+        .supported()
+        .pure()
+        .notes('Exact-integer ascending Sort; mixed/non-integer stays residual')
+        .eval('sort.3', 'Sort[{3, 1, 2}]', '{1, 2, 3}')
+        .done(),
+    feature('MemberQ', 'list').supported().pure().eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True').done(),
     feature('Select', 'list')
         .unsupported('unevaluated Select[list, EvenQ] (no predicate fold yet)')
         .pure()
@@ -87,7 +92,7 @@ export const listFeatures = [
     feature('Total', 'list').supported().pure().notes('Total lowers to Sum').eval('total.3', 'Total[{1, 2, 3}]', '6').done(),
     feature('Append', 'list').supported().pure().eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}').done(),
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),
-    feature('DeleteDuplicates', 'list').unsupported().pure().gap('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', { expected: '{1, 2}' }).done(),
+    feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
     feature('Array', 'list').unsupported().pure().gap('array.f3', 'Array[f, 3]', { expected: '{f[1], f[2], f[3]}' }).done(),
     feature('ConstantArray', 'list').unsupported().pure().gap('constarray.0', 'ConstantArray[0, 3]', { expected: '{0, 0, 0}' }).done(),
     feature('DeleteCases', 'list')
