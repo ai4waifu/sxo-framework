@@ -4,9 +4,10 @@ export const metaFeatures = [
     feature('Head', 'meta')
         .supported()
         .pure()
-        .notes('HoldFirst: extract head without evaluating arg (`Head[1+2]` → `Plus`)')
+        .notes('Args evaluate first (`Head[1+2]` → `Integer`); free `Head[a+b]` → `Plus`')
         .eval('head.list', 'Head[{1, 2}]', 'List')
         .eval('head.plus', 'Head[a + b]', 'Plus')
+        .eval('head.int', 'Head[1 + 2]', 'Integer')
         .done(),
     feature('Timing', 'meta')
         .unsupported('HoldAll Form kept; no wall-clock Timing pair runtime')
