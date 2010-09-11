@@ -715,6 +715,17 @@ fn count_partition_and_constant_array() {
 }
 
 #[test]
+fn union_accumulate_free_q_and_extract() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Union[{1, 2}, {2, 3}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("Intersection[{1, 2}, {2, 3}]")), "{2}");
+    assert_eq!(h.wolfram(h.eval("Accumulate[{1, 2, 3}]")), "{1, 3, 6}");
+    assert_eq!(h.wolfram(h.eval("Differences[{1, 4, 9}]")), "{3, 5}");
+    assert_eq!(h.wolfram(h.eval("FreeQ[{1, 2}, 3]")), "True");
+    assert_eq!(h.wolfram(h.eval("Extract[{1, 2, 3}, 2]")), "2");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
