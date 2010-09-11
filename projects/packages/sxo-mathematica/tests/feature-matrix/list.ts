@@ -108,17 +108,37 @@ export const listFeatures = [
         .notes('Contract: top-level structural non-membership only (not deep/pattern `FreeQ`)')
         .eval('freeq.3', 'FreeQ[{1, 2}, 3]', 'True')
         .done(),
-    feature('Position', 'list').unsupported().pure().gap('position.1', 'Position[{1, 2, 1}, 1]', { expected: '{{1}, {3}}' }).done(),
+    feature('Position', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: top-level structural_eq positions as `{{i},…}` (not deep/pattern `Position`)')
+        .eval('position.1', 'Position[{1, 2, 1}, 1]', '{{1}, {3}}')
+        .done(),
     feature('Extract', 'list').supported().pure().eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2').done(),
-    feature('PadLeft', 'list').unsupported().pure().gap('padleft.4', 'PadLeft[{1, 2}, 4]', { expected: '{0, 0, 1, 2}' }).done(),
-    feature('Riffle', 'list').unsupported().pure().gap('riffle.ab', 'Riffle[{1, 2}, {a, b}]', { expected: '{1, a, 2, b}' }).done(),
+    feature('PadLeft', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: left-pad exact integer `0` to length `n`, or left-truncate (no pad value / level args)')
+        .eval('padleft.4', 'PadLeft[{1, 2}, 4]', '{0, 0, 1, 2}')
+        .done(),
+    feature('Riffle', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: top-level zip of two lists, length = min (not MMA multi-arg / x-spacer `Riffle`)')
+        .eval('riffle.ab', 'Riffle[{1, 2}, {a, b}]', '{1, a, 2, b}')
+        .done(),
     feature('Accumulate', 'list').supported().pure().eval('accumulate.3', 'Accumulate[{1, 2, 3}]', '{1, 3, 6}').done(),
     feature('Differences', 'list').supported().pure().eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}').done(),
     feature('Total', 'list').supported().pure().notes('Total lowers to Sum').eval('total.3', 'Total[{1, 2, 3}]', '6').done(),
     feature('Append', 'list').supported().pure().eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}').done(),
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),
     feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
-    feature('Array', 'list').unsupported().pure().gap('array.f3', 'Array[f, 3]', { expected: '{f[1], f[2], f[3]}' }).done(),
+    feature('Array', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: `Array[f, n]` → `{f[1],…,f[n]}` for operator-value head and exact `n` (no dims/list specs)')
+        .eval('array.f3', 'Array[f, 3]', '{f[1], f[2], f[3]}')
+        .done(),
     feature('ConstantArray', 'list').supported().pure().eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}').done(),
     feature('DeleteCases', 'list')
         .supported()

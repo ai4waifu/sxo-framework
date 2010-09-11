@@ -90,6 +90,10 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Differences" => SemanticOperator::Differences,
         "FreeQ" => SemanticOperator::FreeQ,
         "Extract" => SemanticOperator::Extract,
+        "PadLeft" => SemanticOperator::PadLeft,
+        "Riffle" => SemanticOperator::Riffle,
+        "Position" => SemanticOperator::Position,
+        "Array" => SemanticOperator::Array,
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
         "Total" => SemanticOperator::Sum,
@@ -197,7 +201,11 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name))
-                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" =>
+                if name == "Apply"
+                    || name == "Map"
+                    || name == "MapIndexed"
+                    || name == "MapThread"
+                    || name == "Array" =>
             {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
@@ -227,7 +235,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
 /// Lower a head used as an operator value (`Apply[Plus, …]` → 0-ary `Add`).
 ///
 /// Unknown surface names become 0-ary `Extension` heads (not bare `Symbol`),
-/// so `Map` / `MapThread` / `Apply` can rebuild `f[…]` without kernel string intern.
+/// so `Map` / `MapThread` / `Apply` / `Array` can rebuild `f[…]` without kernel string intern.
 fn lower_operator_value(session: &mut Session, w: &WolframForm) -> TermId {
     match w {
         WolframForm::Atom(WolframAtom::Symbol(name)) => {

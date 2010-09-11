@@ -726,6 +726,15 @@ fn union_accumulate_free_q_and_extract() {
 }
 
 #[test]
+fn pad_left_riffle_position_and_array() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("PadLeft[{1, 2}, 4]")), "{0, 0, 1, 2}");
+    assert_eq!(h.wolfram(h.eval("Riffle[{1, 2}, {a, b}]")), "{1, a, 2, b}");
+    assert_eq!(h.wolfram(h.eval("Position[{1, 2, 1}, 1]")), "{{1}, {3}}");
+    assert_eq!(h.wolfram(h.eval("Array[f, 3]")), "{f[1], f[2], f[3]}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
