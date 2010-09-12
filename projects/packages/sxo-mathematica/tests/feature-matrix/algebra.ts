@@ -4,11 +4,11 @@ export const algebraFeatures = [
     feature('Expand', 'algebra').unsupported().pure().gap('expand.bin', 'Expand[(x + 1)^2]', { expected: '1 + 2*x + x^2' }).done(),
     feature('Factor', 'algebra').unsupported().pure().gap('factor.diff', 'Factor[x^2 - 1]', { expected: '(-1 + x)*(1 + x)' }).done(),
     feature('Cancel', 'algebra')
-        .unsupported('Cancel Form kept (HoldAll capture); no Cancel kernel cancelation yet')
+        .unsupported('Args evaluate then residual `Cancel[…]` echo; no Cancel kernel cancelation yet')
         .pure()
         .gap('cancel.x2m1', 'Cancel[(x^2 - 1)/(x - 1)]', {
             expected: '1 + x',
-            notes: 'must keep Cancel[(x^2 - 1)/(x - 1)] shape, not early Cancel[-((-1+x)^-1)+…] rewrite',
+            notes: 'contract: not Hold — args evaluate first; kernel must later cancel to `1 + x`',
         })
         .done(),
     feature('Variables', 'algebra').unsupported().pure().gap('variables.xyz', 'Variables[x*y + z]', { expected: '{x, y, z}' }).done(),
