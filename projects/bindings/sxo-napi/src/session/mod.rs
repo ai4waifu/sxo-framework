@@ -62,8 +62,10 @@ impl Session {
     /// Evaluate a held [`matlab::MatlabForm`] via [`matlab::lower_request`] on this session.
     pub fn evaluate_matlab_form(&self, form: &matlab::MatlabForm) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
-        let request = matlab::lower_request(&mut ms, form);
-        self.execute_lowered(&mut ms, request)
+        matlab::with_session_conventions(&mut ms, |ms| {
+            let request = matlab::lower_request(ms, form);
+            self.execute_lowered(ms, request)
+        })
     }
 
     /// Evaluate a held [`WolframForm`] via [`mathematica::lower_request`] on this session.
