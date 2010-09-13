@@ -11,7 +11,7 @@ mod render;
 mod surface;
 
 pub use form::{MatlabAtom, MatlabForm};
-pub use lower::{form_to_term, lower_request};
+pub use lower::{form_to_term, install_session_conventions, lower_request, with_session_conventions};
 pub use number_literal::{parse_number_literal, render_number};
 pub use parse::{parse_matlab, parse_matlab_form};
 pub use plot::try_plot_svg;

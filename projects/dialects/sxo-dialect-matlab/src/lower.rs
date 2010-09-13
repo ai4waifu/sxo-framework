@@ -13,12 +13,15 @@ use athena::{
     },
     ir::{Atom, MathematicalConstant, SemanticOperator, TermNode},
     numeric::{Integer, Rational},
-    runtime::values::{
-        arena::{
-            application_arguments, number_from_id, push_bool, push_constant, push_list, push_null, push_semantic,
-            push_symbol_name, symbol_name,
+    runtime::{
+        ZeroPowerZeroConvention,
+        values::{
+            arena::{
+                application_arguments, number_from_id, push_bool, push_constant, push_list, push_null, push_semantic,
+                push_symbol_name, symbol_name,
+            },
+            numeric_clone::{clone_integer, clone_number, clone_rational},
         },
-        numeric_clone::{clone_integer, clone_number, clone_rational},
     },
     types::{
         AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SourceSpan, SymbolId,
@@ -30,6 +33,23 @@ use crate::{
     form::{MatlabAtom, MatlabForm},
     surface::{application_surface_name, push_matlab_call},
 };
+
+/// Install MATLAB exact-domain numeric conventions on an Athena session.
+///
+/// Selects [`ZeroPowerZeroConvention::One`] so evaluated zeros (`x=0; x^0`) match
+/// literal `0^0`, without Form-level literal special-cases.
+pub fn install_session_conventions(session: &mut Session) {
+    session.zero_pow_zero = ZeroPowerZeroConvention::One;
+}
+
+/// Run `f` with MATLAB conventions installed, then restore the prior `0^0` policy.
+pub fn with_session_conventions<R>(session: &mut Session, f: impl FnOnce(&mut Session) -> R) -> R {
+    let previous = session.zero_pow_zero;
+    install_session_conventions(session);
+    let out = f(session);
+    session.zero_pow_zero = previous;
+    out
+}
 
 /// Materialize a [`MatlabForm`] into the session arena (transitional bridge).
 pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
@@ -54,10 +74,6 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
             push_list(session, ids)
         }
         MatlabForm::Call { head, args } => {
-            // MATLAB exact-domain convention: literal `0^0` / `0.^0` → `1` (not Athena `Indeterminate`).
-            if (head == "Power" || head == "DotPower") && args.len() == 2 && args.iter().all(form_is_exact_zero) {
-                return session.builder().int(1, Default::default());
-            }
             if head == "Application" {
                 let mut ids: Vec<TermId> = args.iter().map(|a| form_to_term(session, a)).collect();
                 if ids.is_empty() {
@@ -375,10 +391,6 @@ fn form_is_effectful_arm(form: &MatlabForm) -> bool {
         MatlabForm::Call { head, .. } if head == "Set" || head == "CompoundExpression" => true,
         _ => false,
     }
-}
-
-fn form_is_exact_zero(form: &MatlabForm) -> bool {
-    matches!(form, MatlabForm::Atom(MatlabAtom::Number(n)) if n.is_zero())
 }
 
 fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
