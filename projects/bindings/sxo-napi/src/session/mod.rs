@@ -125,6 +125,16 @@ impl Session {
         self.execute_lowered(&mut ms, AthenaRequest::Term(wrapped))
     }
 
+    /// Record that `child` was derived from `parent` (both Session-local).
+    pub fn link_derived_from(&self, child: ResultId, parent: ResultId) -> bool {
+        self.math_session.borrow_mut().results.link_derived_from(child, parent)
+    }
+
+    /// Parent [`ResultId`] recorded on `id`, if any.
+    pub fn derived_from(&self, id: ResultId) -> Option<ResultId> {
+        self.math_session.borrow().results.get(id).and_then(|r| r.derived_from)
+    }
+
     /// `Simplify` and project a symbolic term (errors if the result has no symbolic projection).
     pub fn simplify_term(&self, expr: TermId) -> Result<TermId, SxoError> {
         let outcome = self.simplify_outcome(expr)?;
