@@ -170,6 +170,12 @@ impl Expression {
         self.coverage.clone()
     }
 
+    /// Parent evaluate [`ResultId`] when this handle is a Simplify (or other) transform, else `null`.
+    #[napi(getter, js_name = "derivedFrom")]
+    pub fn derived_from_js(&self) -> Option<u32> {
+        self.result_id.and_then(|id| self.session.derived_from(id).map(|parent| parent.0))
+    }
+
     /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
     ///
     /// Projected from the Session [`ResultId`] on demand — not copied at evaluate time.
