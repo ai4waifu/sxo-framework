@@ -72,6 +72,16 @@ fn dialect_d_limit_series_lower_to_domain() {
 }
 
 #[test]
+fn differentiate_can_link_derived_from_evaluate_parent() {
+    let session = Session::new();
+    let evaluated = session.evaluate_mathematica("x^3").unwrap();
+    let term = session.project_result(evaluated.result_id).unwrap();
+    let d_out = session.differentiate_outcome(term, "x").unwrap();
+    assert!(session.link_derived_from(d_out.result_id, evaluated.result_id));
+    assert_eq!(session.derived_from(d_out.result_id), Some(evaluated.result_id));
+}
+
+#[test]
 fn residual_unevaluated_is_not_exact_full() {
     let session = Session::new();
     let out = session.evaluate_mathematica("Cos[x]").unwrap();

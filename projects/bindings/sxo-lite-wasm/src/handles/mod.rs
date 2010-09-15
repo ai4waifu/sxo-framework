@@ -93,8 +93,12 @@ impl Expression {
 
     /// Differentiate with respect to `var` on the same session.
     pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
+        let parent = self.result_id;
         let term = self.materialize_root()?;
         let outcome = self.session.differentiate_outcome(term, var).map_err(map_err)?;
+        if let Some(parent) = parent {
+            let _ = self.session.link_derived_from(outcome.result_id, parent);
+        }
         Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
