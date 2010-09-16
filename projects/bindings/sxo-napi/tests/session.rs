@@ -90,6 +90,39 @@ fn residual_unevaluated_is_not_exact_full() {
 }
 
 #[test]
+fn napi_path_hold_complete_flatten_and_indeterminate_with_simplify() {
+    // Mirrors TS feature-matrix: evaluate + strategy=simplify (autoSimplify).
+    let session = Session::new();
+    let hold = session.evaluate_mathematica("HoldComplete[1 + 1]").unwrap();
+    let hold_term = session.project_result(hold.result_id).unwrap();
+    let hold_simplified = session.simplify_outcome(hold_term).unwrap();
+    assert_eq!(
+        session.render_as_wolfram(session.project_result(hold_simplified.result_id).unwrap()),
+        "HoldComplete[1 + 1]",
+        "autoSimplify must not evaluate inside HoldComplete"
+    );
+
+    let uneval = session.evaluate_mathematica("Unevaluated[1 + 1]").unwrap();
+    assert_eq!(
+        session.render_as_wolfram(session.project_result(uneval.result_id).unwrap()),
+        "Unevaluated[1 + 1]"
+    );
+
+    let flat = session.evaluate_mathematica("Flatten[{{1, 2}, {3, 4}}]").unwrap();
+    assert_eq!(
+        session.render_as_wolfram(session.project_result(flat.result_id).unwrap()),
+        "{1, 2, 3, 4}",
+        "Flatten must execute, not residual Flatten[…]"
+    );
+
+    for (input, expect) in [("0/0", "Indeterminate"), ("Infinity - Infinity", "Indeterminate"), ("0^0", "Indeterminate")] {
+        let out = session.evaluate_mathematica(input).unwrap();
+        let text = session.render_as_wolfram(session.project_result(out.result_id).unwrap());
+        assert_eq!(text, expect, "input={input}");
+    }
+}
+
+#[test]
 fn session_set_persists_across_mathematica_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
