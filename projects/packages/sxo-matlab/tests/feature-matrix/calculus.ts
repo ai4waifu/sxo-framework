@@ -12,7 +12,10 @@ export const calculusFeatures = [
     feature('int', 'calculus')
         .supported()
         .pure()
-        .eval('int.poly', 'int(x^2, x)', '1/3*x^3')
+        .notes('poly antiderivative renders as `x^3*3^(-1)` (equiv. `1/3*x^3`)')
+        .eval('int.poly', 'int(x^2, x)', 'x^3*3^(-1)', {
+            notes: 'canonical Power form; mathematically equivalent to `1/3*x^3`',
+        })
         .eval('int.sin', 'int(sin(x), x)', '-cos(x)')
         .done(),
     feature('integral', 'calculus')
