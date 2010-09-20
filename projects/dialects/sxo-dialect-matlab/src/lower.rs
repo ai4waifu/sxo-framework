@@ -261,9 +261,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Transpose" || head == "ConjugateTranspose" => {
             // Real matrices: conjugate transpose equals transpose. Complex ctranspose is later.
             if let [arg] = args.as_slice() {
-                let term = form_to_term(session, arg);
-                // True 2-D MatrixValue path; row/column vectors keep Term reshape for MATLAB layout.
-                if let Some(mat) = matrix_from_nested_list(session, term) {
+                // True 2-D MatrixValue path from Form lists; row/column vectors keep Term reshape.
+                if let Some(mat) = matrix_from_form(arg) {
                     let shape = mat.shape();
                     if shape.rows > 1 && shape.cols > 1 {
                         let matrix = session.matrix_objects.intern(mat);
@@ -272,6 +271,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         )));
                     }
                 }
+                let term = form_to_term(session, arg);
                 if let Some(transposed) = transpose_nested_or_vector(session, term) {
                     return AthenaRequest::Term(transposed);
                 }
@@ -328,11 +328,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "LinearSolve" || head == "Mldivide" => {
             if let [a_form, b_form] = args.as_slice() {
-                let a_term = form_to_term(session, a_form);
-                let b_term = form_to_term(session, b_form);
-                if let (Some(a_mat), Some(b_mat)) =
-                    (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
-                {
+                if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
                     let a = session.matrix_objects.intern(a_mat);
                     let b = session.matrix_objects.intern(b_mat);
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -448,52 +444,59 @@ fn expand_span(start: i64, step: i64, end: i64) -> Option<Vec<i64>> {
     Some(out)
 }
 
-fn term_scalar_rational(session: &Session, term: TermId) -> Option<Rational> {
-    let n = number_from_id(session, term)?;
-    if let Some(i) = n.as_exact_integer() {
-        return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
+    match w {
+        MatlabForm::Atom(MatlabAtom::Number(n)) => {
+            if let Some(i) = n.as_exact_integer() {
+                return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+            }
+            if let Some(i) = n.as_integer() {
+                return Some(Rational::from_integer(clone_integer(i)));
+            }
+            n.as_rational().map(clone_rational)
+        }
+        _ => None,
     }
-    if let Some(i) = n.as_integer() {
-        return Some(Rational::from_integer(clone_integer(i)));
-    }
-    n.as_rational().map(clone_rational)
 }
 
-fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValue> {
-    match session.arena.get(term) {
-        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
-            if matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. })) {
-                let mut data = Vec::new();
-                let mut cols: Option<u64> = None;
-                for row in rows {
-                    let cells = match session.arena.get(*row) {
-                        Some(TermNode::Collection { elements: cells, .. }) => cells.clone(),
-                        _ => return None,
-                    };
-                    let c = cells.len() as u64;
-                    match cols {
-                        Some(prev) if prev != c => return None,
-                        None => cols = Some(c),
-                        _ => {}
-                    }
-                    for cell in cells {
-                        data.push(term_scalar_rational(session, cell)?);
-                    }
-                }
-                MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
+    match w {
+        MatlabForm::List(items) => Some(items.as_slice()),
+        _ => None,
+    }
+}
+
+/// Build a dense rational `MatrixValue` from MATLAB list Form literals.
+///
+/// Nested row lists → 2-D matrix. Flat list → `1×n` row. Does not reverse-recognize
+/// arena Collections from variables or computed terms.
+fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
+    let rows = form_list_items(w)?;
+    if rows.is_empty() {
+        return None;
+    }
+    if form_list_items(&rows[0]).is_some() {
+        let mut data = Vec::new();
+        let mut cols: Option<u64> = None;
+        for row in rows {
+            let cells = form_list_items(row)?;
+            let c = cells.len() as u64;
+            match cols {
+                Some(prev) if prev != c => return None,
+                None => cols = Some(c),
+                _ => {}
             }
-            else {
-                let mut data = Vec::with_capacity(rows.len());
-                for cell in rows {
-                    data.push(term_scalar_rational(session, *cell)?);
-                }
-                MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+            for cell in cells {
+                data.push(form_scalar_rational(cell)?);
             }
         }
-        _ => {
-            let r = term_scalar_rational(session, term)?;
-            MatrixValue::from_rationals_row_major(1, 1, vec![r]).ok()
+        MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+    } else {
+        let mut data = Vec::with_capacity(rows.len());
+        for cell in rows {
+            data.push(form_scalar_rational(cell)?);
         }
+        MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
     }
 }
 
