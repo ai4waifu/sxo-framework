@@ -419,6 +419,19 @@ fn transpose_nested_list_via_matrix_value_goal() {
 }
 
 #[test]
+fn set_nested_list_binds_matrix_domain_object() {
+    let h = H::new();
+    let w = h.parse_w("A={{1, 2}, {3, 4}}");
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &w);
+    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
+    AthenaEngine::new().execute_request(&mut s, request).expect("define matrix");
+    let symbol = s.arena.symbols_mut().intern("A");
+    assert!(s.matrix_binding(symbol).is_some());
+    assert!(s.defs.binding(symbol).is_none());
+}
+
+#[test]
 fn matrix_rank_rank1() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatrixRank[{{1, 2}, {2, 4}}]")), "1");

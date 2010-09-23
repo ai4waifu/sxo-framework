@@ -415,6 +415,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
+                        if let Some(mat) = matrix_from_form(rhs) {
+                            let matrix = session.matrix_objects.intern(mat);
+                            return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
+                        }
                         let value = lower_wexpr(session, rhs);
                         return AthenaRequest::Command(SessionCommand::Define {
                             symbol,
@@ -802,13 +806,19 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
         };
         let rhs_r = rename_symbols(rhs, &renames);
         let symbol = session.arena.symbols_mut().intern(fresh);
-        let value = lower_wexpr(session, &rhs_r);
-        steps.push(AthenaRequest::Command(SessionCommand::Define {
-            symbol,
-            value,
-            kind: BindingKind::Lexical,
-            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-        }));
+        if let Some(mat) = matrix_from_form(&rhs_r) {
+            let matrix = session.matrix_objects.intern(mat);
+            steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
+        }
+        else {
+            let value = lower_wexpr(session, &rhs_r);
+            steps.push(AthenaRequest::Command(SessionCommand::Define {
+                symbol,
+                value,
+                kind: BindingKind::Lexical,
+                evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+            }));
+        }
     }
     let body_r = rename_symbols(body, &renames);
     steps.push(lower_request(session, &body_r));
@@ -845,13 +855,19 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
             WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") => {
                 if let [lhs, rhs] = args.as_slice() {
                     if let Some(symbol) = symbol_of(session, lhs) {
-                        let value = lower_wexpr(session, rhs);
-                        steps.push(AthenaRequest::Command(SessionCommand::Define {
-                            symbol,
-                            value,
-                            kind: BindingKind::Dynamic,
-                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-                        }));
+                        if let Some(mat) = matrix_from_form(rhs) {
+                            let matrix = session.matrix_objects.intern(mat);
+                            steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
+                        }
+                        else {
+                            let value = lower_wexpr(session, rhs);
+                            steps.push(AthenaRequest::Command(SessionCommand::Define {
+                                symbol,
+                                value,
+                                kind: BindingKind::Dynamic,
+                                evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                            }));
+                        }
                     }
                 }
             }
