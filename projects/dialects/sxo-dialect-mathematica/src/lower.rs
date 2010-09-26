@@ -656,32 +656,28 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("MatrixRank", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
                         )));
                     }
                 }
                 ("RowReduce", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
                         )));
                     }
                 }
                 ("Inverse", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
                         )));
                     }
                 }
                 ("Tr", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
                         )));
@@ -706,16 +702,14 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("NullSpace", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix },
                         )));
                     }
                 }
                 ("Norm", [arg]) => {
-                    if let Some(mat) = matrix_from_form(arg) {
-                        let matrix = session.matrix_objects.intern(mat);
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
                         )));
@@ -975,6 +969,16 @@ fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
             n.as_rational().map(clone_rational)
         }
         _ => None,
+    }
+}
+
+/// Literal Form matrix or symbol Own binding for unary linear-algebra goals.
+fn matrix_operand_from_form(session: &mut Session, w: &WolframForm) -> Option<MatrixOperand> {
+    if let Some(mat) = matrix_from_form(w) {
+        Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
+    }
+    else {
+        symbol_of(session, w).map(MatrixOperand::binding)
     }
 }
 
