@@ -9,7 +9,7 @@ use athena::{
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder},
-        linear_algebra::MatrixValue,
+        linear_algebra::{MatrixOperand, MatrixValue},
     },
     ir::{Atom, MathematicalConstant, SemanticOperator, TermNode},
     numeric::{Integer, Rational},
@@ -120,6 +120,14 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             if let [lhs, rhs] = args.as_slice() {
                 if let Some(name) = form_symbol_name(lhs) {
                     let symbol = session.arena.symbols_mut().intern(name);
+                    // True 2-D literals → matrix Own. Row/column vectors stay Term so `Part`/`StoreIndex` keep working.
+                    if let Some(mat) = matrix_from_form(rhs) {
+                        let shape = mat.shape();
+                        if shape.rows > 1 && shape.cols > 1 {
+                            let matrix = session.matrix_objects.intern(mat);
+                            return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
+                        }
+                    }
                     let value = form_to_term(session, rhs);
                     return AthenaRequest::Command(SessionCommand::Define {
                         symbol,
@@ -271,6 +279,14 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         )));
                     }
                 }
+                if let Some(name) = form_symbol_name(arg) {
+                    let symbol = session.arena.symbols_mut().intern(name);
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Transpose {
+                            matrix: MatrixOperand::binding(symbol),
+                        },
+                    )));
+                }
                 let term = form_to_term(session, arg);
                 if let Some(transposed) = transpose_nested_or_vector(session, term) {
                     return AthenaRequest::Term(transposed);
@@ -329,8 +345,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "LinearSolve" || head == "Mldivide" => {
             if let [a_form, b_form] = args.as_slice() {
                 if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
-                    let a = session.matrix_objects.intern(a_mat);
-                    let b = session.matrix_objects.intern(b_mat);
+                    let a = MatrixOperand::object(session.matrix_objects.intern(a_mat));
+                    let b = MatrixOperand::object(session.matrix_objects.intern(b_mat));
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                     )));
