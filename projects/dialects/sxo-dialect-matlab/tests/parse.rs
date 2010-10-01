@@ -278,6 +278,13 @@ fn linsolve_symbol_after_2d_set() {
 }
 
 #[test]
+fn times_symbols_after_2d_set() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; B = [5, 6; 7, 8]; A*B")), "[19, 22; 43, 50]");
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; B = [5, 6; 7, 8]; A.*B")), "[5, 12; 21, 32]");
+}
+
+#[test]
 fn set_row_vector_keeps_term_binding_for_part() {
     let h = H::new();
     assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));

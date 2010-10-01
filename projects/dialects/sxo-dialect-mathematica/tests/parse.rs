@@ -443,6 +443,21 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; MatrixRank[A]")), "2");
     assert_eq!(h.wolfram(h.eval("B={{1, 2}, {3, 4}}; Tr[B]")), "5");
     assert_eq!(h.wolfram(h.eval("C={{1, 2}, {3, 4}}; Inverse[C]")), "{{-2, 1}, {3/2, -1/2}}");
+    assert_eq!(h.wolfram(h.eval("D={{1, 2}, {3, 4}}; Det[D]")), "-2");
+}
+
+#[test]
+fn matrix_times_resolves_symbol_bindings() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5, 6}, {7, 8}}; Dot[A, B]")),
+        "{{19, 22}, {43, 50}}"
+    );
+    // Semantic `Times` on Own nested-list matrices uses the matrix-multiply path.
+    assert_eq!(
+        h.wolfram(h.eval("P={{1, 2}, {3, 4}}; Q={{5, 6}, {7, 8}}; P*Q")),
+        "{{19, 22}, {43, 50}}"
+    );
 }
 
 #[test]
