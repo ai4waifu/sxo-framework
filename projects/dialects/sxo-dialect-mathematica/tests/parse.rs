@@ -37,8 +37,17 @@ impl H {
         let request = lower_request(&mut s, &w);
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
-            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| lower_wexpr(&mut s, &w)),
-            Err(_) => lower_wexpr(&mut s, &w),
+            Ok(result_id) => {
+                let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval: {input}"));
+                result.symbolic_term.unwrap_or_else(|| {
+                    panic!(
+                        "result has no symbolic_term after eval: {input} (status={}, coverage={})",
+                        result.status.name(),
+                        result.coverage.name()
+                    )
+                })
+            }
+            Err(err) => panic!("execute_request failed for {input}: {err}"),
         }
     }
 
