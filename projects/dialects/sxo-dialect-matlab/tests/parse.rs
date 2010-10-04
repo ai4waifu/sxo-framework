@@ -221,9 +221,10 @@ fn parse_mldivide_keeps_head() {
     let form = parse_matlab_form(r"A\b").unwrap();
     let t = form_to_term(&mut h.s.borrow_mut(), &form);
     assert_eq!(application_surface_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
+    // Unbound symbolic operands stay residual under `LinearSolve` Own projection.
+    let folded = h.eval_form(&form);
+    assert_eq!(application_surface_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
     assert!(h.render(t).contains('\\'));
-    // Unbound symbolic `A\b` lowers to DomainGoal Solve. Missing matrix bindings currently
-    // yield Invalid without `symbolic_term`. Residual Own echo remains product debt.
 }
 
 #[test]
