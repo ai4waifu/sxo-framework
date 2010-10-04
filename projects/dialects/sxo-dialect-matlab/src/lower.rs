@@ -120,13 +120,10 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             if let [lhs, rhs] = args.as_slice() {
                 if let Some(name) = form_symbol_name(lhs) {
                     let symbol = session.arena.symbols_mut().intern(name);
-                    // True 2-D literals → matrix Own. Row/column vectors stay Term so `Part`/`StoreIndex` keep working.
+                    // List Form → matrix Own（含行/列向量）。`Part`/`StoreIndex` grow 已吃 DomainObject。
                     if let Some(mat) = matrix_from_form(rhs) {
-                        let shape = mat.shape();
-                        if shape.rows > 1 && shape.cols > 1 {
-                            let matrix = session.matrix_objects.intern(mat);
-                            return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
-                        }
+                        let matrix = session.matrix_objects.intern(mat);
+                        return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
                     let value = form_to_term(session, rhs);
                     return AthenaRequest::Command(SessionCommand::Define {
