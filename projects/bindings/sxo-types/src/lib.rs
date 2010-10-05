@@ -4,11 +4,13 @@
 
 #![deny(missing_docs)]
 
+mod condition_summary;
 mod dialect;
 mod error;
 mod eval_outcome;
 
 pub use athena_types::{Diagnostic, DiagnosticCode, ResultId, Severity, SourceSpan, TermId};
+pub use condition_summary::condition_summary;
 pub use dialect::Dialect;
 pub use error::SxoError;
 pub use eval_outcome::EvalOutcome;
