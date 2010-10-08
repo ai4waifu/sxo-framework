@@ -38,6 +38,12 @@ export type NativeExpression = {
     coverage: string;
     /** Diagnostic summaries from the last evaluate. */
     diagnostics: string[];
+    /** Condition summaries from the last evaluate (`PredicateKind resolved=…`). */
+    conditions: string[];
+    /** Result-layer provider stamp (`Name@vN`), or `null`/`undefined` if none. */
+    provider: string | null | undefined;
+    /** Parent evaluate result id when this handle is a Simplify transform. */
+    derivedFrom: number | null | undefined;
 };
 
 /** Full native host ABI used by `@sxo/core` and dialect adapters. */
