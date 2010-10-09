@@ -114,10 +114,20 @@ impl Expression {
     }
 
     /// Simplify via `Session` on the same session.
+    ///
+    /// Parse objects wrap retained Form as dialect `Simplify` and run `lower_request`.
+    /// Result objects still project a symbolic term then dispatch Semantic Simplify.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
         let parent = self.result_id;
-        let term = self.materialize_root()?;
-        let outcome = self.session.simplify_outcome(term).map_err(map_err)?;
+        let outcome = match &self.form {
+            Some(HeldForm::Wolfram(form)) => self.session.simplify_wolfram_form(form),
+            Some(HeldForm::Matlab(form)) => self.session.simplify_matlab_form(form),
+            None => {
+                let term = self.materialize_root()?;
+                self.session.simplify_outcome(term)
+            }
+        }
+        .map_err(map_err)?;
         if let Some(parent) = parent {
             let _ = self.session.link_derived_from(outcome.result_id, parent);
         }
