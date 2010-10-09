@@ -130,6 +130,8 @@ impl Session {
     }
 
     /// Differentiate via [`AthenaRequest::Goal`] and return the full Session result.
+    ///
+    /// Prefer Form helpers for parse objects. This path remains for result term projection.
     pub fn differentiate_outcome(&self, expr: TermId, var: &str) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let variable = ms.arena.symbols_mut().intern(var);
@@ -140,6 +142,18 @@ impl Session {
             assumptions: AssumptionSet::empty(),
         })));
         self.execute_lowered(&mut ms, request)
+    }
+
+    /// Differentiate a retained Wolfram Form via `D[expr, var]` → dialect `lower_request` Goal path.
+    pub fn differentiate_wolfram_form(&self, form: &WolframForm, var: &str) -> Result<EvalOutcome, SxoError> {
+        let d_form = WolframForm::call("D", vec![form.clone(), WolframForm::symbol(var)]);
+        self.evaluate_wolfram_form(&d_form)
+    }
+
+    /// Differentiate a retained MATLAB Form via `diff(expr, var)` → dialect `lower_request` Goal path.
+    pub fn differentiate_matlab_form(&self, form: &matlab::MatlabForm, var: &str) -> Result<EvalOutcome, SxoError> {
+        let d_form = matlab::MatlabForm::call("diff", vec![form.clone(), matlab::MatlabForm::symbol(var)]);
+        self.evaluate_matlab_form(&d_form)
     }
 
     /// Differentiate and project a symbolic term.
@@ -200,11 +214,12 @@ impl Session {
         self.evaluate_wolfram_form(&w)
     }
 
-    /// Differentiate Wolfram input.
+    /// Differentiate Wolfram input via Form `D[…]` request path.
     #[allow(dead_code)]
     pub fn d_mathematica(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        self.differentiate_term(self.lower_mathematica(&w), var)
+        let outcome = self.differentiate_wolfram_form(&w, var)?;
+        self.try_project_symbolic(outcome.result_id)
     }
 
     /// Render a term as Wolfram text.
@@ -245,10 +260,12 @@ impl Session {
         }
     }
 
-    /// Differentiate MATLAB input.
+    /// Differentiate MATLAB input via Form `diff(…)` request path.
     #[allow(dead_code)]
     pub fn d_matlab(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
-        self.differentiate_term(self.parse_matlab(input)?, var)
+        let form = self.parse_matlab_form(input)?;
+        let outcome = self.differentiate_matlab_form(&form, var)?;
+        self.try_project_symbolic(outcome.result_id)
     }
 
     /// Render a term as MATLAB text.

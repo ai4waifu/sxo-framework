@@ -15,8 +15,8 @@ use napi_derive::napi;
 use session::Session;
 use sxo_types::VERSION as CORE_VERSION;
 
-use dialects::{dialect_from_str, map_err, parse_to_term};
-use handles::Expression;
+use dialects::{HeldForm, dialect_from_str, map_err, parse_held, parse_to_term};
+use handles::{Expression, from_eval_outcome};
 use options::{EvaluateOptions, parse_strategy};
 
 /// Return the SXO engine version string.
@@ -25,22 +25,18 @@ pub fn version() -> String {
     CORE_VERSION.to_string()
 }
 
-/// Top-level `d(expr, var, dialect?)`.
+/// Top-level `d(expr, var, dialect?)` — parse Form then dialect `D` / `diff` `lower_request`.
 #[napi]
 pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
-    let (term, resolved) = parse_to_term(&session, &input, d)?;
-    let outcome = session.differentiate_outcome(term, &var).map_err(map_err)?;
-    Ok(Expression {
-        session,
-        root: None,
-        result_id: Some(outcome.result_id),
-        form: None,
-        dialect: resolved,
-        status: outcome.status,
-        coverage: outcome.coverage,
-    })
+    let (form, resolved) = parse_held(&session, &input, d)?;
+    let outcome = match &form {
+        HeldForm::Wolfram(f) => session.differentiate_wolfram_form(f, &var),
+        HeldForm::Matlab(f) => session.differentiate_matlab_form(f, &var),
+    }
+    .map_err(map_err)?;
+    Ok(from_eval_outcome(session, resolved, outcome))
 }
 
 /// Top-level `evaluate(expr, dialect?, options?)` — parse + `lower_request` in one host call.

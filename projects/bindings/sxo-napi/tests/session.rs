@@ -72,6 +72,19 @@ fn dialect_d_limit_series_lower_to_domain() {
 }
 
 #[test]
+fn differentiate_wolfram_form_matches_d_surface_lower() {
+    let session = Session::new();
+    let form = session.parse_mathematica("x^3").unwrap();
+    let via_form = session.differentiate_wolfram_form(&form, "x").unwrap();
+    let via_surface = session.evaluate_mathematica("D[x^3, x]").unwrap();
+    assert!(session.structural_eq(
+        session.project_result(via_form.result_id).unwrap(),
+        session.project_result(via_surface.result_id).unwrap()
+    ));
+    assert_eq!(via_form.status, via_surface.status);
+}
+
+#[test]
 fn differentiate_can_link_derived_from_evaluate_parent() {
     let session = Session::new();
     let evaluated = session.evaluate_mathematica("x^3").unwrap();

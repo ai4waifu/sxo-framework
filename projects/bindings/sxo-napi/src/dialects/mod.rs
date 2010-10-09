@@ -55,7 +55,7 @@ pub(crate) fn parse_held(session: &Session, input: &str, dialect: Dialect) -> Re
     }
 }
 
-/// Parse + materialize once for APIs that still need a [`TermId`] (`d` / `plotSvg` string entry).
+/// Parse + materialize once for APIs that still need a [`TermId`] (`plotSvg` string entry).
 pub(crate) fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect)> {
     let (form, resolved) = parse_held(session, input, dialect)?;
     let term = match &form {

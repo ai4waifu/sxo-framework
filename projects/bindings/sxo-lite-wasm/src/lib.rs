@@ -13,8 +13,8 @@ use session::Session;
 use sxo_types::VERSION as CORE_VERSION;
 use wasm_bindgen::prelude::*;
 
-use dialects::{dialect_from_str, map_err, parse_to_term};
-use handles::{Expression, from_outcome};
+use dialects::{HeldForm, dialect_from_str, map_err, parse_held, parse_to_term};
+use handles::{Expression, from_eval_outcome, from_outcome};
 use options::parse_strategy;
 
 /// Return the SXO engine version string.
@@ -35,20 +35,18 @@ pub fn evaluate(input: &str, dialect: Option<String>, strategy: Option<String>) 
     from_outcome(session, d, outcome, strategy)
 }
 
-/// Top-level `d`.
+/// Top-level `d` — parse Form then dialect `D` / `diff` `lower_request`.
 #[wasm_bindgen]
 pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
-    let (term, resolved) = parse_to_term(&session, input, d)?;
-    let outcome = session.differentiate_outcome(term, var).map_err(map_err)?;
-    Ok(Expression {
-        session,
-        root: None,
-        result_id: Some(outcome.result_id),
-        form: None,
-        dialect: resolved,
-    })
+    let (form, resolved) = parse_held(&session, input, d)?;
+    let outcome = match &form {
+        HeldForm::Wolfram(f) => session.differentiate_wolfram_form(f, var),
+        HeldForm::Matlab(f) => session.differentiate_matlab_form(f, var),
+    }
+    .map_err(map_err)?;
+    Ok(from_eval_outcome(session, resolved, outcome))
 }
 
 /// Top-level `simplify`.
