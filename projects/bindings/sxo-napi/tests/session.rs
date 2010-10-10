@@ -150,6 +150,29 @@ fn project_provider_exposes_result_stamp() {
 }
 
 #[test]
+fn project_evidence_exposes_trusted_kernel_summary() {
+    use athena::runtime::results::{ComputationResult, CoverageStatus, ResultEvidence, ResultProviderId};
+    use athena::types::ComputationStatus;
+
+    let session = Session::new();
+    let result_id = session.with_math_mut(|s| {
+        let term = push_int(s, 1);
+        let result = ComputationResult::with_status(ComputationStatus::Candidate, CoverageStatus::Full)
+            .with_symbolic_term(term)
+            .with_provider(ResultProviderId::SOLVE)
+            .with_evidence(ResultEvidence::TrustedKernelSummary {
+                provider: ResultProviderId::SOLVE,
+                summary: "solution_rules coverage=Complete".into(),
+            });
+        s.insert_result(result)
+    });
+    assert_eq!(
+        session.project_evidence(result_id),
+        vec!["TrustedKernelSummary provider=Solve solution_rules coverage=Complete".to_string()]
+    );
+}
+
+#[test]
 fn residual_unevaluated_is_not_exact_full() {
     let session = Session::new();
     let out = session.evaluate_mathematica("Cos[x]").unwrap();

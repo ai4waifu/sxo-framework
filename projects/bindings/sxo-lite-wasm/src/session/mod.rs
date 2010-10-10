@@ -123,6 +123,25 @@ impl Session {
             .map(|stamp| format!("{}@v{}", stamp.id.name(), stamp.version))
     }
 
+    /// Project evidence summaries for a Session-local [`ResultId`] (empty if missing).
+    pub fn project_evidence(&self, result_id: ResultId) -> Vec<String> {
+        use athena::runtime::results::ResultEvidence;
+        let ms = self.math_session.borrow();
+        ms.results
+            .get(result_id)
+            .map(|r| {
+                r.evidence
+                    .iter()
+                    .map(|e| match e {
+                        ResultEvidence::TrustedKernelSummary { provider, summary } => {
+                            sxo_types::trusted_kernel_evidence_summary(provider.name(), summary)
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     /// Clear Athena Own symbol definitions for this host session.
     #[allow(dead_code)]
     pub fn clear_definitions(&self) {

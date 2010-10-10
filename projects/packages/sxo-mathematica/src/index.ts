@@ -83,6 +83,11 @@ export class Expression {
         return this.#inner.provider;
     }
 
+    /** Evidence summaries from the last evaluate. */
+    get evidence(): string[] {
+        return this.#inner.evidence;
+    }
+
     /** Parent evaluate result id when this handle is a Simplify transform. */
     get derivedFrom(): number | null | undefined {
         return this.#inner.derivedFrom;
