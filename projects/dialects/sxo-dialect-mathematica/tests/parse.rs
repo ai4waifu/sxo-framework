@@ -670,6 +670,15 @@ fn solve_x_squared_eq_one() {
 }
 
 #[test]
+fn solve_linear_two_by_two_rules() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Solve[{x + y == 3, x - y == 1}, {x, y}]")),
+        "{{x -> 2, y -> 1}}"
+    );
+}
+
+#[test]
 fn parse_plot_negative_domain_renders_svg() {
     let h = H::new();
     let w = h.parse_w("Plot[x^2, {x, -1, 1}]");

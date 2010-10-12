@@ -405,12 +405,27 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
-                ("Solve", [equation, unknown]) => {
-                    if let Some(unknown) = symbol_of(session, unknown) {
-                        let equation = lower_wexpr(session, equation);
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
-                            athena::domains::solve::SolveRequest::UnivariateEquation { equation, unknown },
-                        )));
+                ("Solve", [equations, unknowns]) => {
+                    let unknown_syms = symbol_list(session, unknowns)
+                        .or_else(|| symbol_of(session, unknowns).map(|s| vec![s]));
+                    if let Some(unknown_syms) = unknown_syms {
+                        let eqs = term_list(session, equations).unwrap_or_else(|| vec![lower_wexpr(session, equations)]);
+                        if eqs.len() == 1 && unknown_syms.len() == 1 {
+                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
+                                athena::domains::solve::SolveRequest::UnivariateEquation {
+                                    equation: eqs[0],
+                                    unknown: unknown_syms[0],
+                                },
+                            )));
+                        }
+                        if !eqs.is_empty() && !unknown_syms.is_empty() {
+                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
+                                athena::domains::solve::SolveRequest::LinearEquations {
+                                    equations: eqs,
+                                    unknowns: unknown_syms,
+                                },
+                            )));
+                        }
                     }
                 }
                 ("Set", [lhs, rhs]) => {
