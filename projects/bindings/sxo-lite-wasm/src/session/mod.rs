@@ -136,6 +136,9 @@ impl Session {
                         ResultEvidence::TrustedKernelSummary { provider, summary } => {
                             sxo_types::trusted_kernel_evidence_summary(provider.name(), summary)
                         }
+                        ResultEvidence::AdmittedRelation { fact } => {
+                            sxo_types::admitted_relation_evidence_summary(fact.0)
+                        }
                     })
                     .collect()
             })

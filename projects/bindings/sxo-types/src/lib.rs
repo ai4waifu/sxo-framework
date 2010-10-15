@@ -15,7 +15,7 @@ pub use condition_summary::condition_summary;
 pub use dialect::Dialect;
 pub use error::SxoError;
 pub use eval_outcome::EvalOutcome;
-pub use evidence_summary::trusted_kernel_evidence_summary;
+pub use evidence_summary::{admitted_relation_evidence_summary, trusted_kernel_evidence_summary};
 
 /// SXO product version (semver string for N-API / packages).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
