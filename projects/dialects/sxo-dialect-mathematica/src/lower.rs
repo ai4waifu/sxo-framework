@@ -443,6 +443,17 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("Times", [a_form, b_form]) => {
+                    // Living 16: Form matrix literals → typed MatMul. Bare symbols stay
+                    // Semantic Times (Athena routes bound Matrix Values via MatMul slots).
+                    if let (Some(a_mat), Some(b_mat)) = (matrix_value_from_form_tree(a_form), matrix_value_from_form_tree(b_form)) {
+                        let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
+                        let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                        )));
+                    }
+                }
                 ("Clear", args) => {
                     let mut steps = Vec::with_capacity(args.len());
                     let mut ok = true;
@@ -998,11 +1009,37 @@ fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
 
 /// Literal Form matrix or symbol Own binding for unary linear-algebra goals.
 fn matrix_operand_from_form(session: &mut Session, w: &WolframForm) -> Option<MatrixOperand> {
-    if let Some(mat) = matrix_from_form(w) {
+    if let Some(mat) = matrix_value_from_form_tree(w) {
         Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
     }
     else {
         symbol_of(session, w).map(MatrixOperand::binding)
+    }
+}
+
+/// Owned matrix from Form lists or Form-only wrappers (`Transpose` of a literal).
+///
+/// Living 16: keep dialect orientation / Form wrappers here. Do not scan arena
+/// Collections. Bare symbols stay as [`MatrixOperand::Binding`].
+fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
+    use athena::domains::linear_algebra::transpose;
+
+    if let Some(mat) = matrix_from_form(w) {
+        return Some(mat);
+    }
+    match w {
+        WolframForm::Call { head, args } => {
+            let name = match head.as_ref() {
+                WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
+                _ => return None,
+            };
+            match (name, args.as_slice()) {
+                // Real ConjugateTranspose equals Transpose for exact rational literals.
+                ("Transpose" | "ConjugateTranspose", [arg]) => Some(transpose(&matrix_value_from_form_tree(arg)?)),
+                _ => None,
+            }
+        }
+        _ => None,
     }
 }
 

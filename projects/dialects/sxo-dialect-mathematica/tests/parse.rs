@@ -456,6 +456,41 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
 }
 
 #[test]
+fn nested_form_transpose_feeds_inverse_matrix_operand() {
+    let h = H::new();
+    // Living 16: Form wrappers unwrap at lowering — no Term Collection reverse recognition.
+    assert_eq!(
+        h.wolfram(h.eval("Inverse[Transpose[{{1, 2}, {3, 4}}]]")),
+        "{{-2, 3/2}, {1, -1/2}}"
+    );
+    let w = h.parse_w("Inverse[Transpose[{{1, 2}, {3, 4}}]]");
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &w);
+    assert!(matches!(
+        request,
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
+            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { .. })
+        ))
+    ));
+}
+
+#[test]
+fn times_form_matrices_lower_to_matmul_goal() {
+    let h = H::new();
+    let w = h.parse_w("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}");
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &w);
+    assert!(matches!(
+        request,
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
+            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { .. })
+        ))
+    ));
+    drop(s);
+    assert_eq!(h.wolfram(h.eval("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}")), "{{19, 22}, {43, 50}}");
+}
+
+#[test]
 fn det_goal_uses_matrix_operand_binding() {
     let h = H::new();
     let w = h.parse_w("A={{1, 2}, {3, 4}}; Det[A]");
