@@ -518,10 +518,10 @@ fn matrix_times_resolves_symbol_bindings() {
         h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5, 6}, {7, 8}}; Dot[A, B]")),
         "{{19, 22}, {43, 50}}"
     );
-    // Semantic `Times` on Own nested-list matrices uses the matrix-multiply path.
+    // Living 16: Mathematica `Times` on matrices is Hadamard. `Dot` remains MatMul.
     assert_eq!(
         h.wolfram(h.eval("P={{1, 2}, {3, 4}}; Q={{5, 6}, {7, 8}}; P*Q")),
-        "{{19, 22}, {43, 50}}"
+        "{{5, 12}, {21, 32}}"
     );
 }
 
