@@ -156,6 +156,26 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 return AthenaRequest::Control(ControlPlan::Reject);
             }
         }
+        MatlabForm::Call { head, args } if head == "Times" => {
+            // Living 16: MATLAB `*` is MatMul. Element-wise is `.*` / DotTimes.
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "DotTimes" => {
+            // Living 16: MATLAB `.*` is Hadamard on typed matrices.
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "CompoundExpression" => {
             let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
             return AthenaRequest::Control(ControlPlan::Sequence { steps });
