@@ -555,6 +555,20 @@ fn dimensions_of_nested_list() {
 }
 
 #[test]
+fn dimensions_of_matrix_binding() {
+    let h = H::new();
+    // Living 16: bound MatrixRef shape without nested-list reverse recognition.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2, 3}, {4, 5, 6}}; Dimensions[A]")), "{2, 3}");
+}
+
+#[test]
+fn length_of_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2, 3}, {4, 5, 6}}; Length[A]")), "2");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; Length[V]")), "3");
+}
+
+#[test]
 fn diagonal_matrix_from_vector() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
@@ -850,6 +864,14 @@ fn union_accumulate_free_q_and_extract() {
     assert_eq!(h.wolfram(h.eval("Differences[{1, 4, 9}]")), "{3, 5}");
     assert_eq!(h.wolfram(h.eval("FreeQ[{1, 2}, 3]")), "True");
     assert_eq!(h.wolfram(h.eval("Extract[{1, 2, 3}, 2]")), "2");
+}
+
+#[test]
+fn accumulate_differences_on_matrix_binding() {
+    let h = H::new();
+    // Living 16: bound 1×n MatrixRef keeps orientation through Accumulate / Differences.
+    assert_eq!(h.wolfram(h.eval("A={1, 2, 3}; Accumulate[A]")), "{1, 3, 6}");
+    assert_eq!(h.wolfram(h.eval("B={1, 4, 9}; Differences[B]")), "{3, 5}");
 }
 
 #[test]
