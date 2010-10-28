@@ -6,7 +6,12 @@ export const arrayFeatures = [
         .pure()
         .gap('diffvec.3', 'diff([1, 4, 9])', { expected: '[3, 5]' })
         .done(),
-    feature('cumsum', 'array').unsupported().pure().gap('cumsum.3', 'cumsum([1, 2, 3])', { expected: '[1, 3, 6]' }).done(),
+    feature('cumsum', 'array')
+        .supported()
+        .pure()
+        .notes('cumsum → Accumulate on typed 1×n MatrixRef (Living 16)')
+        .eval('cumsum.3', 'cumsum([1, 2, 3])', '[1, 3, 6]')
+        .done(),
     feature('bsxfun', 'array')
         .unsupported('parse/eval keep `@plus` FunctionHandle; bsxfun broadcast runtime still open')
         .pure()
