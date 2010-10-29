@@ -395,6 +395,7 @@ fn map_matlab_head(name: &str) -> String {
         "length" => "Length".to_string(),
         "det" => "Det".to_string(),
         "sum" => "Sum".to_string(),
+        "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
         "linsolve" => "LinearSolve".to_string(),
         other => other.to_string(),
