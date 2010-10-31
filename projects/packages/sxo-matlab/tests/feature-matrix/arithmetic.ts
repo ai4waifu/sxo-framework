@@ -39,8 +39,9 @@ export const arithmeticFeatures = [
     feature('rdivide', 'arithmetic')
         .supported()
         .pure()
-        .notes('./ → DotDivide')
+        .notes('./ → ElementwiseDivide on typed matrices')
         .eval('rdivide.scalar', '1./2', '0.5')
         .eval('rdivide.vec', '[6, 8]./[2, 4]', '[3, 2]')
+        .eval('rdivide.mat', '[6, 8; 10, 12]./[2, 4; 5, 6]', '[3, 2; 2, 2]')
         .done(),
 ];
