@@ -176,6 +176,16 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "DotDivide" => {
+            // Living 16: MATLAB `./` is ElementwiseDivide on typed matrices.
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "CompoundExpression" => {
             let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
             return AthenaRequest::Control(ControlPlan::Sequence { steps });
