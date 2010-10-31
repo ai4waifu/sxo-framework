@@ -297,6 +297,7 @@ fn times_symbols_after_2d_set() {
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; B = [5, 6; 7, 8]; A*B")), "[19, 22; 43, 50]");
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; B = [5, 6; 7, 8]; A.*B")), "[5, 12; 21, 32]");
     assert_eq!(h.render(h.eval("A = [6, 8; 10, 12]; B = [2, 4; 5, 6]; A./B")), "[3, 2; 2, 2]");
+    assert_eq!(h.render(h.eval("A = [2, 3; 4, 5]; B = [2, 2; 2, 2]; A.^B")), "[4, 9; 16, 25]");
 }
 
 #[test]
@@ -326,6 +327,9 @@ fn parse_elementwise_ops_evaluate() {
     );
     assert!(
         h.eq(h.eval("[6, 8; 10, 12]./[2, 4; 5, 6]"), h.lst(vec![h.lst(vec![h.i(3), h.i(2)]), h.lst(vec![h.i(2), h.i(2)]),]))
+    );
+    assert!(
+        h.eq(h.eval("[2, 3; 4, 5].^[2, 2; 2, 2]"), h.lst(vec![h.lst(vec![h.i(4), h.i(9)]), h.lst(vec![h.i(16), h.i(25)]),]))
     );
     assert!(
         h.eq(h.eval("[1, 2; 3, 4]*[5, 6; 7, 8]"), h.lst(vec![h.lst(vec![h.i(19), h.i(22)]), h.lst(vec![h.i(43), h.i(50)]),]))

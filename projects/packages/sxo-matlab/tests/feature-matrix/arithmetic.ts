@@ -29,9 +29,10 @@ export const arithmeticFeatures = [
     feature('power', 'arithmetic')
         .supported()
         .pure()
-        .notes('scalar ^ and .^; binomial base keeps Power after eval (Plus may commute)')
+        .notes('scalar ^ and .^ → ElementwisePower on typed matrices')
         .eval('power.basic', '2^3', '8')
         .eval('power.elementwise', '[1, 2].^[2, 3]', '[1, 8]')
+        .eval('power.mat', '[2, 3; 4, 5].^[2, 2; 2, 2]', '[4, 9; 16, 25]')
         .eval('power.binomsq', '(x + 1)^2', '(1 + x)^2')
         .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
         .done(),
