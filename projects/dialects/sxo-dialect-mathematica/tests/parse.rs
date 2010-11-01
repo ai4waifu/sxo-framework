@@ -464,6 +464,19 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Append[A, {5, 6}]")), "{{1, 2}, {3, 4}, {5, 6}}");
     assert_eq!(h.wolfram(h.eval("V={1, 2}; Append[V, 3]")), "{1, 2, 3}");
     assert_eq!(h.wolfram(h.eval("V={2, 3}; Prepend[V, 0]")), "{0, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("V={3, 1, 2}; Sort[V]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3, 4}; Partition[V, 2]")), "{{1, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3, 2}; DeleteDuplicates[V]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3}; MemberQ[V, 2]")), "True");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3}; Count[V, 1]")), "2");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1}; FreeQ[V, 3]")), "True");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1}; Position[V, 1]")), "{{1}, {3}}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2}; PadLeft[V, 4]")), "{0, 0, 1, 2}");
+    assert_eq!(h.wolfram(h.eval("A={1, 2}; B={9, 8}; Riffle[A, B]")), "{1, 9, 2, 8}");
+    assert_eq!(h.wolfram(h.eval("A={3, 1, 2}; B={2, 4, 1}; Union[A, B]")), "{1, 2, 3, 4}");
+    assert_eq!(h.wolfram(h.eval("A={3, 1, 2}; B={2, 4, 1}; Intersection[A, B]")), "{1, 2}");
+    assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; Extract[V, 2]")), "20");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Extract[A, 2]")), "{3, 4}");
 }
 
 #[test]
