@@ -442,6 +442,16 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         });
                     }
+                    // `A[[i,j]]=v` → StoreIndex (typed write on Own / MatrixRef).
+                    if let WolframForm::Call { head, args: part_args } = lhs {
+                        if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Part") && part_args.len() >= 2 {
+                            if let Some(axes) = part_args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
+                                let target = lower_wexpr(session, &part_args[0]);
+                                let value = lower_wexpr(session, rhs);
+                                return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                            }
+                        }
+                    }
                 }
                 ("Times", [a_form, b_form]) => {
                     // Living 16: Mathematica `Times` on matrices is Hadamard, never MatMul.

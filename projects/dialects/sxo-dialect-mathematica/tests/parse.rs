@@ -475,6 +475,13 @@ fn part_on_matrix_binding() {
 }
 
 #[test]
+fn part_store_on_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 2]] = 9; A[[1, 2]]")), "9");
+    assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; V[[2]] = 8; V")), "{10, 8, 30}");
+}
+
+#[test]
 fn nested_form_transpose_feeds_inverse_matrix_operand() {
     let h = H::new();
     // Living 16: Form wrappers unwrap at lowering — no Term Collection reverse recognition.
@@ -494,7 +501,7 @@ fn nested_form_transpose_feeds_inverse_matrix_operand() {
 }
 
 #[test]
-fn times_form_matrices_lower_to_matmul_goal() {
+fn times_form_matrices_lower_to_hadamard_goal() {
     let h = H::new();
     let w = h.parse_w("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}");
     let mut s = h.s.borrow_mut();
@@ -502,11 +509,12 @@ fn times_form_matrices_lower_to_matmul_goal() {
     assert!(matches!(
         request,
         athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { .. })
+            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { .. })
         ))
     ));
     drop(s);
-    assert_eq!(h.wolfram(h.eval("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}")), "{{19, 22}, {43, 50}}");
+    // Living 16: Mathematica `Times` is Hadamard, not MatMul.
+    assert_eq!(h.wolfram(h.eval("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}")), "{{5, 12}, {21, 32}}");
 }
 
 #[test]
