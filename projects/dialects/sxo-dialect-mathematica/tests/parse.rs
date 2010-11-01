@@ -453,6 +453,25 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("B={{1, 2}, {3, 4}}; Tr[B]")), "5");
     assert_eq!(h.wolfram(h.eval("C={{1, 2}, {3, 4}}; Inverse[C]")), "{{-2, 1}, {3/2, -1/2}}");
     assert_eq!(h.wolfram(h.eval("D={{1, 2}, {3, 4}}; Det[D]")), "-2");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; First[A]")), "{1, 2}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Rest[A]")), "{3, 4}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Flatten[A]")), "{1, 2, 3, 4}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Most[A]")), "{1, 2}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; Reverse[V]")), "{3, 2, 1}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}, {5, 6}}; Take[A, 2]")), "{{1, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}, {5, 6}}; Drop[A, 1]")), "{{3, 4}, {5, 6}}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5, 6}}; Join[A, B]")), "{{1, 2}, {3, 4}, {5, 6}}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Append[A, {5, 6}]")), "{{1, 2}, {3, 4}, {5, 6}}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2}; Append[V, 3]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("V={2, 3}; Prepend[V, 0]")), "{0, 2, 3}");
+}
+
+#[test]
+fn part_on_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 2]]")), "2");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[2]]")), "{3, 4}");
+    assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; V[[2]]")), "20");
 }
 
 #[test]
