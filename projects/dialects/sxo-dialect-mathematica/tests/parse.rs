@@ -477,6 +477,28 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("A={3, 1, 2}; B={2, 4, 1}; Intersection[A, B]")), "{1, 2}");
     assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; Extract[V, 2]")), "20");
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Extract[A, 2]")), "{3, 4}");
+    assert_eq!(h.wolfram(h.eval("V=ConstantArray[7, 3]; Length[V]")), "3");
+    assert_eq!(h.wolfram(h.eval("V=ConstantArray[7, 3]; MemberQ[V, 7]")), "True");
+    assert_eq!(h.wolfram(h.eval("V=Range[4]; Length[V]")), "4");
+    assert_eq!(h.wolfram(h.eval("V=Range[2, 6, 2]; MemberQ[V, 4]")), "True");
+    assert_eq!(h.wolfram(h.eval("A=ConstantArray[5, {2, 3}]; Dimensions[A]")), "{2, 3}");
+    assert_eq!(h.wolfram(h.eval("A=ConstantArray[5, {2, 3}]; First[A]")), "{5, 5, 5}");
+    assert_eq!(h.wolfram(h.eval("V=Range[3]; DiagonalMatrix[V]")), "{{1, 0, 0}, {0, 2, 0}, {0, 0, 3}}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; Det[A]")), "1");
+    assert_eq!(h.wolfram(h.eval("Det[ConstantArray[1, {2, 2}]]")), "0");
+    assert_eq!(h.wolfram(h.eval("Total[ConstantArray[1, {2, 2}]]")), "{2, 2}");
+    assert_eq!(h.wolfram(h.eval("Accumulate[Range[3]]")), "{1, 3, 6}");
+    assert_eq!(h.wolfram(h.eval("Differences[Range[4]]")), "{1, 1, 1}");
+    assert_eq!(h.wolfram(h.eval("Sort[{3, 1, 2}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("PadLeft[{1, 2}, 4]")), "{0, 0, 1, 2}");
+    assert_eq!(h.wolfram(h.eval("Join[{1, 2}, {3}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("Union[{3, 1}, {2, 1}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("Riffle[{1, 2}, {9, 8}]")), "{1, 9, 2, 8}");
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; Dimensions[A]")), "{2, 2}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[3]; Det[A]")), "1");
+    // Living 16: symbolic diagonal stays residual (no nested-list rebuild).
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{x}]")), "DiagonalMatrix[{x}]");
 }
 
 #[test]
@@ -492,6 +514,9 @@ fn part_store_on_matrix_binding() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 2]] = 9; A[[1, 2]]")), "9");
     assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; V[[2]] = 8; V")), "{10, 8, 30}");
+    // Living 16: in-place StoreIndex keeps Own usable for follow-on matrix ops.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 1]] = 0; Det[A]")), "-6");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; V[[3]] = 9; Length[V]")), "3");
 }
 
 #[test]

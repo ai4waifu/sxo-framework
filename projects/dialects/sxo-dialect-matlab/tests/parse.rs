@@ -607,6 +607,10 @@ fn parse_matrix_constructors_and_size() {
     assert!(h.eq(h.eval("ones(2)"), h.lst(vec![h.lst(vec![h.i(1), h.i(1)]), h.lst(vec![h.i(1), h.i(1)]),])));
     assert_eq!(h.render(h.eval("ones(2)")), "[1, 1; 1, 1]");
 
+    // Living 16: rectangular eye interns typed MatrixRef (leading diagonal ones).
+    assert_eq!(h.render(h.eval("eye(2, 3)")), "[1, 0, 0; 0, 1, 0]");
+    assert_eq!(h.render(h.eval("A = eye(2); size(A)")), "[2, 2]");
+
     assert!(h.eq(h.eval("size([1, 2; 3, 4])"), h.lst(vec![h.i(2), h.i(2)])));
     assert_eq!(h.render(h.eval("size([1, 2; 3, 4])")), "[2, 2]");
     assert!(h.eq(h.eval("length([1, 2, 3])"), h.i(3)));
