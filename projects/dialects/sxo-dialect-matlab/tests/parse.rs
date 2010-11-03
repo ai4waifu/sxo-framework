@@ -292,6 +292,12 @@ fn linsolve_symbol_after_2d_set() {
     // Living 16: inconsistent → empty; Infinite → particular column (free_vars in evidence).
     assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "[]");
     assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "[2; 0]");
+    // Living 16: machine-float Form → MachineSolve Singular residual.
+    let singular = h.render(h.eval("[1.0, 2.0; 2.0, 4.0] \\ [1.0; 0.0]"));
+    assert!(
+        singular.contains("linsolve") || singular.contains("\\") || singular.contains("Singular"),
+        "expected Singular residual, got {singular}"
+    );
 }
 
 #[test]
