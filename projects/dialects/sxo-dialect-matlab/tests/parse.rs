@@ -289,6 +289,9 @@ fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; b = [5; 6]; A\\b")), "[-4; 9/2]");
+    // Living 16: inconsistent → empty; Infinite → particular column (free_vars in evidence).
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "[]");
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "[2; 0]");
 }
 
 #[test]
@@ -344,9 +347,8 @@ fn parse_matrix_linear_algebra() {
     assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
     assert!(h.eq(h.eval("prod([2, 3, 4])"), h.i(24)));
     assert!(h.eq(h.eval("prod([1, 2; 3, 4])"), h.lst(vec![h.i(3), h.i(8)])));
-    // linsolve stays Extension until DomainGoal lowering (Living `14`).
-    let ls = h.parse("linsolve([1, 2; 3, 4], [5; 6])");
-    assert_eq!(application_surface_name(&h.s.borrow(), ls).as_deref(), Some("LinearSolve"));
+    // Living 16: `linsolve` / `\` Form literals lower to Solve Goal (not residual Extension).
+    assert_eq!(h.render(h.eval("linsolve([1, 2; 3, 4], [5; 6])")), "[-4; 9/2]");
     assert_eq!(h.render(h.eval("det([1, 2; 3, 4])")), "-2");
 }
 
@@ -583,12 +585,22 @@ fn parse_column_vector_and_mldivide_shape() {
 }
 
 #[test]
-fn parse_mldivide_2x2_stays_extension_until_goal() {
+fn parse_mldivide_2x2_lowers_to_solve_goal() {
     let h = H::new();
-    // `A\b` lowers to Extension LinearSolve — DomainGoal Solve is a later dialect wave.
-    let e = h.parse("[1, 2; 3, 4] \\ [5; 6]");
-    assert_eq!(application_surface_name(&h.s.borrow(), e).as_deref(), Some("LinearSolve"));
-    assert!(h.render(e).contains('\\'));
+    // Living 16: literal `\` / `linsolve` lower to `LinearAlgebraRequest::Solve` (ExactSolve `MatrixResult`).
+    let form = parse_matlab_form("[1, 2; 3, 4] \\ [5; 6]").unwrap();
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &form);
+    assert!(matches!(
+        request,
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
+            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Solve { .. })
+        ))
+    ));
+    drop(s);
+    assert_eq!(h.render(h.eval("[1, 2; 3, 4] \\ [5; 6]")), "[-4; 9/2]");
+    assert_eq!(h.render(h.eval("linsolve([1, 2; 3, 4], [5; 6])")), "[-4; 9/2]");
+    assert_eq!(h.render(h.eval("A = eye(2); b = [3; 5]; A\\b")), "[3; 5]");
 }
 
 #[test]
