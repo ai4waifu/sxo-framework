@@ -36,7 +36,14 @@ export const arithmeticFeatures = [
         .eval('power.binomsq', '(x + 1)^2', '(1 + x)^2')
         .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
         .done(),
-    feature('mrdivide', 'arithmetic').supported().pure().eval('mrdivide.basic', '6 / 2', '3').done(),
+    feature('mrdivide', 'arithmetic')
+        .supported()
+        .pure()
+        .notes('scalar `/` stays Divide; typed matrices → Athena RightSolve (X B = A)')
+        .eval('mrdivide.basic', '6 / 2', '3')
+        .eval('mrdivide.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
+        .eval('mrdivide.2x2', '[1, 2; 3, 4] / [1, 2; 3, 4]', '[1, 0; 0, 1]')
+        .done(),
     feature('rdivide', 'arithmetic')
         .supported()
         .pure()

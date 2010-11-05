@@ -307,6 +307,24 @@ fn times_symbols_after_2d_set() {
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; B = [5, 6; 7, 8]; A.*B")), "[5, 12; 21, 32]");
     assert_eq!(h.render(h.eval("A = [6, 8; 10, 12]; B = [2, 4; 5, 6]; A./B")), "[3, 2; 2, 2]");
     assert_eq!(h.render(h.eval("A = [2, 3; 4, 5]; B = [2, 2; 2, 2]; A.^B")), "[4, 9; 16, 25]");
+    // Living 16: matrix `/` is RightSolve (mrdivide), not element-wise.
+    assert_eq!(h.render(h.eval("[1, 2] / [1, 2; 3, 4]")), "[[1, 0]]");
+    assert_eq!(h.render(h.eval("[1, 2; 3, 4] / [1, 2; 3, 4]")), "[1, 0; 0, 1]");
+}
+
+#[test]
+fn parse_mrdivide_2x2_lowers_to_right_solve_goal() {
+    use athena::api::{AthenaRequest, DomainGoal};
+
+    let form = parse_matlab_form("[1, 2] / [1, 2; 3, 4]").unwrap();
+    let mut session = athena::runtime::Session::new();
+    let request = lower_request(&mut session, &form);
+    assert!(matches!(
+        request,
+        AthenaRequest::Goal(DomainGoal::Dispatch(
+            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { .. })
+        ))
+    ));
 }
 
 #[test]

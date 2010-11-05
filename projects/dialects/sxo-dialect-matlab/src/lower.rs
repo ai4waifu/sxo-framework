@@ -186,6 +186,16 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Divide" || head == "Mrdivide" => {
+            // Living 16: MATLAB `/` is mrdivide (`X B = A`), not element-wise and not `inv`.
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { a, b },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "DotPower" => {
             // Living 16: MATLAB `.^` is ElementwisePower on typed matrices.
             if let [a_form, b_form] = args.as_slice() {
