@@ -358,6 +358,33 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "MatrixRank" || head == "Rank" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "Tr" || head == "Trace" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "RowReduce" || head == "Rref" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Span" => {
             let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
             return AthenaRequest::Term(rewritten);

@@ -298,6 +298,15 @@ fn inv_literal_and_singular_residual() {
 }
 
 #[test]
+fn rank_trace_rref_literal_goals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("rank([1, 2; 2, 4])")), "1");
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; rank(A)")), "2");
+    assert_eq!(h.render(h.eval("trace([1, 2; 3, 4])")), "5");
+    assert_eq!(h.render(h.eval("rref([1, 2; 2, 4])")), "[1, 2; 0, 0]");
+}
+
+#[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.

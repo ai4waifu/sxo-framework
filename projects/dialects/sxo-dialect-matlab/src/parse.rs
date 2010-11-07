@@ -395,6 +395,9 @@ fn map_matlab_head(name: &str) -> String {
         "length" => "Length".to_string(),
         "det" => "Det".to_string(),
         "inv" => "Inverse".to_string(),
+        "rank" => "MatrixRank".to_string(),
+        "trace" => "Tr".to_string(),
+        "rref" => "RowReduce".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -437,6 +440,12 @@ fn is_known_call_head(name: &str) -> bool {
             | "Transpose"
             | "ConjugateTranspose"
             | "Inverse"
+            | "MatrixRank"
+            | "Rank"
+            | "Tr"
+            | "Trace"
+            | "RowReduce"
+            | "Rref"
             | "error"
             | "Error"
             | "Reject"
