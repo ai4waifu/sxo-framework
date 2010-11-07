@@ -394,6 +394,7 @@ fn map_matlab_head(name: &str) -> String {
         "size" => "Size".to_string(),
         "length" => "Length".to_string(),
         "det" => "Det".to_string(),
+        "inv" => "Inverse".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -435,6 +436,7 @@ fn is_known_call_head(name: &str) -> bool {
             | "HoldForm"
             | "Transpose"
             | "ConjugateTranspose"
+            | "Inverse"
             | "error"
             | "Error"
             | "Reject"

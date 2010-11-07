@@ -2,7 +2,12 @@ import { feature } from '@sxo/harness';
 
 export const linearAlgebraFeatures = [
     feature('det', 'linear_algebra').supported().pure().eval('det.2x2', 'det([1, 2; 3, 4])', '-2').done(),
-    feature('inv', 'linear_algebra').unsupported().pure().gap('inv.diag', 'inv([1, 0; 0, 2])', { expected: '[1, 0; 0, 0.5]' }).done(),
+    feature('inv', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('inv → Inverse Goal; Singular → Inverse[Singular] residual')
+        .eval('inv.diag', 'inv([1, 0; 0, 2])', '[1, 0; 0, 1/2]')
+        .done(),
     feature('rank', 'linear_algebra').unsupported().pure().gap('rank.def', 'rank([1, 2; 2, 4])', { expected: '1' }).done(),
     feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
     feature('diag', 'linear_algebra').unsupported().pure().gap('diag.vec', 'diag([1, 2])', { expected: '[1, 0; 0, 2]' }).done(),

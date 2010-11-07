@@ -11,7 +11,7 @@ export const linearAlgebraFeatures = [
     feature('Inverse', 'linear_algebra')
         .supported()
         .pure()
-        .notes('nested List → MatrixValue LinearAlgebraRequest::Inverse')
+        .notes('MatrixOperand → ExactInverse; Singular → Inverse[Singular] residual')
         .eval('inverse.eye', 'Inverse[{{1, 0}, {0, 1}}]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('Transpose', 'linear_algebra')
