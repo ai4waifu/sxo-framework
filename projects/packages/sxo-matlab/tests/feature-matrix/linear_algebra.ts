@@ -22,9 +22,24 @@ export const linearAlgebraFeatures = [
         .notes('trace → Tr Goal → LinearAlgebraRequest::Trace')
         .eval('trace.2x2', 'trace([1, 2; 3, 4])', '5')
         .done(),
-    feature('norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'norm([3, 4])', { expected: '5' }).done(),
-    feature('dot', 'linear_algebra').unsupported().pure().gap('dot.2', 'dot([1, 2], [3, 4])', { expected: '11' }).done(),
-    feature('cross', 'linear_algebra').unsupported().pure().gap('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', { expected: '[0, 0, 1]' }).done(),
+    feature('norm', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('norm → Norm Goal (exact Euclidean perfect square)')
+        .eval('norm.34', 'norm([3, 4])', '5')
+        .done(),
+    feature('dot', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('dot → Dot Goal; flat vectors oriented for inner product')
+        .eval('dot.2', 'dot([1, 2], [3, 4])', '11')
+        .done(),
+    feature('cross', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('cross → Cross Goal on 1×3 / 3×1 vectors')
+        .eval('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', '[0, 0, 1]')
+        .done(),
     feature('cond', 'linear_algebra').unsupported().pure().gap('cond.2x2', 'cond([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('null', 'linear_algebra').unsupported().pure().gap('null.rank1', 'null([1, 2; 2, 4])', { expected: '...' }).done(),
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),

@@ -385,6 +385,40 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Norm" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "Dot" => {
+            if let [a_form, b_form] = args.as_slice() {
+                if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
+                    let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
+                    let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                    )));
+                }
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "Cross" => {
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Span" => {
             let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
             return AthenaRequest::Term(rewritten);
@@ -583,6 +617,37 @@ fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<Mat
     else {
         None
     }
+}
+
+/// Flat list Form is a MATLAB row / column vector literal (not nested rows).
+fn is_flat_list_vector_form(w: &MatlabForm) -> bool {
+    let Some(items) = form_list_items(w) else {
+        return false;
+    };
+    !items.is_empty() && items.iter().all(|c| form_list_items(c).is_none())
+}
+
+/// Orient flat vector Forms for `dot` so `dot([1,2],[3,4])` is an inner product.
+fn dot_matrices_from_forms(a_form: &MatlabForm, b_form: &MatlabForm) -> Option<(MatrixValue, MatrixValue)> {
+    use athena::domains::linear_algebra::transpose;
+
+    let a_flat = is_flat_list_vector_form(a_form);
+    let b_flat = is_flat_list_vector_form(b_form);
+    let a = matrix_from_form(a_form)?;
+    let mut b = matrix_from_form(b_form)?;
+    match (a_flat, b_flat) {
+        (false, true) if a.shape().cols == b.shape().cols && b.shape().rows == 1 => {
+            b = transpose(&b);
+        }
+        (true, true) if a.shape().rows == 1 && b.shape().rows == 1 && a.shape().cols == b.shape().cols => {
+            b = transpose(&b);
+        }
+        _ => {}
+    }
+    if a.shape().cols != b.shape().rows {
+        return None;
+    }
+    Some((a, b))
 }
 
 /// Build a dense `MatrixValue` from MATLAB list Form literals.

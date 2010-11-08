@@ -307,6 +307,14 @@ fn rank_trace_rref_literal_goals() {
 }
 
 #[test]
+fn norm_dot_cross_literal_goals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("norm([3, 4])")), "5");
+    assert_eq!(h.render(h.eval("dot([1, 2], [3, 4])")), "11");
+    assert_eq!(h.render(h.eval("cross([1, 0, 0], [0, 1, 0])")), "[0, 0, 1]");
+}
+
+#[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.

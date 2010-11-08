@@ -398,6 +398,9 @@ fn map_matlab_head(name: &str) -> String {
         "rank" => "MatrixRank".to_string(),
         "trace" => "Tr".to_string(),
         "rref" => "RowReduce".to_string(),
+        "norm" => "Norm".to_string(),
+        "dot" => "Dot".to_string(),
+        "cross" => "Cross".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -446,6 +449,9 @@ fn is_known_call_head(name: &str) -> bool {
             | "Trace"
             | "RowReduce"
             | "Rref"
+            | "Norm"
+            | "Dot"
+            | "Cross"
             | "error"
             | "Error"
             | "Reject"
