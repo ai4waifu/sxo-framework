@@ -747,7 +747,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("NullSpace", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix },
+                            athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace {
+                                matrix,
+                                column_basis: false,
+                            },
                         )));
                     }
                 }
