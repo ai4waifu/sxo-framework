@@ -407,6 +407,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "ConditionNumber" || head == "Cond" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::ConditionNumber { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Dot" => {
             if let [a_form, b_form] = args.as_slice() {
                 if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
@@ -677,6 +686,49 @@ fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
                 data.push(clone_integer(&Integer::one()));
             }
             MatrixValue::from_integers_row_major(m, n, data).ok()
+        }
+        ("Diag" | "DiagonalMatrix", [arg]) => {
+            // `diag(v)` vector → diagonal matrix. Matrix→diag extract stays residual for now.
+            let items = form_list_items(arg)?;
+            if items.is_empty() || items.iter().any(|c| form_list_items(c).is_some()) {
+                return None;
+            }
+            let n = items.len() as u64;
+            let mut rationals = Vec::with_capacity(items.len());
+            let mut all_rational = true;
+            for cell in items {
+                match form_scalar_rational(cell) {
+                    Some(q) => rationals.push(q),
+                    None => {
+                        all_rational = false;
+                        break;
+                    }
+                }
+            }
+            if all_rational {
+                let mut data = Vec::with_capacity((n * n) as usize);
+                for i in 0..n {
+                    for j in 0..n {
+                        if i == j {
+                            data.push(clone_rational(&rationals[i as usize]));
+                        } else {
+                            data.push(Rational::zero());
+                        }
+                    }
+                }
+                return MatrixValue::from_rationals_row_major(n, n, data).ok();
+            }
+            let mut floats = Vec::with_capacity(items.len());
+            for cell in items {
+                floats.push(cell.as_f64_lossy()?);
+            }
+            let mut data = Vec::with_capacity((n * n) as usize);
+            for i in 0..n {
+                for j in 0..n {
+                    data.push(if i == j { floats[i as usize] } else { 0.0 });
+                }
+            }
+            MatrixValue::from_f64_row_major(n, n, data).ok()
         }
         _ => None,
     }

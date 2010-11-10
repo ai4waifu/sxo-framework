@@ -325,6 +325,23 @@ fn null_literal_column_basis_goals() {
 }
 
 #[test]
+fn diag_and_cond_literal_goals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("diag([1, 2])")), "[1, 0; 0, 2]");
+    // Living 16: `cond` → ConditionNumber Goal (LU pivot-ratio estimate).
+    let c = h.render(h.eval("cond([2, 0; 0, 2])"));
+    assert!(
+        c == "1" || c.starts_with("1.") || c == "1.0",
+        "expected ~1 conditioning, got {c}"
+    );
+    let singular = h.render(h.eval("cond([1, 2; 2, 4])"));
+    assert!(
+        singular.contains("Inf") || singular.contains("inf") || singular.contains("Infinity"),
+        "expected Inf for singular, got {singular}"
+    );
+}
+
+#[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.

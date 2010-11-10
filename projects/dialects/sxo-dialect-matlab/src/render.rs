@@ -198,6 +198,8 @@ fn head_matlab_name(name: &str) -> String {
         "Tr" | "Trace" => "trace",
         "RowReduce" | "Rref" => "rref",
         "NullSpace" | "Null" => "null",
+        "Diag" | "DiagonalMatrix" => "diag",
+        "ConditionNumber" | "Cond" => "cond",
         "Norm" => "norm",
         "Dot" => "dot",
         "Cross" => "cross",
