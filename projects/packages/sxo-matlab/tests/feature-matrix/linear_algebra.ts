@@ -15,7 +15,6 @@ export const linearAlgebraFeatures = [
         .eval('rank.def', 'rank([1, 2; 2, 4])', '1')
         .done(),
     feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
-    feature('diag', 'linear_algebra').unsupported().pure().gap('diag.vec', 'diag([1, 2])', { expected: '[1, 0; 0, 2]' }).done(),
     feature('trace', 'linear_algebra')
         .supported()
         .pure()
