@@ -1047,6 +1047,16 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
             match (name, args.as_slice()) {
                 // Real ConjugateTranspose equals Transpose for exact rational literals.
                 ("Transpose" | "ConjugateTranspose", [arg]) => Some(transpose(&matrix_value_from_form_tree(arg)?)),
+                ("IdentityMatrix" | "Eye", [n]) => {
+                    let n = match n {
+                        WolframForm::Atom(WolframAtom::Number(num)) => num.as_exact_integer()?,
+                        _ => return None,
+                    };
+                    if n < 0 {
+                        return None;
+                    }
+                    MatrixValue::identity(athena::domains::linear_algebra::MatrixParent::integers(), n as u64).ok()
+                }
                 _ => None,
             }
         }
