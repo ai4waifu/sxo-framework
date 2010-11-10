@@ -342,6 +342,14 @@ fn diag_and_cond_literal_goals() {
 }
 
 #[test]
+fn tril_triu_and_kron_literal_goals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("tril([1, 2; 3, 4])")), "[1, 0; 3, 4]");
+    assert_eq!(h.render(h.eval("triu([1, 2; 3, 4])")), "[1, 2; 0, 4]");
+    assert_eq!(h.render(h.eval("kron([1, 2], [3, 4])")), "[3, 4, 6, 8]");
+}
+
+#[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.

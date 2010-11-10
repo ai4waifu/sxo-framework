@@ -416,6 +416,33 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "LowerTriangularize" || head == "Tril" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "UpperTriangularize" || head == "Triu" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "KroneckerProduct" || head == "Kron" => {
+            if let [a_form, b_form] = args.as_slice() {
+                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Dot" => {
             if let [a_form, b_form] = args.as_slice() {
                 if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {

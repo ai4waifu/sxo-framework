@@ -40,7 +40,18 @@ export const matrixFeatures = [
     feature('sparse', 'matrix').unsupported().pure().gap('sparse.diag', 'sparse([1, 0; 0, 2])', { expected: '...' }).done(),
     feature('pascal', 'matrix').unsupported().pure().gap('pascal.3', 'pascal(3)', { expected: '[1,1,1; 1,2,3; 1,3,6]' }).done(),
     feature('magic', 'matrix').unsupported().pure().gap('magic.3', 'magic(3)', { expected: '...' }).done(),
-    feature('tril', 'matrix').unsupported().pure().gap('tril.2x2', 'tril([1, 2; 3, 4])', { expected: '[1, 0; 3, 4]' }).done(),
+    feature('tril', 'matrix')
+        .supported()
+        .pure()
+        .notes('tril → LowerTriangularize Goal → LinearAlgebraRequest::Tril')
+        .eval('tril.2x2', 'tril([1, 2; 3, 4])', '[1, 0; 3, 4]')
+        .done(),
+    feature('triu', 'matrix')
+        .supported()
+        .pure()
+        .notes('triu → UpperTriangularize Goal → LinearAlgebraRequest::Triu')
+        .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
+        .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
     feature('numel', 'matrix').unsupported().pure().gap('numel.empty', 'numel([])', { expected: '0' }).done(),

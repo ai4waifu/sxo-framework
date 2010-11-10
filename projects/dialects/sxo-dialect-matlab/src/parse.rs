@@ -404,6 +404,9 @@ fn map_matlab_head(name: &str) -> String {
         "null" => "NullSpace".to_string(),
         "diag" => "Diag".to_string(),
         "cond" => "ConditionNumber".to_string(),
+        "tril" => "LowerTriangularize".to_string(),
+        "triu" => "UpperTriangularize".to_string(),
+        "kron" => "KroneckerProduct".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -458,6 +461,12 @@ fn is_known_call_head(name: &str) -> bool {
             | "DiagonalMatrix"
             | "ConditionNumber"
             | "Cond"
+            | "LowerTriangularize"
+            | "Tril"
+            | "UpperTriangularize"
+            | "Triu"
+            | "KroneckerProduct"
+            | "Kron"
             | "Norm"
             | "Dot"
             | "Cross"

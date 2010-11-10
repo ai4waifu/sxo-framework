@@ -90,6 +90,24 @@ export const linearAlgebraFeatures = [
         .notes('nested List → MatrixValue LinearAlgebraRequest::NullSpace (row basis)')
         .eval('nullspace.rank1', 'NullSpace[{{1, 2}, {2, 4}}]', '{{-2, 1}}')
         .done(),
+    feature('LowerTriangularize', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('LowerTriangularize → LinearAlgebraRequest::Tril')
+        .eval('lower.2x2', 'LowerTriangularize[{{1, 2}, {3, 4}}]', '{{1, 0}, {3, 4}}')
+        .done(),
+    feature('UpperTriangularize', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('UpperTriangularize → LinearAlgebraRequest::Triu')
+        .eval('upper.2x2', 'UpperTriangularize[{{1, 2}, {3, 4}}]', '{{1, 2}, {0, 4}}')
+        .done(),
+    feature('KroneckerProduct', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('KroneckerProduct → LinearAlgebraRequest::Kronecker (vector → Dot surface)')
+        .eval('kron.vecs', 'KroneckerProduct[{1, 2}, {3, 4}]', '{3, 4, 6, 8}')
+        .done(),
     feature('MatrixExp', 'linear_algebra')
         .unsupported()
         .pure()

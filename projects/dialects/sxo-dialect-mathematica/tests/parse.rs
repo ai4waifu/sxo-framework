@@ -693,6 +693,14 @@ fn nullspace_rank1() {
 }
 
 #[test]
+fn tril_triu_and_kronecker_product() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("LowerTriangularize[{{1, 2}, {3, 4}}]")), "{{1, 0}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("UpperTriangularize[{{1, 2}, {3, 4}}]")), "{{1, 2}, {0, 4}}");
+    assert_eq!(h.wolfram(h.eval("KroneckerProduct[{1, 2}, {3, 4}]")), "{3, 4, 6, 8}");
+}
+
+#[test]
 fn norm_34() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Norm[{3, 4}]")), "5");

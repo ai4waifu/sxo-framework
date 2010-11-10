@@ -59,7 +59,12 @@ export const linearAlgebraFeatures = [
         .done(),
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
-    feature('kron', 'linear_algebra').unsupported().pure().gap('kron.basic', 'kron([1, 2], [3, 4])', { expected: '[3,4,6,8]' }).done(),
+    feature('kron', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('kron → KroneckerProduct Goal → LinearAlgebraRequest::Kronecker')
+        .eval('kron.basic', 'kron([1, 2], [3, 4])', '[3, 4, 6, 8]')
+        .done(),
     feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
