@@ -64,9 +64,30 @@ export const matrixFeatures = [
     feature('zeros_empty', 'matrix').unsupported().pure().gap('zeros.0x5', 'zeros(0, 5)', { expected: 'zeros(0,5)' }).done(),
     feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: 'ones(5,0)' }).done(),
     feature('eye_empty', 'matrix').unsupported().pure().gap('eye.0', 'eye(0)', { expected: '[]' }).done(),
-    feature('isdiag', 'matrix').unsupported().pure().gap('isdiag.eye', 'isdiag(eye(3))', { expected: '1' }).done(),
-    feature('issymmetric', 'matrix').unsupported().pure().gap('issymmetric.eye', 'issymmetric(eye(3))', { expected: '1' }).done(),
-    feature('istril', 'matrix').unsupported().pure().gap('istril.tril', 'istril(tril(ones(3)))', { expected: '1' }).done(),
+    feature('isdiag', 'matrix')
+        .supported()
+        .pure()
+        .notes('isdiag → IsDiagonal Goal → 0/1 Dot-surface scalar')
+        .eval('isdiag.eye', 'isdiag(eye(3))', '1')
+        .done(),
+    feature('issymmetric', 'matrix')
+        .supported()
+        .pure()
+        .notes('issymmetric → IsSymmetric Goal → 0/1 Dot-surface scalar')
+        .eval('issymmetric.eye', 'issymmetric(eye(3))', '1')
+        .done(),
+    feature('istril', 'matrix')
+        .supported()
+        .pure()
+        .notes('istril → IsTriangular(lower) Goal; nested tril(…) not MatrixOperand at lower time')
+        .eval('istril.lower', 'istril([1, 0; 3, 4])', '1')
+        .done(),
+    feature('istriu', 'matrix')
+        .supported()
+        .pure()
+        .notes('istriu → IsTriangular(upper) Goal')
+        .eval('istriu.upper', 'istriu([1, 2; 0, 4])', '1')
+        .done(),
     feature('spalloc', 'matrix').unsupported().pure().gap('spalloc.332', 'spalloc(3, 3, 2)', { expected: '...' }).done(),
     feature('sparse_ijv', 'matrix').unsupported().pure().gap('sparse.ijv', 'sparse(1, 2, 3, 4, 4)', { expected: '...' }).done(),
     feature('full_speye', 'matrix').unsupported().pure().gap('full.speye2', 'full(speye(2))', { expected: '[1, 0; 0, 1]' }).done(),
