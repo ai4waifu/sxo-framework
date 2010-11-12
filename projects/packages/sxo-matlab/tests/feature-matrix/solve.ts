@@ -18,7 +18,7 @@ export const solveFeatures = [
         .supported()
         .pure()
         .notes('typed matrix A/B → RightSolve; see also arithmetic.mrdivide')
-        .eval('mrdivide.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
+        .eval('mrdivide.solve.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
         .done(),
     feature('linsolve', 'solve')
         .supported()
