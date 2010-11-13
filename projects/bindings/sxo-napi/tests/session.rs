@@ -109,8 +109,10 @@ fn differentiate_can_link_derived_from_evaluate_parent() {
 
 #[test]
 fn project_conditions_exposes_result_predicates() {
-    use athena::runtime::results::{ComputationResult, CoverageStatus};
-    use athena::types::{ComputationStatus, Condition, Predicate};
+    use athena::{
+        runtime::results::{ComputationResult, CoverageStatus},
+        types::{ComputationStatus, Condition, Predicate},
+    };
 
     let session = Session::new();
     let result_id = session.with_math_mut(|s| {
@@ -118,10 +120,7 @@ fn project_conditions_exposes_result_predicates() {
         let symbol = s.arena.symbols_mut().intern("x");
         let result = ComputationResult::with_status(ComputationStatus::Conditional, CoverageStatus::Partial)
             .with_symbolic_term(term)
-            .with_condition(Condition {
-                predicate: Predicate::SymbolReal(symbol),
-                resolved: false,
-            });
+            .with_condition(Condition { predicate: Predicate::SymbolReal(symbol), resolved: false });
         s.insert_result(result)
     });
     let conditions = session.project_conditions(result_id);
@@ -132,8 +131,10 @@ fn project_conditions_exposes_result_predicates() {
 
 #[test]
 fn project_provider_exposes_result_stamp() {
-    use athena::runtime::results::{ComputationResult, CoverageStatus, ResultProviderId};
-    use athena::types::ComputationStatus;
+    use athena::{
+        runtime::results::{ComputationResult, CoverageStatus, ResultProviderId},
+        types::ComputationStatus,
+    };
 
     let session = Session::new();
     let result_id = session.with_math_mut(|s| {
@@ -143,16 +144,15 @@ fn project_provider_exposes_result_stamp() {
             .with_provider(ResultProviderId::LINEAR_ALGEBRA);
         s.insert_result(result)
     });
-    assert_eq!(
-        session.project_provider(result_id),
-        Some(format!("LinearAlgebra@v{}", ResultProviderId::CONTRACT_VERSION))
-    );
+    assert_eq!(session.project_provider(result_id), Some(format!("LinearAlgebra@v{}", ResultProviderId::CONTRACT_VERSION)));
 }
 
 #[test]
 fn project_evidence_exposes_trusted_kernel_summary() {
-    use athena::runtime::results::{ComputationResult, CoverageStatus, ResultEvidence, ResultProviderId};
-    use athena::types::ComputationStatus;
+    use athena::{
+        runtime::results::{ComputationResult, CoverageStatus, ResultEvidence, ResultProviderId},
+        types::ComputationStatus,
+    };
 
     let session = Session::new();
     let result_id = session.with_math_mut(|s| {
@@ -194,10 +194,7 @@ fn napi_path_hold_complete_flatten_and_indeterminate_with_simplify() {
     );
 
     let uneval = session.evaluate_mathematica("Unevaluated[1 + 1]").unwrap();
-    assert_eq!(
-        session.render_as_wolfram(session.project_result(uneval.result_id).unwrap()),
-        "Unevaluated[1 + 1]"
-    );
+    assert_eq!(session.render_as_wolfram(session.project_result(uneval.result_id).unwrap()), "Unevaluated[1 + 1]");
 
     let flat = session.evaluate_mathematica("Flatten[{{1, 2}, {3, 4}}]").unwrap();
     assert_eq!(
@@ -218,8 +215,12 @@ fn session_set_persists_across_mathematica_evaluates() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let six = session.with_math_mut(|s| push_int(s, 6));
-    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id).unwrap(), five));
-    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x + 1").unwrap().result_id).unwrap(), six));
+    assert!(
+        session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id).unwrap(), five)
+    );
+    assert!(
+        session.structural_eq(session.project_result(session.evaluate_mathematica("x + 1").unwrap().result_id).unwrap(), six)
+    );
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
     let cleared_term = session.project_result(cleared.result_id).unwrap();
@@ -253,13 +254,13 @@ fn module_does_not_clobber_session_binding() {
     let session = Session::new();
     let five = session.with_math_mut(|s| push_int(s, 5));
     let two = session.with_math_mut(|s| push_int(s, 2));
-    assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id).unwrap(), five));
     assert!(
-        session.structural_eq(
-            session.project_result(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().result_id).unwrap(),
-            two
-        )
+        session.structural_eq(session.project_result(session.evaluate_mathematica("x = 5").unwrap().result_id).unwrap(), five)
     );
+    assert!(session.structural_eq(
+        session.project_result(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap().result_id).unwrap(),
+        two
+    ));
     assert!(session.structural_eq(session.project_result(session.evaluate_mathematica("x").unwrap().result_id).unwrap(), five));
 }
 

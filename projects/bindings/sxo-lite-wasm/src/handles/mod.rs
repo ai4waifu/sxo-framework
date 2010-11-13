@@ -51,13 +51,7 @@ pub(crate) fn from_outcome(
             simplified
         }
     };
-    Ok(Expression {
-        session,
-        root: None,
-        result_id: Some(final_outcome.result_id),
-        form: None,
-        dialect,
-    })
+    Ok(Expression { session, root: None, result_id: Some(final_outcome.result_id), form: None, dialect })
 }
 
 pub(crate) fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {

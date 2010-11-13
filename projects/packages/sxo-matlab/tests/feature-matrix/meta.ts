@@ -42,7 +42,7 @@ export const metaFeatures = [
         })
         .done(),
     feature('methods_meta', 'meta')
-        .unsupported("Call Form residual / Reject (no methods runtime)")
+        .unsupported('Call Form residual / Reject (no methods runtime)')
         .pure()
         .gap('methods.double', "methods('double')", {
             expected: '...',

@@ -138,8 +138,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     if part_head == "Part" && part_args.len() >= 2 {
                         if let Some(name) = form_symbol_name(&part_args[0]) {
                             let target = push_symbol_name(session, name);
-                            let axis_terms: Vec<TermId> =
-                                part_args[1..].iter().map(|a| form_to_term(session, a)).collect();
+                            let axis_terms: Vec<TermId> = part_args[1..].iter().map(|a| form_to_term(session, a)).collect();
                             if let Some(axes) = axis_terms
                                 .iter()
                                 .copied()
@@ -159,7 +158,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Times" => {
             // Living 16: MATLAB `*` is MatMul. Element-wise is `.*` / DotTimes.
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
                     )));
@@ -169,7 +170,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "DotTimes" => {
             // Living 16: MATLAB `.*` is Hadamard on typed matrices.
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
                     )));
@@ -179,7 +182,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "DotDivide" => {
             // Living 16: MATLAB `./` is ElementwiseDivide on typed matrices.
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
                     )));
@@ -189,7 +194,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Divide" || head == "Mrdivide" => {
             // Living 16: MATLAB `/` is mrdivide (`X B = A`), not element-wise and not `inv`.
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(a), Some(b)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { a, b },
                     )));
@@ -199,7 +206,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "DotPower" => {
             // Living 16: MATLAB `.^` is ElementwisePower on typed matrices.
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                     )));
@@ -287,7 +296,14 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
         }
-        MatlabForm::Call { head, args } if head == "Global" || head == "Persistent" || head == "Command" || head == "Member" || head == "Parfor" || head == "Spmd" => {
+        MatlabForm::Call { head, args }
+            if head == "Global"
+                || head == "Persistent"
+                || head == "Command"
+                || head == "Member"
+                || head == "Parfor"
+                || head == "Spmd" =>
+        {
             // Typed declarations / command / member / parallel Forms — no silent strip.
             let _ = args;
             return AthenaRequest::Control(ControlPlan::Reject);
@@ -399,10 +415,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace {
-                            matrix,
-                            column_basis: true,
-                        },
+                        athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: true },
                     )));
                 }
             }
@@ -436,7 +449,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "KroneckerProduct" || head == "Kron" => {
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
                     )));
@@ -488,7 +503,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                     )));
                 }
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                     )));
@@ -497,7 +514,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "Cross" => {
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(lhs), Some(rhs)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
                     )));
@@ -555,7 +574,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "LinearSolve" || head == "Mldivide" => {
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                if let (Some(a), Some(b)) =
+                    (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                     )));
@@ -708,7 +729,8 @@ fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<Mat
 fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
     use athena::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
 
-    let MatlabForm::Call { head, args } = w else {
+    let MatlabForm::Call { head, args } = w
+    else {
         return None;
     };
     let dim = |form: &MatlabForm| -> Option<u64> {
@@ -774,7 +796,8 @@ fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
                     for j in 0..n {
                         if i == j {
                             data.push(clone_rational(&rationals[i as usize]));
-                        } else {
+                        }
+                        else {
                             data.push(Rational::zero());
                         }
                     }
@@ -799,7 +822,8 @@ fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
 
 /// Flat list Form is a MATLAB row / column vector literal (not nested rows).
 fn is_flat_list_vector_form(w: &MatlabForm) -> bool {
-    let Some(items) = form_list_items(w) else {
+    let Some(items) = form_list_items(w)
+    else {
         return false;
     };
     !items.is_empty() && items.iter().all(|c| form_list_items(c).is_none())
@@ -852,7 +876,8 @@ fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
             cells.extend_from_slice(row_cells);
         }
         (rows.len() as u64, cols.unwrap_or(0), cells)
-    } else {
+    }
+    else {
         (1u64, rows.len() as u64, rows.to_vec())
     };
     if cells.is_empty() {
