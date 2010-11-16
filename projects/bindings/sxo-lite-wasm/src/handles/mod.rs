@@ -29,6 +29,10 @@ pub struct Expression {
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
     pub(crate) dialect: Dialect,
+    /// Athena [ComputationStatus] name from the owning result (or Unknown if not evaluated).
+    pub(crate) status: String,
+    /// Coverage name from the owning result (or Unknown if not evaluated).
+    pub(crate) coverage: String,
 }
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
@@ -51,11 +55,27 @@ pub(crate) fn from_outcome(
             simplified
         }
     };
-    Ok(Expression { session, root: None, result_id: Some(final_outcome.result_id), form: None, dialect })
+    Ok(Expression {
+        session,
+        root: None,
+        result_id: Some(final_outcome.result_id),
+        form: None,
+        dialect,
+        status: final_outcome.status,
+        coverage: final_outcome.coverage,
+    })
 }
 
 pub(crate) fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
-    Expression { session, root: None, result_id: Some(outcome.result_id), form: None, dialect }
+    Expression {
+        session,
+        root: None,
+        result_id: Some(outcome.result_id),
+        form: None,
+        dialect,
+        status: outcome.status,
+        coverage: outcome.coverage,
+    }
 }
 
 impl Expression {
@@ -83,7 +103,15 @@ impl Expression {
         let d = dialect_from_str(dialect)?;
         let session = Rc::new(Session::new());
         let (form, resolved) = parse_held(&session, input, d)?;
-        Ok(Self { session, root: None, result_id: None, form: Some(form), dialect: resolved })
+        Ok(Self {
+            session,
+            root: None,
+            result_id: None,
+            form: Some(form),
+            dialect: resolved,
+            status: "Unknown".into(),
+            coverage: "Unknown".into(),
+        })
     }
 
     /// Differentiate with respect to `var` on the same session.
@@ -143,6 +171,18 @@ impl Expression {
         }
         .map_err(map_err)?;
         from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy)
+    }
+
+    /// Athena computation status name (`Exact`, `Candidate`, `Unknown`, …).
+    #[wasm_bindgen(getter)]
+    pub fn status(&self) -> String {
+        self.status.clone()
+    }
+
+    /// Coverage name (`Full`, `Partial`, `Unknown`, `Unsupported`).
+    #[wasm_bindgen(getter)]
+    pub fn coverage(&self) -> String {
+        self.coverage.clone()
     }
 
     /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
