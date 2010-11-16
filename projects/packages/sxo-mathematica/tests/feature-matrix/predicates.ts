@@ -1,4 +1,4 @@
-import { feature } from '@sxo/harness';
+﻿import { feature } from '@sxo/harness';
 
 export const predicatesFeatures = [
     feature('PossibleZeroQ', 'predicates').unsupported().pure().gap('possiblezeroq.0', 'PossibleZeroQ[0]', { expected: 'True' }).done(),
@@ -30,8 +30,10 @@ export const predicatesFeatures = [
         .done(),
     feature('Element', 'predicates').unsupported().pure().gap('element.int', 'Element[1, Integers]', { expected: 'True' }).done(),
     feature('SymmetricMatrixQ', 'predicates')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('symmatq.yes', 'SymmetricMatrixQ[{{1, 2}, {2, 1}}]', { expected: 'True' })
+        .notes('IsSymmetric Goal. Shared flag surface is 0/1, same as MATLAB issymmetric, not True/False atoms')
+        .eval('symmatq.yes', 'SymmetricMatrixQ[{{1, 2}, {2, 1}}]', '1')
+        .eval('symmatq.no', 'SymmetricMatrixQ[{{1, 2}, {3, 4}}]', '0')
         .done(),
 ];

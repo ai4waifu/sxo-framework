@@ -1,4 +1,4 @@
-import { feature } from '@sxo/harness';
+﻿import { feature } from '@sxo/harness';
 
 export const matrixFeatures = [
     feature('matrix', 'matrix')
@@ -16,7 +16,7 @@ export const matrixFeatures = [
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
-        .partial('real arrays match Transpose; complex conjugate pending')
+        .partial('real arrays use ConjugateTranspose Goal. Complex parent still pending')
         .pure()
         .eval('ctranspose.real', "[1, 2; 3, 4]'", '[1, 3; 2, 4]')
         .gap('ctranspose.basic', "[1+1i]'", { expected: '1-1i' })

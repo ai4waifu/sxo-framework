@@ -655,8 +655,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         return AthenaRequest::Control(ControlPlan::Index { target: lower_wexpr(session, &args[0]), axes });
                     }
                 }
-                ("Transpose" | "ConjugateTranspose", [arg]) => {
-                    // Real matrices: ConjugateTranspose equals Transpose. Complex path later.
+                ("Transpose", [arg]) => {
                     // Literal matrices come from Form lists, not Term Collection reverse recognition.
                     // Symbols resolve via `MatrixOperand::Binding` at execute time (`DefineMatrix`).
                     if let Some(mat) = matrix_from_form(arg) {
@@ -673,6 +672,33 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             athena::domains::linear_algebra::LinearAlgebraRequest::Transpose {
                                 matrix: MatrixOperand::binding(symbol),
                             },
+                        )));
+                    }
+                }
+                ("ConjugateTranspose", [arg]) => {
+                    if let Some(mat) = matrix_from_form(arg) {
+                        let shape = mat.shape();
+                        if shape.rows >= 1 && shape.cols >= 1 {
+                            let matrix = session.matrix_objects.intern(mat);
+                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                                    matrix: matrix.into(),
+                                },
+                            )));
+                        }
+                    }
+                    if let Some(symbol) = symbol_of(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                                matrix: MatrixOperand::binding(symbol),
+                            },
+                        )));
+                    }
+                }
+                ("SymmetricMatrixQ", [arg]) => {
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
                         )));
                     }
                 }
@@ -1067,8 +1093,11 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
                 _ => return None,
             };
             match (name, args.as_slice()) {
-                // Real ConjugateTranspose equals Transpose for exact rational literals.
-                ("Transpose" | "ConjugateTranspose", [arg]) => Some(transpose(&matrix_value_from_form_tree(arg)?)),
+                // Living 18: Form-tree wrappers keep Transpose / ConjugateTranspose distinct.
+                ("Transpose", [arg]) => Some(transpose(&matrix_value_from_form_tree(arg)?)),
+                ("ConjugateTranspose", [arg]) => {
+                    Some(athena::domains::linear_algebra::conjugate_transpose(&matrix_value_from_form_tree(arg)?))
+                }
                 ("IdentityMatrix" | "Eye", [n]) => {
                     let n = match n {
                         WolframForm::Atom(WolframAtom::Number(num)) => num.as_exact_integer()?,
