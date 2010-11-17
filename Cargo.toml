@@ -34,9 +34,9 @@ wasm-bindgen = "0.2"
 oak-core = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
 oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
 oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
-# Living 16 matrix slice tip (Tril/Triu/Kronecker + structure predicates).
-athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e8ea9359cc45316e2e951f192044e368521c499d", package = "athena" }
-athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e8ea9359cc45316e2e951f192044e368521c499d", package = "athena-types" }
+# Living 16 / 0.0.7 tip: ConjugateTranspose + axis-slice StoreIndex + Inf-Inf Indeterminate.
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "133cb9ff7327432c3a809dc799e730fd37f5753f", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "133cb9ff7327432c3a809dc799e730fd37f5753f", package = "athena-types" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }

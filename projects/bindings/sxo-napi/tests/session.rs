@@ -311,7 +311,7 @@ fn try_plot_svg_mathematica() {
 /// These cases previously diverged when MATLAB handles re-parsed display text.
 #[test]
 fn matlab_direct_and_handle_evaluate_parity() {
-    let cases = [("(1+2)*3", "9"), ("1/(2+3)", "1/5"), ("1-(2-3)", "2"), ("[1,2].*(3+4)", "[7, 14]")];
+    let cases = [("(1+2)*3", "9"), ("1/(2+3)", "1/5"), ("1-(2-3)", "2"), ("[1,2].*(3+4)", "[7, 14]"), ("[1, 2; 3, 4].'", "[1, 3; 2, 4]"), ("[1, 2; 3, 4]'", "[1, 3; 2, 4]")];
     for (input, expected) in cases {
         let direct_session = Session::new();
         let direct = direct_session.evaluate_matlab(input).unwrap();
