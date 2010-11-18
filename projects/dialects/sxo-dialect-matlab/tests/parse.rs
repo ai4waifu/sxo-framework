@@ -520,6 +520,12 @@ fn indexed_assignment_updates_matrix_cell() {
 }
 
 #[test]
+fn indexed_assignment_column_all() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("M=[1, 2; 3, 4]; M(:, 2)=[9; 8]; M")), "[1, 9; 3, 8]");
+}
+
+#[test]
 fn indexed_assignment_grows_with_end_plus_and_pad() {
     let h = H::new();
     assert_eq!(h.render(h.eval("B = 1:4; B(end+1) = 5; B")), "[1, 2, 3, 4, 5]");

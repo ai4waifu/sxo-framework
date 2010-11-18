@@ -441,6 +441,20 @@ fn set_nested_list_binds_matrix_domain_object() {
 }
 
 #[test]
+fn symmetric_matrix_q_flag_surface() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("SymmetricMatrixQ[{{1, 2}, {2, 1}}]")), "1");
+    assert_eq!(h.wolfram(h.eval("SymmetricMatrixQ[{{1, 2}, {3, 4}}]")), "0");
+}
+
+#[test]
+fn replace_part_scalar_via_store_index() {
+    let h = H::new();
+    // Living 18 partial: ReplacePart lowers to StoreIndex (mutates Own). Coordinate Rule on matrices stays Reject/unsupported for now.
+    assert_eq!(h.wolfram(h.eval("A={1, 2, 3}; ReplacePart[A, 2 -> 9]; A")), "{1, 9, 3}");
+}
+
+#[test]
 fn transpose_symbol_after_set_uses_matrix_binding() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Transpose[A]")), "{{1, 3}, {2, 4}}");

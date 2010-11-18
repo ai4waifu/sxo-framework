@@ -447,6 +447,34 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         }
                     }
                 }
+                ("ReplacePart", [target_form, rule_form]) => {
+                    // Minimum: ReplacePart[A, i -> v] / ReplacePart[A, {i, j} -> v] → StoreIndex.
+                    let (axes_form, value_form) = match rule_form {
+                        WolframForm::Call { head, args }
+                            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Rule" || s == "RuleDelayed")
+                                && args.len() == 2 =>
+                        {
+                            (&args[0], &args[1])
+                        }
+                        _ => return AthenaRequest::Control(ControlPlan::Reject),
+                    };
+                    let axes = match axes_form {
+                        WolframForm::Call { head, args }
+                            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") =>
+                        {
+                            args.iter().map(index_spec_of).collect::<Option<Vec<_>>>()
+                        }
+                        other => index_spec_of(other).map(|ax| vec![ax]),
+                    };
+                    match axes {
+                        Some(axes) => {
+                            let target = lower_wexpr(session, target_form);
+                            let value = lower_wexpr(session, value_form);
+                            return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                        }
+                        None => return AthenaRequest::Control(ControlPlan::Reject),
+                    }
+                }
                 ("Times", [a_form, b_form]) => {
                     // Living 16: Mathematica `Times` on matrices is Hadamard, never MatMul.
                     // Matrix product is `Dot` only.

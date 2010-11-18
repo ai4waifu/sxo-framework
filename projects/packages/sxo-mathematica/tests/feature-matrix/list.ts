@@ -7,6 +7,11 @@ export const listFeatures = [
         .eval('list.literal', '{1, 2, 3}', '{1, 2, 3}')
         .roundtrip('list.roundtrip', '{1, 2}', '{1, 2}')
         .done(),
+    feature('ReplacePart', 'list')
+        .partial('Own-mutating StoreIndex path for scalar Rule; coordinate/matrix Rule and non-mutating return deferred')
+        .stateful()
+        .eval('replacepart.scalar', 'A={1, 2, 3}; ReplacePart[A, 2 -> 9]; A', '{1, 9, 3}')
+        .done(),
     feature('Part', 'list')
         .supported()
         .pure()
