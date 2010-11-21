@@ -1,4 +1,4 @@
-//! Integration tests for MATLAB parse (session arena `TermId`).
+﻿//! Integration tests for MATLAB parse (session arena `TermId`).
 
 use std::cell::RefCell;
 
@@ -523,6 +523,12 @@ fn indexed_assignment_updates_matrix_cell() {
 fn indexed_assignment_column_all() {
     let h = H::new();
     assert_eq!(h.render(h.eval("M=[1, 2; 3, 4]; M(:, 2)=[9; 8]; M")), "[1, 9; 3, 8]");
+}
+
+#[test]
+fn indexed_assignment_row_all() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("M=[1, 2; 3, 4]; M(1, :)=[9, 8]; M")), "[9, 8; 3, 4]");
 }
 
 #[test]
