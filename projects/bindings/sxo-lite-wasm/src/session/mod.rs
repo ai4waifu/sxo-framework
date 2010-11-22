@@ -346,3 +346,36 @@ fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
     };
     EvalOutcome::new(result_id, result.status.name().to_string(), result.coverage.name().to_string())
 }
+
+#[cfg(test)]
+mod parity_tests {
+    use super::Session;
+
+    /// Same Session contract the WASM ABI calls: direct string vs parse→Form→evaluate.
+    #[test]
+    fn matlab_direct_and_handle_matrix_parity() {
+        let cases = [
+            ("(1+2)*3", "9"),
+            ("[1, 2; 3, 4].'", "[1, 3; 2, 4]"),
+            ("[1, 2; 3, 4]'", "[1, 3; 2, 4]"),
+            ("M=[1, 2; 3, 4]; M(:, 2)=[9; 8]; M", "[1, 9; 3, 8]"),
+            ("M=[1, 2; 3, 4]; M(1, :)=[9, 8]; M", "[9, 8; 3, 4]"),
+        ];
+        for (input, expected) in cases {
+            let direct_session = Session::new();
+            let direct = direct_session.evaluate_matlab(input).unwrap();
+            let direct_text = direct_session.render_as_matlab(direct_session.project_result(direct.result_id).unwrap());
+
+            let handle_session = Session::new();
+            let form = handle_session.parse_matlab_form(input).unwrap();
+            let via_handle = handle_session.evaluate_matlab_form(&form).unwrap();
+            let handle_text = handle_session.render_as_matlab(handle_session.project_result(via_handle.result_id).unwrap());
+
+            assert_eq!(direct_text, handle_text, "parity failed for {input}: direct={direct_text} handle={handle_text}");
+            assert_eq!(direct_text, expected, "expected value for {input}");
+            assert_eq!(direct.status, via_handle.status, "status parity for {input}");
+            assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
+            assert_ne!(direct_text, "Null", "projection must not invent Null for {input}");
+        }
+    }
+}
