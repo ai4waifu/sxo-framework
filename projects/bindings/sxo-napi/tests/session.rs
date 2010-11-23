@@ -311,7 +311,16 @@ fn try_plot_svg_mathematica() {
 /// These cases previously diverged when MATLAB handles re-parsed display text.
 #[test]
 fn matlab_direct_and_handle_evaluate_parity() {
-    let cases = [("(1+2)*3", "9"), ("1/(2+3)", "1/5"), ("1-(2-3)", "2"), ("[1,2].*(3+4)", "[7, 14]"), ("[1, 2; 3, 4].'", "[1, 3; 2, 4]"), ("[1, 2; 3, 4]'", "[1, 3; 2, 4]")];
+    let cases = [
+        ("(1+2)*3", "9"),
+        ("1/(2+3)", "1/5"),
+        ("1-(2-3)", "2"),
+        ("[1,2].*(3+4)", "[7, 14]"),
+        ("[1, 2; 3, 4].'", "[1, 3; 2, 4]"),
+        ("[1, 2; 3, 4]'", "[1, 3; 2, 4]"),
+        ("M=[1, 2; 3, 4]; M(:, 2)=[9; 8]; M", "[1, 9; 3, 8]"),
+        ("M=[1, 2; 3, 4]; M(1, :)=[9, 8]; M", "[9, 8; 3, 4]"),
+    ];
     for (input, expected) in cases {
         let direct_session = Session::new();
         let direct = direct_session.evaluate_matlab(input).unwrap();
@@ -326,6 +335,35 @@ fn matlab_direct_and_handle_evaluate_parity() {
         assert_eq!(direct_text, expected, "expected value for {input}");
         assert_eq!(direct.status, via_handle.status, "status parity for {input}");
         assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
+        assert_ne!(direct_text, "Null", "projection must not invent Null for {input}");
+    }
+}
+
+/// Direct string evaluate and parse→Form→evaluate must agree on MMA matrix surfaces.
+#[test]
+fn mathematica_direct_and_handle_matrix_parity() {
+    let cases = [
+        ("Transpose[{{1, 2}, {3, 4}}]", "{{1, 3}, {2, 4}}"),
+        ("ConjugateTranspose[{{1, 2}, {3, 4}}]", "{{1, 3}, {2, 4}}"),
+        ("A={{1, 2}, {3, 4}}; ReplacePart[A, {1, 2} -> 9]; A", "{{1, 9}, {3, 4}}"),
+        ("SymmetricMatrixQ[{{1, 2}, {2, 1}}]", "1"),
+        ("SymmetricMatrixQ[{{1, 2}, {3, 4}}]", "0"),
+    ];
+    for (input, expected) in cases {
+        let direct_session = Session::new();
+        let direct = direct_session.evaluate_mathematica(input).unwrap();
+        let direct_text = direct_session.render_as_wolfram(direct_session.project_result(direct.result_id).unwrap());
+
+        let handle_session = Session::new();
+        let form = handle_session.parse_mathematica(input).unwrap();
+        let via_handle = handle_session.evaluate_wolfram_form(&form).unwrap();
+        let handle_text = handle_session.render_as_wolfram(handle_session.project_result(via_handle.result_id).unwrap());
+
+        assert_eq!(direct_text, handle_text, "parity failed for {input}: direct={direct_text} handle={handle_text}");
+        assert_eq!(direct_text, expected, "expected value for {input}");
+        assert_eq!(direct.status, via_handle.status, "status parity for {input}");
+        assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
+        assert_ne!(direct_text, "Null", "projection must not invent Null for {input}");
     }
 }
 
