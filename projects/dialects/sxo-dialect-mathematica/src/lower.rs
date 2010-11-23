@@ -459,6 +459,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         _ => return AthenaRequest::Control(ControlPlan::Reject),
                     };
                     let axes = match axes_form {
+                        WolframForm::List(items) => items.iter().map(index_spec_of).collect::<Option<Vec<_>>>(),
                         WolframForm::Call { head, args }
                             if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") =>
                         {

@@ -8,9 +8,10 @@ export const listFeatures = [
         .roundtrip('list.roundtrip', '{1, 2}', '{1, 2}')
         .done(),
     feature('ReplacePart', 'list')
-        .partial('Own-mutating StoreIndex path for scalar Rule; coordinate/matrix Rule and non-mutating return deferred')
+        .partial('Own-mutating StoreIndex for scalar and coordinate Rules. Non-mutating return value still deferred')
         .stateful()
         .eval('replacepart.scalar', 'A={1, 2, 3}; ReplacePart[A, 2 -> 9]; A', '{1, 9, 3}')
+        .eval('replacepart.coord', 'A={{1, 2}, {3, 4}}; ReplacePart[A, {1, 2} -> 9]; A', '{{1, 9}, {3, 4}}')
         .done(),
     feature('Part', 'list')
         .supported()

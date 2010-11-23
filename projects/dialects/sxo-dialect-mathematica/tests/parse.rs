@@ -450,8 +450,13 @@ fn symmetric_matrix_q_flag_surface() {
 #[test]
 fn replace_part_scalar_via_store_index() {
     let h = H::new();
-    // Living 18 partial: ReplacePart lowers to StoreIndex (mutates Own). Coordinate Rule on matrices stays Reject/unsupported for now.
     assert_eq!(h.wolfram(h.eval("A={1, 2, 3}; ReplacePart[A, 2 -> 9]; A")), "{1, 9, 3}");
+}
+
+#[test]
+fn replace_part_coordinate_rule_on_matrix() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; ReplacePart[A, {1, 2} -> 9]; A")), "{{1, 9}, {3, 4}}");
 }
 
 #[test]
