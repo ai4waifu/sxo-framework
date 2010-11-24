@@ -49,13 +49,7 @@ pub(crate) fn from_outcome(
 ) -> Result<Expression> {
     let final_outcome = match strategy {
         EvalStrategy::None => outcome,
-        EvalStrategy::Simplify => {
-            let parent = outcome.result_id;
-            let term = session.try_project_symbolic(parent).map_err(map_err)?;
-            let simplified = session.simplify_outcome(term).map_err(map_err)?;
-            let _ = session.link_derived_from(simplified.result_id, parent);
-            simplified
-        }
+        EvalStrategy::Simplify => session.simplify_result(outcome.result_id).map_err(map_err)?,
     };
     Ok(Expression {
         session,
@@ -124,7 +118,7 @@ impl Expression {
     /// Differentiate with respect to `var` on the same session.
     ///
     /// Parse objects wrap retained Form as dialect `D` / `diff` and run `lower_request`.
-    /// Result objects still project a symbolic term then dispatch a calculus Goal.
+    /// Result objects go through `differentiate_result`: one outcome, `derived_from` recorded there.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
         let parent = self.result_id;
@@ -132,13 +126,20 @@ impl Expression {
             Some(HeldForm::Wolfram(form)) => self.session.differentiate_wolfram_form(form, &var),
             Some(HeldForm::Matlab(form)) => self.session.differentiate_matlab_form(form, &var),
             None => {
-                let term = self.materialize_root()?;
-                self.session.differentiate_outcome(term, &var)
+                if let Some(parent) = self.result_id {
+                    self.session.differentiate_result(parent, &var)
+                } else {
+                    let term = self.materialize_root()?;
+                    self.session.differentiate_outcome(term, &var)
+                }
             }
         }
         .map_err(map_err)?;
+        let linked_inside = self.form.is_none() && self.result_id.is_some();
         if let Some(parent) = parent {
-            let _ = self.session.link_derived_from(outcome.result_id, parent);
+            if !linked_inside {
+                let _ = self.session.link_derived_from(outcome.result_id, parent);
+            }
         }
         Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
@@ -146,7 +147,7 @@ impl Expression {
     /// Simplify via the engine on the same session.
     ///
     /// Parse objects wrap retained Form as dialect `Simplify` and run `lower_request`.
-    /// Result objects still project a symbolic term then dispatch Semantic Simplify.
+    /// Result objects go through `simplify_result`: one outcome, `derived_from` recorded there.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
         let parent = self.result_id;
@@ -154,13 +155,20 @@ impl Expression {
             Some(HeldForm::Wolfram(form)) => self.session.simplify_wolfram_form(form),
             Some(HeldForm::Matlab(form)) => self.session.simplify_matlab_form(form),
             None => {
-                let term = self.materialize_root()?;
-                self.session.simplify_outcome(term)
+                if let Some(parent) = self.result_id {
+                    self.session.simplify_result(parent)
+                } else {
+                    let term = self.materialize_root()?;
+                    self.session.simplify_outcome(term)
+                }
             }
         }
         .map_err(map_err)?;
+        let linked_inside = self.form.is_none() && self.result_id.is_some();
         if let Some(parent) = parent {
-            let _ = self.session.link_derived_from(outcome.result_id, parent);
+            if !linked_inside {
+                let _ = self.session.link_derived_from(outcome.result_id, parent);
+            }
         }
         Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }

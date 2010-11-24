@@ -206,6 +206,28 @@ impl Session {
         self.evaluate_matlab_form(&s_form)
     }
 
+    /// Differentiate a retained result in one outcome.
+    ///
+    /// Projects a symbolic term, dispatches one calculus Goal, and records `derived_from`.
+    /// A missing projection is an error. This does not invent `Null`.
+    pub fn differentiate_result(&self, parent: ResultId, var: &str) -> Result<EvalOutcome, SxoError> {
+        let term = self.try_project_symbolic(parent)?;
+        let outcome = self.differentiate_outcome(term, var)?;
+        let _ = self.link_derived_from(outcome.result_id, parent);
+        Ok(outcome)
+    }
+
+    /// Simplify a retained result in one outcome.
+    ///
+    /// Projects a symbolic term, dispatches one Simplify, and records `derived_from`.
+    /// A missing projection is an error. This does not invent `Null`.
+    pub fn simplify_result(&self, parent: ResultId) -> Result<EvalOutcome, SxoError> {
+        let term = self.try_project_symbolic(parent)?;
+        let outcome = self.simplify_outcome(term)?;
+        let _ = self.link_derived_from(outcome.result_id, parent);
+        Ok(outcome)
+    }
+
     /// Record that `child` was derived from `parent` (both Session-local).
     pub fn link_derived_from(&self, child: ResultId, parent: ResultId) -> bool {
         self.math_session.borrow_mut().results.link_derived_from(child, parent)
@@ -405,5 +427,29 @@ mod parity_tests {
             assert_eq!(direct.coverage, via_handle.coverage, "coverage parity for {input}");
             assert_ne!(direct_text, "Null", "projection must not invent Null for {input}");
         }
+    }
+
+    #[test]
+    fn result_transforms_record_derived_from_on_the_same_outcome() {
+        let session = Session::new();
+        let evaluated = session.evaluate_mathematica("x^3").unwrap();
+        let derived = session.differentiate_result(evaluated.result_id, "x").unwrap();
+        assert_eq!(session.derived_from(derived.result_id), Some(evaluated.result_id));
+        assert!(!derived.status.is_empty());
+        assert!(!derived.coverage.is_empty());
+        let via_surface = session.evaluate_mathematica("D[x^3, x]").unwrap();
+        assert_eq!(
+            session.render_as_wolfram(session.project_result(derived.result_id).unwrap()),
+            session.render_as_wolfram(session.project_result(via_surface.result_id).unwrap())
+        );
+        assert_ne!(session.render_as_wolfram(session.project_result(derived.result_id).unwrap()), "Null");
+
+        let sum = session.evaluate_matlab("sin(x)^2 + cos(x)^2").unwrap();
+        let simplified = session.simplify_result(sum.result_id).unwrap();
+        assert_eq!(session.derived_from(simplified.result_id), Some(sum.result_id));
+        assert_ne!(simplified.result_id, sum.result_id, "simplify must publish a new ResultId");
+        assert_eq!(session.render_as_matlab(session.project_result(simplified.result_id).unwrap()), "1");
+        assert!(!simplified.status.is_empty());
+        assert!(!simplified.coverage.is_empty());
     }
 }

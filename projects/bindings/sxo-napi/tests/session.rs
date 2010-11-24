@@ -108,6 +108,27 @@ fn differentiate_can_link_derived_from_evaluate_parent() {
 }
 
 #[test]
+fn result_transforms_record_derived_from_on_the_same_outcome() {
+    let session = Session::new();
+    let evaluated = session.evaluate_mathematica("x^3").unwrap();
+    let derived = session.differentiate_result(evaluated.result_id, "x").unwrap();
+    assert_eq!(session.derived_from(derived.result_id), Some(evaluated.result_id));
+    assert!(!derived.status.is_empty());
+    assert!(!derived.coverage.is_empty());
+    let via_surface = session.evaluate_mathematica("D[x^3, x]").unwrap();
+    assert!(session.structural_eq(session.project_result(derived.result_id).unwrap(), session.project_result(via_surface.result_id).unwrap()));
+    assert_ne!(session.render_as_wolfram(session.project_result(derived.result_id).unwrap()), "Null");
+
+    let sum = session.evaluate_matlab("sin(x)^2 + cos(x)^2").unwrap();
+    let simplified = session.simplify_result(sum.result_id).unwrap();
+    assert_eq!(session.derived_from(simplified.result_id), Some(sum.result_id));
+    assert_ne!(simplified.result_id, sum.result_id, "simplify must publish a new ResultId");
+    assert_eq!(session.render_as_matlab(session.project_result(simplified.result_id).unwrap()), "1");
+    assert!(!simplified.status.is_empty());
+    assert!(!simplified.coverage.is_empty());
+}
+
+#[test]
 fn project_conditions_exposes_result_predicates() {
     use athena::{
         runtime::results::{ComputationResult, CoverageStatus},

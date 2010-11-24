@@ -154,6 +154,28 @@ impl Session {
         self.evaluate_matlab_form(&s_form)
     }
 
+    /// Differentiate a retained result in one outcome.
+    ///
+    /// Projects a symbolic term, dispatches one calculus Goal, and records `derived_from`.
+    /// A missing projection is an error. This does not invent `Null`.
+    pub fn differentiate_result(&self, parent: ResultId, var: &str) -> Result<EvalOutcome, SxoError> {
+        let term = self.try_project_symbolic(parent)?;
+        let outcome = self.differentiate_outcome(term, var)?;
+        let _ = self.link_derived_from(outcome.result_id, parent);
+        Ok(outcome)
+    }
+
+    /// Simplify a retained result in one outcome.
+    ///
+    /// Projects a symbolic term, dispatches one Simplify, and records `derived_from`.
+    /// A missing projection is an error. This does not invent `Null`.
+    pub fn simplify_result(&self, parent: ResultId) -> Result<EvalOutcome, SxoError> {
+        let term = self.try_project_symbolic(parent)?;
+        let outcome = self.simplify_outcome(term)?;
+        let _ = self.link_derived_from(outcome.result_id, parent);
+        Ok(outcome)
+    }
+
     /// Record that `child` was derived from `parent` (both Session-local).
     pub fn link_derived_from(&self, child: ResultId, parent: ResultId) -> bool {
         self.math_session.borrow_mut().results.link_derived_from(child, parent)
