@@ -384,6 +384,12 @@ mod parity_tests {
             ("M=[1, 2; 3, 4]; M(1, :)=[9, 8]; M", "[9, 8; 3, 4]"),
             ("A=zeros(2); A(3, 3)=1; A", "[0, 0, 0; 0, 0, 0; 0, 0, 1]"),
             ("B=1:4; B(end+1)=5; B", "[1, 2, 3, 4, 5]"),
+            ("A=[1, 2; 3, 4]; A(2)", "3"),
+            ("A=[1, 2; 3, 4]; A(1, 2)", "2"),
+            ("[1, 2; 3, 4](:)", "[1; 3; 2; 4]"),
+            ("[1, 2; 3, 4].*[5, 6; 7, 8]", "[5, 12; 21, 32]"),
+            ("0/0", "NaN"),
+            ("Inf - Inf", "NaN"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
@@ -412,6 +418,10 @@ mod parity_tests {
             ("A={{1, 2}, {3, 4}}; ReplacePart[A, {1, 2} -> 9]; A", "{{1, 9}, {3, 4}}"),
             ("SymmetricMatrixQ[{{1, 2}, {2, 1}}]", "1"),
             ("SymmetricMatrixQ[{{1, 2}, {3, 4}}]", "0"),
+            ("Inverse[{{1, 2}, {3, 4}}]", "{{-2, 1}, {3/2, -1/2}}"),
+            ("Part[{{1, 2}, {3, 4}}, 1, 2]", "2"),
+            ("0/0", "Indeterminate"),
+            ("Infinity - Infinity", "Indeterminate"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
