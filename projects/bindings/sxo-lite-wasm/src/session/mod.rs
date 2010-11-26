@@ -390,6 +390,7 @@ mod parity_tests {
             ("[1, 2; 3, 4].*[5, 6; 7, 8]", "[5, 12; 21, 32]"),
             ("0/0", "NaN"),
             ("Inf - Inf", "NaN"),
+            ("0.0/0.0", "NaN"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
@@ -422,6 +423,7 @@ mod parity_tests {
             ("Part[{{1, 2}, {3, 4}}, 1, 2]", "2"),
             ("0/0", "Indeterminate"),
             ("Infinity - Infinity", "Indeterminate"),
+            ("0.0/0.0", "Indeterminate"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
