@@ -428,6 +428,10 @@ mod parity_tests {
             ("0/0", "Indeterminate"),
             ("Infinity - Infinity", "Indeterminate"),
             ("0.0/0.0", "Indeterminate"),
+            ("Dot[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}]", "{{19, 22}, {43, 50}}"),
+            ("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}", "{{5, 12}, {21, 32}}"),
+            ("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]", "{{-4}, {9/2}}"),
+            ("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]", "{}"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
