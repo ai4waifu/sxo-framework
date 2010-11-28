@@ -395,6 +395,11 @@ mod parity_tests {
             ("0/0", "NaN"),
             ("Inf - Inf", "NaN"),
             ("0.0/0.0", "NaN"),
+            ("sum([1, 2, 3])", "6"),
+            ("sum([1, 2; 3, 4])", "[4, 6]"),
+            ("prod([2, 3, 4])", "24"),
+            ("prod([1, 2; 3, 4])", "[3, 8]"),
+            ("[1, 2, 3](end)", "3"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();
@@ -432,6 +437,8 @@ mod parity_tests {
             ("{{1, 2}, {3, 4}}*{{5, 6}, {7, 8}}", "{{5, 12}, {21, 32}}"),
             ("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]", "{{-4}, {9/2}}"),
             ("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]", "{}"),
+            ("Total[{1, 2, 3}]", "6"),
+            ("Total[{{1, 2}, {3, 4}}]", "{4, 6}"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();

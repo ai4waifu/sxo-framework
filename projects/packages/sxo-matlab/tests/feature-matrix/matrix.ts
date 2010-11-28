@@ -27,11 +27,18 @@ export const matrixFeatures = [
     feature('size', 'matrix').supported().pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
     feature('length', 'matrix').supported().pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
-        .supported()
+        .partial('vector scalar and matrix column sums. Dimension argument is outside the axis contract')
         .pure()
-        .notes('vector → scalar; matrix → column sums')
         .eval('sum.vec', 'sum([1, 2, 3])', '6')
         .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
+        .gap('sum.axis', 'sum([1, 2; 3, 4], 2)', { expected: '[3; 7]', notes: 'dim argument not lowered' })
+        .done(),
+    feature('prod', 'matrix')
+        .partial('vector scalar and matrix column products. Dimension argument is outside the axis contract')
+        .pure()
+        .eval('prod.vec', 'prod([2, 3, 4])', '24')
+        .eval('prod.matrix', 'prod([1, 2; 3, 4])', '[3, 8]')
+        .gap('prod.axis', 'prod([1, 2; 3, 4], 2)', { expected: '[2; 12]', notes: 'dim argument not lowered' })
         .done(),
     feature('max', 'matrix').unsupported().pure().gap('max.vec', 'max([1, 3, 2])', { expected: '3' }).done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
