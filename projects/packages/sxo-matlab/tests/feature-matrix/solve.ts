@@ -7,24 +7,29 @@ export const solveFeatures = [
         .gap('solve.linear', 'solve(x-1==0, x)', { expected: '1' })
         .done(),
     feature('mldivide', 'solve')
-        .supported()
+        .partial('unique and particular solutions project as matrices. Disposition family is not a surface yet')
         .pure()
-        .notes('exact numeric A\\b → Solve Goal; inconsistent → []; Infinite keeps particular')
         .eval('mldivide.2x2', '[1,2;3,4] \\ [5;6]', '[-4; 9/2]')
         .eval('mldivide.inconsistent', '[1, 2; 2, 4] \\ [1; 0]', '[]')
         .eval('mldivide.infinite', '[1, 2; 2, 4] \\ [2; 4]', '[2; 0]')
+        .gap('mldivide.disposition', '[1, 2; 2, 4] \\ [1; 0]', {
+            expected: 'none',
+            notes: 'Inconsistent still projects as empty list, not SolveDisposition',
+        })
         .done(),
     feature('mrdivide', 'solve')
-        .supported()
+        .partial('unique RightSolve projects as a matrix. Disposition family is not a surface yet')
         .pure()
-        .notes('typed matrix A/B → RightSolve; see also arithmetic.mrdivide')
         .eval('mrdivide.solve.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
         .done(),
     feature('linsolve', 'solve')
-        .supported()
+        .partial('unique path matches mldivide. Disposition family is not a surface yet')
         .pure()
-        .notes('linsolve → LinearSolve Form → Athena Solve Goal (same path as mldivide)')
         .eval('linsolve.2x2', 'linsolve([1, 2; 3, 4], [5; 6])', '[-4; 9/2]')
+        .gap('linsolve.inconsistent', 'linsolve([1, 2; 2, 4], [1; 0])', {
+            expected: 'none',
+            notes: 'same empty-list projection as mldivide',
+        })
         .done(),
     feature('roots', 'solve').unsupported().pure().gap('roots.quad', 'roots([1, 0, -1])', { expected: '[1; -1]' }).done(),
     feature('fzero', 'solve')

@@ -2,10 +2,15 @@ import { feature } from '@sxo/harness';
 
 export const linearAlgebraFeatures = [
     feature('LinearSolve', 'linear_algebra')
-        .supported()
+        .partial('unique and projected none/particular still use list or matrix surfaces. Disposition family is not exposed')
         .pure()
-        .notes('nested List → MatrixValue LinearAlgebraRequest::Solve')
         .eval('linearsolve.2x2', 'LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]', '{{-4}, {9/2}}')
+        .eval('linearsolve.inconsistent', 'LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]', '{}')
+        .eval('linearsolve.infinite', 'LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]', '{{2}, {0}}')
+        .gap('linearsolve.disposition', 'LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]', {
+            expected: 'none',
+            notes: 'Inconsistent still projects as empty list, not SolveDisposition',
+        })
         .done(),
     feature('Det', 'linear_algebra').supported().pure().eval('det.2x2', 'Det[{{1, 2}, {3, 4}}]', '-2').done(),
     feature('Inverse', 'linear_algebra')
@@ -19,6 +24,15 @@ export const linearAlgebraFeatures = [
         .pure()
         .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose')
         .eval('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
+        .done(),
+    feature('ConjugateTranspose', 'linear_algebra')
+        .partial('real matrices match Transpose. Complex MatrixValue parent is still pending')
+        .pure()
+        .eval('ctranspose.real', 'ConjugateTranspose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
+        .gap('ctranspose.complex', 'ConjugateTranspose[{{1 + I}}]', {
+            expected: '{{1 - I}}',
+            notes: 'no Complex ElementParentKind yet',
+        })
         .done(),
     feature('Dot', 'linear_algebra')
         .supported()
