@@ -1061,6 +1061,17 @@ fn hold_complete_and_unevaluated_preserve_plus() {
 }
 
 #[test]
+fn flatten_does_not_enter_hold_complete() {
+    let h = H::new();
+    // Residual Flatten keeps HoldComplete intact. It must not become {1, 2, 3}.
+    assert_eq!(
+        h.wolfram(h.eval("Flatten[HoldComplete[{{1, 2}, {3}}]]")),
+        "Flatten[HoldComplete[{{1, 2}, {3}}]]"
+    );
+}
+
+
+#[test]
 fn unary_minus_binds_looser_than_power() {
     let h = H::new();
     let w = h.parse_w("-x^2");
