@@ -1060,6 +1060,14 @@ fn hold_complete_and_unevaluated_preserve_plus() {
     assert_eq!(h.wolfram(h.eval("ReleaseHold[HoldComplete[1 + 1]]")), "2");
 }
 
+
+#[test]
+fn ragged_nested_list_is_not_a_silent_matrix() {
+    let h = H::new();
+    // Living 18: irregular nesting must not become a silent matrix.
+    assert_eq!(h.wolfram(h.eval("Transpose[{{1, 2}, {3}}]")), "Transpose[{{1, 2}, {3}}]");
+}
+
 #[test]
 fn flatten_does_not_enter_hold_complete() {
     let h = H::new();

@@ -439,6 +439,7 @@ mod parity_tests {
             ("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]", "{}"),
             ("Total[{1, 2, 3}]", "6"),
             ("Total[{{1, 2}, {3, 4}}]", "{4, 6}"),
+            ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),
         ];
         for (input, expected) in cases {
             let direct_session = Session::new();

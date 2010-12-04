@@ -22,8 +22,9 @@ export const linearAlgebraFeatures = [
     feature('Transpose', 'linear_algebra')
         .supported()
         .pure()
-        .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose')
+        .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose; ragged stays residual')
         .eval('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
+        .eval('transpose.ragged', 'Transpose[{{1, 2}, {3}}]', 'Transpose[{{1, 2}, {3}}]')
         .done(),
     feature('ConjugateTranspose', 'linear_algebra')
         .partial('real matrices match Transpose. Complex MatrixValue parent is still pending')
