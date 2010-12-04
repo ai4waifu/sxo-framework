@@ -350,6 +350,7 @@ fn matlab_direct_and_handle_evaluate_parity() {
         ("[1, 2; 3, 4]*[5, 6; 7, 8]", "[19, 22; 43, 50]"),
         ("[6, 8; 10, 12]./[2, 4; 5, 6]", "[3, 2; 2, 2]"),
         ("[1, 2; 3, 4]/[1, 2; 3, 4]", "[1, 0; 0, 1]"),
+        ("inv([1, 2; 2, 4])", "inv(Singular)"),
         ("[1, 2; 3, 4] \\ [5; 6]", "[-4; 9/2]"),
         ("0/0", "NaN"),
         ("Inf - Inf", "NaN"),
@@ -399,6 +400,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Total[{1, 2, 3}]", "6"),
         ("Total[{{1, 2}, {3, 4}}]", "{4, 6}"),
         ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),
+        ("Inverse[{{1, 2}, {2, 4}}]", "Inverse[Singular]"),
     ];
     for (input, expected) in cases {
         let direct_session = Session::new();

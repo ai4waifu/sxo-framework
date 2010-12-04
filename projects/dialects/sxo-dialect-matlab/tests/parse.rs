@@ -290,11 +290,7 @@ fn inv_literal_and_singular_residual() {
     assert_eq!(h.render(h.eval("inv([1, 0; 0, 2])")), "[1, 0; 0, 1/2]");
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; inv(A)")), "[-2, 1; 3/2, -1/2]");
     // Living 16: singular Inverse → Inverse[Singular] residual (rendered as inv(...)).
-    let singular = h.render(h.eval("inv([1, 2; 2, 4])"));
-    assert!(
-        singular.contains("inv") || singular.contains("Inverse") || singular.contains("Singular"),
-        "expected Inverse Singular residual, got {singular}"
-    );
+    assert_eq!(h.render(h.eval("inv([1, 2; 2, 4])")), "inv(Singular)");
 }
 
 #[test]

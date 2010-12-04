@@ -472,11 +472,7 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("B={{1, 2}, {3, 4}}; Tr[B]")), "5");
     assert_eq!(h.wolfram(h.eval("C={{1, 2}, {3, 4}}; Inverse[C]")), "{{-2, 1}, {3/2, -1/2}}");
     // Living 16: singular Inverse projects Inverse[Singular] residual (not Diagnostic hard fail).
-    let singular = h.wolfram(h.eval("Inverse[{{1, 2}, {2, 4}}]"));
-    assert!(
-        singular.contains("Inverse") && singular.contains("Singular"),
-        "expected Inverse Singular residual, got {singular}"
-    );
+    assert_eq!(h.wolfram(h.eval("Inverse[{{1, 2}, {2, 4}}]")), "Inverse[Singular]");
     assert_eq!(h.wolfram(h.eval("D={{1, 2}, {3, 4}}; Det[D]")), "-2");
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; First[A]")), "{1, 2}");
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Rest[A]")), "{3, 4}");

@@ -3,10 +3,10 @@ import { feature } from '@sxo/harness';
 export const linearAlgebraFeatures = [
     feature('det', 'linear_algebra').supported().pure().eval('det.2x2', 'det([1, 2; 3, 4])', '-2').done(),
     feature('inv', 'linear_algebra')
-        .supported()
+        .partial('invertible matrices project. Singular stays inv(Singular), not a matrix')
         .pure()
-        .notes('inv → Inverse Goal; Singular → Inverse[Singular] residual')
         .eval('inv.diag', 'inv([1, 0; 0, 2])', '[1, 0; 0, 1/2]')
+        .eval('inv.singular', 'inv([1, 2; 2, 4])', 'inv(Singular)')
         .done(),
     feature('rank', 'linear_algebra')
         .supported()

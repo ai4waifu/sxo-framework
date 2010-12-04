@@ -14,10 +14,10 @@ export const linearAlgebraFeatures = [
         .done(),
     feature('Det', 'linear_algebra').supported().pure().eval('det.2x2', 'Det[{{1, 2}, {3, 4}}]', '-2').done(),
     feature('Inverse', 'linear_algebra')
-        .supported()
+        .partial('invertible matrices project. Singular stays Inverse[Singular], not a matrix')
         .pure()
-        .notes('MatrixOperand → ExactInverse; Singular → Inverse[Singular] residual')
         .eval('inverse.eye', 'Inverse[{{1, 0}, {0, 1}}]', '{{1, 0}, {0, 1}}')
+        .eval('inverse.singular', 'Inverse[{{1, 2}, {2, 4}}]', 'Inverse[Singular]')
         .done(),
     feature('Transpose', 'linear_algebra')
         .supported()
