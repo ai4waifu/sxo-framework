@@ -288,6 +288,25 @@ fn render_cell_term(session: &Session, args: &[TermId]) -> String {
     }
 }
 
+
+fn is_solve_disposition_name(name: &str) -> bool {
+    matches!(
+        name,
+        "Unique" | "Infinite" | "Inconsistent" | "Singular" | "ResourceLimited"
+    )
+}
+
+fn is_form_solve_disposition(form: &MatlabForm) -> bool {
+    matches!(form, MatlabForm::Atom(MatlabAtom::Symbol(name)) if is_solve_disposition_name(name))
+}
+
+fn is_solve_disposition_term(session: &Session, id: TermId) -> bool {
+    matches!(
+        symbol_name(session, id).as_deref(),
+        Some(name) if is_solve_disposition_name(name)
+    )
+}
+
 fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {
     match head {
         "Plus" if args.len() >= 2 => Some(args.iter().map(render_matlab_form).collect::<Vec<_>>().join(" + ")),
@@ -301,7 +320,7 @@ fn try_form_infix(head: &str, args: &[MatlabForm]) -> Option<String> {
         "Power" if args.len() == 2 => Some(format!("{}^{}", form_power_operand(&args[0]), form_power_operand(&args[1]))),
         "Subtract" if args.len() == 2 => Some(format!("{} - {}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
         "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
-        "LinearSolve" | "Mldivide" if args.len() == 2 => {
+        "LinearSolve" | "Mldivide" if args.len() == 2 && !is_form_solve_disposition(&args[0]) => {
             Some(format!("{}\\{}", render_matlab_form(&args[0]), render_matlab_form(&args[1])))
         }
         "DotTimes" if args.len() == 2 => Some(format!("{}.*{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]))),
@@ -387,7 +406,7 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             Some(format!("{} - {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
         "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
-        "LinearSolve" | "Mldivide" if args.len() == 2 => {
+        "LinearSolve" | "Mldivide" if args.len() == 2 && !is_solve_disposition_term(session, args[0]) => {
             Some(format!("{}\\{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
         "DotTimes" if args.len() == 2 => {
