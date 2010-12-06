@@ -13,6 +13,7 @@ thumbs.db
 # Rust
 target/
 Cargo.lock
+.cargo/config.local.toml
 *.log
 *.txt
 

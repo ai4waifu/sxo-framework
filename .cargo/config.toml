@@ -1,3 +1,9 @@
+# Dual-track Athena: optional local path overlay (gitignored `config.local.toml`).
+# Remote CI skips the missing file and uses `Cargo.toml` git branch `dev`.
+include = [
+    { path = "config.local.toml", optional = true },
+]
+
 # Required by `getrandom` on `wasm32-unknown-unknown` (0.3+ / 0.4+).
 # Feature `wasm_js` alone is not enough — see getrandom WebAssembly support notes.
 [target.wasm32-unknown-unknown]

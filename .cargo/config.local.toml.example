@@ -1,0 +1,7 @@
+# Copy to `config.local.toml` (gitignored) when Athena is a sibling of this repo.
+# Remote CI does not load this file and resolves `Cargo.toml` git branch `dev`.
+#
+# Paths are relative to the workspace root (`sxo-framework/`).
+[patch."https://github.com/ai4waifu/athena.rs.git"]
+athena = { path = "../athena.rs/projects/athena" }
+athena-types = { path = "../athena.rs/projects/athena-types" }
