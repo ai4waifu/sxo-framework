@@ -2,14 +2,14 @@ import { feature } from '@sxo/harness';
 
 export const linearAlgebraFeatures = [
     feature('LinearSolve', 'linear_algebra')
-        .partial('unique and projected none/particular still use list or matrix surfaces. Disposition family is not exposed')
+        .partial('unique projects as a matrix. Inconsistent and Infinite render as LinearSolve[disposition]')
         .pure()
         .eval('linearsolve.2x2', 'LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]', '{{-4}, {9/2}}')
-        .eval('linearsolve.inconsistent', 'LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]', '{}')
-        .eval('linearsolve.infinite', 'LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]', '{{2}, {0}}')
-        .gap('linearsolve.disposition', 'LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]', {
-            expected: 'none',
-            notes: 'Inconsistent still projects as empty list, not SolveDisposition',
+        .eval('linearsolve.inconsistent', 'LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]', 'LinearSolve[Inconsistent]')
+        .eval('linearsolve.infinite', 'LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]', 'LinearSolve[Infinite, 1]')
+        .gap('linearsolve.affine', 'LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]', {
+            expected: 'affine solution space',
+            notes: 'Infinite residual names free_vars but does not publish a parametric family',
         })
         .done(),
     feature('Det', 'linear_algebra').supported().pure().eval('det.2x2', 'Det[{{1, 2}, {3, 4}}]', '-2').done(),

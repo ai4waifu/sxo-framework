@@ -611,9 +611,9 @@ fn binary_matrix_goals_resolve_symbol_bindings() {
     // Living 16: ExactSolve particular publishes MatrixResult via typed MatrixRef operands.
     assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; B={{3}, {5}}; LinearSolve[A, B]")), "{{3}, {5}}");
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {11}}]")), "{{1}, {2}}");
-    // Living 16: inconsistent ExactSolve projects empty list; Infinite keeps a particular.
-    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]")), "{}");
-    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "{{2}, {0}}");
+    // Living 16: Inconsistent / Infinite project as LinearSolve[disposition[, free_vars]].
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]")), "LinearSolve[Inconsistent]");
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "LinearSolve[Infinite, 1]");
     // Living 16: machine-float Form → MachineSolve Singular residual (not exact Infinite).
     let singular = h.wolfram(h.eval("LinearSolve[{{1.0, 2.0}, {2.0, 4.0}}, {{1.0}, {0.0}}]"));
     assert!(singular.contains("LinearSolve") && singular.contains("Singular"), "expected Singular residual, got {singular}");
@@ -1248,4 +1248,19 @@ fn derivative_prime_sugar_forms() {
     // Must not silently collapse to bare `x` (old SILENT WRONG).
     assert_ne!(dsv, "x");
     assert!(dsv.contains("DSolveValue") || dsv.contains("Derivative") || dsv.contains("y'"), "got {dsv}");
+}
+
+#[test]
+fn mapat_stays_residual() {
+    let h = H::new();
+    // Not lowered. Must stay a residual call, not {1, f[2], 3}.
+    assert_eq!(h.wolfram(h.eval("MapAt[f, {1, 2, 3}, 2]")), "MapAt[f, {1, 2, 3}, 2]");
+}
+
+#[test]
+fn linear_solve_disposition_residuals() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]")), "LinearSolve[Inconsistent]");
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "LinearSolve[Infinite, 1]");
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1.0, 2.0}, {2.0, 4.0}}, {{1.0}, {0.0}}]")), "LinearSolve[Singular]");
 }

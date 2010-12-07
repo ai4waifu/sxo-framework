@@ -327,11 +327,7 @@ fn diag_and_cond_literal_goals() {
     // Living 16: `cond` → ConditionNumber Goal (LU pivot-ratio estimate).
     let c = h.render(h.eval("cond([2, 0; 0, 2])"));
     assert!(c == "1" || c.starts_with("1.") || c == "1.0", "expected ~1 conditioning, got {c}");
-    let singular = h.render(h.eval("cond([1, 2; 2, 4])"));
-    assert!(
-        singular.contains("Inf") || singular.contains("inf") || singular.contains("Infinity"),
-        "expected Inf for singular, got {singular}"
-    );
+    assert_eq!(h.render(h.eval("cond([1, 2; 2, 4])")), "inf");
 }
 
 #[test]
@@ -358,9 +354,9 @@ fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; b = [5; 6]; A\\b")), "[-4; 9/2]");
-    // Living 16: inconsistent → empty; Infinite → particular column (free_vars in evidence).
-    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "[]");
-    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "[2; 0]");
+    // Living 16: Inconsistent / Infinite project as linsolve(disposition[, free_vars]).
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "linsolve(Inconsistent)");
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "linsolve(Infinite, 1)");
     // Living 16: machine-float Form → MachineSolve Singular residual.
     let singular = h.render(h.eval("[1.0, 2.0; 2.0, 4.0] \\ [1.0; 0.0]"));
     assert!(
@@ -1067,4 +1063,12 @@ fn member_access_keeps_package_path() {
     let mut s = Session::new();
     assert_eq!(lower_request(&mut s, &parse_matlab_form("containers.Map").unwrap()).kind_name(), "Control");
     assert_eq!(lower_request(&mut s, &parse_matlab_form("py.list([1, 2])").unwrap()).kind_name(), "Control");
+}
+
+#[test]
+fn mldivide_disposition_residuals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "linsolve(Inconsistent)");
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "linsolve(Infinite, 1)");
+    assert_eq!(h.render(h.eval("[1, 2; 3, 4] \\ [5; 6]")), "[-4; 9/2]");
 }
