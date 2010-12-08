@@ -121,6 +121,14 @@ export const listFeatures = [
         .eval('position.1', 'Position[{1, 2, 1}, 1]', '{{1}, {3}}')
         .done(),
     feature('Extract', 'list').supported().pure().eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2').done(),
+    feature('MapAt', 'list')
+        .unsupported('not lowered. Residual MapAt call must not be marked supported')
+        .pure()
+        .gap('mapat.f2', 'MapAt[f, {1, 2, 3}, 2]', {
+            expected: '{1, f[2], 3}',
+            notes: 'currently MapAt[f, {1, 2, 3}, 2]',
+        })
+        .done(),
     feature('PadLeft', 'list')
         .supported()
         .pure()
