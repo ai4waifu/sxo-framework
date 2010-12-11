@@ -1264,3 +1264,20 @@ fn linear_solve_disposition_residuals() {
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "LinearSolve[Infinite, 1]");
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1.0, 2.0}, {2.0, 4.0}}, {{1.0}, {0.0}}]")), "LinearSolve[Singular]");
 }
+
+#[test]
+fn divide_by_zero_residual_cancel_is_indeterminate() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("(1/0)-(1/0)")), "Indeterminate");
+    assert_eq!(h.wolfram(h.eval("(2/0)-(2/0)")), "Indeterminate");
+    // Sum of residuals stays a sum, not a silent fold.
+    assert_eq!(h.wolfram(h.eval("(1/0)+(1/0)")), "2*1/0");
+}
+
+#[test]
+fn replacepart_literal_list_projects_updated_collection() {
+    let h = H::new();
+    // Athena StoreIndex on literal lists returns the updated collection.
+    assert_eq!(h.wolfram(h.eval("ReplacePart[{1, 2, 3}, 2 -> 9]")), "{1, 9, 3}");
+    assert_eq!(h.wolfram(h.eval("ReplacePart[{}, 1 -> 1]")), "{1}");
+}

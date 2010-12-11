@@ -394,6 +394,8 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Inverse[{{1, 2}, {3, 4}}]", "{{-2, 1}, {3/2, -1/2}}"),
         ("Part[{{1, 2}, {3, 4}}, 1, 2]", "2"),
         ("0/0", "Indeterminate"),
+        ("(1/0)-(1/0)", "Indeterminate"),
+        ("ReplacePart[{1, 2, 3}, 2 -> 9]", "{1, 9, 3}"),
         ("Infinity - Infinity", "Indeterminate"),
         ("0.0/0.0", "Indeterminate"),
         ("Dot[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}]", "{{19, 22}, {43, 50}}"),

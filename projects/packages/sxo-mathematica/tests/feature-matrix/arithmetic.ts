@@ -36,6 +36,7 @@ export const arithmeticFeatures = [
         .eval('indet.0over0', '0/0', 'Indeterminate')
         .eval('indet.inf_minus_inf', 'Infinity - Infinity', 'Indeterminate')
         .eval('indet.0pow0', '0^0', 'Indeterminate')
+        .eval('indet.div0_cancel', '(1/0)-(1/0)', 'Indeterminate')
         .done(),
     feature('CubeRootPow', 'arithmetic')
         .supported()
