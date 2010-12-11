@@ -40,10 +40,10 @@ export const linearAlgebraFeatures = [
         .eval('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', '[0, 0, 1]')
         .done(),
     feature('cond', 'linear_algebra')
-        .supported()
+        .partial('finite estimates project. Singular renders inf, not a condition-number object')
         .pure()
-        .notes('cond → ConditionNumber Goal; LU pivot-ratio estimate (Singular → Inf)')
         .eval('cond.eye', 'cond([2, 0; 0, 2])', '1')
+        .eval('cond.singular', 'cond([1, 2; 2, 4])', 'inf')
         .done(),
     feature('null', 'linear_algebra')
         .supported()
