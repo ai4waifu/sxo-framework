@@ -1072,3 +1072,20 @@ fn mldivide_disposition_residuals() {
     assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "linsolve(Infinite, 1)");
     assert_eq!(h.render(h.eval("[1, 2; 3, 4] \\ [5; 6]")), "[-4; 9/2]");
 }
+
+
+#[test]
+fn mrdivide_disposition_residuals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("[1, 2] / [1, 2; 3, 4]")), "[[1, 0]]");
+    assert_eq!(h.render(h.eval("[1, 0] / [1, 2; 2, 4]")), "linsolve(Inconsistent)");
+    // Singular square right-divide currently projects Infinite with free_vars.
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] / [1, 2; 2, 4]")), "linsolve(Infinite, 1)");
+}
+
+#[test]
+fn complex_transpose_stays_residual() {
+    let h = H::new();
+    // Real ctranspose works. Complex parent is still a residual quote surface.
+    assert_eq!(h.render(h.eval("(1+2i)'")), "1 + 2i'");
+}

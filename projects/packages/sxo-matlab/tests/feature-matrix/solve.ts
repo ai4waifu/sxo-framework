@@ -18,9 +18,11 @@ export const solveFeatures = [
         })
         .done(),
     feature('mrdivide', 'solve')
-        .partial('unique RightSolve projects as a matrix. Disposition family is not a surface yet')
+        .partial('unique RightSolve projects as a matrix. Inconsistent and Infinite render as linsolve(disposition)')
         .pure()
         .eval('mrdivide.solve.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
+        .eval('mrdivide.inconsistent', '[1, 0] / [1, 2; 2, 4]', 'linsolve(Inconsistent)')
+        .eval('mrdivide.infinite', '[1, 2; 2, 4] / [1, 2; 2, 4]', 'linsolve(Infinite, 1)')
         .done(),
     feature('linsolve', 'solve')
         .partial('unique path matches mldivide. Inconsistent and Infinite render as linsolve(disposition)')

@@ -355,6 +355,8 @@ fn matlab_direct_and_handle_evaluate_parity() {
         ("[1, 2; 3, 4] \\ [5; 6]", "[-4; 9/2]"),
         ("[1, 2; 2, 4] \\ [1; 0]", "linsolve(Inconsistent)"),
         ("[1, 2; 2, 4] \\ [2; 4]", "linsolve(Infinite, 1)"),
+        ("[1, 0] / [1, 2; 2, 4]", "linsolve(Inconsistent)"),
+        ("[1, 2; 2, 4] / [1, 2; 2, 4]", "linsolve(Infinite, 1)"),
         ("0/0", "NaN"),
         ("Inf - Inf", "NaN"),
         ("0.0/0.0", "NaN"),
