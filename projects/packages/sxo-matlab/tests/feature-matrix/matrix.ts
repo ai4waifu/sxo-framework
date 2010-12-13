@@ -19,7 +19,10 @@ export const matrixFeatures = [
         .partial('real arrays use ConjugateTranspose Goal. Complex parent still pending')
         .pure()
         .eval('ctranspose.real', "[1, 2; 3, 4]'", '[1, 3; 2, 4]')
-        .gap('ctranspose.basic', "[1+1i]'", { expected: '1-1i' })
+        .gap('ctranspose.basic', "[1+1i]'", {
+            expected: '1-1i',
+            notes: 'currently residual [1 + 1i]\'',
+        })
         .done(),
     feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
     feature('zeros', 'matrix').supported().pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),

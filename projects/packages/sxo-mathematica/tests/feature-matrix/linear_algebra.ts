@@ -32,7 +32,7 @@ export const linearAlgebraFeatures = [
         .eval('ctranspose.real', 'ConjugateTranspose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
         .gap('ctranspose.complex', 'ConjugateTranspose[{{1 + I}}]', {
             expected: '{{1 - I}}',
-            notes: 'no Complex ElementParentKind yet',
+            notes: 'currently residual ConjugateTranspose call. No Complex ElementParentKind yet',
         })
         .done(),
     feature('Dot', 'linear_algebra')
