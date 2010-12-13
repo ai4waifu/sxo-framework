@@ -1284,11 +1284,11 @@ fn replacepart_literal_list_projects_updated_collection() {
 
 
 #[test]
-fn complex_conjugate_transpose_stays_residual() {
+fn complex_conjugate_transpose_conjugates_exact_parent() {
     let h = H::new();
-    // Real path works. Complex parent stays a ConjugateTranspose residual.
     assert_eq!(
         h.wolfram(h.eval("ConjugateTranspose[{{1 + 2 I, 3}, {4, 5}}]")),
-        "ConjugateTranspose[{{1 + 2*I, 3}, {4, 5}}]"
+        "{{1 - 2*I, 4}, {3, 5}}"
     );
+    assert_eq!(h.wolfram(h.eval("ConjugateTranspose[{{1 + I}}]")), "{{1 - I}}");
 }

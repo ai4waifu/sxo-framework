@@ -1095,6 +1095,45 @@ fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
     }
 }
 
+/// Exact complex Form scalar → `(re, im)` Gaussian rationals (`I` / `Plus` / `Times`).
+fn form_scalar_complex(w: &WolframForm) -> Option<(Rational, Rational)> {
+    if let Some(q) = form_scalar_rational(w) {
+        return Some((q, Rational::zero()));
+    }
+    match w {
+        WolframForm::Atom(WolframAtom::Symbol(s)) if s == "I" => Some((Rational::zero(), Rational::one())),
+        WolframForm::Call { head, args } => {
+            let name = match head.as_ref() {
+                WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
+                _ => return None,
+            };
+            match name {
+                "Plus" => {
+                    let mut re = Rational::zero();
+                    let mut im = Rational::zero();
+                    for arg in args {
+                        let (r, i) = form_scalar_complex(arg)?;
+                        re = re.add(&r);
+                        im = im.add(&i);
+                    }
+                    Some((re, im))
+                }
+                "Times" if args.len() == 2 => {
+                    let (ar, ai) = form_scalar_complex(&args[0])?;
+                    let (br, bi) = form_scalar_complex(&args[1])?;
+                    Some((ar.mul(&br).add(&ai.mul(&bi).neg()), ar.mul(&bi).add(&ai.mul(&br))))
+                }
+                "Minus" if args.len() == 1 => {
+                    let (re, im) = form_scalar_complex(&args[0])?;
+                    Some((re.neg(), im.neg()))
+                }
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
 /// Literal Form matrix or symbol Own binding for unary linear-algebra goals.
 fn matrix_operand_from_form(session: &mut Session, w: &WolframForm) -> Option<MatrixOperand> {
     if let Some(mat) = matrix_value_from_form_tree(w) {
@@ -1150,6 +1189,14 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
 /// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
 /// Variables and computed terms are not reverse-recognized from arena Collections.
 fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
+    if list_items(w).is_none() {
+        if let Some((re, im)) = form_scalar_complex(w) {
+            if !im.is_zero() {
+                return MatrixValue::from_complex_exact_row_major(1, 1, vec![(re, im)]).ok();
+            }
+        }
+        return None;
+    }
     let rows = list_items(w)?;
     if rows.is_empty() {
         return None;
@@ -1174,6 +1221,26 @@ fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
     };
     if cells.is_empty() {
         return None;
+    }
+    let mut complexes = Vec::with_capacity(cells.len());
+    let mut any_imag = false;
+    let mut all_complex = true;
+    for cell in &cells {
+        match form_scalar_complex(cell) {
+            Some((re, im)) => {
+                if !im.is_zero() {
+                    any_imag = true;
+                }
+                complexes.push((re, im));
+            }
+            None => {
+                all_complex = false;
+                break;
+            }
+        }
+    }
+    if all_complex && any_imag {
+        return MatrixValue::from_complex_exact_row_major(nrows, ncols, complexes).ok();
     }
     let mut rationals = Vec::with_capacity(cells.len());
     let mut all_rational = true;

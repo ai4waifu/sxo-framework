@@ -720,6 +720,51 @@ fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
     }
 }
 
+/// Exact complex Form scalar → `(re, im)` Gaussian rationals.
+///
+/// MATLAB tokenizes `2i` as a single symbol (`"2i"`), not `Times[2, i]`.
+fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
+    if let Some(q) = form_scalar_rational(w) {
+        return Some((q, Rational::zero()));
+    }
+    match w {
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_symbol(s),
+        MatlabForm::Call { head, args } if head == "Plus" => {
+            let mut re = Rational::zero();
+            let mut im = Rational::zero();
+            for arg in args {
+                let (r, i) = form_scalar_complex(arg)?;
+                re = re.add(&r);
+                im = im.add(&i);
+            }
+            Some((re, im))
+        }
+        MatlabForm::Call { head, args } if head == "Minus" && args.len() == 1 => {
+            let (re, im) = form_scalar_complex(&args[0])?;
+            Some((re.neg(), im.neg()))
+        }
+        MatlabForm::Call { head, args } if head == "Times" && args.len() == 2 => {
+            let (ar, ai) = form_scalar_complex(&args[0])?;
+            let (br, bi) = form_scalar_complex(&args[1])?;
+            // (a+bi)(c+di)
+            Some((ar.mul(&br).add(&ai.mul(&bi).neg()), ar.mul(&bi).add(&ai.mul(&br))))
+        }
+        _ => None,
+    }
+}
+
+fn matlab_imag_symbol(s: &str) -> Option<(Rational, Rational)> {
+    if s == "i" || s == "j" || s == "I" || s == "J" {
+        return Some((Rational::zero(), Rational::one()));
+    }
+    let rest = s.strip_suffix('i').or_else(|| s.strip_suffix('j')).or_else(|| s.strip_suffix('I')).or_else(|| s.strip_suffix('J'))?;
+    if rest.is_empty() {
+        return Some((Rational::zero(), Rational::one()));
+    }
+    let n: i64 = rest.parse().ok()?;
+    Some((Rational::zero(), Rational::from_integer(Integer::from_i64(n))))
+}
+
 fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
     match w {
         MatlabForm::List(items) => Some(items.as_slice()),
@@ -873,6 +918,14 @@ fn dot_matrices_from_forms(a_form: &MatlabForm, b_form: &MatlabForm) -> Option<(
 /// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
 /// Does not reverse-recognize arena Collections from variables or computed terms.
 fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
+    if form_list_items(w).is_none() {
+        if let Some((re, im)) = form_scalar_complex(w) {
+            if !im.is_zero() {
+                return MatrixValue::from_complex_exact_row_major(1, 1, vec![(re, im)]).ok();
+            }
+        }
+        return None;
+    }
     let rows = form_list_items(w)?;
     if rows.is_empty() {
         return None;
@@ -897,6 +950,26 @@ fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
     };
     if cells.is_empty() {
         return None;
+    }
+    let mut complexes = Vec::with_capacity(cells.len());
+    let mut any_imag = false;
+    let mut all_complex = true;
+    for cell in &cells {
+        match form_scalar_complex(cell) {
+            Some((re, im)) => {
+                if !im.is_zero() {
+                    any_imag = true;
+                }
+                complexes.push((re, im));
+            }
+            None => {
+                all_complex = false;
+                break;
+            }
+        }
+    }
+    if all_complex && any_imag {
+        return MatrixValue::from_complex_exact_row_major(nrows, ncols, complexes).ok();
     }
     let mut rationals = Vec::with_capacity(cells.len());
     let mut all_rational = true;

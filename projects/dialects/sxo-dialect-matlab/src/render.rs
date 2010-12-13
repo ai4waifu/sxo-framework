@@ -94,6 +94,7 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             Atom::String(s) => format!("'{s}'"),
             Atom::Symbol(_) => match symbol_name(session, id).as_deref() {
                 Some("Infinity") => "Inf".into(),
+                Some("I") | Some("J") => "i".into(),
                 Some(other) => other.into(),
                 None => "?".into(),
             },
@@ -219,6 +220,7 @@ fn head_matlab_name(name: &str) -> String {
         "FunctionHandle" => "@",
         "Indeterminate" => "NaN",
         "Infinity" => "Inf",
+        "I" | "J" => "i",
         other => other,
     }
     .to_string()
