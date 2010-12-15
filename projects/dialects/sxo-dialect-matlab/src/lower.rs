@@ -743,6 +743,11 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
             let (re, im) = form_scalar_complex(&args[0])?;
             Some((re.neg(), im.neg()))
         }
+        MatlabForm::Call { head, args } if (head == "Minus" || head == "Subtract") && args.len() == 2 => {
+            let (ar, ai) = form_scalar_complex(&args[0])?;
+            let (br, bi) = form_scalar_complex(&args[1])?;
+            Some((ar.add(&br.neg()), ai.add(&bi.neg())))
+        }
         MatlabForm::Call { head, args } if head == "Times" && args.len() == 2 => {
             let (ar, ai) = form_scalar_complex(&args[0])?;
             let (br, bi) = form_scalar_complex(&args[1])?;

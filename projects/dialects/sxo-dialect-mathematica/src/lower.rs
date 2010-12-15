@@ -1127,6 +1127,11 @@ fn form_scalar_complex(w: &WolframForm) -> Option<(Rational, Rational)> {
                     let (re, im) = form_scalar_complex(&args[0])?;
                     Some((re.neg(), im.neg()))
                 }
+                "Minus" | "Subtract" if args.len() == 2 => {
+                    let (ar, ai) = form_scalar_complex(&args[0])?;
+                    let (br, bi) = form_scalar_complex(&args[1])?;
+                    Some((ar.add(&br.neg()), ai.add(&bi.neg())))
+                }
                 _ => None,
             }
         }

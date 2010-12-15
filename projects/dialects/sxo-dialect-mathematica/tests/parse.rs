@@ -1292,3 +1292,17 @@ fn complex_conjugate_transpose_conjugates_exact_parent() {
     );
     assert_eq!(h.wolfram(h.eval("ConjugateTranspose[{{1 + I}}]")), "{{1 - I}}");
 }
+
+
+#[test]
+fn complex_exact_dot_and_hadamard() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Dot[{{1 + I, 0}, {0, 1 - I}}, {{1, I}, {-I, 1}}]")),
+        "{{1 + I, -1 + I}, {-1 - I, 1 - I}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("{{1 + I, 2}, {3, 4}}*{{1, I}, {0, 1}}")),
+        "{{1 + I, 2*I}, {0, 4}}"
+    );
+}

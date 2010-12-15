@@ -1090,3 +1090,14 @@ fn complex_ctranspose_conjugates_exact_parent() {
     assert_eq!(h.render(h.eval("(1+2i)'")), "[[1 - 2*i]]");
     assert_eq!(h.render(h.eval("[1+2i, 3; 4, 5]'")), "[1 - 2*i, 4; 3, 5]");
 }
+
+
+#[test]
+fn complex_exact_matmul_and_hadamard() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval("[1+i, 0; 0, 1-i]*[1, i; -i, 1]")),
+        "[1 + i, -1 + i; -1 - i, 1 - i]"
+    );
+    assert_eq!(h.render(h.eval("[1+i, 2; 3, 4].*[1, i; 0, 1]")), "[1 + i, 2*i; 0, 4]");
+}
