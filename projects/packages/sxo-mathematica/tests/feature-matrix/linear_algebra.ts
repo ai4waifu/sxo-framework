@@ -27,13 +27,11 @@ export const linearAlgebraFeatures = [
         .eval('transpose.ragged', 'Transpose[{{1, 2}, {3}}]', 'Transpose[{{1, 2}, {3}}]')
         .done(),
     feature('ConjugateTranspose', 'linear_algebra')
-        .partial('real matrices match Transpose. Complex MatrixValue parent is still pending')
+        .supported()
         .pure()
+        .notes('exact ComplexExact parent conjugates then transposes; machine complex parent still open')
         .eval('ctranspose.real', 'ConjugateTranspose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
-        .gap('ctranspose.complex', 'ConjugateTranspose[{{1 + I}}]', {
-            expected: '{{1 - I}}',
-            notes: 'currently residual ConjugateTranspose call. No Complex ElementParentKind yet',
-        })
+        .eval('ctranspose.complex', 'ConjugateTranspose[{{1 + I}}]', '{{1 - I}}')
         .done(),
     feature('Dot', 'linear_algebra')
         .supported()
