@@ -1306,3 +1306,18 @@ fn complex_exact_dot_and_hadamard() {
         "{{1 + I, 2*I}, {0, 4}}"
     );
 }
+
+#[test]
+fn complex_exact_transpose_and_divide() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Transpose[{{1 + I, 2}, {3, 4}}]")),
+        "{{1 + I, 3}, {2, 4}}"
+    );
+    assert_eq!(h.wolfram(h.eval("{{2 + 2 I}}/{{1 + I}}")), "2");
+    assert_eq!(
+        h.wolfram(h.eval("{{2, 2 I}, {3, 4}}/{{1, I}, {1, 2}}")),
+        "{{2, 2}, {3, 2}}"
+    );
+}
+

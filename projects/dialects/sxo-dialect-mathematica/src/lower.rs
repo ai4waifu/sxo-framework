@@ -487,6 +487,16 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("Divide", [a_form, b_form]) => {
+                    // Living 16: matrix `Divide` is elementwise, not right-solve.
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
+                        )));
+                    }
+                }
                 ("Clear", args) => {
                     let mut steps = Vec::with_capacity(args.len());
                     let mut ok = true;

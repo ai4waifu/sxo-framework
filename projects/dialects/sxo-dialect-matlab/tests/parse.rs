@@ -1101,3 +1101,12 @@ fn complex_exact_matmul_and_hadamard() {
     );
     assert_eq!(h.render(h.eval("[1+i, 2; 3, 4].*[1, i; 0, 1]")), "[1 + i, 2*i; 0, 4]");
 }
+
+#[test]
+fn complex_exact_transpose_and_divide() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("[1+i, 2; 3, 4].'")), "[1 + i, 3; 2, 4]");
+    assert_eq!(h.render(h.eval("[2+2i]./[1+i]")), "2");
+    assert_eq!(h.render(h.eval("[2, 2i; 3, 4]./[1, i; 1, 2]")), "[2, 2; 3, 2]");
+}
+
