@@ -1110,3 +1110,11 @@ fn complex_exact_transpose_and_divide() {
     assert_eq!(h.render(h.eval("[2, 2i; 3, 4]./[1, i; 1, 2]")), "[2, 2; 3, 2]");
 }
 
+#[test]
+fn complex_exact_tril_triu() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("tril([1+i, 2; 3, 4-i])")), "[1 + i, 0; 3, 4 - i]");
+    assert_eq!(h.render(h.eval("triu([1+i, 2; 3, 4-i])")), "[1 + i, 2; 0, 4 - i]");
+}
+
+

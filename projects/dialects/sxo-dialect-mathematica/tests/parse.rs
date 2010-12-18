@@ -1321,3 +1321,17 @@ fn complex_exact_transpose_and_divide() {
     );
 }
 
+#[test]
+fn complex_exact_tril_triu() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("LowerTriangularize[{{1 + I, 2}, {3, 4 - I}}]")),
+        "{{1 + I, 0}, {3, 4 - I}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]")),
+        "{{1 + I, 2}, {0, 4 - I}}"
+    );
+}
+
+
