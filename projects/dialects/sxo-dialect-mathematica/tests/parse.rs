@@ -1334,4 +1334,14 @@ fn complex_exact_tril_triu() {
     );
 }
 
+#[test]
+fn complex_exact_flatten() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4}}]")),
+        "{1 + I, 2, 3, 4}"
+    );
+}
+
+
 
