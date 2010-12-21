@@ -1345,3 +1345,19 @@ fn complex_exact_flatten() {
 
 
 
+
+
+#[test]
+fn complex_exact_reverse_join_part() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Reverse[{{1 + I, 2}, {3, 4}}]")),
+        "{{3, 4}, {1 + I, 2}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Join[{{1 + I, 2}}, {{3, 4}}]")),
+        "{{1 + I, 2}, {3, 4}}"
+    );
+    assert_eq!(h.wolfram(h.eval("Part[{{1 + I, 2}, {3, 4}}, 1, 2]")), "2");
+}
+

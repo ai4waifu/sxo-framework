@@ -1118,3 +1118,16 @@ fn complex_exact_tril_triu() {
 }
 
 
+
+
+#[test]
+fn complex_exact_part_and_slice() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("[1+i, 2; 3, 4](1,2)")), "2");
+    assert_eq!(h.render(h.eval("[1+i, 2; 3, 4](1,:)")), "[1 + i, 2]");
+    assert_eq!(h.render(h.eval("[1+i, 2; 3, 4](:,2)")), "[2, 4]");
+    assert_eq!(h.render(h.eval("A=[1+i, 2; 3, 4]; A(1,2)")), "2");
+}
+
+
+
