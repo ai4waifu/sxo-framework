@@ -1086,8 +1086,7 @@ fn mrdivide_disposition_residuals() {
 #[test]
 fn complex_ctranspose_conjugates_exact_parent() {
     let h = H::new();
-    // Scalar complex lowers as a 1×1 ComplexExact matrix, then conjugates.
-    assert_eq!(h.render(h.eval("(1+2i)'")), "[[1 - 2*i]]");
+    assert_eq!(h.render(h.eval("(1+2i)'")), "1 - 2*i");
     assert_eq!(h.render(h.eval("[1+2i, 3; 4, 5]'")), "[1 - 2*i, 4; 3, 5]");
 }
 

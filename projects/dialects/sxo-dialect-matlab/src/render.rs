@@ -106,6 +106,14 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
         },
         Some(TermNode::Collection { elements: items, .. }) => {
             let items = items.clone();
+            // MATLAB displays 1×1 matrices as scalars (Living 16 surface).
+            if items.len() == 1 {
+                if let Some(TermNode::Collection { elements: cols, .. }) = session.arena.get(items[0]) {
+                    if cols.len() == 1 {
+                        return render_matlab(session, cols[0]);
+                    }
+                }
+            }
             if is_matrix_rows(session, &items) {
                 let rows: Vec<String> = items
                     .iter()

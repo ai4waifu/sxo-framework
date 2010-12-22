@@ -720,6 +720,8 @@ fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
     }
 }
 
+
+
 /// Exact complex Form scalar → `(re, im)` Gaussian rationals.
 ///
 /// MATLAB tokenizes `2i` as a single symbol (`"2i"`), not `Times[2, i]`.

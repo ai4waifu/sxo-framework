@@ -16,11 +16,13 @@ export const matrixFeatures = [
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
-        .partial('exact ComplexExact conjugates. 1×1 still projects as nested matrix, not a scalar')
+        .supported()
         .pure()
+        .notes('exact ComplexExact conjugates. MATLAB renders 1×1 matrix results as scalars')
         .eval('ctranspose.real', "[1, 2; 3, 4]'", '[1, 3; 2, 4]')
         .eval('ctranspose.complex', "[1+2i, 3; 4, 5]'", '[1 - 2*i, 4; 3, 5]')
-        .eval('ctranspose.basic', "[1+1i]'", '[[1 - i]]')
+        .eval('ctranspose.basic', "(1+1i)'", '1 - i')
+        .eval('ctranspose.one_by_one', "[1+1i]'", '1 - i')
         .done(),
     feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
     feature('zeros', 'matrix').supported().pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),
