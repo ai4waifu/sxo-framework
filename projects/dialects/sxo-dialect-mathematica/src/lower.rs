@@ -497,6 +497,27 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("Power", [a_form, b_form]) => {
+                    // Living 16: matrix `Power` is elementwise. Scalar exponents broadcast.
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                        )));
+                    }
+                    if let Some(lhs_mat) = matrix_from_form(a_form) {
+                        if let Some(exp) = form_scalar_rational(b_form) {
+                            if let Some(rhs_mat) = broadcast_scalar_exponent_matrix(&lhs_mat, &exp) {
+                                let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs_mat));
+                                let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs_mat));
+                                return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                    athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                                )));
+                            }
+                        }
+                    }
+                }
                 ("Clear", args) => {
                     let mut steps = Vec::with_capacity(args.len());
                     let mut ok = true;
@@ -1203,6 +1224,37 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
 /// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Exact rationals stay
 /// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
 /// Variables and computed terms are not reverse-recognized from arena Collections.
+
+fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> Option<MatrixValue> {
+    use athena::domains::linear_algebra::ElementParentKind;
+    let rows = template.shape().rows;
+    let cols = template.shape().cols;
+    let n = (rows * cols) as usize;
+    match template.parent().element {
+        ElementParentKind::ComplexExact => {
+            let cells = (0..n).map(|_| (clone_rational(exp), Rational::zero())).collect();
+            MatrixValue::from_complex_exact_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::Rationals => {
+            let cells = (0..n).map(|_| clone_rational(exp)).collect();
+            MatrixValue::from_rationals_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::Integers => {
+            if !exp.is_integer() {
+                return None;
+            }
+            let n_int = exp.numerator();
+            let cells = (0..n).map(|_| clone_integer(&n_int)).collect();
+            MatrixValue::from_integers_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::MachineReal => {
+            let x = athena::numeric::to_f64_lossy(&athena::numeric::Number::rational(clone_rational(exp)))?;
+            let cells = vec![x; n];
+            MatrixValue::from_f64_row_major(rows, cols, cells).ok()
+        }
+    }
+}
+
 fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
     if list_items(w).is_none() {
         if let Some((re, im)) = form_scalar_complex(w) {

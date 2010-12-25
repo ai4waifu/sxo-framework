@@ -1130,3 +1130,12 @@ fn complex_exact_part_and_slice() {
 
 
 
+
+
+#[test]
+fn complex_exact_kronecker_and_power() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("kron([1+i], [1, i])")), "[1 + i, -1 + i]");
+    assert_eq!(h.render(h.eval("[1+i].^2")), "2*i");
+}
+

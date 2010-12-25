@@ -205,6 +205,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "DotPower" => {
             // Living 16: MATLAB `.^` is ElementwisePower on typed matrices.
+            // Scalar exponents broadcast to the left matrix shape / parent.
             if let [a_form, b_form] = args.as_slice() {
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
@@ -212,6 +213,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                     )));
+                }
+                if let (Some(lhs_mat), Some(exp)) = (matrix_from_form(a_form), form_scalar_rational(b_form)) {
+                    if let Some(rhs_mat) = broadcast_scalar_exponent_matrix(&lhs_mat, &exp) {
+                        let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs_mat));
+                        let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs_mat));
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                        )));
+                    }
                 }
             }
         }
@@ -924,6 +934,38 @@ fn dot_matrices_from_forms(a_form: &MatlabForm, b_form: &MatlabForm) -> Option<(
 /// Nested row lists → 2-D matrix. Flat list → `1×n` row. Exact rationals stay
 /// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
 /// Does not reverse-recognize arena Collections from variables or computed terms.
+
+/// Broadcast a rational scalar exponent into a dense matrix matching `template` parent/shape.
+fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> Option<MatrixValue> {
+    use athena::domains::linear_algebra::ElementParentKind;
+    let rows = template.shape().rows;
+    let cols = template.shape().cols;
+    let n = (rows * cols) as usize;
+    match template.parent().element {
+        ElementParentKind::ComplexExact => {
+            let cells = (0..n).map(|_| (clone_rational(exp), Rational::zero())).collect();
+            MatrixValue::from_complex_exact_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::Rationals => {
+            let cells = (0..n).map(|_| clone_rational(exp)).collect();
+            MatrixValue::from_rationals_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::Integers => {
+            if !exp.is_integer() {
+                return None;
+            }
+            let n_int = exp.numerator();
+            let cells = (0..n).map(|_| clone_integer(&n_int)).collect();
+            MatrixValue::from_integers_row_major(rows, cols, cells).ok()
+        }
+        ElementParentKind::MachineReal => {
+            let x = athena::numeric::to_f64_lossy(&athena::numeric::Number::rational(clone_rational(exp)))?;
+            let cells = vec![x; n];
+            MatrixValue::from_f64_row_major(rows, cols, cells).ok()
+        }
+    }
+}
+
 fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
     if form_list_items(w).is_none() {
         if let Some((re, im)) = form_scalar_complex(w) {

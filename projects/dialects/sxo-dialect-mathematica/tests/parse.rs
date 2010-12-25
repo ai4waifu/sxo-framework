@@ -1361,3 +1361,19 @@ fn complex_exact_reverse_join_part() {
     assert_eq!(h.wolfram(h.eval("Part[{{1 + I, 2}, {3, 4}}, 1, 2]")), "2");
 }
 
+
+
+#[test]
+fn complex_exact_kronecker_power_and_riffle() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("KroneckerProduct[{{1 + I}}, {{1, I}}]")),
+        "{1 + I, -1 + I}"
+    );
+    assert_eq!(h.wolfram(h.eval("{{1 + I}}^2")), "2*I");
+    assert_eq!(
+        h.wolfram(h.eval("Riffle[{1, 2}, {I, 2 I}]")),
+        "{1, I, 2, 2*I}"
+    );
+}
+
