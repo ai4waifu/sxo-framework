@@ -1139,3 +1139,14 @@ fn complex_exact_kronecker_and_power() {
     assert_eq!(h.render(h.eval("[1+i].^2")), "2*i");
 }
 
+
+
+#[test]
+fn sum_prod_dimension_axis() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("sum([1, 2; 3, 4])")), "[4, 6]");
+    assert_eq!(h.render(h.eval("sum([1, 2; 3, 4], 1)")), "[4, 6]");
+    assert_eq!(h.render(h.eval("sum([1, 2; 3, 4], 2)")), "[3; 7]");
+    assert_eq!(h.render(h.eval("prod([1, 2; 3, 4], 2)")), "[2; 12]");
+}
+

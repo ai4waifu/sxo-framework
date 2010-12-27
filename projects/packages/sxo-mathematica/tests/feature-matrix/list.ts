@@ -146,11 +146,12 @@ export const listFeatures = [
     feature('Accumulate', 'list').supported().pure().eval('accumulate.3', 'Accumulate[{1, 2, 3}]', '{1, 3, 6}').done(),
     feature('Differences', 'list').supported().pure().eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}').done(),
     feature('Total', 'list')
-        .partial('level-1 fold only. A level specification is outside the axis contract')
+        .supported()
         .pure()
+        .notes('default column fold; bare `2` / `{2}` row fold. Deeper level specs remain open')
         .eval('total.3', 'Total[{1, 2, 3}]', '6')
         .eval('total.cols', 'Total[{{1, 2}, {3, 4}}]', '{4, 6}')
-        .gap('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', { expected: '{3, 7}', notes: 'level spec not lowered' })
+        .eval('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', '{{3}, {7}}')
         .done(),
     feature('Append', 'list').supported().pure().eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}').done(),
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),

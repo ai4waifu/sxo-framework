@@ -1377,3 +1377,14 @@ fn complex_exact_kronecker_power_and_riffle() {
     );
 }
 
+
+
+#[test]
+fn total_level_and_sum_iterator() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Total[{{1, 2}, {3, 4}}]")), "{4, 6}");
+    assert_eq!(h.wolfram(h.eval("Total[{{1, 2}, {3, 4}}, 2]")), "{{3}, {7}}");
+    assert_eq!(h.wolfram(h.eval("Total[{{1, 2}, {3, 4}}, {2}]")), "{{3}, {7}}");
+    assert_eq!(h.wolfram(h.eval("Sum[i, {i, 1, 3}]")), "6");
+}
+
