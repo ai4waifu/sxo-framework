@@ -1150,3 +1150,12 @@ fn sum_prod_dimension_axis() {
     assert_eq!(h.render(h.eval("prod([1, 2; 3, 4], 2)")), "[2; 12]");
 }
 
+#[test]
+fn complex_exact_sum_prod_dimension_axis() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("sum([1+i, 2; 3, 4-i])")), "[4 + i, 6 - i]");
+    assert_eq!(h.render(h.eval("sum([1+i, 2; 3, 4-i], 1)")), "[4 + i, 6 - i]");
+    assert_eq!(h.render(h.eval("sum([1+i, 2; 3, 4-i], 2)")), "[3 + i; 7 - i]");
+    assert_eq!(h.render(h.eval("prod([1+i, 2; 3, 4-i])")), "[3 + 3*i, 8 - 2*i]");
+    assert_eq!(h.render(h.eval("prod([1+i, 2; 3, 4-i], 2)")), "[2 + 2*i; 12 - 3*i]");
+}

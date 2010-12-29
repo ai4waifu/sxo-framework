@@ -1388,3 +1388,24 @@ fn total_level_and_sum_iterator() {
     assert_eq!(h.wolfram(h.eval("Sum[i, {i, 1, 3}]")), "6");
 }
 
+#[test]
+fn complex_exact_total_and_product_dimension_axis() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}]")),
+        "{4 + I, 6 - I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}, {2}]")),
+        "{{3 + I}, {7 - I}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}]")),
+        "{3 + 3*I, 8 - 2*I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}, {2}]")),
+        "{{2 + 2*I}, {12 - 3*I}}"
+    );
+}
+
