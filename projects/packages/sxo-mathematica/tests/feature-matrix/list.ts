@@ -46,8 +46,10 @@ export const listFeatures = [
     feature('Product', 'list')
         .supported()
         .pure()
-        .notes('Product over single iterator via Table fold')
+        .notes('iterator Product via Table fold; matrix column fold and exact complex parent OK')
         .eval('product.basic', 'Product[i, {i, 1, 5}]', '120')
+        .eval('product.cols', 'Product[{{1, 2}, {3, 4}}]', '{3, 8}')
+        .eval('product.complex', 'Product[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{2 + 2*I}, {12 - 3*I}}')
         .done(),
     feature('Length', 'list').supported().pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
     feature('First', 'list')
@@ -148,10 +150,11 @@ export const listFeatures = [
     feature('Total', 'list')
         .supported()
         .pure()
-        .notes('default column fold; bare `2` / `{2}` row fold. Deeper level specs remain open')
+        .notes('default column fold; bare `2` / `{2}` row fold; exact complex parent OK. Deeper level specs remain open')
         .eval('total.3', 'Total[{1, 2, 3}]', '6')
         .eval('total.cols', 'Total[{{1, 2}, {3, 4}}]', '{4, 6}')
         .eval('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', '{{3}, {7}}')
+        .eval('total.complex', 'Total[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{3 + I}, {7 - I}}')
         .done(),
     feature('Append', 'list').supported().pure().eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}').done(),
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),

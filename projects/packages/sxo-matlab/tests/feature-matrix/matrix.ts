@@ -32,18 +32,20 @@ export const matrixFeatures = [
     feature('sum', 'matrix')
         .supported()
         .pure()
-        .notes('default and dim=1 column sums; dim=2 row sums as a column vector')
+        .notes('default and dim=1 column sums; dim=2 row sums as a column vector; exact complex parent OK')
         .eval('sum.vec', 'sum([1, 2, 3])', '6')
         .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
         .eval('sum.axis', 'sum([1, 2; 3, 4], 2)', '[3; 7]')
+        .eval('sum.complex', 'sum([1+i, 2; 3, 4-i], 2)', '[3 + i; 7 - i]')
         .done(),
     feature('prod', 'matrix')
         .supported()
         .pure()
-        .notes('default and dim=1 column products; dim=2 row products as a column vector')
+        .notes('default and dim=1 column products; dim=2 row products as a column vector; exact complex parent OK')
         .eval('prod.vec', 'prod([2, 3, 4])', '24')
         .eval('prod.matrix', 'prod([1, 2; 3, 4])', '[3, 8]')
         .eval('prod.axis', 'prod([1, 2; 3, 4], 2)', '[2; 12]')
+        .eval('prod.complex', 'prod([1+i, 2; 3, 4-i], 2)', '[2 + 2*i; 12 - 3*i]')
         .done(),
     feature('max', 'matrix').unsupported().pure().gap('max.vec', 'max([1, 3, 2])', { expected: '3' }).done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),

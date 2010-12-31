@@ -3,6 +3,11 @@ import { feature } from '@sxo/harness';
 export const algebraFeatures = [
     feature('Expand', 'algebra').unsupported().pure().gap('expand.bin', 'Expand[(x + 1)^2]', { expected: '1 + 2*x + x^2' }).done(),
     feature('Factor', 'algebra').unsupported().pure().gap('factor.diff', 'Factor[x^2 - 1]', { expected: '(-1 + x)*(1 + x)' }).done(),
+    feature('Collect', 'algebra')
+        .unsupported('residual Collect echo; no polynomial collect kernel yet')
+        .pure()
+        .gap('collect.xy', 'Collect[x^2 + 2*x*y + y^2, x]', { expected: 'x^2 + 2*x*y + y^2' })
+        .done(),
     feature('Cancel', 'algebra')
         .unsupported('Args evaluate then residual `Cancel[…]` echo; no Cancel kernel cancelation yet')
         .pure()

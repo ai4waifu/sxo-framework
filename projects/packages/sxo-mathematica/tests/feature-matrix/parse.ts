@@ -6,7 +6,6 @@ export const parseFeatures = [
         .pure()
         .notes('implicit Times via oak juxtaposition; D arity preserved')
         .eval('juxt.d', 'D[x y, x]', 'y')
-        .gap('juxt.collect', 'Collect[x^2 + 2*x*y + y^2, x]', { expected: 'x^2 + 2*x*y + y^2' })
         .done(),
     feature('Prefix', 'parse').supported().pure().notes('f@x → f[x]').eval('prefix.fx', 'f@x', 'f[x]').done(),
     feature('Postfix', 'parse').supported().pure().notes('x//f → f[x]').eval('postfix.xf', 'x//f', 'f[x]').done(),
