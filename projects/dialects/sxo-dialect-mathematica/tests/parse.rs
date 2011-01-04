@@ -1429,3 +1429,16 @@ fn complex_exact_accumulate_and_differences() {
         "{1 - I, 1 - I}"
     );
 }
+
+#[test]
+fn complex_exact_diagonal_matrix() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2}]")),
+        "{{1 + I, 0}, {0, 2}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2 - I}]")),
+        "{{1 + I, 0}, {0, 2 - I}}"
+    );
+}

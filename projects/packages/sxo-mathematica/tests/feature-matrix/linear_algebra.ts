@@ -71,8 +71,9 @@ export const linearAlgebraFeatures = [
     feature('DiagonalMatrix', 'linear_algebra')
         .supported()
         .pure()
-        .notes('surface → SemanticOperator::DiagonalMatrix')
+        .notes('surface → SemanticOperator::DiagonalMatrix; exact complex diagonal OK')
         .eval('diagmat.12', 'DiagonalMatrix[{1, 2}]', '{{1, 0}, {0, 2}}')
+        .eval('diagmat.complex', 'DiagonalMatrix[{1 + I, 2}]', '{{1 + I, 0}, {0, 2}}')
         .done(),
     feature('Tr', 'linear_algebra')
         .supported()

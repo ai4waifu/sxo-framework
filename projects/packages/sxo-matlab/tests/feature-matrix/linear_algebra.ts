@@ -54,8 +54,9 @@ export const linearAlgebraFeatures = [
     feature('diag', 'linear_algebra')
         .supported()
         .pure()
-        .notes('diag(v) → DiagonalMatrix Semantic / Form constructor')
+        .notes('diag(v) → DiagonalMatrix Semantic / Form constructor; exact complex diagonal OK')
         .eval('diag.vec', 'diag([1, 2])', '[1, 0; 0, 2]')
+        .eval('diag.complex', 'diag([1+i, 2])', '[1 + i, 0; 0, 2]')
         .done(),
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),

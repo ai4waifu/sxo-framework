@@ -374,6 +374,7 @@ fn matlab_direct_and_handle_evaluate_parity() {
         ("sum([1+i, 2; 3, 4-i], 2)", "[3 + i; 7 - i]"),
         ("prod([1+i, 2; 3, 4-i], 2)", "[2 + 2*i; 12 - 3*i]"),
         ("cumsum([1+i, 2, 3])", "[1 + i, 3 + i, 6 + i]"),
+        ("diag([1+i, 2])", "[1 + i, 0; 0, 2]"),
         ("[1, 2, 3](end)", "3"),
     ];
     for (input, expected) in cases {
@@ -428,6 +429,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Product[{{1 + I, 2}, {3, 4 - I}}, {2}]", "{{2 + 2*I}, {12 - 3*I}}"),
         ("Accumulate[{1 + I, 2, 3}]", "{1 + I, 3 + I, 6 + I}"),
         ("Differences[{1 + I, 2, 3 - I}]", "{1 - I, 1 - I}"),
+        ("DiagonalMatrix[{1 + I, 2}]", "{{1 + I, 0}, {0, 2}}"),
         ("Join[{{1 + I}}, {{2}}]", "{{1 + I}, {2}}"),
         ("Riffle[{1, 2}, {I, 3}]", "{1, I, 2, 3}"),
         ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),
