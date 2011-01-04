@@ -734,6 +734,7 @@ fn cumsum_on_row_vector() {
     // Living 16: cumsum → Accumulate on typed 1×n MatrixRef.
     assert_eq!(h.render(h.eval("cumsum([1, 2, 3])")), "[1, 3, 6]");
     assert_eq!(h.render(h.eval("A = [1, 2, 3]; cumsum(A)")), "[1, 3, 6]");
+    assert_eq!(h.render(h.eval("cumsum([1+i, 2, 3])")), "[1 + i, 3 + i, 6 + i]");
 }
 
 #[test]

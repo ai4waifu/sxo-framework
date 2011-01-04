@@ -58,7 +58,13 @@ export const listFeatures = [
         .notes('First on non-empty List; empty → InvalidIndex at Athena')
         .eval('first.ab', 'First[{a, b}]', 'a')
         .done(),
-    feature('Join', 'list').supported().pure().eval('join.basic', 'Join[{1}, {2}]', '{1, 2}').done(),
+    feature('Join', 'list')
+        .supported()
+        .pure()
+        .notes('list concat and matrix row stack; exact complex parents unify with `ℤ`/`ℚ`')
+        .eval('join.basic', 'Join[{1}, {2}]', '{1, 2}')
+        .eval('join.complex_mix', 'Join[{{1 + I}}, {{2}}]', '{{1 + I}, {2}}')
+        .done(),
     feature('Flatten', 'list').supported().pure().eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}').done(),
     feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
@@ -142,11 +148,24 @@ export const listFeatures = [
     feature('Riffle', 'list')
         .supported()
         .pure()
-        .notes('Contract: top-level zip of two lists, length = min (not MMA multi-arg / x-spacer `Riffle`)')
+        .notes('Contract: top-level zip of two lists, length = min (not MMA multi-arg / x-spacer `Riffle`). Exact complex unifies with `ℤ`/`ℚ`')
         .eval('riffle.ab', 'Riffle[{1, 2}, {a, b}]', '{1, a, 2, b}')
+        .eval('riffle.complex_mix', 'Riffle[{1, 2}, {I, 3}]', '{1, I, 2, 3}')
         .done(),
-    feature('Accumulate', 'list').supported().pure().eval('accumulate.3', 'Accumulate[{1, 2, 3}]', '{1, 3, 6}').done(),
-    feature('Differences', 'list').supported().pure().eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}').done(),
+    feature('Accumulate', 'list')
+        .supported()
+        .pure()
+        .notes('prefix sums on exact vectors; exact complex parent OK')
+        .eval('accumulate.3', 'Accumulate[{1, 2, 3}]', '{1, 3, 6}')
+        .eval('accumulate.complex', 'Accumulate[{1 + I, 2, 3}]', '{1 + I, 3 + I, 6 + I}')
+        .done(),
+    feature('Differences', 'list')
+        .supported()
+        .pure()
+        .notes('adjacent diffs on exact vectors; exact complex parent OK')
+        .eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}')
+        .eval('differences.complex', 'Differences[{1 + I, 2, 3 - I}]', '{1 - I, 1 - I}')
+        .done(),
     feature('Total', 'list')
         .supported()
         .pure()

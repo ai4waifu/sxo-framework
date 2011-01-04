@@ -9,8 +9,9 @@ export const arrayFeatures = [
     feature('cumsum', 'array')
         .supported()
         .pure()
-        .notes('cumsum → Accumulate on typed 1×n MatrixRef (Living 16)')
+        .notes('cumsum → Accumulate on typed 1×n MatrixRef (Living 16); exact complex parent OK')
         .eval('cumsum.3', 'cumsum([1, 2, 3])', '[1, 3, 6]')
+        .eval('cumsum.complex', 'cumsum([1+i, 2, 3])', '[1 + i, 3 + i, 6 + i]')
         .done(),
     feature('bsxfun', 'array')
         .unsupported('parse/eval keep `@plus` FunctionHandle; bsxfun broadcast runtime still open')

@@ -1358,6 +1358,10 @@ fn complex_exact_reverse_join_part() {
         h.wolfram(h.eval("Join[{{1 + I, 2}}, {{3, 4}}]")),
         "{{1 + I, 2}, {3, 4}}"
     );
+    assert_eq!(
+        h.wolfram(h.eval("Join[{{1 + I}}, {{2}}]")),
+        "{{1 + I}, {2}}"
+    );
     assert_eq!(h.wolfram(h.eval("Part[{{1 + I, 2}, {3, 4}}, 1, 2]")), "2");
 }
 
@@ -1374,6 +1378,10 @@ fn complex_exact_kronecker_power_and_riffle() {
     assert_eq!(
         h.wolfram(h.eval("Riffle[{1, 2}, {I, 2 I}]")),
         "{1, I, 2, 2*I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Riffle[{1, 2}, {I, 3}]")),
+        "{1, I, 2, 3}"
     );
 }
 
@@ -1409,3 +1417,15 @@ fn complex_exact_total_and_product_dimension_axis() {
     );
 }
 
+#[test]
+fn complex_exact_accumulate_and_differences() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Accumulate[{1 + I, 2, 3}]")),
+        "{1 + I, 3 + I, 6 + I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Differences[{1 + I, 2, 3 - I}]")),
+        "{1 - I, 1 - I}"
+    );
+}
