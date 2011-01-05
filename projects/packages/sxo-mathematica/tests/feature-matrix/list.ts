@@ -55,8 +55,9 @@ export const listFeatures = [
     feature('First', 'list')
         .supported()
         .pure()
-        .notes('First on non-empty List; empty → InvalidIndex at Athena')
+        .notes('First on non-empty List; empty → InvalidIndex at Athena; exact complex OK')
         .eval('first.ab', 'First[{a, b}]', 'a')
+        .eval('first.complex', 'First[{1 + I, 2, 3}]', '1 + I')
         .done(),
     feature('Join', 'list')
         .supported()
@@ -65,13 +66,31 @@ export const listFeatures = [
         .eval('join.basic', 'Join[{1}, {2}]', '{1, 2}')
         .eval('join.complex_mix', 'Join[{{1 + I}}, {{2}}]', '{{1 + I}, {2}}')
         .done(),
-    feature('Flatten', 'list').supported().pure().eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}').done(),
+    feature('Flatten', 'list')
+        .supported()
+        .pure()
+        .notes('row-major flatten; exact complex parent OK')
+        .eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}')
+        .eval('flatten.complex', 'Flatten[{{1 + I, 2}, {3, 4 - I}}]', '{1 + I, 2, 3, 4 - I}')
+        .done(),
     feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
     feature('Most', 'list').supported().pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
-    feature('Take', 'list').supported().pure().eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}').done(),
+    feature('Take', 'list')
+        .supported()
+        .pure()
+        .notes('prefix take on exact vectors; exact complex parent OK')
+        .eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}')
+        .eval('take.complex', 'Take[{1 + I, 2, 3, 4}, 2]', '{1 + I, 2}')
+        .done(),
     feature('Drop', 'list').supported().pure().eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}').done(),
-    feature('Reverse', 'list').supported().pure().eval('reverse.3', 'Reverse[{1, 2, 3}]', '{3, 2, 1}').done(),
+    feature('Reverse', 'list')
+        .supported()
+        .pure()
+        .notes('vector and matrix reverse; exact complex parent OK')
+        .eval('reverse.3', 'Reverse[{1, 2, 3}]', '{3, 2, 1}')
+        .eval('reverse.complex', 'Reverse[{1 + I, 2, 3}]', '{3, 2, 1 + I}')
+        .done(),
     feature('Sort', 'list')
         .supported()
         .pure()
@@ -130,7 +149,13 @@ export const listFeatures = [
         .notes('Contract: top-level structural_eq positions as `{{i},…}` (not deep/pattern `Position`)')
         .eval('position.1', 'Position[{1, 2, 1}, 1]', '{{1}, {3}}')
         .done(),
-    feature('Extract', 'list').supported().pure().eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2').done(),
+    feature('Extract', 'list')
+        .supported()
+        .pure()
+        .notes('1-based extract; exact complex parent OK')
+        .eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2')
+        .eval('extract.complex', 'Extract[{1 + I, 2, 3}, 2]', '2')
+        .done(),
     feature('MapAt', 'list')
         .unsupported('not lowered. Residual MapAt call must not be marked supported')
         .pure()
@@ -142,8 +167,9 @@ export const listFeatures = [
     feature('PadLeft', 'list')
         .supported()
         .pure()
-        .notes('Contract: left-pad exact integer `0` to length `n`, or left-truncate (no pad value / level args)')
+        .notes('Contract: left-pad exact integer `0` to length `n`, or left-truncate (no pad value / level args); exact complex OK')
         .eval('padleft.4', 'PadLeft[{1, 2}, 4]', '{0, 0, 1, 2}')
+        .eval('padleft.complex', 'PadLeft[{1 + I, 2}, 4]', '{0, 0, 1 + I, 2}')
         .done(),
     feature('Riffle', 'list')
         .supported()

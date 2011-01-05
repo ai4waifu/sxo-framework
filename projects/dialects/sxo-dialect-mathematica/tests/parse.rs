@@ -1460,3 +1460,17 @@ fn complex_exact_constant_array_and_append() {
         "{1, 2, I}"
     );
 }
+
+#[test]
+fn complex_exact_vector_struct_ops() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("PadLeft[{1 + I, 2}, 4]")), "{0, 0, 1 + I, 2}");
+    assert_eq!(h.wolfram(h.eval("Reverse[{1 + I, 2, 3}]")), "{3, 2, 1 + I}");
+    assert_eq!(h.wolfram(h.eval("Take[{1 + I, 2, 3, 4}, 2]")), "{1 + I, 2}");
+    assert_eq!(h.wolfram(h.eval("First[{1 + I, 2, 3}]")), "1 + I");
+    assert_eq!(h.wolfram(h.eval("Extract[{1 + I, 2, 3}, 2]")), "2");
+    assert_eq!(
+        h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4 - I}}]")),
+        "{1 + I, 2, 3, 4 - I}"
+    );
+}
