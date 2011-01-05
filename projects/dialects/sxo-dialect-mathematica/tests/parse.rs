@@ -1459,6 +1459,10 @@ fn complex_exact_constant_array_and_append() {
         h.wolfram(h.eval("Append[{1, 2}, I]")),
         "{1, 2, I}"
     );
+    assert_eq!(
+        h.wolfram(h.eval("Prepend[{1, 2}, I]")),
+        "{I, 1, 2}"
+    );
 }
 
 #[test]

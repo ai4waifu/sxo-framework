@@ -473,6 +473,7 @@ mod parity_tests {
             ("DiagonalMatrix[{1 + I, 2}]", "{{1 + I, 0}, {0, 2}}"),
             ("ConstantArray[I, 3]", "{I, I, I}"),
             ("Append[{1, 2}, I]", "{1, 2, I}"),
+            ("Prepend[{1, 2}, I]", "{I, 1, 2}"),
             ("PadLeft[{1 + I, 2}, 4]", "{0, 0, 1 + I, 2}"),
             ("Reverse[{1 + I, 2, 3}]", "{3, 2, 1 + I}"),
             ("Take[{1 + I, 2, 3, 4}, 2]", "{1 + I, 2}"),

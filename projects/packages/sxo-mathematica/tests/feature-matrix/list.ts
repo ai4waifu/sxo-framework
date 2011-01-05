@@ -208,7 +208,13 @@ export const listFeatures = [
         .eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}')
         .eval('append.complex', 'Append[{1, 2}, I]', '{1, 2, I}')
         .done(),
-    feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),
+    feature('Prepend', 'list')
+        .supported()
+        .pure()
+        .notes('row-vector scalar prepend; exact complex scalars promote integer and rational parents')
+        .eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}')
+        .eval('prepend.complex', 'Prepend[{1, 2}, I]', '{I, 1, 2}')
+        .done(),
     feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
     feature('Array', 'list')
         .supported()
