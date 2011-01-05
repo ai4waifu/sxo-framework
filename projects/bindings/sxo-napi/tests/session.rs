@@ -430,6 +430,8 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Accumulate[{1 + I, 2, 3}]", "{1 + I, 3 + I, 6 + I}"),
         ("Differences[{1 + I, 2, 3 - I}]", "{1 - I, 1 - I}"),
         ("DiagonalMatrix[{1 + I, 2}]", "{{1 + I, 0}, {0, 2}}"),
+        ("ConstantArray[I, 3]", "{I, I, I}"),
+        ("Append[{1, 2}, I]", "{1, 2, I}"),
         ("Join[{{1 + I}}, {{2}}]", "{{1 + I}, {2}}"),
         ("Riffle[{1, 2}, {I, 3}]", "{1, I, 2, 3}"),
         ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),

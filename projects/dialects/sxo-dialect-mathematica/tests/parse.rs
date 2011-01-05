@@ -1442,3 +1442,21 @@ fn complex_exact_diagonal_matrix() {
         "{{1 + I, 0}, {0, 2 - I}}"
     );
 }
+
+#[test]
+fn complex_exact_constant_array_and_append() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ConstantArray[I, 3]")), "{I, I, I}");
+    assert_eq!(
+        h.wolfram(h.eval("ConstantArray[1 + I, 2]")),
+        "{1 + I, 1 + I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Append[{1 + I, 2}, I]")),
+        "{1 + I, 2, I}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("Append[{1, 2}, I]")),
+        "{1, 2, I}"
+    );
+}

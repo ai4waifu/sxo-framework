@@ -175,7 +175,13 @@ export const listFeatures = [
         .eval('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', '{{3}, {7}}')
         .eval('total.complex', 'Total[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{3 + I}, {7 - I}}')
         .done(),
-    feature('Append', 'list').supported().pure().eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}').done(),
+    feature('Append', 'list')
+        .supported()
+        .pure()
+        .notes('row-vector scalar extend; exact complex scalars promote `ℤ`/`ℚ` parents')
+        .eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}')
+        .eval('append.complex', 'Append[{1, 2}, I]', '{1, 2, I}')
+        .done(),
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),
     feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
     feature('Array', 'list')
@@ -184,7 +190,13 @@ export const listFeatures = [
         .notes('Contract: `Array[f, n]` → `{f[1],…,f[n]}` for operator-value head and exact `n` (no dims/list specs)')
         .eval('array.f3', 'Array[f, 3]', '{f[1], f[2], f[3]}')
         .done(),
-    feature('ConstantArray', 'list').supported().pure().eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}').done(),
+    feature('ConstantArray', 'list')
+        .supported()
+        .pure()
+        .notes('exact scalar fill including `I` / `1+I` on `ComplexExact` parent')
+        .eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}')
+        .eval('constarray.complex', 'ConstantArray[I, 3]', '{I, I, I}')
+        .done(),
     feature('DeleteCases', 'list')
         .supported()
         .pure()
