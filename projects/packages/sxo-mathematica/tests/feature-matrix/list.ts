@@ -32,15 +32,13 @@ export const listFeatures = [
         .eval('map.slot', 'Map[#^2 &, {1, 2, 3}]', '{1, 4, 9}')
         .done(),
     feature('Table', 'list')
-        .supported()
+        .partial('single-iterator `Table[i, {i, n}]` contract only')
         .pure()
-        .notes('single iterator Table[i,{i,n}]')
         .eval('table.basic', 'Table[i, {i, 3}]', '{1, 2, 3}')
         .done(),
     feature('Sum', 'list')
-        .supported()
+        .partial('single-iterator / list fold via Table only')
         .pure()
-        .notes('Sum over single iterator via Table fold')
         .eval('sum.basic', 'Sum[i, {i, 1, 10}]', '55')
         .done(),
     feature('Product', 'list')
@@ -92,15 +90,13 @@ export const listFeatures = [
         .eval('reverse.complex', 'Reverse[{1 + I, 2, 3}]', '{3, 2, 1 + I}')
         .done(),
     feature('Sort', 'list')
-        .supported()
+        .partial('exact-integer ascending contract only. Mixed or non-integer stays residual')
         .pure()
-        .notes('Contract: exact-integer ascending only; mixed/non-integer → residual (not full MMA Sort)')
         .eval('sort.3', 'Sort[{3, 1, 2}]', '{1, 2, 3}')
         .done(),
     feature('MemberQ', 'list')
-        .supported()
+        .partial('structural equality membership only. Not pattern `MemberQ`')
         .pure()
-        .notes('Contract: structural equality membership only (not pattern `MemberQ`)')
         .eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True')
         .done(),
     feature('Select', 'list')
@@ -119,9 +115,8 @@ export const listFeatures = [
         .eval('cases.mixed', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
     feature('Count', 'list')
-        .supported()
+        .partial('structural equality occurrence count only. Not pattern `Count`')
         .pure()
-        .notes('Contract: structural equality occurrence count (not pattern `Count`)')
         .eval('count.1', 'Count[{1, 1, 2}, 1]', '2')
         .done(),
     feature('Partition', 'list').supported().pure().eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}').done(),
@@ -138,15 +133,13 @@ export const listFeatures = [
         .eval('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', '{2}')
         .done(),
     feature('FreeQ', 'list')
-        .supported()
+        .partial('top-level structural non-membership only. Not deep or pattern `FreeQ`')
         .pure()
-        .notes('Contract: top-level structural non-membership only (not deep/pattern `FreeQ`)')
         .eval('freeq.3', 'FreeQ[{1, 2}, 3]', 'True')
         .done(),
     feature('Position', 'list')
-        .supported()
+        .partial('top-level structural_eq positions only. Not deep or pattern `Position`')
         .pure()
-        .notes('Contract: top-level structural_eq positions as `{{i},…}` (not deep/pattern `Position`)')
         .eval('position.1', 'Position[{1, 2, 1}, 1]', '{{1}, {3}}')
         .done(),
     feature('Extract', 'list')
@@ -193,9 +186,8 @@ export const listFeatures = [
         .eval('differences.complex', 'Differences[{1 + I, 2, 3 - I}]', '{1 - I, 1 - I}')
         .done(),
     feature('Total', 'list')
-        .supported()
+        .partial('default column fold and tested level specs only. Deeper level specs remain open')
         .pure()
-        .notes('default column fold; bare `2` / `{2}` row fold; exact complex parent OK. Deeper level specs remain open')
         .eval('total.3', 'Total[{1, 2, 3}]', '6')
         .eval('total.cols', 'Total[{{1, 2}, {3, 4}}]', '{4, 6}')
         .eval('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', '{{3}, {7}}')

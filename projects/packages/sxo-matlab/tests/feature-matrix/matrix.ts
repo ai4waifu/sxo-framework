@@ -8,9 +8,8 @@ export const matrixFeatures = [
         .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
         .done(),
     feature('transpose', 'matrix')
-        .supported()
+        .partial('2-D MatrixValue transpose. Row/column vectors keep Term reshape')
         .pure()
-        .notes("`.'` Transpose: 2-D via MatrixValue Goal; row/column vectors keep Term reshape")
         .eval('transpose.row', "[1, 2].'", '[1; 2]')
         .eval('transpose.col', "[1; 2].'", '[1, 2]')
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
@@ -90,9 +89,8 @@ export const matrixFeatures = [
         .eval('issymmetric.eye', 'issymmetric(eye(3))', '1')
         .done(),
     feature('istril', 'matrix')
-        .supported()
+        .partial('istril → IsTriangular(lower) Goal. Nested `tril(…)` not MatrixOperand at lower time')
         .pure()
-        .notes('istril → IsTriangular(lower) Goal; nested tril(…) not MatrixOperand at lower time')
         .eval('istril.lower', 'istril([1, 0; 3, 4])', '1')
         .done(),
     feature('istriu', 'matrix')

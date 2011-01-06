@@ -37,9 +37,8 @@ export const arithmeticFeatures = [
         .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
         .done(),
     feature('mrdivide', 'arithmetic')
-        .supported()
+        .partial('scalar `/` stays Divide. Typed matrices → RightSolve with disposition residuals (see solve.mrdivide)')
         .pure()
-        .notes('scalar `/` stays Divide; typed matrices → Athena RightSolve (X B = A)')
         .eval('mrdivide.basic', '6 / 2', '3')
         .eval('mrdivide.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
         .eval('mrdivide.2x2', '[1, 2; 3, 4] / [1, 2; 3, 4]', '[1, 0; 0, 1]')
