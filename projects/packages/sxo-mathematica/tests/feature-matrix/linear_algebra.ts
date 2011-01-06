@@ -27,9 +27,8 @@ export const linearAlgebraFeatures = [
         .eval('transpose.ragged', 'Transpose[{{1, 2}, {3}}]', 'Transpose[{{1, 2}, {3}}]')
         .done(),
     feature('ConjugateTranspose', 'linear_algebra')
-        .supported()
+        .partial('ComplexExact parent conjugates then transposes. Machine complex parent still open')
         .pure()
-        .notes('exact ComplexExact parent conjugates then transposes; machine complex parent still open')
         .eval('ctranspose.real', 'ConjugateTranspose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
         .eval('ctranspose.complex', 'ConjugateTranspose[{{1 + I}}]', '{{1 - I}}')
         .done(),

@@ -16,9 +16,8 @@ export const matrixFeatures = [
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
-        .supported()
+        .partial('ComplexExact parent conjugates. Machine complex parent still open. MATLAB renders 1×1 matrix results as scalars')
         .pure()
-        .notes('exact ComplexExact conjugates. MATLAB renders 1×1 matrix results as scalars')
         .eval('ctranspose.real', "[1, 2; 3, 4]'", '[1, 3; 2, 4]')
         .eval('ctranspose.complex', "[1+2i, 3; 4, 5]'", '[1 - 2*i, 4; 3, 5]')
         .eval('ctranspose.basic', "(1+1i)'", '1 - i')

@@ -2,11 +2,8 @@ import { feature } from '@sxo/harness';
 
 export const solveFeatures = [
     feature('Solve', 'solve')
-        .supported()
+        .partial('univariate polynomial and affine list systems only. Nonlinear multivariate still open')
         .pure()
-        .notes(
-            'univariate polynomial → `UnivariateEquation`; affine list systems → `LinearEquations` (exact Rules). Nonlinear multivariate still open.',
-        )
         .eval('solve.quad', 'Solve[x^2 == 1, x]', '{{x -> -1}, {x -> 1}}')
         .eval('solve.linear2', 'Solve[{x + y == 3, x - y == 1}, {x, y}]', '{{x -> 2, y -> 1}}')
         .done(),
