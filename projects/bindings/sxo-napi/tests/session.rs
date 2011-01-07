@@ -437,6 +437,11 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Reverse[{1 + I, 2, 3}]", "{3, 2, 1 + I}"),
         ("Take[{1 + I, 2, 3, 4}, 2]", "{1 + I, 2}"),
         ("First[{1 + I, 2, 3}]", "1 + I"),
+        ("Extract[{1 + I, 2, 3}, 2]", "2"),
+        (
+            "Flatten[{{1 + I, 2}, {3, 4 - I}}]",
+            "{1 + I, 2, 3, 4 - I}",
+        ),
         ("Join[{{1 + I}}, {{2}}]", "{{1 + I}, {2}}"),
         ("Riffle[{1, 2}, {I, 3}]", "{1, I, 2, 3}"),
         ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),
