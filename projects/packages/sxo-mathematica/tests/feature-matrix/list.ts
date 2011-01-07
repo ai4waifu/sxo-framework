@@ -25,9 +25,8 @@ export const listFeatures = [
         .done(),
     feature('Range', 'list').supported().pure().notes('Range[n] integer sequence').eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
     feature('Map', 'list')
-        .supported()
+        .partial('head Map keeps exact `Sin[1]`. Slot `Map` folds integers only')
         .pure()
-        .notes('Map keeps exact Sin[1]; Slot Map folds integers')
         .eval('map.sin', 'Map[Sin, {0, 1}]', '{0, Sin[1]}')
         .eval('map.slot', 'Map[#^2 &, {1, 2, 3}]', '{1, 4, 9}')
         .done(),
@@ -42,9 +41,8 @@ export const listFeatures = [
         .eval('sum.basic', 'Sum[i, {i, 1, 10}]', '55')
         .done(),
     feature('Product', 'list')
-        .supported()
+        .partial('iterator Product via Table fold and tested matrix column fold. Deeper specs open')
         .pure()
-        .notes('iterator Product via Table fold; matrix column fold and exact complex parent OK')
         .eval('product.basic', 'Product[i, {i, 1, 5}]', '120')
         .eval('product.cols', 'Product[{{1, 2}, {3, 4}}]', '{3, 8}')
         .eval('product.complex', 'Product[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{2 + 2*I}, {12 - 3*I}}')
@@ -108,9 +106,8 @@ export const listFeatures = [
         })
         .done(),
     feature('Cases', 'list')
-        .supported()
+        .partial('CollectMatches via `Blank[Integer]` only. Not full pattern `Cases`')
         .pure()
-        .notes('CollectMatches via Blank[Integer]; also covered under pattern.blank')
         .eval('cases.integer', 'Cases[{1, 2, 3}, _Integer]', '{1, 2, 3}')
         .eval('cases.mixed', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
@@ -121,15 +118,13 @@ export const listFeatures = [
         .done(),
     feature('Partition', 'list').supported().pure().eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}').done(),
     feature('Union', 'list')
-        .supported()
+        .partial('structural dedupe of list args. Exact integers sorted ascending only')
         .pure()
-        .notes('Contract: structural dedupe of list args; exact integers sorted ascending')
         .eval('union.basic', 'Union[{1, 2}, {2, 3}]', '{1, 2, 3}')
         .done(),
     feature('Intersection', 'list')
-        .supported()
+        .partial('structural intersection. Exact integers sorted ascending only')
         .pure()
-        .notes('Contract: structural intersection; exact integers sorted ascending')
         .eval('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', '{2}')
         .done(),
     feature('FreeQ', 'list')
@@ -158,16 +153,14 @@ export const listFeatures = [
         })
         .done(),
     feature('PadLeft', 'list')
-        .supported()
+        .partial('left-pad exact integer `0` or left-truncate. No pad value or level args')
         .pure()
-        .notes('Contract: left-pad exact integer `0` to length `n`, or left-truncate (no pad value / level args); exact complex OK')
         .eval('padleft.4', 'PadLeft[{1, 2}, 4]', '{0, 0, 1, 2}')
         .eval('padleft.complex', 'PadLeft[{1 + I, 2}, 4]', '{0, 0, 1 + I, 2}')
         .done(),
     feature('Riffle', 'list')
-        .supported()
+        .partial('top-level zip of two lists with length = min. Not MMA multi-arg or x-spacer')
         .pure()
-        .notes('Contract: top-level zip of two lists, length = min (not MMA multi-arg / x-spacer `Riffle`). Exact complex unifies with `ℤ`/`ℚ`')
         .eval('riffle.ab', 'Riffle[{1, 2}, {a, b}]', '{1, a, 2, b}')
         .eval('riffle.complex_mix', 'Riffle[{1, 2}, {I, 3}]', '{1, I, 2, 3}')
         .done(),
@@ -207,11 +200,14 @@ export const listFeatures = [
         .eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}')
         .eval('prepend.complex', 'Prepend[{1, 2}, I]', '{I, 1, 2}')
         .done(),
-    feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
-    feature('Array', 'list')
-        .supported()
+    feature('DeleteDuplicates', 'list')
+        .partial('structural dedupe on tested exact elements only')
         .pure()
-        .notes('Contract: `Array[f, n]` → `{f[1],…,f[n]}` for operator-value head and exact `n` (no dims/list specs)')
+        .eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}')
+        .done(),
+    feature('Array', 'list')
+        .partial('`Array[f, n]` operator-value head and exact `n` only. No dims or list specs')
+        .pure()
         .eval('array.f3', 'Array[f, 3]', '{f[1], f[2], f[3]}')
         .done(),
     feature('ConstantArray', 'list')
@@ -222,21 +218,18 @@ export const listFeatures = [
         .eval('constarray.complex', 'ConstantArray[I, 3]', '{I, I, I}')
         .done(),
     feature('DeleteCases', 'list')
-        .supported()
+        .partial('CollectRejects via `Blank[Integer]` only. Inverse of contracted `Cases`')
         .pure()
-        .notes('CollectRejects via Blank[Integer]; inverse of Cases')
         .eval('deletecases.int', 'DeleteCases[{1, a, 2}, _Integer]', '{a}')
         .done(),
     feature('MapIndexed', 'list')
-        .supported()
+        .partial('MapIndexed applies `f[elem,{i}]`. Multi-slot `#2&` contract only')
         .pure()
-        .notes('Multi-slot `#2&` → `Function[{$slot1,$slot2},…]`; MapIndexed applies `f[elem,{i}]`')
         .eval('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', '{{1}, {2}}')
         .done(),
     feature('MapThread', 'list')
-        .supported()
+        .partial('zip columns of `{list1, list2, …}` then apply head or Function')
         .pure()
-        .notes('Zip columns of `{list1, list2, …}` then apply head / Function')
         .eval('mapthread.f', 'MapThread[f, {{1, 2}, {3, 4}}]', '{f[1, 3], f[2, 4]}')
         .done(),
     feature('Nearest', 'list').unsupported().pure().gap('nearest.3', 'Nearest[{1, 2, 4}, 3]', { expected: '{2, 4}' }).done(),

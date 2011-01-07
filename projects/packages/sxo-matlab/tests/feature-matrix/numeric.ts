@@ -23,6 +23,7 @@ export const numericFeatures = [
         .notes('Inf/NaN dialect surface; exact 0^0 via session ZeroPowerZeroConvention::One; 0/0 and Inf-Inf render NaN from Indeterminate')
         .eval('ieee.0over0', '0/0', 'NaN')
         .eval('ieee.inf_minus_inf', 'Inf - Inf', 'NaN')
+        .eval('ieee.div0_cancel', '(1/0)-(1/0)', 'NaN')
         .eval('ieee.0pow0', '0^0', '1', { notes: 'session convention One (not Form literal rewrite)' })
         .eval('ieee.0pow0.bound', 'x = 0; x^0', '1', { notes: 'same convention after Own binding' })
         .done(),

@@ -20,9 +20,8 @@ export const linearAlgebraFeatures = [
         .eval('inverse.singular', 'Inverse[{{1, 2}, {2, 4}}]', 'Inverse[Singular]')
         .done(),
     feature('Transpose', 'linear_algebra')
-        .supported()
+        .partial('typed numeric nested List transpose. Ragged stays residual')
         .pure()
-        .notes('nested List → MatrixValue LinearAlgebraRequest::Transpose; ragged stays residual')
         .eval('transpose.2x2', 'Transpose[{{1, 2}, {3, 4}}]', '{{1, 3}, {2, 4}}')
         .eval('transpose.ragged', 'Transpose[{{1, 2}, {3}}]', 'Transpose[{{1, 2}, {3}}]')
         .done(),
@@ -81,9 +80,8 @@ export const linearAlgebraFeatures = [
         .eval('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', '5')
         .done(),
     feature('Norm', 'linear_algebra')
-        .supported()
+        .partial('vector norm when sum of squares is a perfect square only')
         .pure()
-        .notes('nested List → MatrixValue LinearAlgebraRequest::Norm (perfect square)')
         .eval('norm.34', 'Norm[{3, 4}]', '5')
         .done(),
     feature('Cross', 'linear_algebra')
