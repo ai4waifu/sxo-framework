@@ -18,9 +18,8 @@ export const numericFeatures = [
     feature('mod', 'numeric').unsupported().pure().gap('mod.10_3', 'mod(10, 3)', { expected: '1' }).done(),
     feature('hypot', 'numeric').unsupported().pure().gap('hypot.34', 'hypot(3, 4)', { expected: '5' }).done(),
     feature('ieee_edge', 'numeric')
-        .supported()
+        .partial('NaN surface for indeterminate forms. Session `0^0` convention is One')
         .pure()
-        .notes('Inf/NaN dialect surface; exact 0^0 via session ZeroPowerZeroConvention::One; 0/0 and Inf-Inf render NaN from Indeterminate')
         .eval('ieee.0over0', '0/0', 'NaN')
         .eval('ieee.inf_minus_inf', 'Inf - Inf', 'NaN')
         .eval('ieee.div0_cancel', '(1/0)-(1/0)', 'NaN')

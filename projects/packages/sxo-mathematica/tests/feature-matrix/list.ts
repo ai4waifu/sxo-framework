@@ -16,9 +16,8 @@ export const listFeatures = [
         .eval('replacepart.empty_grow', 'ReplacePart[{}, 1 -> 1]', '{1}')
         .done(),
     feature('Part', 'list')
-        .supported()
+        .partial('1-based Part on tested literal forms. `[[0]]` → `{}` per Index contract')
         .pure()
-        .notes('1-based Part; [[0]] → empty list (kernel Index contract)')
         .eval('part.infix', '{1, 2, 3}[[2]]', '2')
         .eval('part.head', 'Part[{1, 2, 3}, 1]', '1')
         .eval('part.zero', '{1, 2, 3}[[0]]', '{}')
@@ -116,7 +115,11 @@ export const listFeatures = [
         .pure()
         .eval('count.1', 'Count[{1, 1, 2}, 1]', '2')
         .done(),
-    feature('Partition', 'list').supported().pure().eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}').done(),
+    feature('Partition', 'list')
+        .partial('fixed-width exact-integer partitions only')
+        .pure()
+        .eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}')
+        .done(),
     feature('Union', 'list')
         .partial('structural dedupe of list args. Exact integers sorted ascending only')
         .pure()

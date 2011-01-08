@@ -9,28 +9,26 @@ export const indexingFeatures = [
         .eval('colon.step', '1:2:10', '[1, 3, 5, 7, 9]')
         .done(),
     feature('subsref', 'indexing')
-        .supported()
+        .partial('1-based subsref on literals including linear and slice forms')
         .pure()
-        .notes('1-based; matrix A(k) is column-major linear index')
         .eval('subsref.vec', '[1, 2, 3](2)', '2')
         .eval('subsref.matrix', '[1, 2; 3, 4](1, 2)', '2')
+        .eval('subsref.complex', '[1+i, 2; 3, 4](1, 2)', '2')
         .eval('subsref.linear', '[1, 2; 3, 4](2)', '3')
         .eval('subsref.linear4', '[1, 2; 3, 4](4)', '4')
         .eval('subsref.slice', '[1, 2, 3](1:2)', '[1, 2]')
         .done(),
     feature('end', 'indexing').supported().pure().eval('end.index', '[1, 2, 3](end)', '3').done(),
     feature('row_colon', 'indexing')
-        .supported()
+        .partial('row/col `:` slices on literal matrices only')
         .pure()
-        .notes('All-colon row/col on literals; column as flat list of picks')
         .eval('row.colon', '[1, 2; 3, 4](1,:)', '[1, 2]')
         .eval('col.colon', '[1, 2; 3, 4](:,2)', '[2, 4]')
         .done(),
     feature('logical_index', 'indexing').unsupported().pure().gap('logical.gt', 'A=[1,2,3]; A(A>1)', { expected: '[2, 3]' }).done(),
     feature('colon_all', 'indexing')
-        .supported()
+        .partial('`A(:)` column-major flatten on literal rectangular matrices')
         .pure()
-        .notes('A(:) flattens rectangular matrices column-major')
         .eval('colon.all', '[1, 2; 3, 4](:)', '[1; 3; 2; 4]')
         .eval('colon.all_own', 'A=[1, 2; 3, 4]; A(:)', '[1; 3; 2; 4]')
         .done(),
