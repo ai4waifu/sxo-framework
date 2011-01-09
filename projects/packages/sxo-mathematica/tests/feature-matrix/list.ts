@@ -2,7 +2,7 @@ import { feature } from '@sxo/harness';
 
 export const listFeatures = [
     feature('List', 'list')
-        .supported()
+        .partial('literal nested list surface and roundtrip only')
         .pure()
         .eval('list.literal', '{1, 2, 3}', '{1, 2, 3}')
         .roundtrip('list.roundtrip', '{1, 2}', '{1, 2}')
@@ -21,6 +21,7 @@ export const listFeatures = [
         .eval('part.infix', '{1, 2, 3}[[2]]', '2')
         .eval('part.head', 'Part[{1, 2, 3}, 1]', '1')
         .eval('part.zero', '{1, 2, 3}[[0]]', '{}')
+        .eval('part.complex', 'Part[{{1 + I, 2}, {3, 4}}, 1, 2]', '2')
         .done(),
     feature('Range', 'list').supported().pure().notes('Range[n] integer sequence').eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
     feature('Map', 'list')
@@ -48,23 +49,20 @@ export const listFeatures = [
         .done(),
     feature('Length', 'list').supported().pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
     feature('First', 'list')
-        .supported()
+        .partial('non-empty List only. Empty → `InvalidIndex`. Exact complex OK')
         .pure()
-        .notes('First on non-empty List; empty → InvalidIndex at Athena; exact complex OK')
         .eval('first.ab', 'First[{a, b}]', 'a')
         .eval('first.complex', 'First[{1 + I, 2, 3}]', '1 + I')
         .done(),
     feature('Join', 'list')
-        .supported()
+        .partial('list concat and matrix row stack. Exact complex parents unify with `ℤ`/`ℚ`')
         .pure()
-        .notes('list concat and matrix row stack; exact complex parents unify with `ℤ`/`ℚ`')
         .eval('join.basic', 'Join[{1}, {2}]', '{1, 2}')
         .eval('join.complex_mix', 'Join[{{1 + I}}, {{2}}]', '{{1 + I}, {2}}')
         .done(),
     feature('Flatten', 'list')
-        .supported()
+        .partial('row-major flatten on tested nested lists. Exact complex parent OK')
         .pure()
-        .notes('row-major flatten; exact complex parent OK')
         .eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}')
         .eval('flatten.complex', 'Flatten[{{1 + I, 2}, {3, 4 - I}}]', '{1 + I, 2, 3, 4 - I}')
         .done(),
@@ -72,17 +70,15 @@ export const listFeatures = [
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
     feature('Most', 'list').supported().pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
     feature('Take', 'list')
-        .supported()
+        .partial('prefix take on exact vectors. Exact complex parent OK')
         .pure()
-        .notes('prefix take on exact vectors; exact complex parent OK')
         .eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}')
         .eval('take.complex', 'Take[{1 + I, 2, 3, 4}, 2]', '{1 + I, 2}')
         .done(),
     feature('Drop', 'list').supported().pure().eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}').done(),
     feature('Reverse', 'list')
-        .supported()
+        .partial('vector and matrix reverse on tested forms. Exact complex parent OK')
         .pure()
-        .notes('vector and matrix reverse; exact complex parent OK')
         .eval('reverse.3', 'Reverse[{1, 2, 3}]', '{3, 2, 1}')
         .eval('reverse.complex', 'Reverse[{1 + I, 2, 3}]', '{3, 2, 1 + I}')
         .done(),
@@ -141,9 +137,8 @@ export const listFeatures = [
         .eval('position.1', 'Position[{1, 2, 1}, 1]', '{{1}, {3}}')
         .done(),
     feature('Extract', 'list')
-        .supported()
+        .partial('1-based extract on tested forms. Exact complex parent OK')
         .pure()
-        .notes('1-based extract; exact complex parent OK')
         .eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2')
         .eval('extract.complex', 'Extract[{1 + I, 2, 3}, 2]', '2')
         .done(),
@@ -168,16 +163,14 @@ export const listFeatures = [
         .eval('riffle.complex_mix', 'Riffle[{1, 2}, {I, 3}]', '{1, I, 2, 3}')
         .done(),
     feature('Accumulate', 'list')
-        .supported()
+        .partial('prefix sums on exact vectors. Exact complex parent OK')
         .pure()
-        .notes('prefix sums on exact vectors; exact complex parent OK')
         .eval('accumulate.3', 'Accumulate[{1, 2, 3}]', '{1, 3, 6}')
         .eval('accumulate.complex', 'Accumulate[{1 + I, 2, 3}]', '{1 + I, 3 + I, 6 + I}')
         .done(),
     feature('Differences', 'list')
-        .supported()
+        .partial('adjacent diffs on exact vectors. Exact complex parent OK')
         .pure()
-        .notes('adjacent diffs on exact vectors; exact complex parent OK')
         .eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}')
         .eval('differences.complex', 'Differences[{1 + I, 2, 3 - I}]', '{1 - I, 1 - I}')
         .done(),
@@ -190,16 +183,14 @@ export const listFeatures = [
         .eval('total.complex', 'Total[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{3 + I}, {7 - I}}')
         .done(),
     feature('Append', 'list')
-        .supported()
+        .partial('row-vector scalar extend. Exact complex scalars promote `ℤ`/`ℚ` parents')
         .pure()
-        .notes('row-vector scalar extend; exact complex scalars promote `ℤ`/`ℚ` parents')
         .eval('append.3', 'Append[{1, 2}, 3]', '{1, 2, 3}')
         .eval('append.complex', 'Append[{1, 2}, I]', '{1, 2, I}')
         .done(),
     feature('Prepend', 'list')
-        .supported()
+        .partial('row-vector scalar prepend. Exact complex scalars promote integer and rational parents')
         .pure()
-        .notes('row-vector scalar prepend; exact complex scalars promote integer and rational parents')
         .eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}')
         .eval('prepend.complex', 'Prepend[{1, 2}, I]', '{I, 1, 2}')
         .done(),
@@ -214,9 +205,8 @@ export const listFeatures = [
         .eval('array.f3', 'Array[f, 3]', '{f[1], f[2], f[3]}')
         .done(),
     feature('ConstantArray', 'list')
-        .supported()
+        .partial('exact scalar fill including `I` / `1+I` on `ComplexExact` parent')
         .pure()
-        .notes('exact scalar fill including `I` / `1+I` on `ComplexExact` parent')
         .eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}')
         .eval('constarray.complex', 'ConstantArray[I, 3]', '{I, I, I}')
         .done(),

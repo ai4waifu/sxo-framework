@@ -6,7 +6,7 @@ export const arithmeticFeatures = [
     feature('Power', 'arithmetic').supported().pure().eval('power.pow1', 'Power[x, 1]', 'x').eval('power.square', '2^3', '8').done(),
     feature('Subtract', 'arithmetic').supported().pure().eval('subtract.basic', 'Subtract[5, 2]', '3').done(),
     feature('Divide', 'arithmetic')
-        .supported()
+        .partial('exact rational divide on tested forms only')
         .pure()
         .eval('divide.basic', 'Divide[6, 2]', '3')
         .eval('divide.rational', '1/3 + 1/3 + 1/3', '1')
@@ -17,9 +17,8 @@ export const arithmeticFeatures = [
     feature('Max', 'arithmetic').unsupported().pure().gap('max.3', 'Max[1, 3, 2]', { expected: '3' }).done(),
     feature('Floor', 'arithmetic').unsupported().pure().gap('floor.2_7', 'Floor[2.7]', { expected: '2' }).done(),
     feature('ArithCanonical', 'arithmetic')
-        .supported()
+        .partial('tested identity folds `x+0` / `1*x` / `x^0` / like powers only')
         .pure()
-        .notes('identity folds x+0 / 1*x / x^0 / like powers')
         .eval('arith.x_plus_0', 'x + 0', 'x')
         .eval('arith.one_times_x', '1 * x', 'x')
         .eval('arith.x_pow_0', 'x^0', '1')
@@ -30,18 +29,16 @@ export const arithmeticFeatures = [
     feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
     feature('Ceiling', 'arithmetic').unsupported().pure().gap('ceiling.2_1', 'Ceiling[2.1]', { expected: '3' }).done(),
     feature('IndeterminateForms', 'arithmetic')
-        .supported()
+        .partial('tested singular forms fold to `Indeterminate` via Athena domain rules')
         .pure()
-        .notes('exact singular forms fold to Indeterminate via Athena domain rules')
         .eval('indet.0over0', '0/0', 'Indeterminate')
         .eval('indet.inf_minus_inf', 'Infinity - Infinity', 'Indeterminate')
         .eval('indet.0pow0', '0^0', 'Indeterminate')
         .eval('indet.div0_cancel', '(1/0)-(1/0)', 'Indeterminate')
         .done(),
     feature('CubeRootPow', 'arithmetic')
-        .supported()
+        .partial('exact integer cube root of negative base on tested pin only')
         .pure()
-        .notes('exact integer cube root of negative base under current athena pin')
         .eval('cuberoot.neg8', '(-8)^(1/3)', '-2')
         .done(),
     feature('SqrtRational', 'arithmetic').supported().pure().eval('sqrt.9_4', 'Sqrt[9/4]', '3/2').done(),

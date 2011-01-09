@@ -46,15 +46,13 @@ export const linearAlgebraFeatures = [
         .eval('rowreduce.basic', 'RowReduce[{{1, 2}, {3, 4}}]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('IdentityMatrix', 'linear_algebra')
-        .supported()
+        .partial('exact integer square `IdentityMatrix[n]` only')
         .pure()
-        .notes('surface → SemanticOperator::Eye')
         .eval('idmat.2', 'IdentityMatrix[2]', '{{1, 0}, {0, 1}}')
         .done(),
     feature('Dimensions', 'linear_algebra')
-        .supported()
+        .partial('typed numeric nested List shape only')
         .pure()
-        .notes('surface → SemanticOperator::Size')
         .eval('dims.2x2', 'Dimensions[{{1, 2}, {3, 4}}]', '{2, 2}')
         .done(),
     feature('MatrixRank', 'linear_algebra')
@@ -68,9 +66,8 @@ export const linearAlgebraFeatures = [
         .gap('eigenvalues.diag', 'Eigenvalues[{{1, 0}, {0, 2}}]', { expected: '{2, 1}' })
         .done(),
     feature('DiagonalMatrix', 'linear_algebra')
-        .supported()
+        .partial('vector diagonal constructor with exact complex entries OK')
         .pure()
-        .notes('surface → SemanticOperator::DiagonalMatrix; exact complex diagonal OK')
         .eval('diagmat.12', 'DiagonalMatrix[{1, 2}]', '{{1, 0}, {0, 2}}')
         .eval('diagmat.complex', 'DiagonalMatrix[{1 + I, 2}]', '{{1 + I, 0}, {0, 2}}')
         .done(),

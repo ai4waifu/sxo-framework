@@ -28,18 +28,16 @@ export const matrixFeatures = [
     feature('size', 'matrix').supported().pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
     feature('length', 'matrix').supported().pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
-        .supported()
+        .partial('default and dim `1`/`2` column or row sums. Exact complex parent OK on tested forms')
         .pure()
-        .notes('default and dim=1 column sums; dim=2 row sums as a column vector; exact complex parent OK')
         .eval('sum.vec', 'sum([1, 2, 3])', '6')
         .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
         .eval('sum.axis', 'sum([1, 2; 3, 4], 2)', '[3; 7]')
         .eval('sum.complex', 'sum([1+i, 2; 3, 4-i], 2)', '[3 + i; 7 - i]')
         .done(),
     feature('prod', 'matrix')
-        .supported()
+        .partial('default and dim `1`/`2` column or row products. Exact complex parent OK on tested forms')
         .pure()
-        .notes('default and dim=1 column products; dim=2 row products as a column vector; exact complex parent OK')
         .eval('prod.vec', 'prod([2, 3, 4])', '24')
         .eval('prod.matrix', 'prod([1, 2; 3, 4])', '[3, 8]')
         .eval('prod.axis', 'prod([1, 2; 3, 4], 2)', '[2; 12]')
@@ -77,15 +75,13 @@ export const matrixFeatures = [
     feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: 'ones(5,0)' }).done(),
     feature('eye_empty', 'matrix').unsupported().pure().gap('eye.0', 'eye(0)', { expected: '[]' }).done(),
     feature('isdiag', 'matrix')
-        .supported()
+        .partial('typed numeric matrix diagonal predicate only')
         .pure()
-        .notes('isdiag → IsDiagonal Goal → 0/1 Dot-surface scalar')
         .eval('isdiag.eye', 'isdiag(eye(3))', '1')
         .done(),
     feature('issymmetric', 'matrix')
-        .supported()
+        .partial('typed numeric matrix symmetry predicate only')
         .pure()
-        .notes('issymmetric → IsSymmetric Goal → 0/1 Dot-surface scalar')
         .eval('issymmetric.eye', 'issymmetric(eye(3))', '1')
         .done(),
     feature('istril', 'matrix')
@@ -94,9 +90,8 @@ export const matrixFeatures = [
         .eval('istril.lower', 'istril([1, 0; 3, 4])', '1')
         .done(),
     feature('istriu', 'matrix')
-        .supported()
+        .partial('istriu → IsTriangular(upper) Goal on typed numeric matrices')
         .pure()
-        .notes('istriu → IsTriangular(upper) Goal')
         .eval('istriu.upper', 'istriu([1, 2; 0, 4])', '1')
         .done(),
     feature('spalloc', 'matrix').unsupported().pure().gap('spalloc.332', 'spalloc(3, 3, 2)', { expected: '...' }).done(),

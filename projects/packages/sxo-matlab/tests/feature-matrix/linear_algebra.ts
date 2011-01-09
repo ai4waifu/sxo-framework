@@ -50,9 +50,8 @@ export const linearAlgebraFeatures = [
         .eval('null.rank1', 'null([1, 2; 2, 4])', '[-2; 1]')
         .done(),
     feature('diag', 'linear_algebra')
-        .supported()
+        .partial('vector diagonal constructor with exact complex entries OK')
         .pure()
-        .notes('diag(v) → DiagonalMatrix Semantic / Form constructor; exact complex diagonal OK')
         .eval('diag.vec', 'diag([1, 2])', '[1, 0; 0, 2]')
         .eval('diag.complex', 'diag([1+i, 2])', '[1 + i, 0; 0, 2]')
         .done(),

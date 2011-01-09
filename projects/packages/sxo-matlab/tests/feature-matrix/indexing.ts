@@ -2,9 +2,8 @@ import { feature } from '@sxo/harness';
 
 export const indexingFeatures = [
     feature('colon', 'indexing')
-        .supported()
+        .partial('integer `1:n` and `a:step:b` row vectors only')
         .pure()
-        .notes('1:n and a:step:b expand to numeric row vectors')
         .eval('colon.range', '1:3', '[1, 2, 3]')
         .eval('colon.step', '1:2:10', '[1, 3, 5, 7, 9]')
         .done(),
@@ -18,7 +17,11 @@ export const indexingFeatures = [
         .eval('subsref.linear4', '[1, 2; 3, 4](4)', '4')
         .eval('subsref.slice', '[1, 2, 3](1:2)', '[1, 2]')
         .done(),
-    feature('end', 'indexing').supported().pure().eval('end.index', '[1, 2, 3](end)', '3').done(),
+    feature('end', 'indexing')
+        .partial('`end` on literal vectors only')
+        .pure()
+        .eval('end.index', '[1, 2, 3](end)', '3')
+        .done(),
     feature('row_colon', 'indexing')
         .partial('row/col `:` slices on literal matrices only')
         .pure()
