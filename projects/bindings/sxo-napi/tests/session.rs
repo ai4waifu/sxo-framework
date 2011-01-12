@@ -414,6 +414,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("SymmetricMatrixQ[{{1, 2}, {3, 4}}]", "0"),
         ("Inverse[{{1, 2}, {3, 4}}]", "{{-2, 1}, {3/2, -1/2}}"),
         ("Part[{{1, 2}, {3, 4}}, 1, 2]", "2"),
+        ("Part[{{1 + I, 2}, {3, 4}}, 1, 2]", "2"),
         ("0/0", "Indeterminate"),
         ("(1/0)-(1/0)", "Indeterminate"),
         ("ReplacePart[{1, 2, 3}, 2 -> 9]", "{1, 9, 3}"),
