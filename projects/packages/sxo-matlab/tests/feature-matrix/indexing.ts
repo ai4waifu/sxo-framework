@@ -27,6 +27,7 @@ export const indexingFeatures = [
         .pure()
         .eval('row.colon', '[1, 2; 3, 4](1,:)', '[1, 2]')
         .eval('col.colon', '[1, 2; 3, 4](:,2)', '[2, 4]')
+        .eval('col.colon.complex', '[1+i, 2; 3, 4](:,2)', '[2, 4]')
         .done(),
     feature('logical_index', 'indexing').unsupported().pure().gap('logical.gt', 'A=[1,2,3]; A(A>1)', { expected: '[2, 3]' }).done(),
     feature('colon_all', 'indexing')
