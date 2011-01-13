@@ -22,11 +22,11 @@ export const matrixFeatures = [
         .eval('ctranspose.basic', "(1+1i)'", '1 - i')
         .eval('ctranspose.one_by_one', "[1+1i]'", '1 - i')
         .done(),
-    feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
-    feature('zeros', 'matrix').supported().pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),
-    feature('ones', 'matrix').supported().pure().eval('ones.2', 'ones(2)', '[1, 1; 1, 1]').done(),
-    feature('size', 'matrix').supported().pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
-    feature('length', 'matrix').supported().pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
+    feature('eye', 'matrix').partial('square `eye(n)` exact integer constructor only').pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
+    feature('zeros', 'matrix').partial('`zeros(m,n)` exact numeric fill only').pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),
+    feature('ones', 'matrix').partial('`ones(n)` square exact fill only').pure().eval('ones.2', 'ones(2)', '[1, 1; 1, 1]').done(),
+    feature('size', 'matrix').partial('typed numeric matrix shape only').pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
+    feature('length', 'matrix').partial('max dimension on tested vectors only').pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
         .partial('default and dim `1`/`2` column or row sums. Exact complex parent OK on tested forms')
         .pure()
@@ -51,15 +51,13 @@ export const matrixFeatures = [
     feature('pascal', 'matrix').unsupported().pure().gap('pascal.3', 'pascal(3)', { expected: '[1,1,1; 1,2,3; 1,3,6]' }).done(),
     feature('magic', 'matrix').unsupported().pure().gap('magic.3', 'magic(3)', { expected: '...' }).done(),
     feature('tril', 'matrix')
-        .supported()
+        .partial('typed numeric matrix lower triangularize only')
         .pure()
-        .notes('tril → LowerTriangularize Goal → LinearAlgebraRequest::Tril')
         .eval('tril.2x2', 'tril([1, 2; 3, 4])', '[1, 0; 3, 4]')
         .done(),
     feature('triu', 'matrix')
-        .supported()
+        .partial('typed numeric matrix upper triangularize only')
         .pure()
-        .notes('triu → UpperTriangularize Goal → LinearAlgebraRequest::Triu')
         .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
         .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),

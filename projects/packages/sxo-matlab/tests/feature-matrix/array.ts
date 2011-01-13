@@ -7,9 +7,8 @@ export const arrayFeatures = [
         .gap('diffvec.3', 'diff([1, 4, 9])', { expected: '[3, 5]' })
         .done(),
     feature('cumsum', 'array')
-        .supported()
+        .partial('row-vector `cumsum` on tested forms. Exact complex parent OK')
         .pure()
-        .notes('cumsum → Accumulate on typed 1×n MatrixRef (Living 16); exact complex parent OK')
         .eval('cumsum.3', 'cumsum([1, 2, 3])', '[1, 3, 6]')
         .eval('cumsum.complex', 'cumsum([1+i, 2, 3])', '[1 + i, 3 + i, 6 + i]')
         .done(),

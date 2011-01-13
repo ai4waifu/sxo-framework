@@ -13,9 +13,8 @@ export const predicatesFeatures = [
     feature('ListQ', 'predicates').unsupported().pure().gap('listq.1', 'ListQ[{1}]', { expected: 'True' }).done(),
     feature('StringQ', 'predicates').unsupported().pure().gap('stringq.a', 'StringQ["a"]', { expected: 'True' }).done(),
     feature('TrueQ', 'predicates')
-        .supported()
+        .partial('`TrueQ` on tested boolean and equality forms only')
         .pure()
-        .notes('TrueQ lowers to Branch → True/False')
         .eval('trueq.true', 'TrueQ[True]', 'True')
         .eval('trueq.equal', 'TrueQ[1 == 1]', 'True')
         .eval('trueq.false', 'TrueQ[False]', 'False')
@@ -30,9 +29,8 @@ export const predicatesFeatures = [
         .done(),
     feature('Element', 'predicates').unsupported().pure().gap('element.int', 'Element[1, Integers]', { expected: 'True' }).done(),
     feature('SymmetricMatrixQ', 'predicates')
-        .supported()
+        .partial('typed numeric matrix symmetry predicate only. Surface is `0`/`1`, not `True`/`False`')
         .pure()
-        .notes('IsSymmetric Goal. Shared flag surface is 0/1, same as MATLAB issymmetric, not True/False atoms')
         .eval('symmatq.yes', 'SymmetricMatrixQ[{{1, 2}, {2, 1}}]', '1')
         .eval('symmatq.no', 'SymmetricMatrixQ[{{1, 2}, {3, 4}}]', '0')
         .done(),

@@ -23,7 +23,7 @@ export const listFeatures = [
         .eval('part.zero', '{1, 2, 3}[[0]]', '{}')
         .eval('part.complex', 'Part[{{1 + I, 2}, {3, 4}}, 1, 2]', '2')
         .done(),
-    feature('Range', 'list').supported().pure().notes('Range[n] integer sequence').eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
+    feature('Range', 'list').partial('`Range[n]` positive integer sequence only').pure().eval('range.3', 'Range[3]', '{1, 2, 3}').done(),
     feature('Map', 'list')
         .partial('head Map keeps exact `Sin[1]`. Slot `Map` folds integers only')
         .pure()
@@ -47,7 +47,7 @@ export const listFeatures = [
         .eval('product.cols', 'Product[{{1, 2}, {3, 4}}]', '{3, 8}')
         .eval('product.complex', 'Product[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{2 + 2*I}, {12 - 3*I}}')
         .done(),
-    feature('Length', 'list').supported().pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
+    feature('Length', 'list').partial('top-level list length on tested forms only').pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
     feature('First', 'list')
         .partial('non-empty List only. Empty → `InvalidIndex`. Exact complex OK')
         .pure()
@@ -66,16 +66,16 @@ export const listFeatures = [
         .eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}')
         .eval('flatten.complex', 'Flatten[{{1 + I, 2}, {3, 4 - I}}]', '{1 + I, 2, 3, 4 - I}')
         .done(),
-    feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
-    feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
-    feature('Most', 'list').supported().pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
+    feature('Apply', 'list').partial('head `Apply` on tested exact lists only').pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
+    feature('Rest', 'list').partial('tail drop on non-empty tested lists only').pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
+    feature('Most', 'list').partial('drop last on non-empty tested lists only').pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
     feature('Take', 'list')
         .partial('prefix take on exact vectors. Exact complex parent OK')
         .pure()
         .eval('take.2', 'Take[{1, 2, 3, 4}, 2]', '{1, 2}')
         .eval('take.complex', 'Take[{1 + I, 2, 3, 4}, 2]', '{1 + I, 2}')
         .done(),
-    feature('Drop', 'list').supported().pure().eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}').done(),
+    feature('Drop', 'list').partial('prefix drop on tested exact lists only').pure().eval('drop.2', 'Drop[{1, 2, 3, 4}, 2]', '{3, 4}').done(),
     feature('Reverse', 'list')
         .partial('vector and matrix reverse on tested forms. Exact complex parent OK')
         .pure()
