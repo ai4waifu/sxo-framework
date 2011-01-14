@@ -2,15 +2,14 @@
 
 export const sessionFeatures = [
     feature('assignment', 'session')
-        .supported()
+        .partial('compound assignment and matrix index read on tested forms')
         .stateful()
-        .notes('compound assignment binds in one evaluate string; Own then subsref')
         .eval('assign.compound', 'x = 5; x + 1', '6')
         .eval('assign.persist', 'x = 5', '5', { notes: 'follow-up x+1 on same Session → 6 (napi session test)' })
         .eval('assign.then_index', 'A = [10, 20]; A(2)', '20')
         .eval('assign.then_linear', 'M = [1, 2; 3, 4]; M(2)', '3')
         .done(),
-    feature('sequence', 'session').supported().pure().eval('seq.last', '1; 2 + 2', '4').done(),
+    feature('sequence', 'session').partial('semicolon compound returns last value only').pure().eval('seq.last', '1; 2 + 2', '4').done(),
     feature('global', 'session')
         .unsupported('parse keeps Global Form via oak Statement::Global; workspace declaration runtime still open')
         .stateful()
