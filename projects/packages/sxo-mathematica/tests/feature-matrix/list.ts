@@ -59,6 +59,7 @@ export const listFeatures = [
         .pure()
         .eval('join.basic', 'Join[{1}, {2}]', '{1, 2}')
         .eval('join.complex_mix', 'Join[{{1 + I}}, {{2}}]', '{{1 + I}, {2}}')
+        .eval('join.complex_matrix', 'Join[{{1 + I, 2}}, {{3, 4}}]', '{{1 + I, 2}, {3, 4}}')
         .done(),
     feature('Flatten', 'list')
         .partial('row-major flatten on tested nested lists. Exact complex parent OK')

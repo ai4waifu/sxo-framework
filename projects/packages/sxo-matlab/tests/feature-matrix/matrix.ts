@@ -59,6 +59,7 @@ export const matrixFeatures = [
         .partial('typed numeric matrix upper triangularize only')
         .pure()
         .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
+        .eval('triu.complex', 'triu([1+i, 2; 3, 4-i])', '[1 + i, 2; 0, 4 - i]')
         .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),

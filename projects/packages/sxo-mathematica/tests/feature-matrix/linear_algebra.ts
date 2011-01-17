@@ -105,6 +105,7 @@ export const linearAlgebraFeatures = [
         .partial('typed numeric nested List upper triangle only')
         .pure()
         .eval('upper.2x2', 'UpperTriangularize[{{1, 2}, {3, 4}}]', '{{1, 2}, {0, 4}}')
+        .eval('upper.complex', 'UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]', '{{1 + I, 2}, {0, 4 - I}}')
         .done(),
     feature('KroneckerProduct', 'linear_algebra')
         .partial('typed numeric vector Kronecker only. Matrix blocks stay open')
