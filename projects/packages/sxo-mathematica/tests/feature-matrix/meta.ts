@@ -2,9 +2,8 @@ import { feature } from '@sxo/harness';
 
 export const metaFeatures = [
     feature('Head', 'meta')
-        .supported()
+        .partial('tested evaluated and symbolic heads only')
         .pure()
-        .notes('Args evaluate first (`Head[1+2]` → `Integer`); free `Head[a+b]` → `Plus`')
         .eval('head.list', 'Head[{1, 2}]', 'List')
         .eval('head.plus', 'Head[a + b]', 'Plus')
         .eval('head.int', 'Head[1 + 2]', 'Integer')
@@ -27,9 +26,8 @@ export const metaFeatures = [
         })
         .done(),
     feature('Assert', 'meta')
-        .supported()
+        .partial('`Assert` on tested boolean and equality forms only')
         .pure()
-        .notes('Assert lowers to Branch → Null / Reject')
         .eval('assert.true', 'Assert[True]', 'Null')
         .eval('assert.equal', 'Assert[1 == 1]', 'Null')
         .done(),

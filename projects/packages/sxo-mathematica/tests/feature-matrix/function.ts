@@ -2,9 +2,8 @@ import { feature } from '@sxo/harness';
 
 export const functionFeatures = [
     feature('Function', 'function')
-        .supported()
+        .partial('slot and named `Function` application on tested forms only')
         .pure()
-        .notes('Slot pure function and named Function application')
         .eval('function.slot', '(#^2)&[4]', '16')
         .eval('function.named', 'Function[x, x^2][3]', '9')
         .done(),
