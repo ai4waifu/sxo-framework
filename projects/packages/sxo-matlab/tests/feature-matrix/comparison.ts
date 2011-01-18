@@ -1,11 +1,10 @@
 import { feature } from '@sxo/harness';
 
 export const comparisonFeatures = [
-    feature('eq', 'comparison').supported().pure().eval('eq.true', '3 == 3', 'true').done(),
+    feature('eq', 'comparison').partial('scalar `==` on tested exact forms only').pure().eval('eq.true', '3 == 3', 'true').done(),
     feature('ne', 'comparison')
-        .supported()
+        .partial('scalar `~=` and tested vector boolean masks only')
         .pure()
-        .notes('scalar ~= and vector Unequal boolean mask')
         .eval('ne.true', '3 ~= 2', 'true')
         .eval('ne.false', '1 ~= 1', 'false')
         .eval('ne.vec', '[1, 2] ~= [1, 3]', '[false, true]')
@@ -25,18 +24,16 @@ export const comparisonFeatures = [
         .eval('ge.vec', '[1, 2, 3] >= 2', '[false, true, true]')
         .gap('ge.fn', 'ge(2, 2)', { expected: 'true' })
         .done(),
-    feature('gt', 'comparison').supported().pure().eval('gt.true', '3 > 2', 'true').done(),
+    feature('gt', 'comparison').partial('scalar `>` on tested exact integers only').pure().eval('gt.true', '3 > 2', 'true').done(),
     feature('elementwise_compare', 'comparison')
-        .supported()
+        .partial('vectorized relations return boolean masks on tested forms')
         .pure()
-        .notes('vectorized relations return boolean masks rendered as true/false')
         .eval('gt.vec', '[1, 2, 3] > 2', '[false, false, true]')
         .done(),
     feature('isequal', 'comparison').unsupported().pure().gap('isequal.vec', 'isequal([1, 2], [1, 2])', { expected: '1' }).done(),
     feature('lt_chain', 'comparison')
-        .supported()
+        .partial('scalar chains and tested elementwise vector `<` only')
         .pure()
-        .notes('scalar chains and elementwise vector Less')
         .eval('ltchain.123', '1 < 2 < 3', 'true')
         .eval('ltchain.vec', '[1, 2, 3] < 2', '[true, false, false]')
         .done(),

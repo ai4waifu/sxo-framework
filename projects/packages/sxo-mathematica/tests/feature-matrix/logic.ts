@@ -2,46 +2,40 @@ import { feature } from '@sxo/harness';
 
 export const logicFeatures = [
     feature('And', 'logic')
-        .supported()
+        .partial('short-circuit `And` on tested boolean and equality forms')
         .pure()
-        .notes('short-circuit via ControlPlan::Branch; And over Equal and True/False')
         .eval('and.equal', 'And[1 == 1, 2 == 2]', 'True')
         .eval('and.bool_atoms', 'And[True, False]', 'False')
         .done(),
     feature('Or', 'logic')
-        .supported()
+        .partial('short-circuit `Or` on tested boolean and equality forms')
         .pure()
-        .notes('short-circuit via ControlPlan::Branch')
         .eval('or.equal', 'Or[1 == 2, 2 == 2]', 'True')
         .eval('or.bool_atoms', 'Or[False, True]', 'True')
         .done(),
-    feature('Not', 'logic').supported().pure().eval('not.equal', 'Not[1 == 2]', 'True').eval('not.true', 'Not[True]', 'False').done(),
+    feature('Not', 'logic').partial('`Not` on tested boolean and equality forms').pure().eval('not.equal', 'Not[1 == 2]', 'True').eval('not.true', 'Not[True]', 'False').done(),
     feature('If', 'logic')
-        .supported()
+        .partial('short-circuit `If` on tested boolean conditions')
         .pure()
-        .notes('short-circuit; non-boolean condition is structured diagnostic at Athena')
         .eval('if.true', 'If[1 == 1, 7, 8]', '7')
         .done(),
-    feature('Which', 'logic').supported().pure().eval('which.basic', 'Which[False, 1, True, 2]', '2').done(),
+    feature('Which', 'logic').partial('tested `Which` branch selection only').pure().eval('which.basic', 'Which[False, 1, True, 2]', '2').done(),
     feature('Boole', 'logic')
-        .supported()
+        .partial('`Boole` on tested boolean predicates only')
         .pure()
-        .notes('Boole lowers to Branch → 1/0')
         .eval('boole.true', 'Boole[True]', '1')
         .eval('boole.pred', 'Boole[2 > 1]', '1')
         .eval('boole.false', 'Boole[False]', '0')
         .done(),
     feature('Xor', 'logic')
-        .supported()
+        .partial('`Xor` on tested boolean atoms only')
         .pure()
-        .notes('Xor lowers to nested Branch')
         .eval('xor.tf', 'Xor[True, False]', 'True')
         .eval('xor.tt', 'Xor[True, True]', 'False')
         .done(),
     feature('Implies', 'logic')
-        .supported()
+        .partial('`Implies` on tested boolean atoms only')
         .pure()
-        .notes('Implies lowers to Branch(antecedent, consequent, True)')
         .eval('implies.tf', 'Implies[True, False]', 'False')
         .eval('implies.ff', 'Implies[False, False]', 'True')
         .done(),

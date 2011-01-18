@@ -1,10 +1,10 @@
 import { feature } from '@sxo/harness';
 
 export const comparisonFeatures = [
-    feature('Equal', 'comparison').supported().pure().eval('equal.true', '2 == 2', 'True').done(),
-    feature('Unequal', 'comparison').supported().pure().eval('unequal.true', '2 != 3', 'True').done(),
-    feature('Less', 'comparison').supported().pure().eval('less.infix', '2 < 3', 'True').eval('less.head', 'Less[2, 3]', 'True').done(),
-    feature('Greater', 'comparison').supported().pure().eval('greater.infix', '3 > 2', 'True').done(),
+    feature('Equal', 'comparison').partial('scalar exact equality on tested forms only').pure().eval('equal.true', '2 == 2', 'True').done(),
+    feature('Unequal', 'comparison').partial('scalar exact inequality on tested forms only').pure().eval('unequal.true', '2 != 3', 'True').done(),
+    feature('Less', 'comparison').partial('scalar `<` / `Less` on tested exact integers only').pure().eval('less.infix', '2 < 3', 'True').eval('less.head', 'Less[2, 3]', 'True').done(),
+    feature('Greater', 'comparison').partial('scalar `>` on tested exact integers only').pure().eval('greater.infix', '3 > 2', 'True').done(),
     feature('LessEqual', 'comparison')
         .partial('binary <= / LessEqual returns typed Boolean; n-ary LessEqual[1,2,3] unevaluated')
         .pure()
