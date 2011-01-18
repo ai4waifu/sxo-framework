@@ -42,6 +42,7 @@ export const matrixFeatures = [
         .eval('prod.matrix', 'prod([1, 2; 3, 4])', '[3, 8]')
         .eval('prod.axis', 'prod([1, 2; 3, 4], 2)', '[2; 12]')
         .eval('prod.complex', 'prod([1+i, 2; 3, 4-i], 2)', '[2 + 2*i; 12 - 3*i]')
+        .eval('prod.complex_bare', 'prod([1+i, 2; 3, 4-i])', '[3 + 3*i, 8 - 2*i]')
         .done(),
     feature('max', 'matrix').unsupported().pure().gap('max.vec', 'max([1, 3, 2])', { expected: '3' }).done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),

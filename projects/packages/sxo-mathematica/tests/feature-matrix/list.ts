@@ -45,6 +45,7 @@ export const listFeatures = [
         .pure()
         .eval('product.basic', 'Product[i, {i, 1, 5}]', '120')
         .eval('product.cols', 'Product[{{1, 2}, {3, 4}}]', '{3, 8}')
+        .eval('product.complex_bare', 'Product[{{1 + I, 2}, {3, 4 - I}}]', '{3 + 3*I, 8 - 2*I}')
         .eval('product.complex', 'Product[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{2 + 2*I}, {12 - 3*I}}')
         .done(),
     feature('Length', 'list').partial('top-level list length on tested forms only').pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
@@ -173,6 +174,7 @@ export const listFeatures = [
         .partial('adjacent diffs on exact vectors. Exact complex parent OK')
         .pure()
         .eval('differences.3', 'Differences[{1, 4, 9}]', '{3, 5}')
+        .eval('differences.range', 'Differences[Range[4]]', '{1, 1, 1}')
         .eval('differences.complex', 'Differences[{1 + I, 2, 3 - I}]', '{1 - I, 1 - I}')
         .done(),
     feature('Total', 'list')
