@@ -413,6 +413,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("LowerTriangularize[{{1 + I, 2}, {3, 4 - I}}]", "{{1 + I, 0}, {3, 4 - I}}"),
         ("UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]", "{{1 + I, 2}, {0, 4 - I}}"),
         ("Reverse[{{1 + I, 2}, {3, 4}}]", "{{3, 4}, {1 + I, 2}}"),
+        ("KroneckerProduct[{1, 2}, {3, 4}]", "{3, 4, 6, 8}"),
         ("KroneckerProduct[{{1 + I}}, {{1, I}}]", "{1 + I, -1 + I}"),
         ("A={{1, 2}, {3, 4}}; ReplacePart[A, {1, 2} -> 9]; A", "{{1, 9}, {3, 4}}"),
         ("SymmetricMatrixQ[{{1, 2}, {2, 1}}]", "1"),
