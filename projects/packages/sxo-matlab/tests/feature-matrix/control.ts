@@ -1,31 +1,27 @@
 import { feature } from '@sxo/harness';
 
 export const controlFeatures = [
-    feature('if', 'control').supported().pure().eval('if.else', 'if 1, 2, else, 3, end', '2').done(),
+    feature('if', 'control').partial('tested `if`/`else` on scalar conditions only').pure().eval('if.else', 'if 1, 2, else, 3, end', '2').done(),
     feature('for', 'control')
-        .supported()
+        .partial('`for i=1:n` last value and tested accumulator in one Session')
         .stateful()
-        .notes('for i=1:n last value and compound accumulator via shared Session bindings')
         .eval('for.last', 'for i=1:3, i, end', '3')
         .eval('for.sum', 's=0; for i=1:3, s=s+i; end; s', '6')
         .done(),
     feature('while', 'control')
-        .supported()
+        .partial('`while 0` skips body on tested form')
         .stateful()
-        .notes('while 0 skips body; empty result renders as []')
         .eval('while.false', 'while 0, 1, end', '[]')
         .done(),
     feature('switch', 'control')
-        .supported()
+        .partial('tested `switch`/`case`/`otherwise` without fall-through')
         .pure()
-        .notes('oak Statement::Switch → nested If[Equal[disc,case],…] without fall-through')
         .eval('switch.case1', 'switch 1, case 1, 2, otherwise, 3, end', '2')
         .eval('switch.otherwise', 'switch 2, case 1, 2, otherwise, 3, end', '3')
         .done(),
     feature('try_catch', 'control')
-        .supported()
+        .partial('tested `try`/`catch` success and `error` paths only')
         .pure()
-        .notes('oak Statement::Try → Athena Try[body, catch]; success and error paths')
         .eval('try.catch', "try, error('e'), catch, 1, end", '1')
         .eval('try.no_error', 'try, 2, catch, 3, end', '2')
         .done(),

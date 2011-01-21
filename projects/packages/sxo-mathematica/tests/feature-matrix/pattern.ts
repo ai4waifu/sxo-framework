@@ -2,16 +2,14 @@ import { feature } from '@sxo/harness';
 
 export const patternFeatures = [
     feature('Blank', 'pattern')
-        .supported()
+        .partial('typed `Blank[Integer]` for tested `MatchQ`/`Cases` only')
         .pure()
-        .notes('typed Blank[Integer] for MatchQ/Cases')
         .eval('blank.matchq', 'MatchQ[1, _Integer]', 'True')
         .eval('blank.cases', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
     feature('MatchQ', 'pattern')
-        .supported()
+        .partial('`MatchQ` with typed `Blank[Integer]` on tested forms only')
         .pure()
-        .notes('ControlPlan::Match with typed Blank[Integer]')
         .eval('matchq.integer', 'MatchQ[1, _Integer]', 'True')
         .done(),
     feature('Condition', 'pattern')

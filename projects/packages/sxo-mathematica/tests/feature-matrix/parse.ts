@@ -2,13 +2,12 @@ import { feature } from '@sxo/harness';
 
 export const parseFeatures = [
     feature('JuxtapositionTimes', 'parse')
-        .supported()
+        .partial('implicit `Times` via juxtaposition on tested forms only')
         .pure()
-        .notes('implicit Times via oak juxtaposition; D arity preserved')
         .eval('juxt.d', 'D[x y, x]', 'y')
         .done(),
-    feature('Prefix', 'parse').supported().pure().notes('f@x → f[x]').eval('prefix.fx', 'f@x', 'f[x]').done(),
-    feature('Postfix', 'parse').supported().pure().notes('x//f → f[x]').eval('postfix.xf', 'x//f', 'f[x]').done(),
+    feature('Prefix', 'parse').partial('`f@x` → `f[x]` on tested symbols only').pure().eval('prefix.fx', 'f@x', 'f[x]').done(),
+    feature('Postfix', 'parse').partial('`x//f` → `f[x]` on tested symbols only').pure().eval('postfix.xf', 'x//f', 'f[x]').done(),
     feature('ScientificLiteral', 'parse')
         .unsupported('oak error on 1*^3 and 2.5*^-2')
         .pure()
