@@ -2,17 +2,15 @@ import { feature } from '@sxo/harness';
 
 export const calculusFeatures = [
     feature('diff', 'calculus')
-        .supported()
+        .partial('symbolic `diff` on tested polynomial and trig forms only')
         .pure()
-        .notes('symbolic diff(f,x) and higher-order diff(f,x,n)')
         .eval('diff.poly', 'diff(x^3, x)', '3*x^2')
         .eval('diff.sin', 'diff(sin(x), x)', 'cos(x)')
         .eval('diff.order2', 'diff(x^2, x, 2)', '2')
         .done(),
     feature('int', 'calculus')
-        .supported()
+        .partial('indefinite `int` on tested polynomial and trig forms only')
         .pure()
-        .notes('poly antiderivative renders as `x^3*3^(-1)` (equiv. `1/3*x^3`)')
         .eval('int.poly', 'int(x^2, x)', 'x^3*3^(-1)', {
             notes: 'canonical Power form; mathematically equivalent to `1/3*x^3`',
         })

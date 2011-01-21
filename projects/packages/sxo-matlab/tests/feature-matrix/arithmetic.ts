@@ -1,11 +1,10 @@
 import { feature } from '@sxo/harness';
 
 export const arithmeticFeatures = [
-    feature('plus', 'arithmetic').supported().pure().eval('plus.basic', '2 + 3', '5').done(),
+    feature('plus', 'arithmetic').partial('scalar exact `+` on tested integers only').pure().eval('plus.basic', '2 + 3', '5').done(),
     feature('parens', 'arithmetic')
-        .supported()
+        .partial('grouping and precedence on tested scalar and vector forms')
         .pure()
-        .notes('R-2.11: string and handle paths must preserve grouping (no display-text fork)')
         .eval('parens.mul', '(1+2)*3', '9')
         .eval('parens.div', '1/(2+3)', '1/5')
         .eval('parens.sub', '1-(2-3)', '2')
@@ -32,6 +31,7 @@ export const arithmeticFeatures = [
         .eval('power.mat', '[2, 3; 4, 5].^[2, 2; 2, 2]', '[4, 9; 16, 25]')
         .eval('power.binomsq', '(x + 1)^2', '(1 + x)^2')
         .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
+        .eval('power.complex', '[1+i].^2', '2*i')
         .done(),
     feature('mrdivide', 'arithmetic')
         .partial('scalar `/` stays Divide. Typed matrices → RightSolve with disposition residuals (see solve.mrdivide)')
