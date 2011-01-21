@@ -182,6 +182,7 @@ export const listFeatures = [
         .pure()
         .eval('total.3', 'Total[{1, 2, 3}]', '6')
         .eval('total.cols', 'Total[{{1, 2}, {3, 4}}]', '{4, 6}')
+        .eval('total.complex_bare', 'Total[{{1 + I, 2}, {3, 4 - I}}]', '{4 + I, 6 - I}')
         .eval('total.level', 'Total[{{1, 2}, {3, 4}}, {2}]', '{{3}, {7}}')
         .eval('total.complex', 'Total[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{3 + I}, {7 - I}}')
         .done(),
