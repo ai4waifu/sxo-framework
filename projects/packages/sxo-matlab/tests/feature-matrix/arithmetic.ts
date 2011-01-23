@@ -22,6 +22,7 @@ export const arithmeticFeatures = [
         .eval('times.scalar', '2 .* [1, 2]', '[2, 4]')
         .eval('times.vec', '[1, 2].*[3, 4]', '[3, 8]')
         .eval('times.mat', '[1, 2; 3, 4].*[5, 6; 7, 8]', '[5, 12; 21, 32]')
+        .eval('times.complex', '[1+i, 2; 3, 4].*[1, i; 0, 1]', '[1 + i, 2*i; 0, 4]')
         .done(),
     feature('power', 'arithmetic')
         .partial('scalar `^` and typed numeric elementwise `.^` only')

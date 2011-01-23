@@ -16,9 +16,8 @@ export const symbolicFeatures = [
     feature('limit', 'symbolic').unsupported().pure().gap('limit.sinc', 'limit(sin(x)/x, x, 0)', { expected: '1' }).done(),
     feature('dsolve', 'symbolic').planned().pure().gap('dsolve.exp', 'dsolve(diff(y)==y)', { expected: 'C1*exp(t)' }).done(),
     feature('simplify_trig', 'symbolic')
-        .supported()
+        .partial('trig identity fold via `simplify` on tested form only')
         .pure()
-        .notes('same identity as simplify entry; explicit symbolic toolbox spelling')
         .eval('simplify_trig.pythag', 'simplify(sin(x)^2 + cos(x)^2)', '1')
         .done(),
     feature('fourier_sym', 'symbolic')

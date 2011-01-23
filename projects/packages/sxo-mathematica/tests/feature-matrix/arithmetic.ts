@@ -2,7 +2,12 @@ import { feature } from '@sxo/harness';
 
 export const arithmeticFeatures = [
     feature('Plus', 'arithmetic').partial('exact integer `Plus` on tested forms only').pure().eval('plus.basic', '1 + 2 * 3', '7').eval('plus.nary', 'Plus[1, 2, 3]', '6').done(),
-    feature('Times', 'arithmetic').partial('exact integer `Times` on tested forms only').pure().eval('times.nary', 'Times[2, 3, 4]', '24').done(),
+    feature('Times', 'arithmetic')
+        .partial('exact integer `Times` and typed `ComplexExact` Hadamard on tested forms')
+        .pure()
+        .eval('times.nary', 'Times[2, 3, 4]', '24')
+        .eval('times.complex_hadamard', '{{1 + I, 2}, {3, 4}}*{{1, I}, {0, 1}}', '{{1 + I, 2*I}, {0, 4}}')
+        .done(),
     feature('Power', 'arithmetic')
         .partial('symbolic `Power[x,1]` and exact integer powers on tested forms. `ComplexExact` `1×1` matrix OK')
         .pure()
