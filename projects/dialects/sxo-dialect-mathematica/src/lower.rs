@@ -212,6 +212,11 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 push_surface_call(session, name, arg_ids)
             }
             WolframForm::Atom(WolframAtom::Symbol(name)) => {
+                if name == "Part" && args.len() == 2 {
+                    let target = lower_wexpr(session, &args[0]);
+                    let index = lower_wexpr(session, &args[1]);
+                    return push_semantic(session, SemanticOperator::Extract, vec![target, index]);
+                }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
             }
@@ -571,8 +576,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                                     operator: ApplicationHead::Extension(f_op),
                                     arguments: pat_args,
                                 };
-                                let value = lower_wexpr(session, rhs);
-                                session.defs.register_extension_rule(f_op, pattern, value);
+                                let value = lower_request(session, rhs);
+                                session.defs.register_extension_request_rule(f_op, pattern, value);
                                 return AthenaRequest::Term(push_null(session));
                             }
                         }
@@ -690,16 +695,31 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Do", [body, iter]) => {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
-                        let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
-                            variable,
-                            iterator,
-                            body: Box::new(lower_request(session, body)),
-                        });
-                        // Mathematica `Do` evaluates to `Null`.
-                        return AthenaRequest::Control(ControlPlan::Sequence {
-                            steps: vec![counted, AthenaRequest::Term(push_null(session))],
-                        });
+                        let body_req = lower_request(session, body);
+                        if is_static_counted_iterator(session, iterator) {
+                            let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
+                                variable,
+                                iterator,
+                                body: Box::new(body_req),
+                            });
+                            return AthenaRequest::Control(ControlPlan::Sequence {
+                                steps: vec![counted, AthenaRequest::Term(push_null(session))],
+                            });
+                        }
+                        if let Some(dynamic) = lower_dynamic_do(session, variable, iterator, body_req) {
+                            return dynamic;
+                        }
                     }
+                }
+                ("Return", [value]) => {
+                    return AthenaRequest::Control(ControlPlan::EarlyReturn {
+                        value: lower_wexpr(session, value),
+                    });
+                }
+                ("Return", []) => {
+                    return AthenaRequest::Control(ControlPlan::EarlyReturn {
+                        value: push_null(session),
+                    });
                 }
                 ("Module", [bindings, body]) => {
                     return lower_module(session, bindings, body);
@@ -1543,6 +1563,67 @@ fn extract_table_binder(session: &mut Session, iter: &WolframForm) -> Option<Ter
 }
 
 /// `Do` iterator `{n}` / `{i, n}` / `{i, a, b}` → counted-loop variable + value list.
+///
+/// Only literal expansion lists (all integer atoms) are static. A range tail such as
+/// `{i, 1, n}` must stay dynamic even though `n` is an atom.
+fn is_static_counted_iterator(session: &Session, iterator: TermId) -> bool {
+    match session.arena.get(iterator) {
+        Some(TermNode::Collection { elements, .. }) => {
+            elements.iter().all(|t| matches!(session.arena.get(*t), Some(TermNode::Atom(Atom::Number(_)))))
+        }
+        Some(TermNode::Application { arguments, .. }) => arguments
+            .iter()
+            .all(|t| matches!(session.arena.get(*t), Some(TermNode::Atom(Atom::Number(_))))),
+        _ => false,
+    }
+}
+
+fn lower_dynamic_do(
+    session: &mut Session,
+    variable: TermId,
+    iterator: TermId,
+    body_req: AthenaRequest,
+) -> Option<AthenaRequest> {
+    let elements = match session.arena.get(iterator) {
+        Some(TermNode::Collection { elements, .. }) => elements.clone(),
+        _ => return None,
+    };
+    let symbol = match session.arena.get(variable) {
+        Some(TermNode::Atom(Atom::Symbol(symbol))) => *symbol,
+        _ => return None,
+    };
+    let (start, end, step) = match elements.as_slice() {
+        [_, end] => (push_int(session, 1), *end, push_int(session, 1)),
+        [_, start, end] => (*start, *end, push_int(session, 1)),
+        [_, start, end, step] => (*start, *end, *step),
+        _ => return None,
+    };
+    let init = AthenaRequest::Command(SessionCommand::Define {
+        symbol,
+        value: start,
+        kind: BindingKind::Session,
+        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+    });
+    let cond = push_semantic(session, SemanticOperator::LessEqual, vec![variable, end]);
+    let next = push_semantic(session, SemanticOperator::Add, vec![variable, step]);
+    let increment = AthenaRequest::Command(SessionCommand::Define {
+        symbol,
+        value: next,
+        kind: BindingKind::Session,
+        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+    });
+    let loop_body = AthenaRequest::Control(ControlPlan::Sequence {
+        steps: vec![body_req, increment],
+    });
+    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile {
+        condition: cond,
+        body: Box::new(loop_body),
+    });
+    Some(AthenaRequest::Control(ControlPlan::Sequence {
+        steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
+    }))
+}
+
 fn do_loop_parts(session: &mut Session, iter: &WolframForm) -> Option<(TermId, TermId)> {
     let items = list_items(iter)?;
     match items {

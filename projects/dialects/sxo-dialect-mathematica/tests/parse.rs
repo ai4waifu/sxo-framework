@@ -1478,3 +1478,65 @@ fn complex_exact_vector_struct_ops() {
         "{1 + I, 2, 3, 4 - I}"
     );
 }
+
+#[test]
+fn while_return_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval(
+            "Module[{n = 2}, i = 1; While[i <= n, CompoundExpression[If[i == 2, Return[{0, 1}]], i = i + 1]]]"
+        )),
+        "{0, 1}"
+    );
+}
+
+#[test]
+fn static_do_return_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Module[{}, Do[If[i == 2, Return[{0, 1}]], {i, 1, 2}]]")),
+        "{0, 1}"
+    );
+}
+
+#[test]
+fn dynamic_do_return_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 2, Return[{0, 1}]], {i, 1, n}]]")),
+        "{0, 1}"
+    );
+}
+
+#[test]
+fn return_in_module_anchor() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Module[{}, Return[{0, 1}]]")), "{0, 1}");
+}
+
+#[test]
+fn two_sum_nested_do_return_anchor() {
+    let h = H::new();
+    let src = r#"twoSum[nums_, target_] := Module[{n = Length[nums]},
+  Do[
+    Do[
+      If[nums[[i]] + nums[[j]] == target, Return[{i - 1, j - 1}]],
+      {j, i + 1, n}
+    ],
+    {i, 1, n - 1}
+  ];
+  Null
+];
+twoSum[{3, 3}, 6]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "{0, 1}", "two-sum wolfram-sxo anchor");
+}
+
+#[test]
+fn dynamic_do_expression_end_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 1, Return[{0, 1}]], {i, 1, n - 1}]]")),
+        "{0, 1}"
+    );
+}
+
