@@ -11,7 +11,8 @@ use athena::{
         calculus::{CalculusRequest, DerivativeOrder},
         linear_algebra::{MatrixOperand, MatrixValue},
     },
-    ir::{Atom, MathematicalConstant, SemanticOperator, TermNode},
+    ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode},
+    reasoning::trs::TermPattern,
     numeric::{Integer, Rational},
     runtime::{
         ZeroPowerZeroConvention,
@@ -31,7 +32,7 @@ use athena::{
 
 use crate::{
     form::{MatlabAtom, MatlabForm},
-    surface::{application_surface_name, push_matlab_call},
+    surface::{application_surface_name, push_matlab_call, surface_to_semantic},
 };
 
 /// Install MATLAB exact-domain numeric conventions on an Athena session.
@@ -125,7 +126,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
-                    let value = form_to_term(session, rhs);
+                    let value = form_to_eval_term(session, rhs);
                     return AthenaRequest::Command(SessionCommand::Define {
                         symbol,
                         value,
@@ -229,17 +230,35 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
             return AthenaRequest::Control(ControlPlan::Sequence { steps });
         }
+        MatlabForm::Call { head, args } if head == "FunctionDef" => {
+            if let [header, body] = args.as_slice() {
+                return lower_matlab_function_def(session, header, body);
+            }
+        }
+        MatlabForm::Call { head, args } if head == "Return" => match args.as_slice() {
+            [value] => {
+                return AthenaRequest::Control(ControlPlan::EarlyReturn {
+                    value: form_to_term(session, value),
+                });
+            }
+            [] => {
+                return AthenaRequest::Control(ControlPlan::EarlyReturn {
+                    value: push_null(session),
+                });
+            }
+            _ => {}
+        },
         MatlabForm::Call { head, args } if head == "If" || head == "Branch" => match args.as_slice() {
             [cond, then_branch] => {
                 return AthenaRequest::Control(ControlPlan::Branch {
-                    condition: form_to_term(session, cond),
+                    condition: form_to_eval_term(session, cond),
                     then_branch: Box::new(lower_request(session, then_branch)),
                     else_branch: None,
                 });
             }
             [cond, then_branch, else_branch] => {
                 return AthenaRequest::Control(ControlPlan::Branch {
-                    condition: form_to_term(session, cond),
+                    condition: form_to_eval_term(session, cond),
                     then_branch: Box::new(lower_request(session, then_branch)),
                     else_branch: Some(Box::new(lower_request(session, else_branch))),
                 });
@@ -295,6 +314,11 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     }
                     return AthenaRequest::Control(ControlPlan::Sequence { steps });
                 }
+                if let Some(dynamic) =
+                    lower_dynamic_for(session, variable_t, iterator_t, body_req.owning_copy())
+                {
+                    return dynamic;
+                }
                 return AthenaRequest::Control(ControlPlan::CountedLoop {
                     variable: variable_t,
                     iterator: iterator_t,
@@ -326,6 +350,13 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "Part" => {
             if args.len() >= 2 {
+                if let Some(name) = form_symbol_name(&args[0]) {
+                    let op = session.extensions.intern(name);
+                    if session.defs.extension_request_dispatch_rules(op).is_some_and(|rules| !rules.is_empty()) {
+                        let arg_terms: Vec<TermId> = args[1..].iter().map(|a| form_to_term(session, a)).collect();
+                        return AthenaRequest::Term(push_matlab_call(session, name, arg_terms));
+                    }
+                }
                 let target = form_to_term(session, &args[0]);
                 let axis_terms: Vec<TermId> = args[1..].iter().map(|a| form_to_term(session, a)).collect();
                 if let Some(axes) = axis_terms
@@ -678,6 +709,119 @@ fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {
     }
 }
 
+fn lower_dynamic_for(
+    session: &mut Session,
+    variable: TermId,
+    iterator: TermId,
+    body_req: AthenaRequest,
+) -> Option<AthenaRequest> {
+    let symbol = symbol_atom(session, variable)?;
+    let head = application_surface_name(session, iterator)?;
+    if head != "Range" && head != "Span" {
+        return None;
+    }
+    let args = application_arguments(session, iterator)?;
+    let (start, end, step) = match args.as_slice() {
+        [a, b] => (*a, *b, push_int(session, 1)),
+        [a, b, s] => (*a, *b, *s),
+        _ => return None,
+    };
+    let init = AthenaRequest::Command(SessionCommand::Define {
+        symbol,
+        value: start,
+        kind: BindingKind::Session,
+        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+    });
+    let cond = push_semantic(session, SemanticOperator::LessEqual, vec![variable, end]);
+    let next = push_semantic(session, SemanticOperator::Add, vec![variable, step]);
+    let increment = AthenaRequest::Command(SessionCommand::Define {
+        symbol,
+        value: next,
+        kind: BindingKind::Session,
+        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+    });
+    let loop_body = AthenaRequest::Control(ControlPlan::Sequence {
+        steps: vec![body_req, increment],
+    });
+    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile {
+        condition: cond,
+        body: Box::new(loop_body),
+    });
+    Some(AthenaRequest::Control(ControlPlan::Sequence {
+        steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
+    }))
+}
+
+fn push_int(session: &mut Session, n: i64) -> TermId {
+    session.builder().int(n, Default::default())
+}
+
+/// Expression term materialization with `Part` → `Extract` for runtime indexing.
+fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
+    match form {
+        MatlabForm::List(items) => {
+            let ids: Vec<TermId> = items.iter().map(|a| form_to_eval_term(session, a)).collect();
+            push_list(session, ids)
+        }
+        MatlabForm::Call { head, args } if head == "Part" && args.len() == 2 => {
+            let target = form_to_eval_term(session, &args[0]);
+            let index = form_to_eval_term(session, &args[1]);
+            push_semantic(session, SemanticOperator::Extract, vec![target, index])
+        }
+        MatlabForm::Call { head, args } if args.len() == 1 && subsref_call_head(head) && form_arg_is_dynamic_index(&args[0]) => {
+            let target = form_to_eval_term(session, &MatlabForm::symbol(head));
+            let index = form_to_eval_term(session, &args[0]);
+            push_semantic(session, SemanticOperator::Extract, vec![target, index])
+        }
+        MatlabForm::Call { head, args }
+            if matches!(
+                head.as_str(),
+                "Plus" | "Add" | "Subtract" | "Times" | "Multiply" | "Divide" | "Power" | "Equal" | "Unequal" | "Less"
+                    | "Greater" | "LessEqual" | "GreaterEqual" | "And" | "Or"
+            ) =>
+        {
+            let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
+            if let Some(op) = surface_to_semantic(head) {
+                return push_semantic(session, op, ids);
+            }
+            push_matlab_call(session, head, ids)
+        }
+        _ => form_to_term(session, form),
+    }
+}
+
+/// Unknown `head(expr)` with a non-literal `expr` is MATLAB subsref (`A(i)`), not a user call.
+fn subsref_call_head(head: &str) -> bool {
+    if surface_to_semantic(head).is_some() {
+        return false;
+    }
+    !matches!(
+        head,
+        "Part"
+            | "Application"
+            | "Set"
+            | "CompoundExpression"
+            | "If"
+            | "Branch"
+            | "While"
+            | "For"
+            | "Return"
+            | "FunctionDef"
+            | "plot"
+            | "Plot"
+            | "error"
+            | "Error"
+            | "Reject"
+    )
+}
+
+fn form_arg_is_dynamic_index(form: &MatlabForm) -> bool {
+    match form {
+        MatlabForm::Atom(MatlabAtom::Number(_)) | MatlabForm::Atom(MatlabAtom::String(_)) => false,
+        _ => true,
+    }
+}
+
 fn expand_counted_iterator(session: &mut Session, iterator: TermId) -> Option<Vec<TermId>> {
     if let Some(TermNode::Collection { elements, .. }) = session.arena.get(iterator) {
         return Some(elements.clone());
@@ -740,29 +884,29 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
         return Some((q, Rational::zero()));
     }
     match w {
-        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_symbol(s),
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s),
         MatlabForm::Call { head, args } if head == "Plus" => {
             let mut re = Rational::zero();
             let mut im = Rational::zero();
             for arg in args {
-                let (r, i) = form_scalar_complex(arg)?;
+                let (r, i) = form_scalar_complex_component(arg)?;
                 re = re.add(&r);
                 im = im.add(&i);
             }
             Some((re, im))
         }
         MatlabForm::Call { head, args } if head == "Minus" && args.len() == 1 => {
-            let (re, im) = form_scalar_complex(&args[0])?;
+            let (re, im) = form_scalar_complex_literal_atom(&args[0])?;
             Some((re.neg(), im.neg()))
         }
         MatlabForm::Call { head, args } if (head == "Minus" || head == "Subtract") && args.len() == 2 => {
-            let (ar, ai) = form_scalar_complex(&args[0])?;
-            let (br, bi) = form_scalar_complex(&args[1])?;
+            let (ar, ai) = form_scalar_complex_literal_atom(&args[0])?;
+            let (br, bi) = form_scalar_complex_literal_atom(&args[1])?;
             Some((ar.add(&br.neg()), ai.add(&bi.neg())))
         }
         MatlabForm::Call { head, args } if head == "Times" && args.len() == 2 => {
-            let (ar, ai) = form_scalar_complex(&args[0])?;
-            let (br, bi) = form_scalar_complex(&args[1])?;
+            let (ar, ai) = form_scalar_complex_component(&args[0])?;
+            let (br, bi) = form_scalar_complex_component(&args[1])?;
             // (a+bi)(c+di)
             Some((ar.mul(&br).add(&ai.mul(&bi).neg()), ar.mul(&bi).add(&ai.mul(&br))))
         }
@@ -770,13 +914,47 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
     }
 }
 
-fn matlab_imag_symbol(s: &str) -> Option<(Rational, Rational)> {
-    if s == "i" || s == "j" || s == "I" || s == "J" {
+/// Complex literal atom at the top level of `Subtract` — bare `i`/`j` stay variables.
+fn form_scalar_complex_literal_atom(w: &MatlabForm) -> Option<(Rational, Rational)> {
+    if let Some(q) = form_scalar_rational(w) {
+        return Some((q, Rational::zero()));
+    }
+    match w {
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s),
+        _ => None,
+    }
+}
+
+/// Complex literal component inside `Plus` / `Times` — bare `i`/`j` are imag units (`1+i`).
+fn form_scalar_complex_component(w: &MatlabForm) -> Option<(Rational, Rational)> {
+    if let Some(q) = form_scalar_rational(w) {
+        return Some((q, Rational::zero()));
+    }
+    match w {
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s).or_else(|| bare_imag_unit_symbol(s)),
+        MatlabForm::Call { head, args } if head == "Minus" && args.len() == 1 => {
+            let (re, im) = form_scalar_complex_component(&args[0])?;
+            Some((re.neg(), im.neg()))
+        }
+        _ => None,
+    }
+}
+
+fn bare_imag_unit_symbol(s: &str) -> Option<(Rational, Rational)> {
+    if matches!(s, "i" | "j" | "I" | "J") {
         return Some((Rational::zero(), Rational::one()));
     }
-    let rest = s.strip_suffix('i').or_else(|| s.strip_suffix('j')).or_else(|| s.strip_suffix('I')).or_else(|| s.strip_suffix('J'))?;
+    None
+}
+
+fn matlab_imag_suffix_symbol(s: &str) -> Option<(Rational, Rational)> {
+    let rest = s.strip_suffix('i')
+        .or_else(|| s.strip_suffix('j'))
+        .or_else(|| s.strip_suffix('I'))
+        .or_else(|| s.strip_suffix('J'))?;
     if rest.is_empty() {
-        return Some((Rational::zero(), Rational::one()));
+        // Bare `i` / `j` are variables (loop indices, assignments). Imag literals tokenize as `1i`, `2i`, …
+        return None;
     }
     let n: i64 = rest.parse().ok()?;
     Some((Rational::zero(), Rational::from_integer(Integer::from_i64(n))))
@@ -1127,5 +1305,151 @@ fn index_spec_of(session: &Session, term: TermId, single_axis: bool) -> Option<I
             None
         }
         _ => None,
+    }
+}
+
+struct MatlabFunctionHeader {
+    outputs: Vec<String>,
+    name: String,
+    params: Vec<String>,
+}
+
+fn lower_matlab_function_def(session: &mut Session, header: &MatlabForm, body: &MatlabForm) -> AthenaRequest {
+    let parsed = match parse_matlab_function_header(header) {
+        Some(parsed) => parsed,
+        None => return AthenaRequest::Control(ControlPlan::Reject),
+    };
+    let body_form = rewrite_bare_function_returns(body, &parsed.outputs);
+    let body_req = lower_request(session, &body_form);
+    let body_req = wrap_function_body_request(session, body_req, &parsed.outputs);
+    let f_op = session.extensions.intern(&parsed.name);
+    let pat_args: Vec<TermPattern> = parsed
+        .params
+        .iter()
+        .map(|p| {
+            let name = session.arena.symbols_mut().intern(p);
+            TermPattern::Bind { name, inner: Box::new(TermPattern::Any) }
+        })
+        .collect();
+    let pattern = TermPattern::Application {
+        operator: ApplicationHead::Extension(f_op),
+        arguments: pat_args,
+    };
+    session.defs.register_extension_request_rule(f_op, pattern, body_req);
+    AthenaRequest::Term(push_null(session))
+}
+
+fn parse_matlab_function_header(header: &MatlabForm) -> Option<MatlabFunctionHeader> {
+    match header {
+        MatlabForm::Call { head, args } if head == "Set" => {
+            if let [lhs, rhs] = args.as_slice() {
+                let outputs = output_names_from_lhs(lhs)?;
+                let (name, params) = callable_from_form(rhs)?;
+                return Some(MatlabFunctionHeader { outputs, name, params });
+            }
+            None
+        }
+        other => {
+            let (name, params) = callable_from_form(other)?;
+            Some(MatlabFunctionHeader { outputs: Vec::new(), name, params })
+        }
+    }
+}
+
+fn output_names_from_lhs(lhs: &MatlabForm) -> Option<Vec<String>> {
+    if let Some(name) = form_symbol_name(lhs) {
+        return Some(vec![name.to_string()]);
+    }
+    if let MatlabForm::List(items) = lhs {
+        let mut out = Vec::with_capacity(items.len());
+        for item in items {
+            out.push(form_symbol_name(item)?.to_string());
+        }
+        return Some(out);
+    }
+    None
+}
+
+fn callable_from_form(form: &MatlabForm) -> Option<(String, Vec<String>)> {
+    match form {
+        MatlabForm::Call { head, args } if head == "Application" => {
+            if args.is_empty() {
+                return None;
+            }
+            let name = form_symbol_name(&args[0])?.to_string();
+            let params = args[1..]
+                .iter()
+                .map(|a| form_symbol_name(a).map(str::to_string))
+                .collect::<Option<Vec<_>>>()?;
+            Some((name, params))
+        }
+        MatlabForm::Call { head, args } => {
+            let params = args
+                .iter()
+                .map(|a| form_symbol_name(a).map(str::to_string))
+                .collect::<Option<Vec<_>>>()?;
+            Some((head.clone(), params))
+        }
+        _ => None,
+    }
+}
+
+fn rewrite_bare_function_returns(form: &MatlabForm, outputs: &[String]) -> MatlabForm {
+    if outputs.len() != 1 {
+        return form.clone();
+    }
+    let out = MatlabForm::symbol(&outputs[0]);
+    rewrite_returns_in_form(form, &out)
+}
+
+fn rewrite_returns_in_form(form: &MatlabForm, out: &MatlabForm) -> MatlabForm {
+    match form {
+        MatlabForm::Call { head, args } if head == "Return" && args.is_empty() => MatlabForm::call("Return", vec![out.clone()]),
+        MatlabForm::Call { head, args } if head == "CompoundExpression" => {
+            MatlabForm::call("CompoundExpression", args.iter().map(|a| rewrite_returns_in_form(a, out)).collect())
+        }
+        MatlabForm::Call { head, args } if head == "If" => match args.as_slice() {
+            [cond, then_branch] => MatlabForm::call("If", vec![cond.clone(), rewrite_returns_in_form(then_branch, out)]),
+            [cond, then_branch, else_branch] => MatlabForm::call(
+                "If",
+                vec![cond.clone(), rewrite_returns_in_form(then_branch, out), rewrite_returns_in_form(else_branch, out)],
+            ),
+            _ => form.clone(),
+        },
+        MatlabForm::Call { head, args } if head == "While" || head == "LoopWhile" => {
+            if let [cond, body] = args.as_slice() {
+                MatlabForm::call(head, vec![cond.clone(), rewrite_returns_in_form(body, out)])
+            }
+            else {
+                form.clone()
+            }
+        }
+        MatlabForm::Call { head, args } if head == "For" || head == "CountedLoop" => {
+            if let [variable, iterator, body] = args.as_slice() {
+                MatlabForm::call(
+                    head,
+                    vec![variable.clone(), iterator.clone(), rewrite_returns_in_form(body, out)],
+                )
+            }
+            else {
+                form.clone()
+            }
+        }
+        _ => form.clone(),
+    }
+}
+
+fn wrap_function_body_request(session: &mut Session, body_req: AthenaRequest, outputs: &[String]) -> AthenaRequest {
+    if outputs.len() != 1 {
+        return body_req;
+    }
+    let ret = AthenaRequest::Control(ControlPlan::EarlyReturn {
+        value: push_symbol_name(session, &outputs[0]),
+    });
+    match body_req {
+        AthenaRequest::Control(ControlPlan::Sequence { steps }) => {
+            AthenaRequest::Control(ControlPlan::Sequence { steps: steps.into_iter().chain([ret]).collect() })
+        }
+        other => AthenaRequest::Control(ControlPlan::Sequence { steps: vec![other, ret] }),
     }
 }

@@ -164,6 +164,15 @@ fn lower_stmt(stmt: &Statement, source: &str) -> Result<MatlabForm, SxoError> {
             let forms = names.iter().map(|n| MatlabForm::symbol(&n.name)).collect();
             Ok(MatlabForm::call("Persistent", forms))
         }
+        Statement::Function { header, body, .. } => {
+            let header_f = lower_expr(header, source)?;
+            let body_f = compound_stmts(body, source)?;
+            Ok(MatlabForm::call("FunctionDef", vec![header_f, body_f]))
+        }
+        Statement::Return { value, .. } => match value {
+            Some(expr) => Ok(MatlabForm::call("Return", vec![lower_expr(expr, source)?])),
+            None => Ok(MatlabForm::call("Return", vec![])),
+        },
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
 }
@@ -494,7 +503,9 @@ fn form_looks_like_index(form: &MatlabForm) -> bool {
         MatlabForm::Atom(MatlabAtom::Number(_))
         | MatlabForm::Atom(MatlabAtom::Null)
         | MatlabForm::Atom(MatlabAtom::Bool(_)) => true,
-        MatlabForm::Atom(MatlabAtom::Symbol(name)) => matches!(name.as_str(), "end" | ":" | "All" | "true" | "false"),
+        MatlabForm::Atom(MatlabAtom::Symbol(name)) => {
+            matches!(name.as_str(), "end" | ":" | "All" | "true" | "false" | "i" | "j" | "k")
+        }
         MatlabForm::List(_) => true,
         MatlabForm::Call { head, .. } => matches!(head.as_str(), "Span" | "Range" | "Colon" | "Plus" | "Add" | "Subtract"),
         _ => false,

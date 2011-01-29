@@ -4,8 +4,10 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session,
+    api::{AthenaRequest, ControlPlan, SessionCommand},
+    ir::{ApplicationHead, Atom, SemanticOperator, TermNode},
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
-    types::TermId,
+    types::{BindingEvaluationPolicy, BindingKind, TermId},
 };
 use sxo_dialect_matlab::{
     MatlabAtom, MatlabForm, application_surface_name, form_to_term, install_session_conventions, lower_request, parse_matlab,
@@ -1166,4 +1168,366 @@ fn complex_exact_diag() {
     let h = H::new();
     assert_eq!(h.render(h.eval("diag([1+i, 2])")), "[1 + i, 0; 0, 2]");
     assert_eq!(h.render(h.eval("diag([1+i, 2-i])")), "[1 + i, 0; 0, 2 - i]");
+}
+
+#[test]
+fn function_return_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = pick()\n    out = [0, 1];\n    return;\nend;\npick()"
+        )),
+        "[0, 1]"
+    );
+}
+
+#[test]
+fn script_part_index_literal_anchor() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("nums = [3, 3]; out = nums(1); out")), "3");
+}
+
+#[test]
+fn function_part_index_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = test(nums)\n    out = nums(1);\nend;\ntest([3, 3])"
+        )),
+        "3"
+    );
+}
+
+#[test]
+fn nested_dynamic_for_return_anchor() {
+    let h = H::new();
+    let src = r#"function out = test(n)
+    for i = 1:(n - 1)
+        for j = (i + 1):n
+            if j == 2
+                out = [0, 1];
+                return;
+            end
+        end
+    end
+    out = [];
+end;
+test(3)"#;
+    assert_eq!(h.render(h.eval(src)), "[0, 1]");
+}
+
+#[test]
+fn dynamic_for_return_anchor() {
+    let h = H::new();
+    let src = r#"function out = test(n)
+    for i = 1:(n - 1)
+        if i == 2
+            out = [0, 1];
+            return;
+        end
+    end
+    out = [];
+end;
+test(3)"#;
+    assert_eq!(h.render(h.eval(src)), "[0, 1]");
+}
+
+#[test]
+fn athena_direct_extract_symbol_index_anchor() {
+    let mut s = Session::new();
+    install_session_conventions(&mut s);
+    let three = s.builder().int(3, Default::default());
+    let list = s.builder().list(vec![three, three], Default::default());
+    let one = s.builder().int(1, Default::default());
+    let nums_term = s.builder().symbol("nums", Default::default());
+    let nums = match s.arena.get(nums_term) {
+        Some(TermNode::Atom(Atom::Symbol(id))) => *id,
+        other => panic!("expected nums symbol, got {other:?}"),
+    };
+    let i_term = s.builder().symbol("i", Default::default());
+    let i = match s.arena.get(i_term) {
+        Some(TermNode::Atom(Atom::Symbol(id))) => *id,
+        other => panic!("expected i symbol, got {other:?}"),
+    };
+    let extract = s.builder().application(
+        ApplicationHead::Semantic(SemanticOperator::Extract),
+        vec![nums_term, i_term],
+        Default::default(),
+    );
+    let term = {
+        let result_id = AthenaEngine::new()
+            .execute_request(
+                &mut s,
+                AthenaRequest::Control(ControlPlan::Sequence {
+                    steps: vec![
+                        AthenaRequest::Command(SessionCommand::Define {
+                            symbol: nums,
+                            value: list,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }),
+                        AthenaRequest::Command(SessionCommand::Define {
+                            symbol: i,
+                            value: one,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }),
+                        AthenaRequest::Term(extract),
+                    ],
+                }),
+            )
+            .expect("direct extract");
+        s.results.get(result_id).unwrap().symbolic_term.unwrap()
+    };
+    assert_eq!(render_matlab(&s, term), "3");
+}
+
+#[test]
+fn athena_direct_subtract_symbol_index_anchor() {
+    use athena::api::request::{AthenaRequest, ControlPlan, SessionCommand};
+    use athena::ir::{ApplicationHead, TermNode};
+
+    let mut s = Session::new();
+    install_session_conventions(&mut s);
+    let one = s.builder().int(1, Default::default());
+    let i_term = s.builder().symbol("i", Default::default());
+    let i = match s.arena.get(i_term) {
+        Some(TermNode::Atom(Atom::Symbol(id))) => *id,
+        other => panic!("expected i symbol, got {other:?}"),
+    };
+    let subtract = s.builder().application(
+        ApplicationHead::Semantic(SemanticOperator::Subtract),
+        vec![i_term, one],
+        Default::default(),
+    );
+    let term = {
+        let result_id = AthenaEngine::new()
+            .execute_request(
+                &mut s,
+                AthenaRequest::Control(ControlPlan::Sequence {
+                    steps: vec![
+                        AthenaRequest::Command(SessionCommand::Define {
+                            symbol: i,
+                            value: one,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }),
+                        AthenaRequest::Term(subtract),
+                    ],
+                }),
+            )
+            .expect("direct subtract");
+        s.results.get(result_id).unwrap().symbolic_term.unwrap()
+    };
+    assert_eq!(render_matlab(&s, term), "0");
+
+    let out_term = s.builder().symbol("out", Default::default());
+    let out = match s.arena.get(out_term) {
+        Some(TermNode::Atom(Atom::Symbol(id))) => *id,
+        other => panic!("expected out symbol, got {other:?}"),
+    };
+    let term = {
+        let result_id = AthenaEngine::new()
+            .execute_request(
+                &mut s,
+                AthenaRequest::Control(ControlPlan::Sequence {
+                    steps: vec![
+                        AthenaRequest::Command(SessionCommand::Define {
+                            symbol: i,
+                            value: one,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }),
+                        AthenaRequest::Command(SessionCommand::Define {
+                            symbol: out,
+                            value: subtract,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }),
+                        AthenaRequest::Term(out_term),
+                    ],
+                }),
+            )
+            .expect("define out subtract");
+        s.results.get(result_id).unwrap().symbolic_term.unwrap()
+    };
+    assert_eq!(render_matlab(&s, term), "0", "define out then read out");
+}
+
+#[test]
+fn parse_part_vs_application_forms() {
+    let part_lit = parse_matlab_form("nums(1)").unwrap();
+    let part_sym = parse_matlab_form("nums(i)").unwrap();
+    assert_eq!(part_lit.head_name(), Some("Part"));
+    assert_eq!(part_sym.head_name(), Some("Part"));
+}
+
+#[test]
+fn set_rhs_part_symbol_index_lowers_to_extract() {
+    let h = H::new();
+    h.with_mut(|s| {
+        use athena::ir::{ApplicationHead, TermNode};
+        let form = parse_matlab_form("out = nums(i)").unwrap();
+        let req = lower_request(s, &form);
+        let AthenaRequest::Command(SessionCommand::Define { value, .. }) = req else {
+            panic!("expected Define, got {req:?}");
+        };
+        match s.arena.get(value) {
+            Some(TermNode::Application { head: ApplicationHead::Semantic(SemanticOperator::Extract), .. }) => {}
+            other => panic!("expected Extract application, got {other:?}"),
+        }
+    });
+}
+
+#[test]
+fn function_part_index_with_leading_scalar_define_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = test(nums)\n    i = 1;\n    out = nums(1);\nend;\ntest([3, 3])"
+        )),
+        "3"
+    );
+}
+
+#[test]
+fn function_part_index_after_scalar_define_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = test(nums)\n    i = 1;\n    out = nums(i);\nend;\ntest([3, 3])"
+        )),
+        "3"
+    );
+}
+
+#[test]
+fn script_loop_part_index_assign_anchor() {
+    let h = H::new();
+    let src = r#"nums = [3, 3];
+for i = 1:2
+    out = nums(i);
+end;
+out"#;
+    assert_eq!(h.render(h.eval(src)), "3", "script-level loop nums(i)");
+}
+
+#[test]
+fn part_index_in_loop_assign_anchor() {
+    let h = H::new();
+    let src = r#"function out = test(nums)
+    for i = 1:2
+        out = nums(i);
+    end
+end;
+test([3, 3])"#;
+    assert_eq!(h.render(h.eval(src)), "3", "loop assign nums(i)");
+}
+
+#[test]
+fn part_index_in_if_condition_anchor() {
+    let h = H::new();
+    let src = r#"function out = test(nums)
+    out = 0;
+    for i = 1:2
+        if nums(i) == 3
+            out = 1;
+        end
+    end
+end;
+test([3, 3])"#;
+    assert_eq!(h.render(h.eval(src)), "1");
+}
+
+#[test]
+fn part_index_sum_in_if_condition_anchor() {
+    let h = H::new();
+    let src = r#"function out = test(nums, target)
+    out = 0;
+    for i = 1:2
+        for j = 1:2
+            if nums(i) + nums(j) == target
+                out = 1;
+            end
+        end
+    end
+end;
+test([3, 3], 6)"#;
+    assert_eq!(h.render(h.eval(src)), "1");
+}
+
+#[test]
+fn lowered_script_scalar_subtract_symbol_index_anchor() {
+    let mut s = Session::new();
+    install_session_conventions(&mut s);
+    let form = parse_matlab_form("i = 1; out = i - 1; out").unwrap();
+    let request = lower_request(&mut s, &form);
+    let result_id = AthenaEngine::new().execute_request(&mut s, request).expect("lowered script subtract");
+    let term = s.results.get(result_id).unwrap().symbolic_term.unwrap();
+    assert_eq!(render_matlab(&s, term), "0");
+}
+
+#[test]
+fn script_scalar_subtract_symbol_index_anchor() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("i = 1; out = i - 1; out")), "0");
+}
+
+#[test]
+fn scalar_subtract_symbol_index_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = test()\n    i = 1;\n    out = i - 1;\nend;\ntest()"
+        )),
+        "0"
+    );
+}
+
+#[test]
+fn list_subtract_symbol_indices_anchor() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function out = test()\n    i = 1;\n    j = 2;\n    out = [i - 1, j - 1];\nend;\ntest()"
+        )),
+        "[0, 1]"
+    );
+}
+
+#[test]
+fn two_sum_static_loop_anchor() {
+    let h = H::new();
+    let src = r#"function out = twoSum(nums, target)
+    for i = 1:2
+        for j = (i + 1):2
+            if nums(i) + nums(j) == target
+                out = [i - 1, j - 1];
+                return;
+            end
+        end
+    end
+    out = [];
+end;
+twoSum([3, 3], 6)"#;
+    assert_eq!(h.render(h.eval(src)), "[0, 1]");
+}
+
+#[test]
+fn two_sum_nested_for_return_anchor() {
+    let h = H::new();
+    let src = r#"function out = twoSum(nums, target)
+    n = length(nums);
+    for i = 1:(n - 1)
+        for j = (i + 1):n
+            if nums(i) + nums(j) == target
+                out = [i - 1, j - 1];
+                return;
+            end
+        end
+    end
+    out = [];
+end;
+twoSum([3, 3], 6)"#;
+    assert_eq!(h.render(h.eval(src)), "[0, 1]", "two-sum matlab-sxo anchor");
 }
