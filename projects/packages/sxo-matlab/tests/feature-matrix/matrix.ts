@@ -32,8 +32,10 @@ export const matrixFeatures = [
         .pure()
         .eval('sum.vec', 'sum([1, 2, 3])', '6')
         .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
+        .eval('sum.axis1', 'sum([1, 2; 3, 4], 1)', '[4, 6]')
         .eval('sum.axis', 'sum([1, 2; 3, 4], 2)', '[3; 7]')
         .eval('sum.complex_bare', 'sum([1+i, 2; 3, 4-i])', '[4 + i, 6 - i]')
+        .eval('sum.complex_axis1', 'sum([1+i, 2; 3, 4-i], 1)', '[4 + i, 6 - i]')
         .eval('sum.complex', 'sum([1+i, 2; 3, 4-i], 2)', '[3 + i; 7 - i]')
         .done(),
     feature('prod', 'matrix')

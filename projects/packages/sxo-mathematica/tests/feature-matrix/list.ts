@@ -163,6 +163,7 @@ export const listFeatures = [
         .pure()
         .eval('riffle.ab', 'Riffle[{1, 2}, {a, b}]', '{1, a, 2, b}')
         .eval('riffle.complex_mix', 'Riffle[{1, 2}, {I, 3}]', '{1, I, 2, 3}')
+        .eval('riffle.complex_2i', 'Riffle[{1, 2}, {I, 2 I}]', '{1, I, 2, 2*I}')
         .done(),
     feature('Accumulate', 'list')
         .partial('prefix sums on exact vectors. Exact complex parent OK')
