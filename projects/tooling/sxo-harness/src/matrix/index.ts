@@ -3,9 +3,11 @@ export type {
     GapCaseOptions,
     NegativeCaseOptions,
     PlotCaseOptions,
+    SuboptimalCaseOptions,
     WrongCaseOptions,
 } from './builders.js';
 export {
+    cosmeticCase,
     entry,
     evalCase,
     FeatureEntryBuilder,
@@ -16,8 +18,11 @@ export {
     parseCase,
     plotCase,
     roundtripCase,
+    suboptimalCase,
     wrongCase,
 } from './builders.js';
+export type { WellKnownFeatureCaseFlag } from './flags.js';
+export { FEATURE_CASE_FLAGS, mergeCaseFlags } from './flags.js';
 export type {
     FeatureCaseRunFail,
     FeatureCaseRunGap,

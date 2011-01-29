@@ -83,6 +83,24 @@ describe('feature matrix builders', () => {
         expect(validateFeatureMatrix(matrix(exp)).ok).toBe(true);
     });
 
+    it('builds suboptimal and cosmetic runnable locks', () => {
+        const dabs = feature('DAbs', 'calculus')
+            .partial('not Sign')
+            .pure()
+            .suboptimal('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]')
+            .cosmetic('pow.print', '(-8)^(1/3)', '(-8)^(1/3)')
+            .done();
+        expect(dabs.cases[0]).toEqual({
+            id: 'dabs.x',
+            kind: 'eval',
+            input: 'D[Abs[x], x]',
+            expected: 'x^(-1)*Abs[x]',
+            flags: ['suboptimal'],
+        });
+        expect(dabs.cases[1]?.flags).toEqual(['cosmetic']);
+        expect(validateFeatureMatrix(matrix(dabs)).ok).toBe(true);
+    });
+
     it('supports entry() and matrix() assembly', () => {
         const m = matrix(
             entry('Abs', 'arithmetic', 'supported', 'pure', [evalCase('abs.neg', 'Abs[-1]', '1')]),

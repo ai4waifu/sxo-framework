@@ -44,6 +44,12 @@ function parseFlagArgs(argv: string[]): { dialect?: string; mode: string; flags:
     if (mode === 'wrongs' || mode === 'wrong') {
         flags.push('wrong');
         mode = 'flags';
+    } else if (mode === 'suboptimal' || mode === 'suboptimals') {
+        flags.push('suboptimal');
+        mode = 'flags';
+    } else if (mode === 'cosmetic' || mode === 'cosmetics') {
+        flags.push('cosmetic');
+        mode = 'flags';
     }
     return { dialect, mode, flags };
 }
@@ -51,8 +57,12 @@ function parseFlagArgs(argv: string[]): { dialect?: string; mode: string; flags:
 async function main(argv: string[] = process.argv): Promise<number> {
     const { dialect: dialectArg, mode, flags } = parseFlagArgs(argv);
     if (!isDialectId(dialectArg)) {
-        console.error('Usage: report-features <mathematica|matlab|pari-gp> [markdown|table|wrongs]');
-        console.error('       report-features <mathematica|matlab|pari-gp> --flag=wrong[,upstream-athena]');
+        console.error(
+            'Usage: report-features <mathematica|matlab|pari-gp> [markdown|table|wrongs|suboptimal|cosmetic]',
+        );
+        console.error(
+            '       report-features <mathematica|matlab|pari-gp> --flag=wrong[,suboptimal,cosmetic,upstream-athena]',
+        );
         console.error('Prefer: pnpm --filter @sxo/<dialect> report:features');
         return 1;
     }
@@ -66,7 +76,7 @@ async function main(argv: string[] = process.argv): Promise<number> {
             return 0;
         }
         if (mode !== 'markdown' && mode !== 'table') {
-            console.error('Mode must be markdown, table, or wrongs');
+            console.error('Mode must be markdown, table, wrongs, suboptimal, or cosmetic');
             return 1;
         }
         const out = await reportDialectFeatures(dialectArg, mode);

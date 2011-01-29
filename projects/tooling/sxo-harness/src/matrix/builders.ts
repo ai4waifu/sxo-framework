@@ -1,3 +1,4 @@
+import { FEATURE_CASE_FLAGS, mergeCaseFlags } from './flags.js';
 import type { CaseKind, FeatureBackend, FeatureCase, FeatureEffect, FeatureEntry, FeatureHost, FeatureMatrix, FeatureStatus } from './types.js';
 
 /** Optional fields shared by case constructors. */
@@ -20,6 +21,12 @@ export type WrongCaseOptions = FeatureCaseOptions & {
     isolate?: boolean;
     isolateTimeoutMs?: number;
 };
+
+/**
+ * Suboptimal lock: runnable `eval` that asserts the current imperfect result.
+ * Does not skip CI — failure still fails the build. Flagged for triage / upgrade.
+ */
+export type SuboptimalCaseOptions = FeatureCaseOptions;
 
 export type NegativeCaseOptions = FeatureCaseOptions & {
     forbidden?: string;
@@ -96,8 +103,34 @@ export function gapCase(id: string, input: string, opts: GapCaseOptions = {}): F
  * case can be promoted to `eval`. Always tagged with flag `wrong`.
  */
 export function wrongCase(id: string, input: string, opts: WrongCaseOptions = {}): FeatureCase {
-    const flags = new Set<string>(['wrong', ...(opts.flags ?? [])]);
-    return caseBase(id, 'wrong', input, { ...opts, flags: [...flags] });
+    return caseBase(id, 'wrong', input, {
+        ...opts,
+        flags: mergeCaseFlags([FEATURE_CASE_FLAGS.wrong], opts.flags),
+    });
+}
+
+/**
+ * Suboptimal `eval`: locks today's imperfect render/value while flagging for later upgrade.
+ * Always tagged with flag `suboptimal`. Still runs in CI (unlike `wrong` / `gap`).
+ */
+export function suboptimalCase(id: string, input: string, expected: string, opts: SuboptimalCaseOptions = {}): FeatureCase {
+    return caseBase(id, 'eval', input, {
+        expected,
+        ...opts,
+        flags: mergeCaseFlags([FEATURE_CASE_FLAGS.suboptimal], opts.flags),
+    });
+}
+
+/**
+ * Cosmetic `eval`: semantics OK, presentation only. Always tagged `cosmetic`.
+ * Still runs in CI.
+ */
+export function cosmeticCase(id: string, input: string, expected: string, opts: FeatureCaseOptions = {}): FeatureCase {
+    return caseBase(id, 'eval', input, {
+        expected,
+        ...opts,
+        flags: mergeCaseFlags([FEATURE_CASE_FLAGS.cosmetic], opts.flags),
+    });
 }
 
 type EntryEnv = {
@@ -223,6 +256,16 @@ export class FeatureEntryBuilder {
 
     wrong(id: string, input: string, opts?: WrongCaseOptions): this {
         return this.cases(wrongCase(id, input, opts));
+    }
+
+    /** Runnable imperfect lock (`suboptimal` flag). */
+    suboptimal(id: string, input: string, expected: string, opts?: SuboptimalCaseOptions): this {
+        return this.cases(suboptimalCase(id, input, expected, opts));
+    }
+
+    /** Runnable presentation-only lock (`cosmetic` flag). */
+    cosmetic(id: string, input: string, expected: string, opts?: FeatureCaseOptions): this {
+        return this.cases(cosmeticCase(id, input, expected, opts));
     }
 
     /** Freeze into a `FeatureEntry`. Throws if status / effect missing. */

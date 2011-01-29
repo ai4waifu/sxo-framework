@@ -107,6 +107,11 @@ export function listWrongs(matrix: FeatureMatrix): FeatureFlaggedRow[] {
     return listCasesByFlags(matrix, ['wrong']);
 }
 
+/** Convenience: flag `suboptimal` rows (usually runnable imperfect locks). */
+export function listSuboptimal(matrix: FeatureMatrix): FeatureFlaggedRow[] {
+    return listCasesByFlags(matrix, ['suboptimal']);
+}
+
 export function summarizeMatrix(matrix: FeatureMatrix): {
     entries: number;
     byStatus: Record<FeatureStatus, number>;

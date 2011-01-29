@@ -71,7 +71,9 @@ export const calculusFeatures = [
     feature('DAbs', 'calculus')
         .partial('D[Abs[x],x] → Abs[x]/x form (`x^(-1)*Abs[x]`); acceptable rewrite, not `Sign[x]`')
         .pure()
-        .eval('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]')
+        .suboptimal('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]', {
+            notes: 'ideal is `Sign[x]` or Abs[x]/x canonical; current Power paren form is locked',
+        })
         .done(),
     feature('Curl', 'calculus').partial('2-D vector `Curl` on tested symbolic form only').pure().eval('curl.2d', 'Curl[{-y, x}, {x, y}]', '2').done(),
     feature('Grad', 'calculus').partial('symbolic `Grad` on tested bivariate form only').pure().eval('grad.xy', 'Grad[x*y, {x, y}]', '{y, x}').done(),

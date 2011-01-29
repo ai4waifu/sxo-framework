@@ -16,8 +16,13 @@ export type FeatureHost = 'native' | 'wasm';
 export type FeatureBackend = 'internal-athena' | 'internal-titan' | 'reference-wolfram' | 'reference-matlab' | 'reference-pari-gp';
 
 /**
- * Retrievable case tags for triage (e.g. `wrong`, `upstream-athena`).
- * Convention: `wrong` is always present on `kind: 'wrong'` cases.
+ * Retrievable case tags for triage.
+ * Prefer well-known names from `FEATURE_CASE_FLAGS` (`wrong`, `suboptimal`, `cosmetic`,
+ * `upstream-athena`, …). Free-form strings remain allowed.
+ *
+ * Convention:
+ * - `kind: 'wrong'` always includes flag `wrong` (Vitest todo, does not fail CI)
+ * - `.suboptimal()` / `.cosmetic()` are runnable `eval` locks with those flags
  */
 export type FeatureCaseFlag = string;
 
@@ -36,7 +41,7 @@ export type FeatureCase = {
     backend?: FeatureBackend;
     /** Optional device tag when `backend` is `internal-titan`. */
     device?: string;
-    /** Optional triage flags (`wrong`, `upstream-athena`, …). */
+    /** Optional triage flags (`wrong`, `suboptimal`, `cosmetic`, `upstream-athena`, …). */
     flags?: readonly FeatureCaseFlag[];
     /**
      * Run evaluate in an isolated child process (native crash containment).
