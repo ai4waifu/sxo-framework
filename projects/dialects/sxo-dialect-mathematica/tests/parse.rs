@@ -1532,6 +1532,28 @@ twoSum[{3, 3}, 6]"#;
 }
 
 #[test]
+fn two_sum_n20_nested_do_anchor() {
+    let h = H::new();
+    let nums: Vec<i64> = (1..=20).map(|i| i * 100).collect();
+    let list = nums.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(", ");
+    let target = nums[18] + nums[19];
+    let src = format!(
+        r#"twoSum[nums_, target_] := Module[{{n = Length[nums]}},
+  Do[
+    Do[
+      If[nums[[i]] + nums[[j]] == target, Return[{{i - 1, j - 1}}]],
+      {{j, i + 1, n}}
+    ],
+    {{i, 1, n - 1}}
+  ];
+  Null
+];
+twoSum[{{{list}}}, {target}]"#
+    );
+    assert_eq!(h.wolfram(h.eval(&src)), "{18, 19}", "two-sum n=20 wolfram anchor");
+}
+
+#[test]
 fn dynamic_do_expression_end_anchor() {
     let h = H::new();
     assert_eq!(
