@@ -48,6 +48,15 @@ export type NativeExpression = {
     derivedFrom: number | null | undefined;
 };
 
+/** Stateful harness session: load → bind → invoke (JSON args, no program stitching). */
+export type NativeHostSession = {
+    evaluateDefinition(source: string, options?: EvaluateOptions | null): void;
+    bindJson(name: string, json: string): void;
+    invoke(symbol: string, argNames: string[], options?: EvaluateOptions | null): NativeExpression;
+    termToJson(expr: NativeExpression): string;
+    clearDefinitions(): void;
+};
+
 /** Full native host ABI used by `@sxo/core` and dialect adapters. */
 export type NativeBinding = {
     version(): string;
@@ -58,6 +67,7 @@ export type NativeBinding = {
     plotSvg(input: string, dialect?: string | null): string;
     /** Block until Jupyter kernel shutdown (connection file path). */
     runJupyterKernel(connectionFile: string): void;
+    HostSession: new (dialect?: string | null) => NativeHostSession;
 };
 
 function platformPackage(): { name: string; triple: string } {

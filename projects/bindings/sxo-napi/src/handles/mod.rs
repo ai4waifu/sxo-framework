@@ -87,6 +87,14 @@ pub(crate) fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome:
 }
 
 impl Expression {
+    /// Project the symbolic term for the last evaluate result.
+    pub(crate) fn project_symbolic_term(&self) -> Result<TermId> {
+        if let Some(result_id) = self.result_id {
+            return self.session.try_project_symbolic(result_id).map_err(map_err);
+        }
+        self.materialize_root()
+    }
+
     /// Materialize a Term once when an API still requires [`TermId`].
     /// Prefer projecting `result_id` when present.
     fn materialize_root(&self) -> Result<TermId> {

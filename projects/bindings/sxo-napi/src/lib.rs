@@ -4,9 +4,13 @@
 
 mod dialects;
 mod handles;
+mod host_session;
+mod json;
 mod jupyter;
 mod options;
 pub mod session;
+
+pub use host_session::HostSession;
 
 use std::rc::Rc;
 
