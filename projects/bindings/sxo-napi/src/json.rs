@@ -2,7 +2,7 @@
 
 use athena::{
     api::{AthenaRequest, SessionCommand},
-    ir::{Atom, TermBuilder, TermNode},
+    ir::{ApplicationHead, Atom, TermBuilder, TermNode},
     numeric::{NumericValue, to_f64_lossy},
     runtime::values::arena::{default_span, push_bool, push_int, push_list, push_null},
     types::{BindingEvaluationPolicy, BindingKind, TermId},
@@ -66,9 +66,25 @@ pub fn term_to_json(session: &AthenaSession, term: TermId) -> Result<JsonValue, 
             }
             Ok(JsonValue::Array(out))
         }
-        Some(_) => Err(SxoError::new("term_not_json_surface")),
+        Some(node) => Err(term_not_json_error(node)),
         None => Err(SxoError::new("term_out_of_range")),
     }
+}
+
+fn term_not_json_error(node: &TermNode) -> SxoError {
+    let detail = match node {
+        TermNode::Application { head, arguments } => {
+            let head = match head {
+                ApplicationHead::Semantic(op) => op.debug_label(),
+                ApplicationHead::Extension(_) => "extension",
+            };
+            format!("unevaluated_application head={head} argc={}", arguments.len())
+        }
+        TermNode::Atom(Atom::Symbol(_)) => "symbol_atom".into(),
+        TermNode::Atom(_) => "atom_not_json".into(),
+        TermNode::Collection { elements, .. } => format!("collection_projection_failed argc={}", elements.len()),
+    };
+    SxoError::new(format!("term_not_json_surface:{detail}"))
 }
 
 fn number_to_json(n: &NumericValue) -> Result<JsonValue, SxoError> {
