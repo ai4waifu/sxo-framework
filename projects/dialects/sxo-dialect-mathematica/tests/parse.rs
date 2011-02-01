@@ -97,6 +97,38 @@ fn parse_max_min() {
 }
 
 #[test]
+fn parse_sameq_desugars_to_sameq_call() {
+    let w = parse_mathematica("IntegerDigits[121] === Reverse[IntegerDigits[121]]").unwrap();
+    assert_eq!(
+        w,
+        WolframForm::call(
+            "SameQ",
+            vec![
+                WolframForm::call("IntegerDigits", vec![WolframForm::int(121)]),
+                WolframForm::call("Reverse", vec![WolframForm::call("IntegerDigits", vec![WolframForm::int(121)])]),
+            ],
+        ),
+    );
+}
+
+#[test]
+fn parse_mod_quotient_integer_digits() {
+    let h = H::new();
+    assert!(h.eq(h.eval("Mod[7, 3]"), h.i(1)));
+    assert!(h.eq(h.eval("Quotient[7, 3]"), h.i(2)));
+    assert!(h.eq(h.eval("IntegerDigits[123]"), h.lst(vec![h.i(1), h.i(2), h.i(3)])));
+    assert!(h.eq(h.eval("IntegerDigits[123] === Reverse[IntegerDigits[123]]"), h.boolean(false)));
+    let lhs121 = h.eval("IntegerDigits[121]");
+    let rhs121 = h.eval("Reverse[IntegerDigits[121]]");
+    eprintln!("lhs121={} rhs121={} eq={}", h.wolfram(lhs121), h.wolfram(rhs121), h.eq(lhs121, rhs121));
+    let sameq = h.eval("SameQ[IntegerDigits[121], Reverse[IntegerDigits[121]]]");
+    eprintln!("sameq direct={}", h.wolfram(sameq));
+    let pal121 = h.eval("IntegerDigits[121] === Reverse[IntegerDigits[121]]");
+    assert_eq!(h.wolfram(pal121), "True", "palindrome 121 identical");
+    assert!(h.eq(pal121, h.boolean(true)));
+}
+
+#[test]
 fn parse_plus_times() {
     let h = H::new();
     assert!(h.eq(h.eval("1 + 2 * 3"), h.i(7)));

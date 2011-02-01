@@ -23,6 +23,7 @@ pub fn parse_mathematica(input: &str) -> Result<WolframForm, SxoError> {
     if trimmed.is_empty() {
         return Err(SxoError::new("mathematica: empty input"));
     }
+    let trimmed = desugar_sameq(trimmed);
 
     let language = WolframLanguage::default();
     let builder = WolframBuilder::new(&language);
@@ -194,6 +195,151 @@ fn lower_postfix(u: &UnaryExpr) -> Result<WolframForm, SxoError> {
         }
         other => return Err(SxoError::new(format!("mathematica(ast): unsupported postfix {other:?}"))),
     })
+}
+
+/// Oak lexer folds `==` and `===` into [`WolframTokenType::Equal`]; rewrite `===` to `SameQ` before parse.
+fn desugar_sameq(input: &str) -> String {
+    let mut out = input.to_string();
+    while let Some(pos) = find_sameq_outside_string(&out) {
+        let (lhs_start, lhs_end) = span_expr_before(&out, pos);
+        let (rhs_start, rhs_end) = span_expr_after(&out, pos + 3);
+        let lhs = out[lhs_start..lhs_end].trim();
+        let rhs = out[rhs_start..rhs_end].trim();
+        let replacement = format!("SameQ[{lhs},{rhs}]");
+        out.replace_range(lhs_start..rhs_end, &replacement);
+    }
+    out
+}
+
+fn find_sameq_outside_string(s: &str) -> Option<usize> {
+    let bytes = s.as_bytes();
+    let mut in_string = false;
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if bytes[i] == b'"' {
+            in_string = !in_string;
+            i += 1;
+            continue;
+        }
+        if !in_string && bytes[i] == b'=' && bytes[i + 1] == b'=' && bytes[i + 2] == b'=' {
+            return Some(i);
+        }
+        i += 1;
+    }
+    None
+}
+
+fn span_expr_before(s: &str, op_start: usize) -> (usize, usize) {
+    let end = skip_ws_back(s, op_start);
+    let start = scan_expr_start_back(s, end);
+    (start, end)
+}
+
+fn span_expr_after(s: &str, op_end: usize) -> (usize, usize) {
+    let start = skip_ws_forward(s, op_end);
+    let end = scan_expr_end_forward(s, start);
+    (start, end)
+}
+
+fn skip_ws_back(s: &str, end: usize) -> usize {
+    let mut i = end;
+    while i > 0 && s.as_bytes()[i - 1].is_ascii_whitespace() {
+        i -= 1;
+    }
+    i
+}
+
+fn skip_ws_forward(s: &str, start: usize) -> usize {
+    let mut i = start;
+    while i < s.len() && s.as_bytes()[i].is_ascii_whitespace() {
+        i += 1;
+    }
+    i
+}
+
+fn scan_expr_start_back(s: &str, end: usize) -> usize {
+    let bytes = s.as_bytes();
+    let mut i = end;
+    let mut sq = 0i32;
+    let mut paren = 0i32;
+    let mut curl = 0i32;
+    while i > 0 {
+        i -= 1;
+        match bytes[i] {
+            b']' => sq += 1,
+            b'[' => {
+                sq -= 1;
+                if sq < 0 {
+                    return i;
+                }
+            }
+            b')' => paren += 1,
+            b'(' => {
+                paren -= 1;
+                if paren < 0 {
+                    return i;
+                }
+            }
+            b'}' => curl += 1,
+            b'{' => {
+                curl -= 1;
+                if curl < 0 {
+                    return i;
+                }
+            }
+            c if sq == 0 && paren == 0 && curl == 0 && (c == b',' || c == b';') => return i + 1,
+            _ => {}
+        }
+    }
+    0
+}
+
+fn scan_expr_end_forward(s: &str, start: usize) -> usize {
+    let bytes = s.as_bytes();
+    let mut i = start;
+    let mut sq = 0i32;
+    let mut paren = 0i32;
+    let mut curl = 0i32;
+    let mut in_string = false;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if c == b'"' {
+            in_string = !in_string;
+            i += 1;
+            continue;
+        }
+        if in_string {
+            i += 1;
+            continue;
+        }
+        match c {
+            b'[' => sq += 1,
+            b']' => {
+                sq -= 1;
+                if sq < 0 {
+                    return i;
+                }
+            }
+            b'(' => paren += 1,
+            b')' => {
+                paren -= 1;
+                if paren < 0 {
+                    return i;
+                }
+            }
+            b'{' => curl += 1,
+            b'}' => {
+                curl -= 1;
+                if curl < 0 {
+                    return i;
+                }
+            }
+            c if sq == 0 && paren == 0 && curl == 0 && (c == b',' || c == b';') => return i,
+            _ => {}
+        }
+        i += 1;
+    }
+    i
 }
 
 fn lower_blank(kind: WolframTokenType, head: Option<&Expression>) -> Result<WolframForm, SxoError> {

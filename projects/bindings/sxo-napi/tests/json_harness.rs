@@ -3,6 +3,38 @@
 use sxo_napi::HostSession;
 
 #[test]
+fn reverse_integer_palindrome_invoke() {
+    let session = HostSession::new(Some("mathematica".into())).expect("session");
+    session
+        .evaluate_definition(
+            "reverse[x_] := Module[{mi = -2147483648, mx = 2147483647, n = x, ans = 0},
+  While[n != 0,
+    If[ans < Quotient[mi - 9, 10] + 1 || ans > Quotient[mx, 10], Return[0]];
+    ans = ans * 10 + Mod[n, 10];
+    n = Quotient[n - Mod[n, 10], 10]
+  ];
+  ans
+]".into(),
+            None,
+        )
+        .expect("reverse def");
+    session
+        .evaluate_definition(
+            "isPalindrome[x_] := If[x < 0 || (x != 0 && Mod[x, 10] == 0), False, IntegerDigits[x] === Reverse[IntegerDigits[x]]]".into(),
+            None,
+        )
+        .expect("palindrome def");
+    session.bind_json("x".into(), "123".into()).expect("bind");
+    let rev = session.invoke("reverse".into(), vec!["x".into()], None).expect("reverse");
+    assert_eq!(session.term_to_json(&rev).expect("reverse json"), "321");
+    let pal = session.invoke("isPalindrome".into(), vec!["x".into()], None).expect("palindrome");
+    assert_eq!(session.term_to_json(&pal).expect("palindrome json"), "false");
+    session.bind_json("x".into(), "121".into()).expect("bind 121");
+    let pal2 = session.invoke("isPalindrome".into(), vec!["x".into()], None).expect("palindrome 121");
+    assert_eq!(session.term_to_json(&pal2).expect("palindrome 121 json"), "true");
+}
+
+#[test]
 fn max_min_invoke() {
     let session = HostSession::new(Some("mathematica".into())).expect("session");
     session.evaluate_definition("maxT[] := Max[1, 7]".into(), None).expect("max def");
