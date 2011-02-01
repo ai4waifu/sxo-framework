@@ -42,6 +42,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Greater" => SemanticOperator::Greater,
         "LessEqual" => SemanticOperator::LessEqual,
         "GreaterEqual" => SemanticOperator::GreaterEqual,
+        "Max" => SemanticOperator::Max,
+        "Min" => SemanticOperator::Min,
         "And" => SemanticOperator::And,
         "Or" => SemanticOperator::Or,
         "Not" => SemanticOperator::Not,

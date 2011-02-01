@@ -27,6 +27,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Greater" => SemanticOperator::Greater,
         "LessEqual" => SemanticOperator::LessEqual,
         "GreaterEqual" => SemanticOperator::GreaterEqual,
+        "max" | "Max" => SemanticOperator::Max,
+        "min" | "Min" => SemanticOperator::Min,
         "And" => SemanticOperator::And,
         "Or" => SemanticOperator::Or,
         "ElementwiseAnd" => SemanticOperator::ElementwiseAnd,

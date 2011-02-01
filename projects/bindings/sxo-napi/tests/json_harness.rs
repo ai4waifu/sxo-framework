@@ -3,6 +3,17 @@
 use sxo_napi::HostSession;
 
 #[test]
+fn max_min_invoke() {
+    let session = HostSession::new(Some("mathematica".into())).expect("session");
+    session.evaluate_definition("maxT[] := Max[1, 7]".into(), None).expect("max def");
+    session.evaluate_definition("minT[] := Min[1, 7]".into(), None).expect("min def");
+    let max_out = session.invoke("maxT".into(), vec![], None).expect("max invoke");
+    let min_out = session.invoke("minT".into(), vec![], None).expect("min invoke");
+    assert_eq!(session.term_to_json(&max_out).expect("max json"), "7");
+    assert_eq!(session.term_to_json(&min_out).expect("min json"), "1");
+}
+
+#[test]
 fn bind_json_list_length_invoke() {
     let nums: Vec<i64> = (0..20).map(|i| i).collect();
     let json = serde_json::to_string(&nums).expect("encode");

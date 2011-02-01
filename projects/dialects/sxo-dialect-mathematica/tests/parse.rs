@@ -90,6 +90,13 @@ impl H {
 }
 
 #[test]
+fn parse_max_min() {
+    let h = H::new();
+    assert!(h.eq(h.eval("Max[1, 7]"), h.i(7)));
+    assert!(h.eq(h.eval("Min[1, 7]"), h.i(1)));
+}
+
+#[test]
 fn parse_plus_times() {
     let h = H::new();
     assert!(h.eq(h.eval("1 + 2 * 3"), h.i(7)));
