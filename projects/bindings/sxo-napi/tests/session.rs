@@ -116,7 +116,10 @@ fn result_transforms_record_derived_from_on_the_same_outcome() {
     assert!(!derived.status.is_empty());
     assert!(!derived.coverage.is_empty());
     let via_surface = session.evaluate_mathematica("D[x^3, x]").unwrap();
-    assert!(session.structural_eq(session.project_result(derived.result_id).unwrap(), session.project_result(via_surface.result_id).unwrap()));
+    assert!(session.structural_eq(
+        session.project_result(derived.result_id).unwrap(),
+        session.project_result(via_surface.result_id).unwrap()
+    ));
     assert_ne!(session.render_as_wolfram(session.project_result(derived.result_id).unwrap()), "Null");
 
     let sum = session.evaluate_matlab("sin(x)^2 + cos(x)^2").unwrap();
@@ -458,10 +461,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Take[{1 + I, 2, 3, 4}, 2]", "{1 + I, 2}"),
         ("First[{1 + I, 2, 3}]", "1 + I"),
         ("Extract[{1 + I, 2, 3}, 2]", "2"),
-        (
-            "Flatten[{{1 + I, 2}, {3, 4 - I}}]",
-            "{1 + I, 2, 3, 4 - I}",
-        ),
+        ("Flatten[{{1 + I, 2}, {3, 4 - I}}]", "{1 + I, 2, 3, 4 - I}"),
         ("Join[{{1 + I}}, {{2}}]", "{{1 + I}, {2}}"),
         ("Join[{{1 + I, 2}}, {{3, 4}}]", "{{1 + I, 2}, {3, 4}}"),
         ("Riffle[{1, 2}, {I, 3}]", "{1, I, 2, 3}"),

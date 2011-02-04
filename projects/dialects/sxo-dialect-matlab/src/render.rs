@@ -298,12 +298,8 @@ fn render_cell_term(session: &Session, args: &[TermId]) -> String {
     }
 }
 
-
 fn is_solve_disposition_name(name: &str) -> bool {
-    matches!(
-        name,
-        "Unique" | "Infinite" | "Inconsistent" | "Singular" | "ResourceLimited"
-    )
+    matches!(name, "Unique" | "Infinite" | "Inconsistent" | "Singular" | "ResourceLimited")
 }
 
 fn is_form_solve_disposition(form: &MatlabForm) -> bool {

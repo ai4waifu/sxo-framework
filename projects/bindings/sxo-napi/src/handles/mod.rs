@@ -136,7 +136,8 @@ impl Expression {
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.differentiate_result(parent, &var)
-                } else {
+                }
+                else {
                     let term = self.materialize_root()?;
                     self.session.differentiate_outcome(term, &var)
                 }
@@ -165,7 +166,8 @@ impl Expression {
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.simplify_result(parent)
-                } else {
+                }
+                else {
                     let term = self.materialize_root()?;
                     self.session.simplify_outcome(term)
                 }

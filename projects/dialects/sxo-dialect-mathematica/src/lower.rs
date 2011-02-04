@@ -471,9 +471,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     };
                     let axes = match axes_form {
                         WolframForm::List(items) => items.iter().map(index_spec_of).collect::<Option<Vec<_>>>(),
-                        WolframForm::Call { head, args }
-                            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") =>
-                        {
+                        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "List") => {
                             args.iter().map(index_spec_of).collect::<Option<Vec<_>>>()
                         }
                         other => index_spec_of(other).map(|ax| vec![ax]),
@@ -718,14 +716,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Return", [value]) => {
-                    return AthenaRequest::Control(ControlPlan::EarlyReturn {
-                        value: lower_wexpr(session, value),
-                    });
+                    return AthenaRequest::Control(ControlPlan::EarlyReturn { value: lower_wexpr(session, value) });
                 }
                 ("Return", []) => {
-                    return AthenaRequest::Control(ControlPlan::EarlyReturn {
-                        value: push_null(session),
-                    });
+                    return AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
                 }
                 ("Module", [bindings, body]) => {
                     return lower_module(session, bindings, body);
@@ -1577,9 +1571,9 @@ fn is_static_counted_iterator(session: &Session, iterator: TermId) -> bool {
         Some(TermNode::Collection { elements, .. }) => {
             elements.iter().all(|t| matches!(session.arena.get(*t), Some(TermNode::Atom(Atom::Number(_)))))
         }
-        Some(TermNode::Application { arguments, .. }) => arguments
-            .iter()
-            .all(|t| matches!(session.arena.get(*t), Some(TermNode::Atom(Atom::Number(_))))),
+        Some(TermNode::Application { arguments, .. }) => {
+            arguments.iter().all(|t| matches!(session.arena.get(*t), Some(TermNode::Atom(Atom::Number(_)))))
+        }
         _ => false,
     }
 }
@@ -1618,13 +1612,8 @@ fn lower_dynamic_do(
         kind: BindingKind::Session,
         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
     });
-    let loop_body = AthenaRequest::Control(ControlPlan::Sequence {
-        steps: vec![body_req, increment],
-    });
-    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile {
-        condition: cond,
-        body: Box::new(loop_body),
-    });
+    let loop_body = AthenaRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
+    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
     Some(AthenaRequest::Control(ControlPlan::Sequence {
         steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
     }))

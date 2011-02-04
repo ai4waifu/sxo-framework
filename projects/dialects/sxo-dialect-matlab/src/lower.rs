@@ -12,8 +12,8 @@ use athena::{
         linear_algebra::{MatrixOperand, MatrixValue},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode},
-    reasoning::trs::TermPattern,
     numeric::{Integer, Rational},
+    reasoning::trs::TermPattern,
     runtime::{
         ZeroPowerZeroConvention,
         values::{
@@ -237,14 +237,10 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "Return" => match args.as_slice() {
             [value] => {
-                return AthenaRequest::Control(ControlPlan::EarlyReturn {
-                    value: form_to_term(session, value),
-                });
+                return AthenaRequest::Control(ControlPlan::EarlyReturn { value: form_to_term(session, value) });
             }
             [] => {
-                return AthenaRequest::Control(ControlPlan::EarlyReturn {
-                    value: push_null(session),
-                });
+                return AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
             }
             _ => {}
         },
@@ -314,9 +310,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     }
                     return AthenaRequest::Control(ControlPlan::Sequence { steps });
                 }
-                if let Some(dynamic) =
-                    lower_dynamic_for(session, variable_t, iterator_t, body_req.owning_copy())
-                {
+                if let Some(dynamic) = lower_dynamic_for(session, variable_t, iterator_t, body_req.owning_copy()) {
                     return dynamic;
                 }
                 return AthenaRequest::Control(ControlPlan::CountedLoop {
@@ -740,13 +734,8 @@ fn lower_dynamic_for(
         kind: BindingKind::Session,
         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
     });
-    let loop_body = AthenaRequest::Control(ControlPlan::Sequence {
-        steps: vec![body_req, increment],
-    });
-    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile {
-        condition: cond,
-        body: Box::new(loop_body),
-    });
+    let loop_body = AthenaRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
+    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
     Some(AthenaRequest::Control(ControlPlan::Sequence {
         steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
     }))
@@ -768,7 +757,9 @@ fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
             let index = form_to_eval_term(session, &args[1]);
             push_semantic(session, SemanticOperator::Extract, vec![target, index])
         }
-        MatlabForm::Call { head, args } if args.len() == 1 && subsref_call_head(head) && form_arg_is_dynamic_index(&args[0]) => {
+        MatlabForm::Call { head, args }
+            if args.len() == 1 && subsref_call_head(head) && form_arg_is_dynamic_index(&args[0]) =>
+        {
             let target = form_to_eval_term(session, &MatlabForm::symbol(head));
             let index = form_to_eval_term(session, &args[0]);
             push_semantic(session, SemanticOperator::Extract, vec![target, index])
@@ -776,8 +767,21 @@ fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
         MatlabForm::Call { head, args }
             if matches!(
                 head.as_str(),
-                "Plus" | "Add" | "Subtract" | "Times" | "Multiply" | "Divide" | "Power" | "Equal" | "Unequal" | "Less"
-                    | "Greater" | "LessEqual" | "GreaterEqual" | "And" | "Or"
+                "Plus"
+                    | "Add"
+                    | "Subtract"
+                    | "Times"
+                    | "Multiply"
+                    | "Divide"
+                    | "Power"
+                    | "Equal"
+                    | "Unequal"
+                    | "Less"
+                    | "Greater"
+                    | "LessEqual"
+                    | "GreaterEqual"
+                    | "And"
+                    | "Or"
             ) =>
         {
             let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
@@ -874,8 +878,6 @@ fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
     }
 }
 
-
-
 /// Exact complex Form scalar → `(re, im)` Gaussian rationals.
 ///
 /// MATLAB tokenizes `2i` as a single symbol (`"2i"`), not `Times[2, i]`.
@@ -948,10 +950,8 @@ fn bare_imag_unit_symbol(s: &str) -> Option<(Rational, Rational)> {
 }
 
 fn matlab_imag_suffix_symbol(s: &str) -> Option<(Rational, Rational)> {
-    let rest = s.strip_suffix('i')
-        .or_else(|| s.strip_suffix('j'))
-        .or_else(|| s.strip_suffix('I'))
-        .or_else(|| s.strip_suffix('J'))?;
+    let rest =
+        s.strip_suffix('i').or_else(|| s.strip_suffix('j')).or_else(|| s.strip_suffix('I')).or_else(|| s.strip_suffix('J'))?;
     if rest.is_empty() {
         // Bare `i` / `j` are variables (loop indices, assignments). Imag literals tokenize as `1i`, `2i`, …
         return None;
@@ -1331,10 +1331,7 @@ fn lower_matlab_function_def(session: &mut Session, header: &MatlabForm, body: &
             TermPattern::Bind { name, inner: Box::new(TermPattern::Any) }
         })
         .collect();
-    let pattern = TermPattern::Application {
-        operator: ApplicationHead::Extension(f_op),
-        arguments: pat_args,
-    };
+    let pattern = TermPattern::Application { operator: ApplicationHead::Extension(f_op), arguments: pat_args };
     session.defs.register_extension_request_rule(f_op, pattern, body_req);
     AthenaRequest::Term(push_null(session))
 }
@@ -1377,17 +1374,11 @@ fn callable_from_form(form: &MatlabForm) -> Option<(String, Vec<String>)> {
                 return None;
             }
             let name = form_symbol_name(&args[0])?.to_string();
-            let params = args[1..]
-                .iter()
-                .map(|a| form_symbol_name(a).map(str::to_string))
-                .collect::<Option<Vec<_>>>()?;
+            let params = args[1..].iter().map(|a| form_symbol_name(a).map(str::to_string)).collect::<Option<Vec<_>>>()?;
             Some((name, params))
         }
         MatlabForm::Call { head, args } => {
-            let params = args
-                .iter()
-                .map(|a| form_symbol_name(a).map(str::to_string))
-                .collect::<Option<Vec<_>>>()?;
+            let params = args.iter().map(|a| form_symbol_name(a).map(str::to_string)).collect::<Option<Vec<_>>>()?;
             Some((head.clone(), params))
         }
         _ => None,
@@ -1426,10 +1417,7 @@ fn rewrite_returns_in_form(form: &MatlabForm, out: &MatlabForm) -> MatlabForm {
         }
         MatlabForm::Call { head, args } if head == "For" || head == "CountedLoop" => {
             if let [variable, iterator, body] = args.as_slice() {
-                MatlabForm::call(
-                    head,
-                    vec![variable.clone(), iterator.clone(), rewrite_returns_in_form(body, out)],
-                )
+                MatlabForm::call(head, vec![variable.clone(), iterator.clone(), rewrite_returns_in_form(body, out)])
             }
             else {
                 form.clone()
@@ -1443,9 +1431,7 @@ fn wrap_function_body_request(session: &mut Session, body_req: AthenaRequest, ou
     if outputs.len() != 1 {
         return body_req;
     }
-    let ret = AthenaRequest::Control(ControlPlan::EarlyReturn {
-        value: push_symbol_name(session, &outputs[0]),
-    });
+    let ret = AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_symbol_name(session, &outputs[0]) });
     match body_req {
         AthenaRequest::Control(ControlPlan::Sequence { steps }) => {
             AthenaRequest::Control(ControlPlan::Sequence { steps: steps.into_iter().chain([ret]).collect() })

@@ -1095,7 +1095,6 @@ fn hold_complete_and_unevaluated_preserve_plus() {
     assert_eq!(h.wolfram(h.eval("ReleaseHold[HoldComplete[1 + 1]]")), "2");
 }
 
-
 #[test]
 fn ragged_nested_list_is_not_a_silent_matrix() {
     let h = H::new();
@@ -1107,12 +1106,8 @@ fn ragged_nested_list_is_not_a_silent_matrix() {
 fn flatten_does_not_enter_hold_complete() {
     let h = H::new();
     // Residual Flatten keeps HoldComplete intact. It must not become {1, 2, 3}.
-    assert_eq!(
-        h.wolfram(h.eval("Flatten[HoldComplete[{{1, 2}, {3}}]]")),
-        "Flatten[HoldComplete[{{1, 2}, {3}}]]"
-    );
+    assert_eq!(h.wolfram(h.eval("Flatten[HoldComplete[{{1, 2}, {3}}]]")), "Flatten[HoldComplete[{{1, 2}, {3}}]]");
 }
-
 
 #[test]
 fn unary_minus_binds_looser_than_power() {
@@ -1321,110 +1316,58 @@ fn replacepart_literal_list_projects_updated_collection() {
     assert_eq!(h.wolfram(h.eval("ReplacePart[{}, 1 -> 1]")), "{1}");
 }
 
-
 #[test]
 fn complex_conjugate_transpose_conjugates_exact_parent() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("ConjugateTranspose[{{1 + 2 I, 3}, {4, 5}}]")),
-        "{{1 - 2*I, 4}, {3, 5}}"
-    );
+    assert_eq!(h.wolfram(h.eval("ConjugateTranspose[{{1 + 2 I, 3}, {4, 5}}]")), "{{1 - 2*I, 4}, {3, 5}}");
     assert_eq!(h.wolfram(h.eval("ConjugateTranspose[{{1 + I}}]")), "{{1 - I}}");
 }
-
 
 #[test]
 fn complex_exact_dot_and_hadamard() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Dot[{{1 + I, 0}, {0, 1 - I}}, {{1, I}, {-I, 1}}]")),
-        "{{1 + I, -1 + I}, {-1 - I, 1 - I}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("{{1 + I, 2}, {3, 4}}*{{1, I}, {0, 1}}")),
-        "{{1 + I, 2*I}, {0, 4}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Dot[{{1 + I, 0}, {0, 1 - I}}, {{1, I}, {-I, 1}}]")), "{{1 + I, -1 + I}, {-1 - I, 1 - I}}");
+    assert_eq!(h.wolfram(h.eval("{{1 + I, 2}, {3, 4}}*{{1, I}, {0, 1}}")), "{{1 + I, 2*I}, {0, 4}}");
 }
 
 #[test]
 fn complex_exact_transpose_and_divide() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Transpose[{{1 + I, 2}, {3, 4}}]")),
-        "{{1 + I, 3}, {2, 4}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Transpose[{{1 + I, 2}, {3, 4}}]")), "{{1 + I, 3}, {2, 4}}");
     assert_eq!(h.wolfram(h.eval("{{2 + 2 I}}/{{1 + I}}")), "2");
-    assert_eq!(
-        h.wolfram(h.eval("{{2, 2 I}, {3, 4}}/{{1, I}, {1, 2}}")),
-        "{{2, 2}, {3, 2}}"
-    );
+    assert_eq!(h.wolfram(h.eval("{{2, 2 I}, {3, 4}}/{{1, I}, {1, 2}}")), "{{2, 2}, {3, 2}}");
 }
 
 #[test]
 fn complex_exact_tril_triu() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("LowerTriangularize[{{1 + I, 2}, {3, 4 - I}}]")),
-        "{{1 + I, 0}, {3, 4 - I}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]")),
-        "{{1 + I, 2}, {0, 4 - I}}"
-    );
+    assert_eq!(h.wolfram(h.eval("LowerTriangularize[{{1 + I, 2}, {3, 4 - I}}]")), "{{1 + I, 0}, {3, 4 - I}}");
+    assert_eq!(h.wolfram(h.eval("UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]")), "{{1 + I, 2}, {0, 4 - I}}");
 }
 
 #[test]
 fn complex_exact_flatten() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4}}]")),
-        "{1 + I, 2, 3, 4}"
-    );
+    assert_eq!(h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4}}]")), "{1 + I, 2, 3, 4}");
 }
-
-
-
-
 
 #[test]
 fn complex_exact_reverse_join_part() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Reverse[{{1 + I, 2}, {3, 4}}]")),
-        "{{3, 4}, {1 + I, 2}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Join[{{1 + I, 2}}, {{3, 4}}]")),
-        "{{1 + I, 2}, {3, 4}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Join[{{1 + I}}, {{2}}]")),
-        "{{1 + I}, {2}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Reverse[{{1 + I, 2}, {3, 4}}]")), "{{3, 4}, {1 + I, 2}}");
+    assert_eq!(h.wolfram(h.eval("Join[{{1 + I, 2}}, {{3, 4}}]")), "{{1 + I, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("Join[{{1 + I}}, {{2}}]")), "{{1 + I}, {2}}");
     assert_eq!(h.wolfram(h.eval("Part[{{1 + I, 2}, {3, 4}}, 1, 2]")), "2");
 }
-
-
 
 #[test]
 fn complex_exact_kronecker_power_and_riffle() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("KroneckerProduct[{{1 + I}}, {{1, I}}]")),
-        "{1 + I, -1 + I}"
-    );
+    assert_eq!(h.wolfram(h.eval("KroneckerProduct[{{1 + I}}, {{1, I}}]")), "{1 + I, -1 + I}");
     assert_eq!(h.wolfram(h.eval("{{1 + I}}^2")), "2*I");
-    assert_eq!(
-        h.wolfram(h.eval("Riffle[{1, 2}, {I, 2 I}]")),
-        "{1, I, 2, 2*I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Riffle[{1, 2}, {I, 3}]")),
-        "{1, I, 2, 3}"
-    );
+    assert_eq!(h.wolfram(h.eval("Riffle[{1, 2}, {I, 2 I}]")), "{1, I, 2, 2*I}");
+    assert_eq!(h.wolfram(h.eval("Riffle[{1, 2}, {I, 3}]")), "{1, I, 2, 3}");
 }
-
-
 
 #[test]
 fn total_level_and_sum_iterator() {
@@ -1438,70 +1381,34 @@ fn total_level_and_sum_iterator() {
 #[test]
 fn complex_exact_total_and_product_dimension_axis() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}]")),
-        "{4 + I, 6 - I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}, {2}]")),
-        "{{3 + I}, {7 - I}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}]")),
-        "{3 + 3*I, 8 - 2*I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}, {2}]")),
-        "{{2 + 2*I}, {12 - 3*I}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}]")), "{4 + I, 6 - I}");
+    assert_eq!(h.wolfram(h.eval("Total[{{1 + I, 2}, {3, 4 - I}}, {2}]")), "{{3 + I}, {7 - I}}");
+    assert_eq!(h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}]")), "{3 + 3*I, 8 - 2*I}");
+    assert_eq!(h.wolfram(h.eval("Product[{{1 + I, 2}, {3, 4 - I}}, {2}]")), "{{2 + 2*I}, {12 - 3*I}}");
 }
 
 #[test]
 fn complex_exact_accumulate_and_differences() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Accumulate[{1 + I, 2, 3}]")),
-        "{1 + I, 3 + I, 6 + I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Differences[{1 + I, 2, 3 - I}]")),
-        "{1 - I, 1 - I}"
-    );
+    assert_eq!(h.wolfram(h.eval("Accumulate[{1 + I, 2, 3}]")), "{1 + I, 3 + I, 6 + I}");
+    assert_eq!(h.wolfram(h.eval("Differences[{1 + I, 2, 3 - I}]")), "{1 - I, 1 - I}");
 }
 
 #[test]
 fn complex_exact_diagonal_matrix() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2}]")),
-        "{{1 + I, 0}, {0, 2}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2 - I}]")),
-        "{{1 + I, 0}, {0, 2 - I}}"
-    );
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2}]")), "{{1 + I, 0}, {0, 2}}");
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1 + I, 2 - I}]")), "{{1 + I, 0}, {0, 2 - I}}");
 }
 
 #[test]
 fn complex_exact_constant_array_and_append() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("ConstantArray[I, 3]")), "{I, I, I}");
-    assert_eq!(
-        h.wolfram(h.eval("ConstantArray[1 + I, 2]")),
-        "{1 + I, 1 + I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Append[{1 + I, 2}, I]")),
-        "{1 + I, 2, I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Append[{1, 2}, I]")),
-        "{1, 2, I}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("Prepend[{1, 2}, I]")),
-        "{I, 1, 2}"
-    );
+    assert_eq!(h.wolfram(h.eval("ConstantArray[1 + I, 2]")), "{1 + I, 1 + I}");
+    assert_eq!(h.wolfram(h.eval("Append[{1 + I, 2}, I]")), "{1 + I, 2, I}");
+    assert_eq!(h.wolfram(h.eval("Append[{1, 2}, I]")), "{1, 2, I}");
+    assert_eq!(h.wolfram(h.eval("Prepend[{1, 2}, I]")), "{I, 1, 2}");
 }
 
 #[test]
@@ -1512,19 +1419,14 @@ fn complex_exact_vector_struct_ops() {
     assert_eq!(h.wolfram(h.eval("Take[{1 + I, 2, 3, 4}, 2]")), "{1 + I, 2}");
     assert_eq!(h.wolfram(h.eval("First[{1 + I, 2, 3}]")), "1 + I");
     assert_eq!(h.wolfram(h.eval("Extract[{1 + I, 2, 3}, 2]")), "2");
-    assert_eq!(
-        h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4 - I}}]")),
-        "{1 + I, 2, 3, 4 - I}"
-    );
+    assert_eq!(h.wolfram(h.eval("Flatten[{{1 + I, 2}, {3, 4 - I}}]")), "{1 + I, 2, 3, 4 - I}");
 }
 
 #[test]
 fn while_return_anchor() {
     let h = H::new();
     assert_eq!(
-        h.wolfram(h.eval(
-            "Module[{n = 2}, i = 1; While[i <= n, CompoundExpression[If[i == 2, Return[{0, 1}]], i = i + 1]]]"
-        )),
+        h.wolfram(h.eval("Module[{n = 2}, i = 1; While[i <= n, CompoundExpression[If[i == 2, Return[{0, 1}]], i = i + 1]]]")),
         "{0, 1}"
     );
 }
@@ -1532,19 +1434,13 @@ fn while_return_anchor() {
 #[test]
 fn static_do_return_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Module[{}, Do[If[i == 2, Return[{0, 1}]], {i, 1, 2}]]")),
-        "{0, 1}"
-    );
+    assert_eq!(h.wolfram(h.eval("Module[{}, Do[If[i == 2, Return[{0, 1}]], {i, 1, 2}]]")), "{0, 1}");
 }
 
 #[test]
 fn dynamic_do_return_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 2, Return[{0, 1}]], {i, 1, n}]]")),
-        "{0, 1}"
-    );
+    assert_eq!(h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 2, Return[{0, 1}]], {i, 1, n}]]")), "{0, 1}");
 }
 
 #[test]
@@ -1595,9 +1491,5 @@ twoSum[{{{list}}}, {target}]"#
 #[test]
 fn dynamic_do_expression_end_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 1, Return[{0, 1}]], {i, 1, n - 1}]]")),
-        "{0, 1}"
-    );
+    assert_eq!(h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 1, Return[{0, 1}]], {i, 1, n - 1}]]")), "{0, 1}");
 }
-

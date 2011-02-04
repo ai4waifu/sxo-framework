@@ -20,14 +20,16 @@ fn invoke_source(dialect: Dialect, symbol: &str, arg_names: &[String]) -> String
         Dialect::Mathematica => {
             if arg_names.is_empty() {
                 format!("{symbol}[]")
-            } else {
+            }
+            else {
                 format!("{symbol}[{}]", arg_names.join(", "))
             }
         }
         Dialect::Matlab => {
             if arg_names.is_empty() {
                 format!("{symbol}()")
-            } else {
+            }
+            else {
                 format!("{symbol}({})", arg_names.join(", "))
             }
         }
@@ -62,7 +64,8 @@ impl HostSession {
     /// Bind a harness JSON value to a session symbol (no surface literal).
     #[napi(js_name = "bindJson")]
     pub fn bind_json(&self, name: String, json: String) -> Result<()> {
-        let value: JsonValue = serde_json::from_str(&json).map_err(|e| Error::from_reason(format!("invalid harness json: {e}")))?;
+        let value: JsonValue =
+            serde_json::from_str(&json).map_err(|e| Error::from_reason(format!("invalid harness json: {e}")))?;
         self.inner
             .with_math_mut(|ms| {
                 let term = json_to_term(ms, &value)?;

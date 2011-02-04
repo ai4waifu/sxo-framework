@@ -1,12 +1,12 @@
 //! Harness / product JSON ↔ arena [`TermId`] marshalling (no dialect surface syntax).
 
 use athena::{
+    Session as AthenaSession,
     api::{AthenaRequest, SessionCommand},
     ir::{ApplicationHead, Atom, TermBuilder, TermNode},
     numeric::{NumericValue, to_f64_lossy},
     runtime::values::arena::{default_span, push_bool, push_int, push_list, push_null},
     types::{BindingEvaluationPolicy, BindingKind, TermId},
-    Session as AthenaSession,
 };
 use serde_json::Value as JsonValue;
 use sxo_types::SxoError;
@@ -107,8 +107,6 @@ pub fn bind_session_term(session: &mut AthenaSession, name: &str, value: TermId)
         // Harness JSON is already materialized in the arena — capture without VM ConstructCollection.
         evaluation: BindingEvaluationPolicy::StoreResidualTerm,
     });
-    athena::AthenaEngine::new()
-        .execute_request(session, request)
-        .map_err(SxoError::from_diagnostic)?;
+    athena::AthenaEngine::new().execute_request(session, request).map_err(SxoError::from_diagnostic)?;
     Ok(())
 }

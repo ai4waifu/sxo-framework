@@ -14,7 +14,8 @@ fn reverse_integer_palindrome_invoke() {
     n = Quotient[n - Mod[n, 10], 10]
   ];
   ans
-]".into(),
+]"
+            .into(),
             None,
         )
         .expect("reverse def");
@@ -75,9 +76,7 @@ fn bind_json_large_list_two_sum_invoke() {
     session.evaluate_definition(def.into(), None).expect("definition");
     session.bind_json("nums".into(), json).expect("bind");
     session.bind_json("target".into(), "19".into()).expect("bind target");
-    let out = session
-        .invoke("twoSum".into(), vec!["nums".into(), "target".into()], None)
-        .expect("invoke");
+    let out = session.invoke("twoSum".into(), vec!["nums".into(), "target".into()], None).expect("invoke");
     let got = session.term_to_json(&out).expect("json");
     assert_eq!(got, "[0,19]");
 }
@@ -98,9 +97,7 @@ fn bind_json_then_invoke_two_sum_wolfram() {
     session.evaluate_definition(def.into(), None).expect("definition");
     session.bind_json("nums".into(), "[3,3]".into()).expect("bind nums");
     session.bind_json("target".into(), "6".into()).expect("bind target");
-    let out = session
-        .invoke("twoSum".into(), vec!["nums".into(), "target".into()], None)
-        .expect("invoke");
+    let out = session.invoke("twoSum".into(), vec!["nums".into(), "target".into()], None).expect("invoke");
     let got = session.term_to_json(&out).expect("json");
     assert_eq!(got, "[0,1]");
 }

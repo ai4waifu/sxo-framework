@@ -1,4 +1,4 @@
-﻿//! Integration tests for MATLAB parse (session arena `TermId`).
+//! Integration tests for MATLAB parse (session arena `TermId`).
 
 use std::cell::RefCell;
 
@@ -1076,7 +1076,6 @@ fn mldivide_disposition_residuals() {
     assert_eq!(h.render(h.eval("[1, 2; 3, 4] \\ [5; 6]")), "[-4; 9/2]");
 }
 
-
 #[test]
 fn mrdivide_disposition_residuals() {
     let h = H::new();
@@ -1093,14 +1092,10 @@ fn complex_ctranspose_conjugates_exact_parent() {
     assert_eq!(h.render(h.eval("[1+2i, 3; 4, 5]'")), "[1 - 2*i, 4; 3, 5]");
 }
 
-
 #[test]
 fn complex_exact_matmul_and_hadamard() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval("[1+i, 0; 0, 1-i]*[1, i; -i, 1]")),
-        "[1 + i, -1 + i; -1 - i, 1 - i]"
-    );
+    assert_eq!(h.render(h.eval("[1+i, 0; 0, 1-i]*[1, i; -i, 1]")), "[1 + i, -1 + i; -1 - i, 1 - i]");
     assert_eq!(h.render(h.eval("[1+i, 2; 3, 4].*[1, i; 0, 1]")), "[1 + i, 2*i; 0, 4]");
 }
 
@@ -1119,9 +1114,6 @@ fn complex_exact_tril_triu() {
     assert_eq!(h.render(h.eval("triu([1+i, 2; 3, 4-i])")), "[1 + i, 2; 0, 4 - i]");
 }
 
-
-
-
 #[test]
 fn complex_exact_part_and_slice() {
     let h = H::new();
@@ -1131,18 +1123,12 @@ fn complex_exact_part_and_slice() {
     assert_eq!(h.render(h.eval("A=[1+i, 2; 3, 4]; A(1,2)")), "2");
 }
 
-
-
-
-
 #[test]
 fn complex_exact_kronecker_and_power() {
     let h = H::new();
     assert_eq!(h.render(h.eval("kron([1+i], [1, i])")), "[1 + i, -1 + i]");
     assert_eq!(h.render(h.eval("[1+i].^2")), "2*i");
 }
-
-
 
 #[test]
 fn sum_prod_dimension_axis() {
@@ -1173,12 +1159,7 @@ fn complex_exact_diag() {
 #[test]
 fn function_return_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval(
-            "function out = pick()\n    out = [0, 1];\n    return;\nend;\npick()"
-        )),
-        "[0, 1]"
-    );
+    assert_eq!(h.render(h.eval("function out = pick()\n    out = [0, 1];\n    return;\nend;\npick()")), "[0, 1]");
 }
 
 #[test]
@@ -1190,12 +1171,7 @@ fn script_part_index_literal_anchor() {
 #[test]
 fn function_part_index_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval(
-            "function out = test(nums)\n    out = nums(1);\nend;\ntest([3, 3])"
-        )),
-        "3"
-    );
+    assert_eq!(h.render(h.eval("function out = test(nums)\n    out = nums(1);\nend;\ntest([3, 3])")), "3");
 }
 
 #[test]
@@ -1284,8 +1260,10 @@ fn athena_direct_extract_symbol_index_anchor() {
 
 #[test]
 fn athena_direct_subtract_symbol_index_anchor() {
-    use athena::api::request::{AthenaRequest, ControlPlan, SessionCommand};
-    use athena::ir::{ApplicationHead, TermNode};
+    use athena::{
+        api::request::{AthenaRequest, ControlPlan, SessionCommand},
+        ir::{ApplicationHead, TermNode},
+    };
 
     let mut s = Session::new();
     install_session_conventions(&mut s);
@@ -1295,11 +1273,8 @@ fn athena_direct_subtract_symbol_index_anchor() {
         Some(TermNode::Atom(Atom::Symbol(id))) => *id,
         other => panic!("expected i symbol, got {other:?}"),
     };
-    let subtract = s.builder().application(
-        ApplicationHead::Semantic(SemanticOperator::Subtract),
-        vec![i_term, one],
-        Default::default(),
-    );
+    let subtract =
+        s.builder().application(ApplicationHead::Semantic(SemanticOperator::Subtract), vec![i_term, one], Default::default());
     let term = {
         let result_id = AthenaEngine::new()
             .execute_request(
@@ -1369,7 +1344,8 @@ fn set_rhs_part_symbol_index_lowers_to_extract() {
         use athena::ir::{ApplicationHead, TermNode};
         let form = parse_matlab_form("out = nums(i)").unwrap();
         let req = lower_request(s, &form);
-        let AthenaRequest::Command(SessionCommand::Define { value, .. }) = req else {
+        let AthenaRequest::Command(SessionCommand::Define { value, .. }) = req
+        else {
             panic!("expected Define, got {req:?}");
         };
         match s.arena.get(value) {
@@ -1382,23 +1358,13 @@ fn set_rhs_part_symbol_index_lowers_to_extract() {
 #[test]
 fn function_part_index_with_leading_scalar_define_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval(
-            "function out = test(nums)\n    i = 1;\n    out = nums(1);\nend;\ntest([3, 3])"
-        )),
-        "3"
-    );
+    assert_eq!(h.render(h.eval("function out = test(nums)\n    i = 1;\n    out = nums(1);\nend;\ntest([3, 3])")), "3");
 }
 
 #[test]
 fn function_part_index_after_scalar_define_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval(
-            "function out = test(nums)\n    i = 1;\n    out = nums(i);\nend;\ntest([3, 3])"
-        )),
-        "3"
-    );
+    assert_eq!(h.render(h.eval("function out = test(nums)\n    i = 1;\n    out = nums(i);\nend;\ntest([3, 3])")), "3");
 }
 
 #[test]
@@ -1476,21 +1442,14 @@ fn script_scalar_subtract_symbol_index_anchor() {
 #[test]
 fn scalar_subtract_symbol_index_anchor() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval(
-            "function out = test()\n    i = 1;\n    out = i - 1;\nend;\ntest()"
-        )),
-        "0"
-    );
+    assert_eq!(h.render(h.eval("function out = test()\n    i = 1;\n    out = i - 1;\nend;\ntest()")), "0");
 }
 
 #[test]
 fn list_subtract_symbol_indices_anchor() {
     let h = H::new();
     assert_eq!(
-        h.render(h.eval(
-            "function out = test()\n    i = 1;\n    j = 2;\n    out = [i - 1, j - 1];\nend;\ntest()"
-        )),
+        h.render(h.eval("function out = test()\n    i = 1;\n    j = 2;\n    out = [i - 1, j - 1];\nend;\ntest()")),
         "[0, 1]"
     );
 }
