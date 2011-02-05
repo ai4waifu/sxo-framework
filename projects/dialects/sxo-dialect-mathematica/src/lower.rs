@@ -1239,12 +1239,6 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
     }
 }
 
-/// Build a dense `MatrixValue` from Mathematica list Form literals.
-///
-/// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Exact rationals stay
-/// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
-/// Variables and computed terms are not reverse-recognized from arena Collections.
-
 fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> Option<MatrixValue> {
     use athena::domains::linear_algebra::ElementParentKind;
     let rows = template.shape().rows;
@@ -1275,6 +1269,11 @@ fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> O
     }
 }
 
+/// Build a dense `MatrixValue` from Mathematica list Form literals.
+///
+/// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Exact rationals stay
+/// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
+/// Variables and computed terms are not reverse-recognized from arena Collections.
 fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
     if list_items(w).is_none() {
         if let Some((re, im)) = form_scalar_complex(w) {
