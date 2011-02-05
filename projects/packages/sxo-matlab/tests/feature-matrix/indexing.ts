@@ -17,11 +17,7 @@ export const indexingFeatures = [
         .eval('subsref.linear4', '[1, 2; 3, 4](4)', '4')
         .eval('subsref.slice', '[1, 2, 3](1:2)', '[1, 2]')
         .done(),
-    feature('end', 'indexing')
-        .partial('`end` on literal vectors only')
-        .pure()
-        .eval('end.index', '[1, 2, 3](end)', '3')
-        .done(),
+    feature('end', 'indexing').partial('`end` on literal vectors only').pure().eval('end.index', '[1, 2, 3](end)', '3').done(),
     feature('row_colon', 'indexing')
         .partial('row/col `:` slices on literal matrices only')
         .pure()

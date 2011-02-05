@@ -36,11 +36,7 @@ export const holdFeatures = [
         .pure()
         .eval('holdcomplete.plus', 'HoldComplete[1 + 1]', 'HoldComplete[1 + 1]')
         .eval('releasehold.holdcomplete', 'ReleaseHold[HoldComplete[1 + 1]]', '2')
-        .eval(
-            'flatten.holdcomplete',
-            'Flatten[HoldComplete[{{1, 2}, {3}}]]',
-            'Flatten[HoldComplete[{{1, 2}, {3}}]]',
-        )
+        .eval('flatten.holdcomplete', 'Flatten[HoldComplete[{{1, 2}, {3}}]]', 'Flatten[HoldComplete[{{1, 2}, {3}}]]')
         .done(),
     feature('Inactive', 'hold')
         .partial('Inactive[Plus][1,2] retained; Inactivate[1+2] forces arg first → Inactivate[3]')

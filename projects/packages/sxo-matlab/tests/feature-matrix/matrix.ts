@@ -23,7 +23,11 @@ export const matrixFeatures = [
         .eval('ctranspose.one_by_one', "[1+1i]'", '1 - i')
         .done(),
     feature('eye', 'matrix').partial('square `eye(n)` exact integer constructor only').pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
-    feature('zeros', 'matrix').partial('`zeros(m,n)` exact numeric fill only').pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),
+    feature('zeros', 'matrix')
+        .partial('`zeros(m,n)` exact numeric fill only')
+        .pure()
+        .eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]')
+        .done(),
     feature('ones', 'matrix').partial('`ones(n)` square exact fill only').pure().eval('ones.2', 'ones(2)', '[1, 1; 1, 1]').done(),
     feature('size', 'matrix').partial('typed numeric matrix shape only').pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
     feature('length', 'matrix').partial('max dimension on tested vectors only').pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
@@ -77,11 +81,7 @@ export const matrixFeatures = [
     feature('zeros_empty', 'matrix').unsupported().pure().gap('zeros.0x5', 'zeros(0, 5)', { expected: 'zeros(0,5)' }).done(),
     feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: 'ones(5,0)' }).done(),
     feature('eye_empty', 'matrix').unsupported().pure().gap('eye.0', 'eye(0)', { expected: '[]' }).done(),
-    feature('isdiag', 'matrix')
-        .partial('typed numeric matrix diagonal predicate only')
-        .pure()
-        .eval('isdiag.eye', 'isdiag(eye(3))', '1')
-        .done(),
+    feature('isdiag', 'matrix').partial('typed numeric matrix diagonal predicate only').pure().eval('isdiag.eye', 'isdiag(eye(3))', '1').done(),
     feature('issymmetric', 'matrix')
         .partial('typed numeric matrix symmetry predicate only')
         .pure()

@@ -35,11 +35,7 @@ export const listFeatures = [
         .pure()
         .eval('table.basic', 'Table[i, {i, 3}]', '{1, 2, 3}')
         .done(),
-    feature('Sum', 'list')
-        .partial('single-iterator / list fold via Table only')
-        .pure()
-        .eval('sum.basic', 'Sum[i, {i, 1, 10}]', '55')
-        .done(),
+    feature('Sum', 'list').partial('single-iterator / list fold via Table only').pure().eval('sum.basic', 'Sum[i, {i, 1, 10}]', '55').done(),
     feature('Product', 'list')
         .partial('iterator Product via Table fold and tested matrix column fold. Deeper specs open')
         .pure()

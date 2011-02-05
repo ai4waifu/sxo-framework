@@ -1,7 +1,11 @@
 import { feature } from '@sxo/harness';
 
 export const simplifyFeatures = [
-    feature('Simplify', 'simplify').partial('tested trig identity fold only').pure().eval('simplify.trig', 'Simplify[Sin[x]^2 + Cos[x]^2]', '1').done(),
+    feature('Simplify', 'simplify')
+        .partial('tested trig identity fold only')
+        .pure()
+        .eval('simplify.trig', 'Simplify[Sin[x]^2 + Cos[x]^2]', '1')
+        .done(),
     feature('FullSimplify', 'simplify')
         .unsupported('distinct from Simplify; must not alias')
         .pure()

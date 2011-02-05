@@ -57,12 +57,8 @@ function parseFlagArgs(argv: string[]): { dialect?: string; mode: string; flags:
 async function main(argv: string[] = process.argv): Promise<number> {
     const { dialect: dialectArg, mode, flags } = parseFlagArgs(argv);
     if (!isDialectId(dialectArg)) {
-        console.error(
-            'Usage: report-features <mathematica|matlab|pari-gp> [markdown|table|wrongs|suboptimal|cosmetic]',
-        );
-        console.error(
-            '       report-features <mathematica|matlab|pari-gp> --flag=wrong[,suboptimal,cosmetic,upstream-athena]',
-        );
+        console.error('Usage: report-features <mathematica|matlab|pari-gp> [markdown|table|wrongs|suboptimal|cosmetic]');
+        console.error('       report-features <mathematica|matlab|pari-gp> --flag=wrong[,suboptimal,cosmetic,upstream-athena]');
         console.error('Prefer: pnpm --filter @sxo/<dialect> report:features');
         return 1;
     }

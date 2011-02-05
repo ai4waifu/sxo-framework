@@ -1,7 +1,12 @@
 import { feature } from '@sxo/harness';
 
 export const arithmeticFeatures = [
-    feature('Plus', 'arithmetic').partial('exact integer `Plus` on tested forms only').pure().eval('plus.basic', '1 + 2 * 3', '7').eval('plus.nary', 'Plus[1, 2, 3]', '6').done(),
+    feature('Plus', 'arithmetic')
+        .partial('exact integer `Plus` on tested forms only')
+        .pure()
+        .eval('plus.basic', '1 + 2 * 3', '7')
+        .eval('plus.nary', 'Plus[1, 2, 3]', '6')
+        .done(),
     feature('Times', 'arithmetic')
         .partial('exact integer `Times` and typed `ComplexExact` Hadamard on tested forms')
         .pure()
@@ -15,7 +20,11 @@ export const arithmeticFeatures = [
         .eval('power.square', '2^3', '8')
         .eval('power.complex', '{{1 + I}}^2', '2*I')
         .done(),
-    feature('Subtract', 'arithmetic').partial('exact integer `Subtract` on tested forms only').pure().eval('subtract.basic', 'Subtract[5, 2]', '3').done(),
+    feature('Subtract', 'arithmetic')
+        .partial('exact integer `Subtract` on tested forms only')
+        .pure()
+        .eval('subtract.basic', 'Subtract[5, 2]', '3')
+        .done(),
     feature('Divide', 'arithmetic')
         .partial('exact rational divide on tested forms only')
         .pure()
@@ -52,8 +61,16 @@ export const arithmeticFeatures = [
         .pure()
         .eval('cuberoot.neg8', '(-8)^(1/3)', '-2')
         .done(),
-    feature('SqrtRational', 'arithmetic').partial('exact rational square root on tested forms only').pure().eval('sqrt.9_4', 'Sqrt[9/4]', '3/2').done(),
-    feature('RationalAdd', 'arithmetic').partial('exact rational addition on tested forms only').pure().eval('rational.add', '1/2 + 1/3', '5/6').done(),
+    feature('SqrtRational', 'arithmetic')
+        .partial('exact rational square root on tested forms only')
+        .pure()
+        .eval('sqrt.9_4', 'Sqrt[9/4]', '3/2')
+        .done(),
+    feature('RationalAdd', 'arithmetic')
+        .partial('exact rational addition on tested forms only')
+        .pure()
+        .eval('rational.add', '1/2 + 1/3', '5/6')
+        .done(),
     feature('CubeRoot', 'arithmetic').unsupported().pure().gap('cuberoot.m8', 'CubeRoot[-8]', { expected: '-2' }).done(),
     feature('Surd', 'arithmetic').unsupported().pure().gap('surd.m8_3', 'Surd[-8, 3]', { expected: '-2' }).done(),
     feature('Clip', 'arithmetic')

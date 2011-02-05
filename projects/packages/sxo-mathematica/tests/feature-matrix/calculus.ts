@@ -42,7 +42,11 @@ export const calculusFeatures = [
         .eval('series.exp3', 'Series[Exp[x], {x, 0, 3}]', '1 + x + 1/2*x^2 + 1/6*x^3')
         .eval('series.sin', 'Series[Sin[x], {x, 0, 3}]', 'x + -1/6*x^3')
         .done(),
-    feature('LaplaceTransform', 'calculus').partial('tested exponential kernel transform only').pure().eval('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', '(s + a)^(-1)').done(),
+    feature('LaplaceTransform', 'calculus')
+        .partial('tested exponential kernel transform only')
+        .pure()
+        .eval('laplace.exp', 'LaplaceTransform[Exp[-a*t], t, s]', '(s + a)^(-1)')
+        .done(),
     feature('FourierTransform', 'calculus')
         .partial('Gaussian kernel transform on tested form only')
         .pure()
@@ -75,10 +79,22 @@ export const calculusFeatures = [
             notes: 'ideal is `Sign[x]` or Abs[x]/x canonical; current Power paren form is locked',
         })
         .done(),
-    feature('Curl', 'calculus').partial('2-D vector `Curl` on tested symbolic form only').pure().eval('curl.2d', 'Curl[{-y, x}, {x, y}]', '2').done(),
-    feature('Grad', 'calculus').partial('symbolic `Grad` on tested bivariate form only').pure().eval('grad.xy', 'Grad[x*y, {x, y}]', '{y, x}').done(),
+    feature('Curl', 'calculus')
+        .partial('2-D vector `Curl` on tested symbolic form only')
+        .pure()
+        .eval('curl.2d', 'Curl[{-y, x}, {x, y}]', '2')
+        .done(),
+    feature('Grad', 'calculus')
+        .partial('symbolic `Grad` on tested bivariate form only')
+        .pure()
+        .eval('grad.xy', 'Grad[x*y, {x, y}]', '{y, x}')
+        .done(),
     feature('Div', 'calculus').partial('symbolic `Div` on tested bivariate form only').pure().eval('div.xy', 'Div[{x, y}, {x, y}]', '2').done(),
-    feature('ZTransform', 'calculus').partial('tested `ZTransform[n,n,z]` closed form only').pure().eval('ztransform.n', 'ZTransform[n, n, z]', 'z*(-1 + z)^(-2)').done(),
+    feature('ZTransform', 'calculus')
+        .partial('tested `ZTransform[n,n,z]` closed form only')
+        .pure()
+        .eval('ztransform.n', 'ZTransform[n, n, z]', 'z*(-1 + z)^(-2)')
+        .done(),
     feature('InverseZTransform', 'calculus')
         .unsupported()
         .pure()

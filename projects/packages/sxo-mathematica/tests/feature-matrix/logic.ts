@@ -13,13 +13,18 @@ export const logicFeatures = [
         .eval('or.equal', 'Or[1 == 2, 2 == 2]', 'True')
         .eval('or.bool_atoms', 'Or[False, True]', 'True')
         .done(),
-    feature('Not', 'logic').partial('`Not` on tested boolean and equality forms').pure().eval('not.equal', 'Not[1 == 2]', 'True').eval('not.true', 'Not[True]', 'False').done(),
-    feature('If', 'logic')
-        .partial('short-circuit `If` on tested boolean conditions')
+    feature('Not', 'logic')
+        .partial('`Not` on tested boolean and equality forms')
         .pure()
-        .eval('if.true', 'If[1 == 1, 7, 8]', '7')
+        .eval('not.equal', 'Not[1 == 2]', 'True')
+        .eval('not.true', 'Not[True]', 'False')
         .done(),
-    feature('Which', 'logic').partial('tested `Which` branch selection only').pure().eval('which.basic', 'Which[False, 1, True, 2]', '2').done(),
+    feature('If', 'logic').partial('short-circuit `If` on tested boolean conditions').pure().eval('if.true', 'If[1 == 1, 7, 8]', '7').done(),
+    feature('Which', 'logic')
+        .partial('tested `Which` branch selection only')
+        .pure()
+        .eval('which.basic', 'Which[False, 1, True, 2]', '2')
+        .done(),
     feature('Boole', 'logic')
         .partial('`Boole` on tested boolean predicates only')
         .pure()

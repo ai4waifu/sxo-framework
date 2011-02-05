@@ -71,11 +71,7 @@ export const linearAlgebraFeatures = [
         .eval('diagmat.12', 'DiagonalMatrix[{1, 2}]', '{{1, 0}, {0, 2}}')
         .eval('diagmat.complex', 'DiagonalMatrix[{1 + I, 2}]', '{{1 + I, 0}, {0, 2}}')
         .done(),
-    feature('Tr', 'linear_algebra')
-        .partial('typed numeric nested List trace only')
-        .pure()
-        .eval('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', '5')
-        .done(),
+    feature('Tr', 'linear_algebra').partial('typed numeric nested List trace only').pure().eval('tr.2x2', 'Tr[{{1, 2}, {3, 4}}]', '5').done(),
     feature('Norm', 'linear_algebra')
         .partial('vector norm when sum of squares is a perfect square only')
         .pure()

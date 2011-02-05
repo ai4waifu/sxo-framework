@@ -12,11 +12,7 @@ export const linearAlgebraFeatures = [
         .eval('inv.diag', 'inv([1, 0; 0, 2])', '[1, 0; 0, 1/2]')
         .eval('inv.singular', 'inv([1, 2; 2, 4])', 'inv(Singular)')
         .done(),
-    feature('rank', 'linear_algebra')
-        .partial('typed numeric MatrixValue rank only')
-        .pure()
-        .eval('rank.def', 'rank([1, 2; 2, 4])', '1')
-        .done(),
+    feature('rank', 'linear_algebra').partial('typed numeric MatrixValue rank only').pure().eval('rank.def', 'rank([1, 2; 2, 4])', '1').done(),
     feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
     feature('trace', 'linear_algebra')
         .partial('typed numeric MatrixValue trace only')

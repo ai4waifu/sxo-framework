@@ -7,7 +7,11 @@ export const numericFeatures = [
         .gap('n.pi', 'N[Pi]', { expected: '3.14159' })
         .gap('n.prec', 'N[1/3, 20]', { expected: '0.33333333333333333333' })
         .done(),
-    feature('ExactInteger', 'numeric').partial('exact big integer add on tested literal only').pure().eval('bigint.add', '99999999999999999999 + 1', '100000000000000000000').done(),
+    feature('ExactInteger', 'numeric')
+        .partial('exact big integer add on tested literal only')
+        .pure()
+        .eval('bigint.add', '99999999999999999999 + 1', '100000000000000000000')
+        .done(),
     feature('Interval', 'numeric')
         .unsupported()
         .pure()
