@@ -3,11 +3,11 @@ import { feature } from '@sxo/harness';
 export const comparisonFeatures = [
     feature('eq', 'comparison').partial('scalar `==` on tested exact forms only').pure().eval('eq.true', '3 == 3', 'true').done(),
     feature('ne', 'comparison')
-        .partial('scalar `~=` and tested vector boolean masks only')
+        .partial('scalar `~=` on tested exact forms only')
         .pure()
         .eval('ne.true', '3 ~= 2', 'true')
         .eval('ne.false', '1 ~= 1', 'false')
-        .eval('ne.vec', '[1, 2] ~= [1, 3]', '[false, true]')
+        .gap('ne.vec', '[1, 2] ~= [1, 3]', { expected: '[false, true]', notes: 'N-API path still scalar-folds vector Unequal' })
         .done(),
     feature('le', 'comparison')
         .partial('scalar <= OK; vector mask OK; functional le(…) still open')

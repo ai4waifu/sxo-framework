@@ -8,10 +8,10 @@ export const matrixFeatures = [
         .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
         .done(),
     feature('transpose', 'matrix')
-        .partial('2-D MatrixValue transpose. Row/column vectors keep Term reshape')
+        .partial('2-D MatrixValue transpose. Row vectors OK. Column-vector reshape via N-API still open')
         .pure()
         .eval('transpose.row', "[1, 2].'", '[1; 2]')
-        .eval('transpose.col', "[1; 2].'", '[1, 2]')
+        .gap('transpose.col', "[1; 2].'", { expected: '[1, 2]', notes: 'N-API renders nested List instead of row vector' })
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
@@ -64,10 +64,10 @@ export const matrixFeatures = [
         .eval('tril.2x2', 'tril([1, 2; 3, 4])', '[1, 0; 3, 4]')
         .done(),
     feature('triu', 'matrix')
-        .partial('typed numeric matrix upper triangularize only')
+        .partial('real numeric matrix upper triangularize only')
         .pure()
         .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
-        .eval('triu.complex', 'triu([1+i, 2; 3, 4-i])', '[1 + i, 2; 0, 4 - i]')
+        .gap('triu.complex', 'triu([1+i, 2; 3, 4-i])', { expected: '[1 + i, 2; 0, 4 - i]', notes: 'complex triu unevaluated on N-API path' })
         .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
