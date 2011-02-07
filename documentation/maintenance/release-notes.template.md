@@ -1,4 +1,4 @@
-# 🚀 `@sxo/*` vX.Y.Z
+# 🚀 vX.Y.Z
 
 <!--
 Drafting: `pnpm change-logs --version X.Y.Z` (`--write` → `releases/vX.Y.Z.reference.md`, gitignored).

@@ -71,7 +71,7 @@ pnpm change-logs --from vA.B.C --to vX.Y.Z
 发布稿首行**固定**：
 
 ```markdown
-# 🚀 `@sxo/*` vX.Y.Z
+# 🚀 vX.Y.Z
 ```
 
 🐛 / ✨ / 🔧 只出现在正文小节标题里。
