@@ -1490,3 +1490,140 @@ end;
 twoSum([3, 3], 6)"#;
     assert_eq!(h.render(h.eval(src)), "[0, 1]", "two-sum matlab-sxo anchor");
 }
+
+#[test]
+fn max_area_while_function_anchor() {
+    let h = H::new();
+    let src = r#"function y = maxArea(height)
+    l = 1;
+    r = length(height);
+    y = 0;
+    while l < r
+        t = min(height(l), height(r)) * (r - l);
+        y = max(y, t);
+        if height(l) < height(r)
+            l = l + 1;
+        else
+            r = r - 1;
+        end
+    end
+end;
+maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7])"#;
+    assert_eq!(h.render(h.eval(src)), "49", "container-with-most-water matlab-sxo anchor");
+}
+
+#[test]
+fn reverse_integer_mod_floor_builtins() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("mod(7, 3)")), "1");
+    assert_eq!(h.render(h.eval("floor(7 / 3)")), "2");
+}
+
+#[test]
+fn while_countdown_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function y = f(x)\n    n = x;\n    while n ~= 0\n        n = n - 1;\n    end\n    y = 7;\nend;\nf(3)",
+        )),
+        "7",
+    );
+}
+
+#[test]
+fn mod_in_function_returns() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("function y = f(x)\n    y = mod(x, 10);\nend;\nf(123)")), "3");
+}
+
+#[test]
+fn while_mod_assign_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(x)
+    n = x;
+    while n ~= 0
+        d = mod(n, 10);
+        n = n - 1;
+    end
+    y = 1;
+end;
+f(3)"#;
+    assert_eq!(h.render(h.eval(src)), "1");
+}
+
+#[test]
+fn scalar_divide_in_function() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("function y = f(x)\n    y = x / 10;\nend;\nf(20)")), "2");
+}
+
+#[test]
+fn trunc_divide_digits_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(x)
+    d = mod(x, 10);
+    y = (x - d) / 10;
+end;
+f(123)"#;
+    assert_eq!(h.render(h.eval(src)), "12");
+}
+
+#[test]
+fn while_mod_quotient_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(x)
+    n = x;
+    y = 0;
+    while n ~= 0
+        rem = mod(n, 10);
+        y = y * 10 + rem;
+        n = (n - rem) / 10;
+    end
+end;
+f(123)"#;
+    assert_eq!(h.render(h.eval(src)), "321");
+}
+
+#[test]
+fn reverse_integer_while_function_anchor() {
+    let h = H::new();
+    let src = r#"function y = reverse(x)
+    lo = -214748365;
+    hi = 214748364;
+    n = x;
+    y = 0;
+    while n ~= 0
+        if y < lo + 1 || y > hi
+            y = 0;
+            return;
+        end
+        rem = mod(n, 10);
+        if n < 0 && rem > 0
+            rem = rem - 10;
+        end
+        y = y * 10 + rem;
+        n = (n - rem) / 10;
+    end
+end;
+reverse(123)"#;
+    assert_eq!(h.render(h.eval(src)), "321", "reverse-integer matlab-sxo anchor");
+    assert_eq!(h.render(h.eval(r#"function y = reverse(x)
+    lo = -214748365;
+    hi = 214748364;
+    n = x;
+    y = 0;
+    while n ~= 0
+        if y < lo + 1 || y > hi
+            y = 0;
+            return;
+        end
+        rem = mod(n, 10);
+        if n < 0 && rem > 0
+            rem = rem - 10;
+        end
+        y = y * 10 + rem;
+        n = (n - rem) / 10;
+    end
+end;
+reverse(1534236469)"#)), "0");
+}

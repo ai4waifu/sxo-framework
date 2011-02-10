@@ -270,7 +270,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "While" || head == "LoopWhile" => {
             if let [cond, body] = args.as_slice() {
                 return AthenaRequest::Control(ControlPlan::LoopWhile {
-                    condition: form_to_term(session, cond),
+                    condition: form_to_eval_term(session, cond),
                     body: Box::new(lower_request(session, body)),
                 });
             }
@@ -633,6 +633,14 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if matches!(head.as_str(), "intmin" | "intmax") => {
+            if let Some(bound) = eval_matlab_int_bound(session, head, args) {
+                return AthenaRequest::Term(bound);
+            }
+        }
+        MatlabForm::Call { head, args } if matches!(head.as_str(), "floor" | "Floor") && args.len() == 1 => {
+            return AthenaRequest::Term(eval_matlab_floor(session, &args[0]));
+        }
         _ => {}
     }
     // Ordinary expression Forms materialize once. Request-shaped heads above already returned.
@@ -745,6 +753,34 @@ fn push_int(session: &mut Session, n: i64) -> TermId {
     session.builder().int(n, Default::default())
 }
 
+/// `intmin('int32')` / `intmax('int32')` for leetcode 32-bit overflow guards.
+fn eval_matlab_int_bound(session: &mut Session, head: &str, args: &[MatlabForm]) -> Option<TermId> {
+    let is_int32 = match args.first() {
+        Some(MatlabForm::Atom(MatlabAtom::String(s))) => s == "int32",
+        _ => false,
+    };
+    if !is_int32 {
+        return None;
+    }
+    match head {
+        "intmin" => Some(push_int(session, -2_147_483_648)),
+        "intmax" => Some(push_int(session, 2_147_483_647)),
+        _ => None,
+    }
+}
+
+/// `floor(a/b)` on integer operands lowers to `Quotient` (leetcode reverse-integer path).
+fn eval_matlab_floor(session: &mut Session, arg: &MatlabForm) -> TermId {
+    if let MatlabForm::Call { head, args } = arg {
+        if head == "Divide" && args.len() == 2 {
+            let lhs = form_to_eval_term(session, &args[0]);
+            let rhs = form_to_eval_term(session, &args[1]);
+            return push_semantic(session, SemanticOperator::Quotient, vec![lhs, rhs]);
+        }
+    }
+    form_to_eval_term(session, arg)
+}
+
 /// Expression term materialization with `Part` → `Extract` for runtime indexing.
 fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
     match form {
@@ -782,12 +818,28 @@ fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
                     | "GreaterEqual"
                     | "And"
                     | "Or"
+                    | "Max"
+                    | "Min"
+                    | "max"
+                    | "min"
+                    | "Mod"
+                    | "Quotient"
             ) =>
         {
             let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
             if let Some(op) = surface_to_semantic(head) {
                 return push_semantic(session, op, ids);
             }
+            push_matlab_call(session, head, ids)
+        }
+        MatlabForm::Call { head, args } if matches!(head.as_str(), "floor" | "Floor") && args.len() == 1 => {
+            eval_matlab_floor(session, &args[0])
+        }
+        MatlabForm::Call { head, args } if matches!(head.as_str(), "intmin" | "intmax") => {
+            if let Some(bound) = eval_matlab_int_bound(session, head, args) {
+                return bound;
+            }
+            let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
             push_matlab_call(session, head, ids)
         }
         _ => form_to_term(session, form),
