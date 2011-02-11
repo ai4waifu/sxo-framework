@@ -12,37 +12,51 @@ description: >-
 
 ```text
 ① 生成 reference  →  ② 提炼发布稿  →  ③ 同步 GitHub Release（用户明确要求时）
-   pnpm change-logs      releases/vX.Y.Z.md     gh release edit
+   git-change-logs     releases/vX.Y.Z.md     gh release edit
 ```
 
 Tag 锚点见 [documentation/maintenance/tags.md](../../../documentation/maintenance/tags.md)（bump commit，非 `dev` 尖端）。
+
+## Prerequisite: install `git-change-logs`
+
+Same source as `git-reword` — [git-tools](https://github.com/oovm/git-tools):
+
+```bash
+cargo install --git https://github.com/oovm/git-tools.git --bin git-change-logs
+```
+
+Verify with `git-change-logs --help`. This repo's `pnpm change-logs` is a shortcut and **requires** the binary on `PATH`.
 
 ## 路径与产物
 
 | 路径 | 用途 | 入库 |
 | --- | --- | --- |
-| `scripts/change-logs.mjs` | commit 索引生成器 | 是 |
-| `documentation/maintenance/release-notes.template.md` | 发布稿模板 | 是 |
-| `documentation/maintenance/author-github.json` | 非 noreply 邮箱 → GitHub `id` / `login` | 是 |
-| `documentation/maintenance/releases/vX.Y.Z.reference.md` | 按 commit 分组的**对照稿** | **否**（gitignore） |
-| `documentation/maintenance/releases/vX.Y.Z.md` | 面向用户的**发布稿** | 是 |
+| `git-change-logs` (git-tools global CLI) | commit index generator | no |
+| `documentation/maintenance/release-notes.template.md` | release notes template | yes |
+| `documentation/maintenance/author-github.json` | non-noreply email → GitHub `id` / `login` | yes |
+| `documentation/maintenance/releases/vX.Y.Z.reference.md` | per-commit **reference** draft | **no** (gitignore) |
+| `documentation/maintenance/releases/vX.Y.Z.md` | user-facing **release notes** | yes |
 
 ## ① 生成 reference
 
+From the repo root (or any subdirectory):
+
 ```text
-pnpm change-logs --tags
-pnpm change-logs --version X.Y.Z
-pnpm change-logs --version X.Y.Z --write
-pnpm change-logs --from vA.B.C --to vX.Y.Z
+git-change-logs --tags
+git-change-logs --version X.Y.Z
+git-change-logs --version X.Y.Z --write
+git-change-logs --from vA.B.C --to vX.Y.Z
 ```
 
-- `--version X.Y.Z`：范围 = 上一个 `v*` tag .. `vX.Y.Z`（semver 回退兜底）。
-- `--write`：写入 `documentation/maintenance/releases/vX.Y.Z.reference.md`（与发布稿同目录）。
-- 输出按 gitmoji 分组：Features / Bug Fixes / Breaking / Other；每行 `- <subject> (@user)`。
+(`pnpm change-logs …` is equivalent when the binary is installed.)
 
-### `v0.0.0` 特例
+- `--version X.Y.Z`: range = previous `v*` tag .. `vX.Y.Z` (semver fallback).
+- `--write`: writes `documentation/maintenance/releases/vX.Y.Z.reference.md`.
+- Output grouped by gitmoji: Features / Bug Fixes / Breaking / Other. One bullet per commit: `- <subject> (@user)`.
 
-首个 tag 无 `--from` 时，reference 覆盖**到该 tag 为止的全历史**，不能逐条照抄。只取 [tags.md](../../../documentation/maintenance/tags.md) 锚点 commit 与用户可感知的里程碑。
+### `v0.0.0` edge case
+
+When there is no `--from`, the first tag spans **all history** to that tag. Do not paste every line into release notes. Keep milestones aligned with [tags.md](../../../documentation/maintenance/tags.md).
 
 ## ② 提炼发布稿
 
@@ -76,6 +90,19 @@ pnpm change-logs --from vA.B.C --to vX.Y.Z
 
 🐛 / ✨ / 🔧 只出现在正文小节标题里。
 
+## Contributor email map
+
+`documentation/maintenance/author-github.json` — same shape as valkyrie.rs (`id` + `login`).
+
+When the contributor wall is empty, resolve handles before re-running `--write`:
+
+```text
+git-change-logs lookup --email you@example.com
+git-change-logs lookup --login handle
+```
+
+Noreply GitHub emails are parsed automatically. For other emails, set `GITHUB_TOKEN` and use `--fetch` if needed.
+
 ## ③ 同步 GitHub Release
 
 **仅在用户明确要求时**：
@@ -89,3 +116,4 @@ gh release edit vX.Y.Z --notes-file documentation/maintenance/releases/vX.Y.Z.md
 - [release-notes.template.md](../../../documentation/maintenance/release-notes.template.md)
 - [index.md](../../../documentation/maintenance/index.md)
 - [update-commit-messages](../update-commit-messages/SKILL.md)
+- git-tools docs: [change-logs.md](https://github.com/oovm/git-tools/blob/dev/documentation/change-logs.md)

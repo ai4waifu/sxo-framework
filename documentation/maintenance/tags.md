@@ -1,6 +1,6 @@
 # Version tag anchors
 
-`v0.0.x` tags point at **version-boundary commits** (bump or semver alignment), not `dev` tip. `pnpm change-logs --version X.Y.Z` uses range `previous tag .. this tag`.
+`v0.0.x` tags point at **version-boundary commits** (bump or semver alignment), not `dev` tip. `git-change-logs --version X.Y.Z` uses range `previous tag .. this tag`.
 
 | Tag | Commit | Anchor |
 | --- | --- | --- |
