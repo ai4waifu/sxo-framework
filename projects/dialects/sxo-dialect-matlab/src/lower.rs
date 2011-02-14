@@ -851,6 +851,9 @@ fn subsref_call_head(head: &str) -> bool {
     if surface_to_semantic(head).is_some() {
         return false;
     }
+    if crate::parse::is_known_call_head(head) {
+        return false;
+    }
     !matches!(
         head,
         "Part"

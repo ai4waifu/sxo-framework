@@ -1627,3 +1627,24 @@ reverse(123)"#;
 end;
 reverse(1534236469)"#)), "0");
 }
+
+#[test]
+fn floor_divide_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval("function y = f(x)\n    y = floor(x / 10);\nend;\nf(123)")),
+        "12",
+        "floor(x/10) in user function",
+    );
+    assert_eq!(
+        h.render(h.eval(
+            r#"function y = f(x)
+    rem = mod(x, 10);
+    y = floor((x - rem) / 10);
+end;
+f(123)"#,
+        )),
+        "12",
+        "floor((x-rem)/10) in user function",
+    );
+}
