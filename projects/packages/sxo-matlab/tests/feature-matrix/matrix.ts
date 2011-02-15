@@ -64,10 +64,10 @@ export const matrixFeatures = [
         .eval('tril.2x2', 'tril([1, 2; 3, 4])', '[1, 0; 3, 4]')
         .done(),
     feature('triu', 'matrix')
-        .partial('real numeric matrix upper triangularize only')
+        .partial('typed numeric matrix upper triangularize. Exact complex parent OK on tested forms')
         .pure()
         .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
-        .gap('triu.complex', 'triu([1+i, 2; 3, 4-i])', { expected: '[1 + i, 2; 0, 4 - i]', notes: 'complex triu unevaluated on N-API path' })
+        .eval('triu.complex', 'triu([1+i, 2; 3, 4-i])', '[1 + i, 2; 0, 4 - i]')
         .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
