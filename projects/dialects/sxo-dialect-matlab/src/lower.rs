@@ -1510,10 +1510,7 @@ mod complex_matrix_literal_tests {
     fn matrix_from_form_accepts_i_and_neg_i_cells() {
         let m = matrix_from_form(&MatlabForm::List(vec![
             MatlabForm::List(vec![MatlabForm::int(1), MatlabForm::symbol("i")]),
-            MatlabForm::List(vec![
-                MatlabForm::call("Minus", vec![MatlabForm::symbol("i")]),
-                MatlabForm::int(1),
-            ]),
+            MatlabForm::List(vec![MatlabForm::call("Minus", vec![MatlabForm::symbol("i")]), MatlabForm::int(1)]),
         ]))
         .expect("complex matrix with bare i cells");
         assert_eq!(m.shape().rows, 2);

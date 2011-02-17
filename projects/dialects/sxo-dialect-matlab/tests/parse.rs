@@ -1523,9 +1523,9 @@ fn reverse_integer_mod_floor_builtins() {
 fn while_countdown_in_function() {
     let h = H::new();
     assert_eq!(
-        h.render(h.eval(
-            "function y = f(x)\n    n = x;\n    while n ~= 0\n        n = n - 1;\n    end\n    y = 7;\nend;\nf(3)",
-        )),
+        h.render(
+            h.eval("function y = f(x)\n    n = x;\n    while n ~= 0\n        n = n - 1;\n    end\n    y = 7;\nend;\nf(3)",)
+        ),
         "7",
     );
 }
@@ -1607,7 +1607,9 @@ fn reverse_integer_while_function_anchor() {
 end;
 reverse(123)"#;
     assert_eq!(h.render(h.eval(src)), "321", "reverse-integer matlab-sxo anchor");
-    assert_eq!(h.render(h.eval(r#"function y = reverse(x)
+    assert_eq!(
+        h.render(h.eval(
+            r#"function y = reverse(x)
     lo = -214748365;
     hi = 214748364;
     n = x;
@@ -1625,7 +1627,10 @@ reverse(123)"#;
         n = (n - rem) / 10;
     end
 end;
-reverse(1534236469)"#)), "0");
+reverse(1534236469)"#
+        )),
+        "0"
+    );
 }
 
 #[test]
@@ -1652,11 +1657,7 @@ f(123)"#,
 #[test]
 fn assign_symbol_to_output_in_function() {
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval("function y = f()\n    q = 8;\n    y = q;\nend;\nf()")),
-        "8",
-        "output from local symbol rhs",
-    );
+    assert_eq!(h.render(h.eval("function y = f()\n    q = 8;\n    y = q;\nend;\nf()")), "8", "output from local symbol rhs",);
 }
 
 #[test]
