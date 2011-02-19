@@ -1493,3 +1493,90 @@ fn dynamic_do_expression_end_anchor() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Module[{n = 2}, Do[If[i == 1, Return[{0, 1}]], {i, 1, n - 1}]]")), "{0, 1}");
 }
+
+#[test]
+fn module_if_initializer_in_function() {
+    let h = H::new();
+    let src = r#"f[x_] := Module[{a = If[x < 0, -x, x]}, a];
+f[10]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "10", "module If initializer reads formal");
+}
+
+#[test]
+fn nested_while_divide_peel_wolfram_anchor() {
+    let h = H::new();
+    let src = r#"divide[dividend_, divisor_] := Module[
+  {neg = (dividend < 0 && divisor > 0) || (dividend > 0 && divisor < 0),
+   a = If[dividend < 0, -dividend, dividend],
+   b = If[divisor < 0, -divisor, divisor],
+   q = 0, t, k},
+  While[a >= b,
+    t = b;
+    k = 1;
+    While[a >= t + t, t = t + t; k = k + k];
+    a = a - t;
+    q = q + k
+  ];
+  q = If[neg, -q, q];
+  If[q > 2147483647, 2147483647, If[q < -2147483648, -2147483648, q]]
+];
+divide[10, 3]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "3", "divide-two-integers wolfram nested while");
+}
+
+#[test]
+fn nested_while_counting_module() {
+    let h = H::new();
+    let src = r#"Module[{i = 0, j, n = 5},
+  While[i < n,
+    j = 0;
+    While[j < 2, j = j + 1];
+    i = i + 1
+  ];
+  i
+]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "5", "nested while counting in module");
+}
+
+#[test]
+fn nested_while_ge_plus_self_module() {
+    let h = H::new();
+    let src = r#"Module[{a = 10, t = 1, k = 1},
+  While[a >= t + t, t = t + t; k = k + k];
+  k
+]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "8", "inner while ge plus self");
+}
+
+#[test]
+fn nested_while_divide_peel_function() {
+    let h = H::new();
+    let src = r#"f[a_, b_] := Module[{q = 0, t, k},
+  While[a >= b,
+    t = b;
+    k = 1;
+    While[a >= t + t, t = t + t; k = k + k];
+    a = a - t;
+    q = q + k
+  ];
+  q
+];
+f[10, 3]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "3", "divide peel in SetDelayed function");
+}
+
+#[test]
+fn nested_while_divide_peel_module() {
+    let h = H::new();
+    let src = r#"Module[{a = 10, b = 3, q = 0, t, k},
+  While[a >= b,
+    t = b;
+    k = 1;
+    While[a >= t + t, t = t + t; k = k + k];
+    a = a - t;
+    q = q + k
+  ];
+  q
+]"#;
+    assert_eq!(h.wolfram(h.eval(src)), "3", "divide peel nested while module");
+}

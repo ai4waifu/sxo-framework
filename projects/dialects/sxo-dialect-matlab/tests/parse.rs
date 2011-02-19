@@ -1675,3 +1675,269 @@ end;
 f(10)"#;
     assert_eq!(h.render(h.eval(src)), "8", "nested while with two assigns in body");
 }
+
+#[test]
+fn single_while_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(n)
+    i = 0;
+    while i < n
+        i = i + 1;
+    end
+    y = i;
+end;
+f(5)"#;
+    assert_eq!(h.render(h.eval(src)), "5", "single while in function");
+}
+
+#[test]
+fn nested_while_counting_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(n)
+    i = 0;
+    while i < n
+        j = 0;
+        while j < 2
+            j = j + 1;
+        end
+        i = i + 1;
+    end
+    y = i;
+end;
+f(5)"#;
+    assert_eq!(h.render(h.eval(src)), "5", "nested while counting");
+}
+
+#[test]
+fn while_less_equal_literal_in_function() {
+    let h = H::new();
+    let src = r#"function y = f()
+    i = 0;
+    while i <= 5
+        i = i + 1;
+    end
+    y = i;
+end;
+f()"#;
+    assert_eq!(h.render(h.eval(src)), "6", "while <= literal bound");
+}
+
+#[test]
+fn outer_while_greater_equal_literal_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function y = f()\n    a = 10;\n    while a >= 5\n        a = a - 1;\n    end\n    y = a;\nend;\nf()",
+        )),
+        "4",
+        "outer >= literal",
+    );
+}
+
+#[test]
+fn outer_while_greater_equal_param_rhs_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function y = f(n)\n    i = n;\n    while i >= 1\n        i = i - 1;\n    end\n    y = i;\nend;\nf(5)",
+        )),
+        "0",
+        "outer >= param rhs",
+    );
+}
+
+#[test]
+fn outer_while_greater_equal_decrement_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval(
+            "function y = f(a, b)\n    while a >= b\n        a = a - 1;\n    end\n    y = a;\nend;\nf(10, 3)",
+        )),
+        "2",
+        "outer >= decrement",
+    );
+}
+
+#[test]
+fn nested_while_divide_peel_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(a, b)
+    q = 0;
+    while a >= b
+        t = b;
+        k = 1;
+        while a >= t + t
+            t = t + t;
+            k = k + k;
+        end
+        a = a - t;
+        q = q + k;
+    end
+    y = q;
+end;
+f(10, 3)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "divide peel nested while");
+}
+
+#[test]
+fn inner_while_ge_plus_self_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(a)
+    t = 3;
+    k = 1;
+    while a >= t + t
+        t = t + t;
+        k = k + k;
+    end
+    y = k;
+end;
+f(10)"#;
+    assert_eq!(h.render(h.eval(src)), "2", "inner while a >= t+t with doubling");
+}
+
+#[test]
+fn nested_while_inner_condition_reads_outer_var() {
+    let h = H::new();
+    let src = r#"function y = f(n)
+    i = 0;
+    while i < n
+        j = 0;
+        while j < i
+            j = j + 1;
+        end
+        i = i + 1;
+    end
+    y = i;
+end;
+f(5)"#;
+    assert_eq!(h.render(h.eval(src)), "5", "inner while j < i reads outer i");
+}
+
+#[test]
+fn nested_while_inner_ge_plus_nested_in_counting_outer() {
+    let h = H::new();
+    let src = r#"function y = f(n)
+    a = 10;
+    i = 0;
+    while i < n
+        t = 3;
+        while a >= t + t
+            t = t + t;
+        end
+        i = i + 1;
+    end
+    y = i;
+end;
+f(5)"#;
+    assert_eq!(h.render(h.eval(src)), "5", "nested ge inner inside counting outer");
+}
+
+#[test]
+fn outer_while_ge_subtract_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(a, b)
+    q = 0;
+    while a >= b
+        a = a - b;
+        q = q + 1;
+    end
+    y = q;
+end;
+f(10, 3)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "outer while a >= b subtract");
+}
+
+#[test]
+fn outer_while_ge_with_inner_counting_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(a, b)
+    q = 0;
+    while a >= b
+        j = 0;
+        while j < 2
+            j = j + 1;
+        end
+        a = a - b;
+        q = q + 1;
+    end
+    y = q;
+end;
+f(10, 3)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "outer ge with inner counting");
+}
+
+#[test]
+fn outer_while_ge_literal_bound_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(a)
+    q = 0;
+    while a >= 3
+        a = a - 3;
+        q = q + 1;
+    end
+    y = q;
+end;
+f(10)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "outer while a >= 3 literal");
+}
+
+#[test]
+fn if_boolean_symbol_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(flag)
+    q = 3;
+    if flag
+        q = -q;
+    end
+    y = q;
+end;
+f(false)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "if on boolean symbol binding");
+    assert_eq!(h.render(h.eval("f(true)")), "-3");
+}
+
+#[test]
+fn divide_two_integers_anchor() {
+    let h = H::new();
+    let src = r#"function y = divide(dividend, divisor)
+    neg = (dividend < 0 && divisor > 0) || (dividend > 0 && divisor < 0);
+    if dividend < 0
+        a = -dividend;
+    else
+        a = dividend;
+    end
+    if divisor < 0
+        b = -divisor;
+    else
+        b = divisor;
+    end
+    q = 0;
+    while a >= b
+        t = b;
+        k = 1;
+        while a >= t + t
+            t = t + t;
+            k = k + k;
+        end
+        a = a - t;
+        q = q + k;
+    end
+    if neg
+        q = -q;
+    end
+    if q > 2147483647
+        q = 2147483647;
+    end
+    if q < -2147483648
+        q = -2147483648;
+    end
+    y = q;
+end;
+divide(10, 3)"#;
+    assert_eq!(h.render(h.eval(src)), "3", "divide-two-integers matlab-sxo anchor");
+    assert_eq!(
+        h.render(h.eval("divide(-2147483648, -1)")),
+        "2147483647",
+        "divide overflow clamp",
+    );
+}

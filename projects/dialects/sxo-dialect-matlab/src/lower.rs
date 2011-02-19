@@ -1188,11 +1188,24 @@ fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> O
     }
 }
 
+/// Bare `i`/`j` are variables in user arithmetic (`i = i + 1`, `y = i`), not `1×1` complex literals.
+fn is_ambiguous_matlab_scalar_symbol(w: &MatlabForm) -> bool {
+    match w {
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matches!(s.as_str(), "i" | "j" | "I" | "J"),
+        MatlabForm::Call { head, args } if head == "Plus" => args.iter().any(|arg| {
+            matches!(arg, MatlabForm::Atom(MatlabAtom::Symbol(s)) if matches!(s.as_str(), "i" | "j" | "I" | "J"))
+        }),
+        _ => false,
+    }
+}
+
 fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
     if form_list_items(w).is_none() {
-        if let Some((re, im)) = form_scalar_complex(w) {
-            if !im.is_zero() {
-                return MatrixValue::from_complex_exact_row_major(1, 1, vec![(re, im)]).ok();
+        if !is_ambiguous_matlab_scalar_symbol(w) {
+            if let Some((re, im)) = form_scalar_complex(w) {
+                if !im.is_zero() {
+                    return MatrixValue::from_complex_exact_row_major(1, 1, vec![(re, im)]).ok();
+                }
             }
         }
         return None;
@@ -1515,5 +1528,26 @@ mod complex_matrix_literal_tests {
         .expect("complex matrix with bare i cells");
         assert_eq!(m.shape().rows, 2);
         assert_eq!(m.shape().cols, 2);
+    }
+
+    #[test]
+    fn matrix_from_form_rejects_loop_increment_as_complex_scalar() {
+        let plus = MatlabForm::call("Plus", vec![MatlabForm::symbol("i"), MatlabForm::int(1)]);
+        assert!(matrix_from_form(&plus).is_none(), "i + 1 is runtime arithmetic, not a 1x1 complex literal");
+        assert!(matrix_from_form(&MatlabForm::symbol("i")).is_none(), "bare i assignment rhs is a variable reference");
+    }
+
+    #[test]
+    fn lower_increment_assignment_is_define_not_define_matrix() {
+        let mut session = Session::new();
+        install_session_conventions(&mut session);
+        let assign = MatlabForm::call(
+            "Set",
+            vec![MatlabForm::symbol("i"), MatlabForm::call("Plus", vec![MatlabForm::symbol("i"), MatlabForm::int(1)])],
+        );
+        match lower_request(&mut session, &assign) {
+            AthenaRequest::Command(SessionCommand::Define { .. }) => {}
+            other => panic!("expected Define for i = i + 1, got {other:?}"),
+        }
     }
 }

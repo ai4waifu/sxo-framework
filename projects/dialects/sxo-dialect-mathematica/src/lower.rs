@@ -437,13 +437,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             let matrix = session.matrix_objects.intern(mat);
                             return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                         }
-                        let value = lower_wexpr(session, rhs);
-                        return AthenaRequest::Command(SessionCommand::Define {
-                            symbol,
-                            value,
-                            kind: BindingKind::Session,
-                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-                        });
+                        return lower_define_initializer(session, symbol, rhs, BindingKind::Session);
                     }
                     // `A[[i,j]]=v` → StoreIndex (typed write on Own / MatrixRef).
                     if let WolframForm::Call { head, args: part_args } = lhs {
@@ -943,6 +937,37 @@ fn lower_short_circuit_or(session: &mut Session, args: &[WolframForm]) -> Athena
     }
 }
 
+/// Local/session initializer: surface `If` must become CFG branches, not residual `If[…]`.
+fn lower_define_initializer(session: &mut Session, symbol: SymbolId, rhs: &WolframForm, kind: BindingKind) -> AthenaRequest {
+    if let WolframForm::Call { head, args } = rhs {
+        if let WolframForm::Atom(WolframAtom::Symbol(op)) = head.as_ref() {
+            match (op.as_str(), args.as_slice()) {
+                ("If", [cond, then_b]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(lower_define_initializer(session, symbol, then_b, kind)),
+                        else_branch: None,
+                    });
+                }
+                ("If", [cond, then_b, else_b]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(lower_define_initializer(session, symbol, then_b, kind)),
+                        else_branch: Some(Box::new(lower_define_initializer(session, symbol, else_b, kind))),
+                    });
+                }
+                _ => {}
+            }
+        }
+    }
+    AthenaRequest::Command(SessionCommand::Define {
+        symbol,
+        value: lower_wexpr(session, rhs),
+        kind,
+        evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+    })
+}
+
 /// Mathematica `Module`: rename locals to fresh `name$n`, then LocalScope.
 ///
 /// Bare `Module[{x}, x]` must not read session OwnValues of `x`.
@@ -987,13 +1012,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
             steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
         }
         else {
-            let value = lower_wexpr(session, &rhs_r);
-            steps.push(AthenaRequest::Command(SessionCommand::Define {
-                symbol,
-                value,
-                kind: BindingKind::Lexical,
-                evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
-            }));
+            steps.push(lower_define_initializer(session, symbol, &rhs_r, BindingKind::Lexical));
         }
     }
     let body_r = rename_symbols(body, &renames);
