@@ -13,12 +13,16 @@ const MATLAB_CASES: ReadonlyArray<readonly [string, string]> = [
     ['triu([1+i, 2; 3, 4-i])', '[1 + i, 2; 0, 4 - i]'],
     ['sum([1+i, 2; 3, 4-i], 1)', '[4 + i, 6 - i]'],
     ['0/0', 'NaN'],
+    ['A=[1, 2, 3]; A(2)=9; A', '[1, 9, 3]'],
+    ['sort([3, 1, 2])', '[1, 2, 3]'],
 ];
 
 const MMA_CASES: ReadonlyArray<readonly [string, string]> = [
     ['Dot[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}]', '{{19, 22}, {43, 50}}'],
     ['{{1 + I, 2}, {3, 4}}*{{1, I}, {0, 1}}', '{{1 + I, 2*I}, {0, 4}}'],
     ['Riffle[{1, 2}, {I, 2 I}]', '{1, I, 2, 2*I}'],
+    ['Flatten[{{1, 2}, {3}}]', '{1, 2, 3}'],
+    ['Most[{1, 2, 3}]', '{1, 2}'],
     ['0/0', 'Indeterminate'],
 ];
 
