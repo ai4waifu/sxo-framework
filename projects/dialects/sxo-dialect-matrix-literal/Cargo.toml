@@ -1,0 +1,16 @@
+[package]
+name = "sxo-dialect-matrix-literal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Shared dense MatrixValue literal builder for SXO dialect Form trees (Living 16)"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+athena = { workspace = true }

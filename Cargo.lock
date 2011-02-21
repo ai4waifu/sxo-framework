@@ -1034,6 +1034,7 @@ dependencies = [
  "oak-core",
  "oak-wolfram",
  "sxo-adapter-apollo",
+ "sxo-dialect-matrix-literal",
  "sxo-types",
 ]
 
@@ -1045,7 +1046,15 @@ dependencies = [
  "oak-core",
  "oak-matlab",
  "sxo-adapter-apollo",
+ "sxo-dialect-matrix-literal",
  "sxo-types",
+]
+
+[[package]]
+name = "sxo-dialect-matrix-literal"
+version = "0.0.8"
+dependencies = [
+ "athena",
 ]
 
 [[package]]

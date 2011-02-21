@@ -14,6 +14,7 @@ workspace = true
 
 [dependencies]
 athena = { workspace = true }
+sxo-dialect-matrix-literal = { workspace = true }
 sxo-types = { workspace = true }
 sxo-adapter-apollo = { workspace = true }
 oak-core = { workspace = true }
