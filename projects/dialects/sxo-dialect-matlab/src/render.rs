@@ -201,6 +201,8 @@ fn head_matlab_name(name: &str) -> String {
         "Eye" | "IdentityMatrix" => "eye",
         "Size" | "Dimensions" => "size",
         "Length" => "length",
+        "Reshape" => "reshape",
+        "NumElements" | "Numel" => "numel",
         "Det" | "Determinant" => "det",
         "Inverse" => "inv",
         "MatrixRank" | "Rank" => "rank",

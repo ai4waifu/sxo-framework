@@ -395,6 +395,8 @@ fn map_matlab_head(name: &str) -> String {
         "eye" => "Eye".to_string(),
         "size" => "Size".to_string(),
         "length" => "Length".to_string(),
+        "reshape" => "Reshape".to_string(),
+        "numel" => "NumElements".to_string(),
         "det" => "Det".to_string(),
         "inv" => "Inverse".to_string(),
         "rank" => "MatrixRank".to_string(),
@@ -499,6 +501,11 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "strcmp"
             | "length"
             | "Length"
+            | "reshape"
+            | "Reshape"
+            | "numel"
+            | "NumElements"
+            | "Numel"
     )
 }
 

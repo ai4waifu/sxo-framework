@@ -341,6 +341,16 @@ fn tril_triu_and_kron_literal_goals() {
 }
 
 #[test]
+fn reshape_numel_and_max_row_vector() {
+    let h = H::new();
+    // Living 16: column-major reshape of 1×4 → 2×2.
+    assert_eq!(h.render(h.eval("reshape([1, 2, 3, 4], 2, 2)")), "[1, 3; 2, 4]");
+    assert_eq!(h.render(h.eval("numel([])")), "0");
+    assert_eq!(h.render(h.eval("numel([1, 2; 3, 4])")), "4");
+    assert_eq!(h.render(h.eval("max([1, 3, 2])")), "3");
+}
+
+#[test]
 fn matrix_structure_predicates() {
     let h = H::new();
     assert_eq!(h.render(h.eval("isdiag(eye(3))")), "1");

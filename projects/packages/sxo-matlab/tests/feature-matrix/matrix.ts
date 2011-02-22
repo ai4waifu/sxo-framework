@@ -51,9 +51,17 @@ export const matrixFeatures = [
         .eval('prod.complex', 'prod([1+i, 2; 3, 4-i], 2)', '[2 + 2*i; 12 - 3*i]')
         .eval('prod.complex_bare', 'prod([1+i, 2; 3, 4-i])', '[3 + 3*i, 8 - 2*i]')
         .done(),
-    feature('max', 'matrix').unsupported().pure().gap('max.vec', 'max([1, 3, 2])', { expected: '3' }).done(),
+    feature('max', 'matrix')
+        .partial('exact integer `1×n` row-vector `Max` via Athena host only')
+        .pure()
+        .eval('max.vec', 'max([1, 3, 2])', '3')
+        .done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
-    feature('reshape', 'matrix').unsupported().pure().gap('reshape.22', 'reshape([1, 2, 3, 4], 2, 2)', { expected: '[1, 3; 2, 4]' }).done(),
+    feature('reshape', 'matrix')
+        .partial('typed numeric column-major `Reshape` on tested forms only')
+        .pure()
+        .eval('reshape.22', 'reshape([1, 2, 3, 4], 2, 2)', '[1, 3; 2, 4]')
+        .done(),
     feature('sort', 'matrix')
         .partial('typed numeric vector `sort` on tested forms only')
         .pure()
@@ -75,7 +83,12 @@ export const matrixFeatures = [
         .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
-    feature('numel', 'matrix').unsupported().pure().gap('numel.empty', 'numel([])', { expected: '0' }).done(),
+    feature('numel', 'matrix')
+        .partial('typed numeric `NumElements` including empty `[]` → `0`')
+        .pure()
+        .eval('numel.empty', 'numel([])', '0')
+        .eval('numel.2x2', 'numel([1, 2; 3, 4])', '4')
+        .done(),
     feature('nan_matrix', 'matrix').unsupported().pure().gap('nan.2', 'nan(2)', { expected: '[NaN, NaN; NaN, NaN]' }).done(),
     feature('inf_matrix', 'matrix').unsupported().pure().gap('inf.2', 'inf(2)', { expected: '...' }).done(),
     feature('true_matrix', 'matrix').unsupported().pure().gap('true.23', 'true(2, 3)', { expected: '...' }).done(),

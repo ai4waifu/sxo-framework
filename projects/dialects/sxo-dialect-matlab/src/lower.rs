@@ -544,6 +544,26 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Reshape" => {
+            if let [mat_form, rows_form, cols_form] = args.as_slice() {
+                let rows = form_scalar_i64(rows_form).filter(|&n| n >= 0).map(|n| n as u64);
+                let cols = form_scalar_i64(cols_form).filter(|&n| n >= 0).map(|n| n as u64);
+                if let (Some(matrix), Some(rows), Some(cols)) = (matrix_operand_from_form(session, mat_form), rows, cols) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Reshape { matrix, rows, cols },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "NumElements" || head == "Numel" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::NumElements { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Dot" => {
             if let [a_form, b_form] = args.as_slice() {
                 if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
@@ -1015,9 +1035,12 @@ fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
     }
 }
 
-/// Literal Form matrix, Eye/Zeros/Ones constructor, or symbol Own binding for goals.
+/// Literal Form matrix, Eye/Zeros/Ones constructor, empty `[]`, or symbol Own binding for goals.
 fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<MatrixOperand> {
-    if let Some(mat) = matrix_from_form(w).or_else(|| matrix_from_constructor_form(w)) {
+    if let Some(mat) = matrix_from_form(w)
+        .or_else(|| matrix_from_constructor_form(w))
+        .or_else(|| matrix_from_empty_form(w))
+    {
         Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
     }
     else if let Some(name) = form_symbol_name(w) {
@@ -1025,6 +1048,20 @@ fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<Mat
     }
     else {
         None
+    }
+}
+
+/// MATLAB `[]` / empty List → `0×0` integer matrix (Living 16 empty shape).
+fn matrix_from_empty_form(w: &MatlabForm) -> Option<MatrixValue> {
+    use athena::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
+    match w {
+        MatlabForm::List(items) if items.is_empty() => {
+            MatrixValue::zeros(MatrixParent::integers(), MatrixShape::new(0, 0), StorageOrder::RowMajor).ok()
+        }
+        MatlabForm::Atom(MatlabAtom::Null) => {
+            MatrixValue::zeros(MatrixParent::integers(), MatrixShape::new(0, 0), StorageOrder::RowMajor).ok()
+        }
+        _ => None,
     }
 }
 
