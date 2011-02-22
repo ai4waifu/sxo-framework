@@ -48,6 +48,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Length" => SemanticOperator::Length,
         "Det" | "Determinant" => SemanticOperator::Determinant,
         "Sum" => SemanticOperator::Sum,
+        "sort" | "Sort" => SemanticOperator::Sort,
         "Product" => SemanticOperator::Product,
         "Accumulate" => SemanticOperator::Accumulate,
         "Differences" => SemanticOperator::Differences,

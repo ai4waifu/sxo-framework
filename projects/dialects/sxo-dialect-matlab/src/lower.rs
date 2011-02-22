@@ -842,6 +842,10 @@ fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
             let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
             push_matlab_call(session, head, ids)
         }
+        MatlabForm::Call { head, args } if surface_to_semantic(head).is_some() => {
+            let ids: Vec<TermId> = args.iter().map(|a| form_to_eval_term(session, a)).collect();
+            push_semantic(session, surface_to_semantic(head).expect("checked"), ids)
+        }
         _ => form_to_term(session, form),
     }
 }
