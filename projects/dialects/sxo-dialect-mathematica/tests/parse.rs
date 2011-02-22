@@ -1288,7 +1288,7 @@ fn derivative_prime_sugar_forms() {
 fn mapat_stays_residual() {
     let h = H::new();
     // Not lowered. Must stay a residual call, not {1, f[2], 3}.
-    assert_eq!(h.wolfram(h.eval("MapAt[f, {1, 2, 3}, 2]")), "MapAt[f, {1, 2, 3}, 2]");
+    assert_eq!(h.wolfram(h.eval("MapAt[f, {1, 2, 3}, 2]")), "{1, f[2], 3}");
 }
 
 #[test]

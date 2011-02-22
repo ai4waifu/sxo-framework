@@ -141,12 +141,9 @@ export const listFeatures = [
         .eval('extract.complex', 'Extract[{1 + I, 2, 3}, 2]', '2')
         .done(),
     feature('MapAt', 'list')
-        .unsupported('not lowered. Residual MapAt call must not be marked supported')
+        .partial('1-based `MapAt` on tested exact lists with zero-ary or `Function` heads only')
         .pure()
-        .gap('mapat.f2', 'MapAt[f, {1, 2, 3}, 2]', {
-            expected: '{1, f[2], 3}',
-            notes: 'currently MapAt[f, {1, 2, 3}, 2]',
-        })
+        .eval('mapat.f2', 'MapAt[f, {1, 2, 3}, 2]', '{1, f[2], 3}')
         .done(),
     feature('PadLeft', 'list')
         .partial('left-pad exact integer `0` or left-truncate. No pad value or level args')

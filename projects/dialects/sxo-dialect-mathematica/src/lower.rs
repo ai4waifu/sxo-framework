@@ -56,6 +56,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Map" => SemanticOperator::Map,
         "MapIndexed" => SemanticOperator::MapIndexed,
         "MapThread" => SemanticOperator::MapThread,
+        "MapAt" => SemanticOperator::MapAt,
         "Rule" => SemanticOperator::Rule,
         "RuleDelayed" => SemanticOperator::RuleDeferred,
         "ReplaceAll" => SemanticOperator::ReplaceAll,
@@ -204,7 +205,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name))
-                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "Array" =>
+                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "MapAt" || name == "Array" =>
             {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {

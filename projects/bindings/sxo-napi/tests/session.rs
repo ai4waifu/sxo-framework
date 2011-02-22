@@ -468,7 +468,7 @@ fn mathematica_direct_and_handle_matrix_parity() {
         ("Riffle[{1, 2}, {I, 2 I}]", "{1, I, 2, 2*I}"),
         ("Transpose[{{1, 2}, {3}}]", "Transpose[{{1, 2}, {3}}]"),
         ("Inverse[{{1, 2}, {2, 4}}]", "Inverse[Singular]"),
-        ("MapAt[f, {1, 2, 3}, 2]", "MapAt[f, {1, 2, 3}, 2]"),
+        ("MapAt[f, {1, 2, 3}, 2]", "{1, f[2], 3}"),
     ];
     for (input, expected) in cases {
         let direct_session = Session::new();
