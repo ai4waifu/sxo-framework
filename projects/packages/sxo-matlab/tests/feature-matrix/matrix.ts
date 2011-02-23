@@ -56,6 +56,11 @@ export const matrixFeatures = [
         .pure()
         .eval('max.vec', 'max([1, 3, 2])', '3')
         .done(),
+    feature('min', 'matrix')
+        .partial('exact integer `1×n` row-vector `Min` via Athena host only')
+        .pure()
+        .eval('min.vec', 'min([1, 3, 2])', '1')
+        .done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
     feature('reshape', 'matrix')
         .partial('typed numeric column-major `Reshape` on tested forms only')
