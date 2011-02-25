@@ -750,6 +750,21 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("ArrayReshape", [mat_form, dims_form]) => {
+                    // Living 16: row-major reshape (≠ MATLAB column-major `reshape`).
+                    if let (Some(matrix), Some((rows, cols))) =
+                        (matrix_operand_from_form(session, mat_form), array_reshape_dims(dims_form))
+                    {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Reshape {
+                                matrix,
+                                rows,
+                                cols,
+                                order: athena::domains::linear_algebra::StorageOrder::RowMajor,
+                            },
+                        )));
+                    }
+                }
                 ("ConjugateTranspose", [arg]) => {
                     if let Some(mat) = matrix_from_form(arg) {
                         let shape = mat.shape();
@@ -1740,6 +1755,22 @@ fn replace_slots(w: &WolframForm) -> WolframForm {
 fn exact_i64(w: &WolframForm) -> Option<i64> {
     match w {
         WolframForm::Atom(WolframAtom::Number(n)) => n.as_exact_integer(),
+        _ => None,
+    }
+}
+
+/// `ArrayReshape` dims `{m, n}` → `(rows, cols)` for 2-D row-major reshape only.
+fn array_reshape_dims(w: &WolframForm) -> Option<(u64, u64)> {
+    let WolframForm::List(items) = w
+    else {
+        return None;
+    };
+    match items.as_slice() {
+        [rows, cols] => {
+            let r = exact_i64(rows).filter(|&n| n >= 0)? as u64;
+            let c = exact_i64(cols).filter(|&n| n >= 0)? as u64;
+            Some((r, c))
+        }
         _ => None,
     }
 }

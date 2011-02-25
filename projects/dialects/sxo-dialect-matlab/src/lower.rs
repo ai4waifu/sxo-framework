@@ -550,7 +550,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 let cols = form_scalar_i64(cols_form).filter(|&n| n >= 0).map(|n| n as u64);
                 if let (Some(matrix), Some(rows), Some(cols)) = (matrix_operand_from_form(session, mat_form), rows, cols) {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Reshape { matrix, rows, cols },
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Reshape {
+                            matrix,
+                            rows,
+                            cols,
+                            order: athena::domains::linear_algebra::StorageOrder::ColumnMajor,
+                        },
                     )));
                 }
             }

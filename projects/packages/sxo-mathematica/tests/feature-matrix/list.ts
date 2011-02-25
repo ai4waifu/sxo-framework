@@ -114,6 +114,11 @@ export const listFeatures = [
         .pure()
         .eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}')
         .done(),
+    feature('ArrayReshape', 'list')
+        .partial('2-D row-major `ArrayReshape` on tested exact vectors only (≠ MATLAB column-major)')
+        .pure()
+        .eval('arrayreshape.22', 'ArrayReshape[{1, 2, 3, 4}, {2, 2}]', '{{1, 2}, {3, 4}}')
+        .done(),
     feature('Union', 'list')
         .partial('structural dedupe of list args. Exact integers sorted ascending only')
         .pure()
