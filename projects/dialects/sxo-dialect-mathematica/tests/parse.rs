@@ -466,6 +466,13 @@ fn array_reshape_row_major_distinct_from_matlab() {
 }
 
 #[test]
+fn tensor_product_outer_product_distinct_from_kronecker() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("TensorProduct[{1, 2}, {3, 4}]")), "{{3, 4}, {6, 8}}");
+    assert_eq!(h.wolfram(h.eval("KroneckerProduct[{1, 2}, {3, 4}]")), "{3, 4, 6, 8}");
+}
+
+#[test]
 fn transpose_nested_list_via_matrix_value_goal() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Transpose[{{1, 2}, {3, 4}}]")), "{{1, 3}, {2, 4}}");

@@ -890,6 +890,16 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("TensorProduct", [a_form, b_form]) => {
+                    // Living 16: rank-1 `TensorProduct` is outer product (≠ `KroneckerProduct`).
+                    if let Some((lhs, rhs)) = tensor_product_matrices_from_forms(a_form, b_form) {
+                        let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs));
+                        let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs));
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                        )));
+                    }
+                }
                 ("KroneckerProduct", [a_form, b_form]) => {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
@@ -1364,6 +1374,21 @@ fn dot_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option
         return None;
     }
     Some((a, b))
+}
+
+/// Flat-list `TensorProduct` → `MatMul(Transpose[row], row)` outer product.
+fn tensor_product_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option<(MatrixValue, MatrixValue)> {
+    use athena::domains::linear_algebra::transpose;
+
+    if !is_flat_list_vector_form(a_form) || !is_flat_list_vector_form(b_form) {
+        return None;
+    }
+    let a = matrix_from_form(a_form)?;
+    let b = matrix_from_form(b_form)?;
+    if a.shape().rows != 1 || b.shape().rows != 1 {
+        return None;
+    }
+    Some((transpose(&a), b))
 }
 
 fn list_items(w: &WolframForm) -> Option<&[WolframForm]> {

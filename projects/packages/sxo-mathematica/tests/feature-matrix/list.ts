@@ -237,9 +237,9 @@ export const listFeatures = [
         .gap('arrayflatten.2x2', 'ArrayFlatten[{{{1, 2}}, {{3, 4}}}]', { expected: '{{1, 2}, {3, 4}}' })
         .done(),
     feature('TensorProduct', 'list')
-        .unsupported()
+        .partial('rank-1 outer product via `MatMul` (≠ `KroneckerProduct`) on tested exact vectors only')
         .pure()
-        .gap('tensorproduct.vec', 'TensorProduct[{1, 2}, {3, 4}]', { expected: '{{3, 4}, {6, 8}}' })
+        .eval('tensorproduct.vec', 'TensorProduct[{1, 2}, {3, 4}]', '{{3, 4}, {6, 8}}')
         .done(),
     feature('MapAll', 'list').unsupported().pure().gap('mapall.nest', 'MapAll[f, {1, {2}}]', { expected: 'f[{f[1], f[{f[2]}]}]' }).done(),
 ];
