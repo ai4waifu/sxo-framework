@@ -765,6 +765,11 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("ArrayFlatten", [arg]) => {
+                    if let Some(unwrapped) = array_flatten_unwrap_one_level(arg) {
+                        return AthenaRequest::Term(lower_wexpr(session, &unwrapped));
+                    }
+                }
                 ("ConjugateTranspose", [arg]) => {
                     if let Some(mat) = matrix_from_form(arg) {
                         let shape = mat.shape();
@@ -1798,6 +1803,24 @@ fn array_reshape_dims(w: &WolframForm) -> Option<(u64, u64)> {
         }
         _ => None,
     }
+}
+
+/// One-level `ArrayFlatten` on nested row blocks (`{{{1, 2}}, {{3, 4}}}` → `{{1, 2}, {3, 4}}`).
+fn array_flatten_unwrap_one_level(w: &WolframForm) -> Option<WolframForm> {
+    let blocks = list_items(w)?;
+    let mut rows = Vec::with_capacity(blocks.len());
+    for block in blocks {
+        let row = match list_items(block) {
+            Some([only]) if list_items(only).is_some() => only.clone(),
+            Some(row_cells) if !row_cells.is_empty() && row_cells.iter().all(|c| list_items(c).is_none()) => block.clone(),
+            _ => return None,
+        };
+        rows.push(row);
+    }
+    if rows.is_empty() {
+        return None;
+    }
+    Some(WolframForm::List(rows))
 }
 
 /// Mathematica pattern Form → neutral [`TermPattern`] (Living `14`).

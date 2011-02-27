@@ -473,6 +473,12 @@ fn tensor_product_outer_product_distinct_from_kronecker() {
 }
 
 #[test]
+fn array_flatten_unwraps_singleton_row_blocks() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ArrayFlatten[{{{1, 2}}, {{3, 4}}}]")), "{{1, 2}, {3, 4}}");
+}
+
+#[test]
 fn transpose_nested_list_via_matrix_value_goal() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Transpose[{{1, 2}, {3, 4}}]")), "{{1, 3}, {2, 4}}");
