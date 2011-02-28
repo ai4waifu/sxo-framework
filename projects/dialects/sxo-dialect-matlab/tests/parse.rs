@@ -355,8 +355,14 @@ fn reshape_numel_and_max_row_vector() {
 fn empty_matrix_constructors_render() {
     let h = H::new();
     assert_eq!(h.render(h.eval("zeros(0, 5)")), "[]");
+    assert_eq!(h.render(h.eval("zeros(5, 0)")), "[]");
     assert_eq!(h.render(h.eval("eye(0)")), "[]");
     assert_eq!(h.render(h.eval("ones(5, 0)")), "[]");
+    // Living 16: zero-element MatrixRef keeps shape for `size` / `numel`.
+    assert_eq!(h.render(h.eval("size(zeros(0, 5))")), "[0, 5]");
+    assert_eq!(h.render(h.eval("size(ones(5, 0))")), "[5, 0]");
+    assert_eq!(h.render(h.eval("numel(zeros(0, 5))")), "0");
+    assert_eq!(h.render(h.eval("numel(ones(5, 0))")), "0");
 }
 
 #[test]

@@ -29,7 +29,12 @@ export const matrixFeatures = [
         .eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]')
         .done(),
     feature('ones', 'matrix').partial('`ones(n)` square exact fill only').pure().eval('ones.2', 'ones(2)', '[1, 1; 1, 1]').done(),
-    feature('size', 'matrix').partial('typed numeric matrix shape only').pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
+    feature('size', 'matrix')
+        .partial('typed numeric matrix shape only')
+        .pure()
+        .eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]')
+        .eval('size.zeros0x5', 'size(zeros(0, 5))', '[0, 5]')
+        .done(),
     feature('length', 'matrix').partial('max dimension on tested vectors only').pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
         .partial('default and dim `1`/`2` column or row sums. Exact complex parent OK on tested forms')
@@ -93,6 +98,7 @@ export const matrixFeatures = [
         .pure()
         .eval('numel.empty', 'numel([])', '0')
         .eval('numel.2x2', 'numel([1, 2; 3, 4])', '4')
+        .eval('numel.ones5x0', 'numel(ones(5, 0))', '0')
         .done(),
     feature('nan_matrix', 'matrix').unsupported().pure().gap('nan.2', 'nan(2)', { expected: '[NaN, NaN; NaN, NaN]' }).done(),
     feature('inf_matrix', 'matrix').unsupported().pure().gap('inf.2', 'inf(2)', { expected: '...' }).done(),
@@ -104,6 +110,7 @@ export const matrixFeatures = [
         .partial('empty `zeros(m,n)` renders as `[]` on tested zero-dim forms only')
         .pure()
         .eval('zeros.0x5', 'zeros(0, 5)', '[]')
+        .eval('zeros.5x0', 'zeros(5, 0)', '[]')
         .done(),
     feature('ones_empty', 'matrix')
         .partial('empty `ones(m,0)` renders as `[]` on tested zero-element forms')
