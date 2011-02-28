@@ -26,6 +26,9 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
             MatlabAtom::Null => "[]".into(),
         },
         MatlabForm::List(items) => {
+            if form_matrix_collection_is_empty(items) {
+                return "[]".into();
+            }
             if is_form_matrix_rows(items) {
                 let rows: Vec<String> = items
                     .iter()
@@ -106,6 +109,9 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
         },
         Some(TermNode::Collection { elements: items, .. }) => {
             let items = items.clone();
+            if matrix_collection_is_empty(session, &items) {
+                return "[]".into();
+            }
             // MATLAB displays 1×1 matrices as scalars (Living 16 surface).
             if items.len() == 1 {
                 if let Some(TermNode::Collection { elements: cols, .. }) = session.arena.get(items[0]) {
@@ -396,6 +402,34 @@ fn form_compound_needs_power_paren(form: &MatlabForm) -> bool {
 
 fn is_form_matrix_rows(items: &[MatlabForm]) -> bool {
     items.len() > 1 && items.iter().all(|row| matches!(row, MatlabForm::List(_)))
+}
+
+fn form_matrix_collection_is_empty(items: &[MatlabForm]) -> bool {
+    if items.is_empty() {
+        return true;
+    }
+    let mut total_cols = 0usize;
+    for row in items {
+        match row {
+            MatlabForm::List(cols) => total_cols += cols.len(),
+            _ => return false,
+        }
+    }
+    total_cols == 0
+}
+
+fn matrix_collection_is_empty(session: &Session, items: &[TermId]) -> bool {
+    if items.is_empty() {
+        return true;
+    }
+    let mut total_cols = 0usize;
+    for row in items {
+        match session.arena.get(*row) {
+            Some(TermNode::Collection { elements: cols, .. }) => total_cols += cols.len(),
+            _ => return false,
+        }
+    }
+    total_cols == 0
 }
 
 fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {

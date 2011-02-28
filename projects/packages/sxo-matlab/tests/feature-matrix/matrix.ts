@@ -105,7 +105,11 @@ export const matrixFeatures = [
         .pure()
         .eval('zeros.0x5', 'zeros(0, 5)', '[]')
         .done(),
-    feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: '[]', notes: 'currently renders `[; ; ; ; ]`' }).done(),
+    feature('ones_empty', 'matrix')
+        .partial('empty `ones(m,0)` renders as `[]` on tested zero-element forms')
+        .pure()
+        .eval('ones.5x0', 'ones(5, 0)', '[]')
+        .done(),
     feature('eye_empty', 'matrix')
         .partial('`eye(0)` empty square renders as `[]`')
         .pure()

@@ -356,6 +356,7 @@ fn empty_matrix_constructors_render() {
     let h = H::new();
     assert_eq!(h.render(h.eval("zeros(0, 5)")), "[]");
     assert_eq!(h.render(h.eval("eye(0)")), "[]");
+    assert_eq!(h.render(h.eval("ones(5, 0)")), "[]");
 }
 
 #[test]
