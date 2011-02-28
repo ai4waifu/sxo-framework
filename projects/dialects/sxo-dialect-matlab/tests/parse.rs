@@ -352,6 +352,13 @@ fn reshape_numel_and_max_row_vector() {
 }
 
 #[test]
+fn empty_matrix_constructors_render() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("zeros(0, 5)")), "[]");
+    assert_eq!(h.render(h.eval("eye(0)")), "[]");
+}
+
+#[test]
 fn matrix_structure_predicates() {
     let h = H::new();
     assert_eq!(h.render(h.eval("isdiag(eye(3))")), "1");

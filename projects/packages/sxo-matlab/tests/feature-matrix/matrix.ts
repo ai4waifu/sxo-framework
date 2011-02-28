@@ -100,9 +100,17 @@ export const matrixFeatures = [
     feature('speye', 'matrix').unsupported().pure().gap('speye.3', 'speye(3)', { expected: '...' }).done(),
     feature('nnz', 'matrix').unsupported().pure().gap('nnz.speye2', 'nnz(speye(2))', { expected: '2' }).done(),
     feature('logspace', 'matrix').unsupported().pure().gap('logspace.3', 'logspace(0, 2, 3)', { expected: '[1, 10, 100]' }).done(),
-    feature('zeros_empty', 'matrix').unsupported().pure().gap('zeros.0x5', 'zeros(0, 5)', { expected: 'zeros(0,5)' }).done(),
-    feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: 'ones(5,0)' }).done(),
-    feature('eye_empty', 'matrix').unsupported().pure().gap('eye.0', 'eye(0)', { expected: '[]' }).done(),
+    feature('zeros_empty', 'matrix')
+        .partial('empty `zeros(m,n)` renders as `[]` on tested zero-dim forms only')
+        .pure()
+        .eval('zeros.0x5', 'zeros(0, 5)', '[]')
+        .done(),
+    feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: '[]', notes: 'currently renders `[; ; ; ; ]`' }).done(),
+    feature('eye_empty', 'matrix')
+        .partial('`eye(0)` empty square renders as `[]`')
+        .pure()
+        .eval('eye.0', 'eye(0)', '[]')
+        .done(),
     feature('isdiag', 'matrix').partial('typed numeric matrix diagonal predicate only').pure().eval('isdiag.eye', 'isdiag(eye(3))', '1').done(),
     feature('issymmetric', 'matrix')
         .partial('typed numeric matrix symmetry predicate only')
