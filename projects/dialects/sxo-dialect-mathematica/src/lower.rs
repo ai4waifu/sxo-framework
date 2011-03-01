@@ -766,8 +766,14 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("ArrayFlatten", [arg]) => {
-                    if let Some(unwrapped) = array_flatten_unwrap_one_level(arg) {
-                        return AthenaRequest::Term(lower_wexpr(session, &unwrapped));
+                    let mut current = arg.clone();
+                    let mut changed = false;
+                    while let Some(unwrapped) = array_flatten_unwrap_one_level(&current) {
+                        current = unwrapped;
+                        changed = true;
+                    }
+                    if changed {
+                        return AthenaRequest::Term(lower_wexpr(session, &current));
                     }
                 }
                 ("ConjugateTranspose", [arg]) => {
@@ -1809,15 +1815,19 @@ fn array_reshape_dims(w: &WolframForm) -> Option<(u64, u64)> {
 fn array_flatten_unwrap_one_level(w: &WolframForm) -> Option<WolframForm> {
     let blocks = list_items(w)?;
     let mut rows = Vec::with_capacity(blocks.len());
+    let mut unwrapped_singleton = false;
     for block in blocks {
         let row = match list_items(block) {
-            Some([only]) if list_items(only).is_some() => only.clone(),
+            Some([only]) if list_items(only).is_some() => {
+                unwrapped_singleton = true;
+                only.clone()
+            }
             Some(row_cells) if !row_cells.is_empty() && row_cells.iter().all(|c| list_items(c).is_none()) => block.clone(),
             _ => return None,
         };
         rows.push(row);
     }
-    if rows.is_empty() {
+    if rows.is_empty() || !unwrapped_singleton {
         return None;
     }
     Some(WolframForm::List(rows))

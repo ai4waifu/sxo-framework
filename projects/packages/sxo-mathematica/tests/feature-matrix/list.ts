@@ -233,9 +233,10 @@ export const listFeatures = [
     feature('Counts', 'list').unsupported().pure().gap('counts.aab', 'Counts[{a, a, b}]', { expected: '<|a -> 2, b -> 1|>' }).done(),
     feature('ListConvolve', 'list').unsupported().pure().gap('listconvolve.basic', 'ListConvolve[{1, 2}, {3, 4}]', { expected: '{11}' }).done(),
     feature('ArrayFlatten', 'list')
-        .partial('one-level unwrap of singleton row blocks on tested nested lists only')
+        .partial('iterative unwrap of singleton row blocks on tested nested lists only')
         .pure()
         .eval('arrayflatten.2x2', 'ArrayFlatten[{{{1, 2}}, {{3, 4}}}]', '{{1, 2}, {3, 4}}')
+        .eval('arrayflatten.2deep', 'ArrayFlatten[{{{{1, 2}}}, {{{3, 4}}}}]', '{{1, 2}, {3, 4}}')
         .done(),
     feature('TensorProduct', 'list')
         .partial('rank-1 outer product via `MatMul` (≠ `KroneckerProduct`) on tested exact vectors only')
