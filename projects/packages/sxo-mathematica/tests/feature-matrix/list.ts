@@ -212,6 +212,7 @@ export const listFeatures = [
         .pure()
         .eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}')
         .eval('constarray.complex', 'ConstantArray[I, 3]', '{I, I, I}')
+        .eval('constarray.0x5', 'ConstantArray[0, {0, 5}]', '{}')
         .done(),
     feature('DeleteCases', 'list')
         .partial('CollectRejects via `Blank[Integer]` only. Inverse of contracted `Cases`')
