@@ -361,6 +361,7 @@ fn empty_matrix_constructors_render() {
     // Living 16: zero-element MatrixRef keeps shape for `size` / `numel`.
     assert_eq!(h.render(h.eval("size(zeros(0, 5))")), "[0, 5]");
     assert_eq!(h.render(h.eval("size(ones(5, 0))")), "[5, 0]");
+    assert_eq!(h.render(h.eval("A = zeros(0, 5); size(A)")), "[0, 5]");
     assert_eq!(h.render(h.eval("numel(zeros(0, 5))")), "0");
     assert_eq!(h.render(h.eval("numel(ones(5, 0))")), "0");
 }
