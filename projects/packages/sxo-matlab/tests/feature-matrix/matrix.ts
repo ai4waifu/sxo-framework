@@ -34,6 +34,8 @@ export const matrixFeatures = [
         .pure()
         .eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]')
         .eval('size.zeros0x5', 'size(zeros(0, 5))', '[0, 5]')
+        .eval('size.ones5x0', 'size(ones(5, 0))', '[5, 0]')
+        .eval('size.bound_zeros0x5', 'A = zeros(0, 5); size(A)', '[0, 5]')
         .done(),
     feature('length', 'matrix').partial('max dimension on tested vectors only').pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
@@ -57,14 +59,16 @@ export const matrixFeatures = [
         .eval('prod.complex_bare', 'prod([1+i, 2; 3, 4-i])', '[3 + 3*i, 8 - 2*i]')
         .done(),
     feature('max', 'matrix')
-        .partial('exact integer `1×n` row-vector `Max` via Athena host only')
+        .partial('exact integer `1×n` row or `n×1` column vector `Max` via Athena host only')
         .pure()
         .eval('max.vec', 'max([1, 3, 2])', '3')
+        .eval('max.col', 'max([1; 3; 2])', '3')
         .done(),
     feature('min', 'matrix')
-        .partial('exact integer `1×n` row-vector `Min` via Athena host only')
+        .partial('exact integer `1×n` row or `n×1` column vector `Min` via Athena host only')
         .pure()
         .eval('min.vec', 'min([1, 3, 2])', '1')
+        .eval('min.col', 'min([1; 3; 2])', '1')
         .done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
     feature('reshape', 'matrix')
@@ -99,6 +103,7 @@ export const matrixFeatures = [
         .eval('numel.empty', 'numel([])', '0')
         .eval('numel.2x2', 'numel([1, 2; 3, 4])', '4')
         .eval('numel.ones5x0', 'numel(ones(5, 0))', '0')
+        .eval('numel.bound_zeros0x5', 'A = zeros(0, 5); numel(A)', '0')
         .done(),
     feature('nan_matrix', 'matrix').unsupported().pure().gap('nan.2', 'nan(2)', { expected: '[NaN, NaN; NaN, NaN]' }).done(),
     feature('inf_matrix', 'matrix').unsupported().pure().gap('inf.2', 'inf(2)', { expected: '...' }).done(),
