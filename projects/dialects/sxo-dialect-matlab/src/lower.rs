@@ -15,7 +15,7 @@ use athena::{
     numeric::{Integer, Rational},
     reasoning::trs::TermPattern,
     runtime::{
-        ZeroPowerZeroConvention,
+        MatrixListSurface, ZeroPowerZeroConvention,
         values::{
             arena::{
                 application_arguments, number_from_id, push_bool, push_constant, push_list, push_null, push_semantic,
@@ -41,14 +41,17 @@ use crate::{
 /// literal `0^0`, without Form-level literal special-cases.
 pub fn install_session_conventions(session: &mut Session) {
     session.zero_pow_zero = ZeroPowerZeroConvention::One;
+    session.matrix_list_surface = MatrixListSurface::MatlabOwn;
 }
 
 /// Run `f` with MATLAB conventions installed, then restore the prior `0^0` policy.
 pub fn with_session_conventions<R>(session: &mut Session, f: impl FnOnce(&mut Session) -> R) -> R {
-    let previous = session.zero_pow_zero;
+    let previous_zero_pow_zero = session.zero_pow_zero;
+    let previous_matrix_list_surface = session.matrix_list_surface;
     install_session_conventions(session);
     let out = f(session);
-    session.zero_pow_zero = previous;
+    session.zero_pow_zero = previous_zero_pow_zero;
+    session.matrix_list_surface = previous_matrix_list_surface;
     out
 }
 

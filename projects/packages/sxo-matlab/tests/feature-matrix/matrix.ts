@@ -8,10 +8,10 @@ export const matrixFeatures = [
         .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
         .done(),
     feature('transpose', 'matrix')
-        .partial('2-D MatrixValue transpose. Row vectors OK. Column-vector reshape via N-API still open')
+        .partial('2-D `MatrixValue` transpose with MATLAB `MatlabOwn` list surface on tested literals')
         .pure()
         .eval('transpose.row', "[1, 2].'", '[1; 2]')
-        .gap('transpose.col', "[1; 2].'", { expected: '[1, 2]', notes: 'N-API renders nested List instead of row vector' })
+        .eval('transpose.col', "[1; 2].'", '[1, 2]')
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
