@@ -351,6 +351,10 @@ fn reshape_numel_and_max_row_vector() {
     assert_eq!(h.render(h.eval("min([1, 3, 2])")), "1");
     assert_eq!(h.render(h.eval("max([1; 3; 2])")), "3");
     assert_eq!(h.render(h.eval("min([1; 3; 2])")), "1");
+    // Living 16: bound `MatrixRef` keeps shape through `reshape` / `size` / `numel`.
+    assert_eq!(h.render(h.eval("A = [1, 2, 3, 4]; reshape(A, 2, 2)")), "[1, 3; 2, 4]");
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; size(A)")), "[2, 2]");
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; numel(A)")), "4");
 }
 
 #[test]

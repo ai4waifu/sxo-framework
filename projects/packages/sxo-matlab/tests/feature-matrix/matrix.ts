@@ -36,6 +36,7 @@ export const matrixFeatures = [
         .eval('size.zeros0x5', 'size(zeros(0, 5))', '[0, 5]')
         .eval('size.ones5x0', 'size(ones(5, 0))', '[5, 0]')
         .eval('size.bound_zeros0x5', 'A = zeros(0, 5); size(A)', '[0, 5]')
+        .eval('size.bound_2x2', 'A = [1, 2; 3, 4]; size(A)', '[2, 2]')
         .done(),
     feature('length', 'matrix').partial('max dimension on tested vectors only').pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
     feature('sum', 'matrix')
@@ -75,6 +76,7 @@ export const matrixFeatures = [
         .partial('typed numeric column-major `Reshape` on tested forms only')
         .pure()
         .eval('reshape.22', 'reshape([1, 2, 3, 4], 2, 2)', '[1, 3; 2, 4]')
+        .eval('reshape.bound', 'A = [1, 2, 3, 4]; reshape(A, 2, 2)', '[1, 3; 2, 4]')
         .done(),
     feature('sort', 'matrix')
         .partial('typed numeric vector `sort` on tested forms only')
@@ -104,6 +106,7 @@ export const matrixFeatures = [
         .eval('numel.2x2', 'numel([1, 2; 3, 4])', '4')
         .eval('numel.ones5x0', 'numel(ones(5, 0))', '0')
         .eval('numel.bound_zeros0x5', 'A = zeros(0, 5); numel(A)', '0')
+        .eval('numel.bound_2x2', 'A = [1, 2; 3, 4]; numel(A)', '4')
         .done(),
     feature('nan_matrix', 'matrix').unsupported().pure().gap('nan.2', 'nan(2)', { expected: '[NaN, NaN; NaN, NaN]' }).done(),
     feature('inf_matrix', 'matrix').unsupported().pure().gap('inf.2', 'inf(2)', { expected: '...' }).done(),
