@@ -467,8 +467,10 @@ fn parse_matrix_linear_algebra() {
     let h = H::new();
     assert!(h.eq(h.eval("det([1, 2; 3, 4])"), h.i(-2)));
     assert!(h.eq(h.eval("sum([1, 2, 3])"), h.i(6)));
+    assert!(h.eq(h.eval("sum([1; 2; 3])"), h.i(6)));
     assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
     assert!(h.eq(h.eval("prod([2, 3, 4])"), h.i(24)));
+    assert!(h.eq(h.eval("prod([2; 3; 4])"), h.i(24)));
     assert!(h.eq(h.eval("prod([1, 2; 3, 4])"), h.lst(vec![h.i(3), h.i(8)])));
     // Living 16: `linsolve` / `\` Form literals lower to Solve Goal (not residual Extension).
     assert_eq!(h.render(h.eval("linsolve([1, 2; 3, 4], [5; 6])")), "[-4; 9/2]");
