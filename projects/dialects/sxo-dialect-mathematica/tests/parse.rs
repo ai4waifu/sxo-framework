@@ -463,6 +463,7 @@ fn array_reshape_row_major_distinct_from_matlab() {
     let h = H::new();
     // Living 16: Mathematica row-major → {{1, 2}, {3, 4}}; MATLAB column-major would be {{1, 3}, {2, 4}}.
     assert_eq!(h.wolfram(h.eval("ArrayReshape[{1, 2, 3, 4}, {2, 2}]")), "{{1, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("A = {1, 2, 3, 4}; ArrayReshape[A, {2, 2}]")), "{{1, 2}, {3, 4}}");
 }
 
 #[test]

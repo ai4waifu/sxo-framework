@@ -118,6 +118,7 @@ export const listFeatures = [
         .partial('2-D row-major `ArrayReshape` on tested exact vectors only (≠ MATLAB column-major)')
         .pure()
         .eval('arrayreshape.22', 'ArrayReshape[{1, 2, 3, 4}, {2, 2}]', '{{1, 2}, {3, 4}}')
+        .eval('arrayreshape.bound', 'A = {1, 2, 3, 4}; ArrayReshape[A, {2, 2}]', '{{1, 2}, {3, 4}}')
         .done(),
     feature('Union', 'list')
         .partial('structural dedupe of list args. Exact integers sorted ascending only')
