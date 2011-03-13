@@ -811,6 +811,11 @@ fn eval_matlab_floor(session: &mut Session, arg: &MatlabForm) -> TermId {
 
 /// Expression term materialization with `Part` → `Extract` for runtime indexing.
 fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
+    if let Some(mat) = matrix_from_form(form) {
+        if let Ok(term) = session.term_from_matrix_literal(mat) {
+            return term;
+        }
+    }
     match form {
         MatlabForm::List(items) => {
             let ids: Vec<TermId> = items.iter().map(|a| form_to_eval_term(session, a)).collect();
