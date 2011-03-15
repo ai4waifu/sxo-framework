@@ -12,6 +12,7 @@ export const matrixFeatures = [
         .pure()
         .eval('transpose.row', "[1, 2].'", '[1; 2]')
         .eval('transpose.col', "[1; 2].'", '[1, 2]')
+        .eval('transpose.bound_col', "A = [1; 2]; A.'", '[1, 2]')
         .eval('transpose.mat', "[1, 2; 3, 4].'", '[1, 3; 2, 4]')
         .done(),
     feature('ctranspose', 'matrix')
@@ -44,6 +45,7 @@ export const matrixFeatures = [
         .pure()
         .eval('sum.vec', 'sum([1, 2, 3])', '6')
         .eval('sum.col', 'sum([1; 2; 3])', '6')
+        .eval('sum.bound_col', 'A = [1; 2; 3]; sum(A)', '6')
         .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
         .eval('sum.axis1', 'sum([1, 2; 3, 4], 1)', '[4, 6]')
         .eval('sum.axis', 'sum([1, 2; 3, 4], 2)', '[3; 7]')
@@ -56,6 +58,7 @@ export const matrixFeatures = [
         .pure()
         .eval('prod.vec', 'prod([2, 3, 4])', '24')
         .eval('prod.col', 'prod([2; 3; 4])', '24')
+        .eval('prod.bound_col', 'A = [2; 3; 4]; prod(A)', '24')
         .eval('prod.matrix', 'prod([1, 2; 3, 4])', '[3, 8]')
         .eval('prod.axis', 'prod([1, 2; 3, 4], 2)', '[2; 12]')
         .eval('prod.complex', 'prod([1+i, 2; 3, 4-i], 2)', '[2 + 2*i; 12 - 3*i]')
@@ -66,12 +69,14 @@ export const matrixFeatures = [
         .pure()
         .eval('max.vec', 'max([1, 3, 2])', '3')
         .eval('max.col', 'max([1; 3; 2])', '3')
+        .eval('max.bound_col', 'A = [1; 3; 2]; max(A)', '3')
         .done(),
     feature('min', 'matrix')
         .partial('exact integer `1×n` row or `n×1` column vector `Min` via Athena host only')
         .pure()
         .eval('min.vec', 'min([1, 3, 2])', '1')
         .eval('min.col', 'min([1; 3; 2])', '1')
+        .eval('min.bound_col', 'A = [1; 3; 2]; min(A)', '1')
         .done(),
     feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
     feature('reshape', 'matrix')
