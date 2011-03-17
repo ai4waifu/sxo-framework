@@ -6,6 +6,7 @@ export const comparisonFeatures = [
         .partial('scalar exact inequality on tested forms only')
         .pure()
         .eval('unequal.true', '2 != 3', 'True')
+        .eval('unequal.list_broadcast', '{1, 2} != {1, 3}', '{False, True}')
         .done(),
     feature('Less', 'comparison')
         .partial('scalar `<` / `Less` on tested exact integers only')

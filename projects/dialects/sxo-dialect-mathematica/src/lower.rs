@@ -198,6 +198,13 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframAtom::Symbol(s) => push_symbol_name(session, s),
         },
         WolframForm::List(items) => {
+            if wolfram_form_is_nested_matrix_literal(w) {
+                if let Some(mat) = matrix_from_form(w) {
+                    if let Ok(term) = session.term_from_matrix_literal(mat) {
+                        return term;
+                    }
+                }
+            }
             let ids: Vec<TermId> = items.iter().map(|i| lower_wexpr(session, i)).collect();
             push_list(session, ids)
         }
@@ -1352,6 +1359,14 @@ fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
 fn is_flat_list_vector_form(w: &WolframForm) -> bool {
     match list_items(w) {
         Some(rows) if !rows.is_empty() => list_items(&rows[0]).is_none(),
+        _ => false,
+    }
+}
+
+/// Nested row lists (`{{…}, …}`) are matrix literals. Flat `{1, 2, 3}` stays a `Collection`.
+fn wolfram_form_is_nested_matrix_literal(w: &WolframForm) -> bool {
+    match list_items(w) {
+        Some(rows) if !rows.is_empty() => list_items(&rows[0]).is_some(),
         _ => false,
     }
 }

@@ -711,6 +711,13 @@ fn dimensions_of_matrix_binding() {
 }
 
 #[test]
+fn elementwise_unequal_list_broadcast() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("{1, 2} != {1, 3}")), "{False, True}");
+    assert_eq!(h.wolfram(h.eval("{1, 2} == {1, 3}")), "{True, False}");
+}
+
+#[test]
 fn length_of_matrix_binding() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("A={{1, 2, 3}, {4, 5, 6}}; Length[A]")), "2");
