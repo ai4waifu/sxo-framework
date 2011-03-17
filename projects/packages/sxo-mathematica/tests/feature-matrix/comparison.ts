@@ -1,7 +1,12 @@
 import { feature } from '@sxo/harness';
 
 export const comparisonFeatures = [
-    feature('Equal', 'comparison').partial('scalar exact equality on tested forms only').pure().eval('equal.true', '2 == 2', 'True').done(),
+    feature('Equal', 'comparison')
+        .partial('scalar and elementwise exact equality on tested forms')
+        .pure()
+        .eval('equal.true', '2 == 2', 'True')
+        .eval('equal.list_broadcast', '{1, 2} == {1, 3}', '{True, False}')
+        .done(),
     feature('Unequal', 'comparison')
         .partial('scalar exact inequality on tested forms only')
         .pure()

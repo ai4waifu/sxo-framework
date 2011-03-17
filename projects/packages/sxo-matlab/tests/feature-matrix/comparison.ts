@@ -1,13 +1,18 @@
 import { feature } from '@sxo/harness';
 
 export const comparisonFeatures = [
-    feature('eq', 'comparison').partial('scalar `==` on tested exact forms only').pure().eval('eq.true', '3 == 3', 'true').done(),
+    feature('eq', 'comparison')
+        .partial('scalar and elementwise `==` on tested exact forms')
+        .pure()
+        .eval('eq.true', '3 == 3', 'true')
+        .eval('eq.vec', '[1, 2] == [1, 3]', '[true, false]')
+        .done(),
     feature('ne', 'comparison')
-        .partial('scalar `~=` on tested exact forms only')
+        .partial('scalar and elementwise `~=` on tested exact forms')
         .pure()
         .eval('ne.true', '3 ~= 2', 'true')
         .eval('ne.false', '1 ~= 1', 'false')
-        .gap('ne.vec', '[1, 2] ~= [1, 3]', { expected: '[false, true]', notes: 'N-API path still scalar-folds vector Unequal' })
+        .eval('ne.vec', '[1, 2] ~= [1, 3]', '[false, true]')
         .done(),
     feature('le', 'comparison')
         .partial('scalar <= OK; vector mask OK; functional le(…) still open')
