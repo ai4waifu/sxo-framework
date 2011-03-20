@@ -711,6 +711,14 @@ fn dimensions_of_matrix_binding() {
 }
 
 #[test]
+fn dimensions_of_flat_vector() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Dimensions[{1, 2, 3}]")), "{3}");
+    assert_eq!(h.wolfram(h.eval("A = {1, 2, 3}; Dimensions[A]")), "{3}");
+    assert_eq!(h.wolfram(h.eval("Dimensions[{{1, 2, 3}}]")), "{1, 3}");
+}
+
+#[test]
 fn elementwise_unequal_list_broadcast() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("{1, 2} != {1, 3}")), "{False, True}");

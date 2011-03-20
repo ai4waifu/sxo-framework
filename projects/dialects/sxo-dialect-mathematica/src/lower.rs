@@ -441,7 +441,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
-                        if let Some(mat) = matrix_from_form(rhs) {
+                        if let Some(mat) = matrix_binding_from_form(rhs) {
                             let matrix = session.matrix_objects.intern(mat);
                             return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                         }
@@ -1051,7 +1051,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
         };
         let rhs_r = rename_symbols(rhs, &renames);
         let symbol = session.arena.symbols_mut().intern(fresh);
-        if let Some(mat) = matrix_from_form(&rhs_r) {
+        if let Some(mat) = matrix_binding_from_form(&rhs_r) {
             let matrix = session.matrix_objects.intern(mat);
             steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
         }
@@ -1094,7 +1094,7 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
             WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") => {
                 if let [lhs, rhs] = args.as_slice() {
                     if let Some(symbol) = symbol_of(session, lhs) {
-                        if let Some(mat) = matrix_from_form(rhs) {
+                        if let Some(mat) = matrix_binding_from_form(rhs) {
                             let matrix = session.matrix_objects.intern(mat);
                             steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
                         }
@@ -1369,6 +1369,11 @@ fn wolfram_form_is_nested_matrix_literal(w: &WolframForm) -> bool {
         Some(rows) if !rows.is_empty() => list_items(&rows[0]).is_some(),
         _ => false,
     }
+}
+
+/// `DefineMatrix` only for nested row literals. Flat vectors keep `Collection` Own semantics.
+fn matrix_binding_from_form(w: &WolframForm) -> Option<MatrixValue> {
+    wolfram_form_is_nested_matrix_literal(w).then(|| matrix_from_form(w)).flatten()
 }
 
 /// Orient Mathematica flat-list vectors for `Dot` at the dialect Form layer.

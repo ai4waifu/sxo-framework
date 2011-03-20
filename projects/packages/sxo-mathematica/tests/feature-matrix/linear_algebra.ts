@@ -54,6 +54,9 @@ export const linearAlgebraFeatures = [
         .partial('typed numeric nested List shape only')
         .pure()
         .eval('dims.2x2', 'Dimensions[{{1, 2}, {3, 4}}]', '{2, 2}')
+        .eval('dims.vec3', 'Dimensions[{1, 2, 3}]', '{3}')
+        .eval('dims.bound_vec3', 'A = {1, 2, 3}; Dimensions[A]', '{3}')
+        .eval('dims.row13', 'Dimensions[{{1, 2, 3}}]', '{1, 3}')
         .eval('dims.bound23', 'A={{1, 2, 3}, {4, 5, 6}}; Dimensions[A]', '{2, 3}')
         .eval('dims.zeros5x0', 'A=ConstantArray[0, {5, 0}]; Dimensions[A]', '{5, 0}')
         .done(),
