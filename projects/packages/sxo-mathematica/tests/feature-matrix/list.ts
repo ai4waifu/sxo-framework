@@ -44,7 +44,13 @@ export const listFeatures = [
         .eval('product.complex_bare', 'Product[{{1 + I, 2}, {3, 4 - I}}]', '{3 + 3*I, 8 - 2*I}')
         .eval('product.complex', 'Product[{{1 + I, 2}, {3, 4 - I}}, {2}]', '{{2 + 2*I}, {12 - 3*I}}')
         .done(),
-    feature('Length', 'list').partial('top-level list length on tested forms only').pure().eval('length.3', 'Length[{1, 2, 3}]', '3').done(),
+    feature('Length', 'list')
+        .partial('top-level list length on tested forms only')
+        .pure()
+        .eval('length.3', 'Length[{1, 2, 3}]', '3')
+        .eval('length.bound_vec', 'V = {1, 2, 3}; Length[V]', '3')
+        .eval('length.bound_matrix', 'A = {{1, 2, 3}, {4, 5, 6}}; Length[A]', '2')
+        .done(),
     feature('First', 'list')
         .partial('non-empty List only. Empty → `InvalidIndex`. Exact complex OK')
         .pure()
@@ -89,6 +95,7 @@ export const listFeatures = [
         .partial('structural equality membership only. Not pattern `MemberQ`')
         .pure()
         .eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True')
+        .eval('memberq.bound', 'V = {1, 2, 1, 3}; MemberQ[V, 2]', 'True')
         .done(),
     feature('Select', 'list')
         .unsupported('unevaluated Select[list, EvenQ] (no predicate fold yet)')
@@ -108,6 +115,7 @@ export const listFeatures = [
         .partial('structural equality occurrence count only. Not pattern `Count`')
         .pure()
         .eval('count.1', 'Count[{1, 1, 2}, 1]', '2')
+        .eval('count.bound', 'V = {1, 2, 1, 3}; Count[V, 1]', '2')
         .done(),
     feature('Partition', 'list')
         .partial('fixed-width exact-integer partitions only')

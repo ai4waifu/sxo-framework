@@ -14,10 +14,11 @@ export const comparisonFeatures = [
         .eval('unequal.list_broadcast', '{1, 2} != {1, 3}', '{False, True}')
         .done(),
     feature('Less', 'comparison')
-        .partial('scalar `<` / `Less` on tested exact integers only')
+        .partial('scalar and elementwise `<` / `Less` on tested exact integers')
         .pure()
         .eval('less.infix', '2 < 3', 'True')
         .eval('less.head', 'Less[2, 3]', 'True')
+        .eval('less.list_broadcast', '{1, 2, 3} < 2', '{True, False, False}')
         .done(),
     feature('Greater', 'comparison').partial('scalar `>` on tested exact integers only').pure().eval('greater.infix', '3 > 2', 'True').done(),
     feature('LessEqual', 'comparison')
