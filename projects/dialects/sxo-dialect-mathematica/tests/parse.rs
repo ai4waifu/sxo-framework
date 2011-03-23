@@ -1032,6 +1032,9 @@ fn even_q_select_list_convolve_and_map_all() {
     assert_eq!(h.wolfram(h.eval("Select[{1, 2, 3, 4}, EvenQ]")), "{2, 4}");
     assert_eq!(h.wolfram(h.eval("ListConvolve[{1, 2}, {3, 4}]")), "{11}");
     assert_eq!(h.wolfram(h.eval("MapAll[f, {1, {2}}]")), "f[{f[1], f[{f[2]}]}]");
+    assert_eq!(h.wolfram(h.eval("IntegerQ[1]")), "True");
+    assert_eq!(h.wolfram(h.eval("AtomQ[1]")), "True");
+    assert_eq!(h.wolfram(h.eval("ListQ[{1}]")), "True");
 }
 
 #[test]
