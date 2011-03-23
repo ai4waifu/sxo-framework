@@ -51,12 +51,16 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "And" => SemanticOperator::And,
         "Or" => SemanticOperator::Or,
         "Not" => SemanticOperator::Not,
+        "EvenQ" => SemanticOperator::EvenQ,
         "Range" | "Span" => SemanticOperator::Range,
         "Apply" => SemanticOperator::Apply,
         "Map" => SemanticOperator::Map,
         "MapIndexed" => SemanticOperator::MapIndexed,
         "MapThread" => SemanticOperator::MapThread,
         "MapAt" => SemanticOperator::MapAt,
+        "MapAll" => SemanticOperator::MapAll,
+        "Select" => SemanticOperator::Select,
+        "ListConvolve" => SemanticOperator::ListConvolve,
         "Rule" => SemanticOperator::Rule,
         "RuleDelayed" => SemanticOperator::RuleDeferred,
         "ReplaceAll" => SemanticOperator::ReplaceAll,
@@ -212,7 +216,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name))
-                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "MapAt" || name == "Array" =>
+                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "MapAt" || name == "MapAll" || name == "Array" =>
             {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
@@ -226,6 +230,11 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 push_surface_call(session, name, arg_ids)
             }
             WolframForm::Atom(WolframAtom::Symbol(name)) => {
+                if name == "Select" && args.len() == 2 {
+                    let list = lower_wexpr(session, &args[0]);
+                    let pred = lower_operator_value(session, &args[1]);
+                    return push_semantic(session, SemanticOperator::Select, vec![list, pred]);
+                }
                 if name == "Part" && args.len() == 2 {
                     let target = lower_wexpr(session, &args[0]);
                     let index = lower_wexpr(session, &args[1]);

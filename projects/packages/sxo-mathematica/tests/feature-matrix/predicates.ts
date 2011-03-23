@@ -6,7 +6,12 @@ export const predicatesFeatures = [
     feature('IntegerQ', 'predicates').unsupported().pure().gap('integerq.1', 'IntegerQ[1]', { expected: 'True' }).done(),
     feature('AtomQ', 'predicates').unsupported().pure().gap('atomq.1', 'AtomQ[1]', { expected: 'True' }).done(),
     feature('NumberQ', 'predicates').unsupported().pure().gap('numberq.12', 'NumberQ[1.2]', { expected: 'True' }).done(),
-    feature('EvenQ', 'predicates').unsupported().pure().gap('evenq.2', 'EvenQ[2]', { expected: 'True' }).done(),
+    feature('EvenQ', 'predicates')
+        .partial('exact integer parity only')
+        .pure()
+        .eval('evenq.2', 'EvenQ[2]', 'True')
+        .eval('evenq.3', 'EvenQ[3]', 'False')
+        .done(),
     feature('Positive', 'predicates').unsupported().pure().gap('positive.3', 'Positive[3]', { expected: 'True' }).done(),
     feature('VectorQ', 'predicates').unsupported().pure().gap('vectorq.12', 'VectorQ[{1, 2}]', { expected: 'True' }).done(),
     feature('MatrixQ', 'predicates').unsupported().pure().gap('matrixq.row', 'MatrixQ[{{1, 2}}]', { expected: 'True' }).done(),

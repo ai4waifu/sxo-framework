@@ -98,12 +98,9 @@ export const listFeatures = [
         .eval('memberq.bound', 'V = {1, 2, 1, 3}; MemberQ[V, 2]', 'True')
         .done(),
     feature('Select', 'list')
-        .unsupported('unevaluated Select[list, EvenQ] (no predicate fold yet)')
+        .partial('bare `EvenQ` head on exact-integer lists only')
         .pure()
-        .gap('select.evenq', 'Select[{1, 2, 3, 4}, EvenQ]', {
-            expected: '{2, 4}',
-            notes: 'stays Select[…]; not a silent strip to EvenQ',
-        })
+        .eval('select.evenq', 'Select[{1, 2, 3, 4}, EvenQ]', '{2, 4}')
         .done(),
     feature('Cases', 'list')
         .partial('CollectMatches via `Blank[Integer]` only. Not full pattern `Cases`')
@@ -240,7 +237,11 @@ export const listFeatures = [
         .done(),
     feature('Nearest', 'list').unsupported().pure().gap('nearest.3', 'Nearest[{1, 2, 4}, 3]', { expected: '{2, 4}' }).done(),
     feature('Counts', 'list').unsupported().pure().gap('counts.aab', 'Counts[{a, a, b}]', { expected: '<|a -> 2, b -> 1|>' }).done(),
-    feature('ListConvolve', 'list').unsupported().pure().gap('listconvolve.basic', 'ListConvolve[{1, 2}, {3, 4}]', { expected: '{11}' }).done(),
+    feature('ListConvolve', 'list')
+        .partial('default no-overhang convolution on exact-integer lists only')
+        .pure()
+        .eval('listconvolve.basic', 'ListConvolve[{1, 2}, {3, 4}]', '{11}')
+        .done(),
     feature('ArrayFlatten', 'list')
         .partial('iterative unwrap of singleton row blocks on tested nested lists only')
         .pure()
@@ -252,5 +253,9 @@ export const listFeatures = [
         .pure()
         .eval('tensorproduct.vec', 'TensorProduct[{1, 2}, {3, 4}]', '{{3, 4}, {6, 8}}')
         .done(),
-    feature('MapAll', 'list').unsupported().pure().gap('mapall.nest', 'MapAll[f, {1, {2}}]', { expected: 'f[{f[1], f[{f[2]}]}]' }).done(),
+    feature('MapAll', 'list')
+        .partial('0-ary head / `Function` deep map with held surface rebuild only')
+        .pure()
+        .eval('mapall.nest', 'MapAll[f, {1, {2}}]', 'f[{f[1], f[{f[2]}]}]')
+        .done(),
 ];

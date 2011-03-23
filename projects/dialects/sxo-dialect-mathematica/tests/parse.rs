@@ -1025,6 +1025,16 @@ fn member_q_sort_and_delete_duplicates() {
 }
 
 #[test]
+fn even_q_select_list_convolve_and_map_all() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("EvenQ[2]")), "True");
+    assert_eq!(h.wolfram(h.eval("EvenQ[3]")), "False");
+    assert_eq!(h.wolfram(h.eval("Select[{1, 2, 3, 4}, EvenQ]")), "{2, 4}");
+    assert_eq!(h.wolfram(h.eval("ListConvolve[{1, 2}, {3, 4}]")), "{11}");
+    assert_eq!(h.wolfram(h.eval("MapAll[f, {1, {2}}]")), "f[{f[1], f[{f[2]}]}]");
+}
+
+#[test]
 fn count_partition_and_constant_array() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Count[{1, 1, 2}, 1]")), "2");
