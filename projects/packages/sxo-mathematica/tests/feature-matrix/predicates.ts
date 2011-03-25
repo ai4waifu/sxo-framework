@@ -1,8 +1,16 @@
 ﻿import { feature } from '@sxo/harness';
 
 export const predicatesFeatures = [
-    feature('PossibleZeroQ', 'predicates').unsupported().pure().gap('possiblezeroq.0', 'PossibleZeroQ[0]', { expected: 'True' }).done(),
-    feature('NumericQ', 'predicates').unsupported().pure().gap('numericq.1', 'NumericQ[1]', { expected: 'True' }).done(),
+    feature('PossibleZeroQ', 'predicates')
+        .partial('numeric zero test only')
+        .pure()
+        .eval('possiblezeroq.0', 'PossibleZeroQ[0]', 'True')
+        .done(),
+    feature('NumericQ', 'predicates')
+        .partial('numeric atom test only')
+        .pure()
+        .eval('numericq.1', 'NumericQ[1]', 'True')
+        .done(),
     feature('IntegerQ', 'predicates')
         .partial('exact integer and integer-valued rationals only')
         .pure()
@@ -13,7 +21,11 @@ export const predicatesFeatures = [
         .pure()
         .eval('atomq.1', 'AtomQ[1]', 'True')
         .done(),
-    feature('NumberQ', 'predicates').unsupported().pure().gap('numberq.12', 'NumberQ[1.2]', { expected: 'True' }).done(),
+    feature('NumberQ', 'predicates')
+        .partial('numeric atom test only')
+        .pure()
+        .eval('numberq.12', 'NumberQ[1.2]', 'True')
+        .done(),
     feature('EvenQ', 'predicates')
         .partial('exact integer parity only')
         .pure()

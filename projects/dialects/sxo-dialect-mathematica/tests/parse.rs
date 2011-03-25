@@ -1035,6 +1035,9 @@ fn even_q_select_list_convolve_and_map_all() {
     assert_eq!(h.wolfram(h.eval("IntegerQ[1]")), "True");
     assert_eq!(h.wolfram(h.eval("AtomQ[1]")), "True");
     assert_eq!(h.wolfram(h.eval("ListQ[{1}]")), "True");
+    assert_eq!(h.wolfram(h.eval("NumericQ[1]")), "True");
+    assert_eq!(h.wolfram(h.eval("NumberQ[1.2]")), "True");
+    assert_eq!(h.wolfram(h.eval("PossibleZeroQ[0]")), "True");
 }
 
 #[test]
