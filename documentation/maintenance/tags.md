@@ -12,6 +12,7 @@
 | `v0.0.5` | `12d2dd1` | bump publishable packages for Trusted Publisher tag release |
 | `v0.0.6` | `3227b83` | bump publishable packages for Trusted Publisher tag release |
 | `v0.0.7` | `96997da` | bump publishable packages to `0.0.7` (SameQ/Mod matrix work in range) |
+| `v0.0.8` | `ffcfd69` | release `@sxo/*` `0.0.8` (MATLAB while control-flow closure) |
 
 Re-apply tags locally (coordinate before `--force` push):
 
@@ -24,4 +25,5 @@ git tag -f v0.0.4 5d6f3aa
 git tag -f v0.0.5 12d2dd1
 git tag -f v0.0.6 3227b83
 git tag -f v0.0.7 96997da
+git tag -f v0.0.8 ffcfd69
 ```
