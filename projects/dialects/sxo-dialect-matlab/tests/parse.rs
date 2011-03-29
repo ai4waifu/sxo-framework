@@ -1766,9 +1766,9 @@ f()"#;
 fn outer_while_greater_equal_literal_in_function() {
     let h = H::new();
     assert_eq!(
-        h.render(h.eval(
-            "function y = f()\n    a = 10;\n    while a >= 5\n        a = a - 1;\n    end\n    y = a;\nend;\nf()",
-        )),
+        h.render(
+            h.eval("function y = f()\n    a = 10;\n    while a >= 5\n        a = a - 1;\n    end\n    y = a;\nend;\nf()",)
+        ),
         "4",
         "outer >= literal",
     );
@@ -1778,9 +1778,9 @@ fn outer_while_greater_equal_literal_in_function() {
 fn outer_while_greater_equal_param_rhs_in_function() {
     let h = H::new();
     assert_eq!(
-        h.render(h.eval(
-            "function y = f(n)\n    i = n;\n    while i >= 1\n        i = i - 1;\n    end\n    y = i;\nend;\nf(5)",
-        )),
+        h.render(
+            h.eval("function y = f(n)\n    i = n;\n    while i >= 1\n        i = i - 1;\n    end\n    y = i;\nend;\nf(5)",)
+        ),
         "0",
         "outer >= param rhs",
     );
@@ -1790,9 +1790,7 @@ fn outer_while_greater_equal_param_rhs_in_function() {
 fn outer_while_greater_equal_decrement_in_function() {
     let h = H::new();
     assert_eq!(
-        h.render(h.eval(
-            "function y = f(a, b)\n    while a >= b\n        a = a - 1;\n    end\n    y = a;\nend;\nf(10, 3)",
-        )),
+        h.render(h.eval("function y = f(a, b)\n    while a >= b\n        a = a - 1;\n    end\n    y = a;\nend;\nf(10, 3)",)),
         "2",
         "outer >= decrement",
     );
@@ -1975,9 +1973,5 @@ fn divide_two_integers_anchor() {
 end;
 divide(10, 3)"#;
     assert_eq!(h.render(h.eval(src)), "3", "divide-two-integers matlab-sxo anchor");
-    assert_eq!(
-        h.render(h.eval("divide(-2147483648, -1)")),
-        "2147483647",
-        "divide overflow clamp",
-    );
+    assert_eq!(h.render(h.eval("divide(-2147483648, -1)")), "2147483647", "divide overflow clamp",);
 }

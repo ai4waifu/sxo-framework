@@ -1050,10 +1050,7 @@ fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
 
 /// Literal Form matrix, Eye/Zeros/Ones constructor, empty `[]`, or symbol Own binding for goals.
 fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<MatrixOperand> {
-    if let Some(mat) = matrix_from_form(w)
-        .or_else(|| matrix_from_constructor_form(w))
-        .or_else(|| matrix_from_empty_form(w))
-    {
+    if let Some(mat) = matrix_from_form(w).or_else(|| matrix_from_constructor_form(w)).or_else(|| matrix_from_empty_form(w)) {
         Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
     }
     else if let Some(name) = form_symbol_name(w) {
@@ -1246,9 +1243,9 @@ fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> O
 fn is_ambiguous_matlab_scalar_symbol(w: &MatlabForm) -> bool {
     match w {
         MatlabForm::Atom(MatlabAtom::Symbol(s)) => matches!(s.as_str(), "i" | "j" | "I" | "J"),
-        MatlabForm::Call { head, args } if head == "Plus" => args.iter().any(|arg| {
-            matches!(arg, MatlabForm::Atom(MatlabAtom::Symbol(s)) if matches!(s.as_str(), "i" | "j" | "I" | "J"))
-        }),
+        MatlabForm::Call { head, args } if head == "Plus" => args
+            .iter()
+            .any(|arg| matches!(arg, MatlabForm::Atom(MatlabAtom::Symbol(s)) if matches!(s.as_str(), "i" | "j" | "I" | "J"))),
         _ => false,
     }
 }

@@ -3,8 +3,7 @@
 //! Dialects implement [`MatrixLiteralForm`] and call [`matrix_from_form`]. Variables and
 //! computed terms are not reverse-recognized from arena `Collection`s.
 
-use athena::domains::linear_algebra::MatrixValue;
-use athena::numeric::Rational;
+use athena::{domains::linear_algebra::MatrixValue, numeric::Rational};
 
 /// Form node that may represent a numeric matrix literal (`nested rows` or flat `1×n`).
 pub trait MatrixLiteralForm: Sized {

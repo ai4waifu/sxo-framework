@@ -1,31 +1,15 @@
 ﻿import { feature } from '@sxo/harness';
 
 export const predicatesFeatures = [
-    feature('PossibleZeroQ', 'predicates')
-        .partial('numeric zero test only')
-        .pure()
-        .eval('possiblezeroq.0', 'PossibleZeroQ[0]', 'True')
-        .done(),
-    feature('NumericQ', 'predicates')
-        .partial('numeric atom test only')
-        .pure()
-        .eval('numericq.1', 'NumericQ[1]', 'True')
-        .done(),
+    feature('PossibleZeroQ', 'predicates').partial('numeric zero test only').pure().eval('possiblezeroq.0', 'PossibleZeroQ[0]', 'True').done(),
+    feature('NumericQ', 'predicates').partial('numeric atom test only').pure().eval('numericq.1', 'NumericQ[1]', 'True').done(),
     feature('IntegerQ', 'predicates')
         .partial('exact integer and integer-valued rationals only')
         .pure()
         .eval('integerq.1', 'IntegerQ[1]', 'True')
         .done(),
-    feature('AtomQ', 'predicates')
-        .partial('non-compound terms only')
-        .pure()
-        .eval('atomq.1', 'AtomQ[1]', 'True')
-        .done(),
-    feature('NumberQ', 'predicates')
-        .partial('numeric atom test only')
-        .pure()
-        .eval('numberq.12', 'NumberQ[1.2]', 'True')
-        .done(),
+    feature('AtomQ', 'predicates').partial('non-compound terms only').pure().eval('atomq.1', 'AtomQ[1]', 'True').done(),
+    feature('NumberQ', 'predicates').partial('numeric atom test only').pure().eval('numberq.12', 'NumberQ[1.2]', 'True').done(),
     feature('EvenQ', 'predicates')
         .partial('exact integer parity only')
         .pure()
@@ -35,11 +19,7 @@ export const predicatesFeatures = [
     feature('Positive', 'predicates').unsupported().pure().gap('positive.3', 'Positive[3]', { expected: 'True' }).done(),
     feature('VectorQ', 'predicates').unsupported().pure().gap('vectorq.12', 'VectorQ[{1, 2}]', { expected: 'True' }).done(),
     feature('MatrixQ', 'predicates').unsupported().pure().gap('matrixq.row', 'MatrixQ[{{1, 2}}]', { expected: 'True' }).done(),
-    feature('ListQ', 'predicates')
-        .partial('ordered `Collection` only')
-        .pure()
-        .eval('listq.1', 'ListQ[{1}]', 'True')
-        .done(),
+    feature('ListQ', 'predicates').partial('ordered `Collection` only').pure().eval('listq.1', 'ListQ[{1}]', 'True').done(),
     feature('StringQ', 'predicates').unsupported().pure().gap('stringq.a', 'StringQ["a"]', { expected: 'True' }).done(),
     feature('TrueQ', 'predicates')
         .partial('`TrueQ` on tested boolean and equality forms only')

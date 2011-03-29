@@ -222,7 +222,13 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name))
-                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "MapAt" || name == "MapAll" || name == "Array" =>
+                if name == "Apply"
+                    || name == "Map"
+                    || name == "MapIndexed"
+                    || name == "MapThread"
+                    || name == "MapAt"
+                    || name == "MapAll"
+                    || name == "Array" =>
             {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {

@@ -132,11 +132,7 @@ export const matrixFeatures = [
         .pure()
         .eval('ones.5x0', 'ones(5, 0)', '[]')
         .done(),
-    feature('eye_empty', 'matrix')
-        .partial('`eye(0)` empty square renders as `[]`')
-        .pure()
-        .eval('eye.0', 'eye(0)', '[]')
-        .done(),
+    feature('eye_empty', 'matrix').partial('`eye(0)` empty square renders as `[]`').pure().eval('eye.0', 'eye(0)', '[]').done(),
     feature('isdiag', 'matrix').partial('typed numeric matrix diagonal predicate only').pure().eval('isdiag.eye', 'isdiag(eye(3))', '1').done(),
     feature('issymmetric', 'matrix')
         .partial('typed numeric matrix symmetry predicate only')
