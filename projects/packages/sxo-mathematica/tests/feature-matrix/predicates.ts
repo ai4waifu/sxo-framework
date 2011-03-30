@@ -16,11 +16,15 @@ export const predicatesFeatures = [
         .eval('evenq.2', 'EvenQ[2]', 'True')
         .eval('evenq.3', 'EvenQ[3]', 'False')
         .done(),
-    feature('Positive', 'predicates').unsupported().pure().gap('positive.3', 'Positive[3]', { expected: 'True' }).done(),
-    feature('VectorQ', 'predicates').unsupported().pure().gap('vectorq.12', 'VectorQ[{1, 2}]', { expected: 'True' }).done(),
-    feature('MatrixQ', 'predicates').unsupported().pure().gap('matrixq.row', 'MatrixQ[{{1, 2}}]', { expected: 'True' }).done(),
+    feature('Positive', 'predicates').partial('numeric atom sign test only').pure().eval('positive.3', 'Positive[3]', 'True').done(),
+    feature('VectorQ', 'predicates').partial('flat ordered `Collection` only').pure().eval('vectorq.12', 'VectorQ[{1, 2}]', 'True').done(),
+    feature('MatrixQ', 'predicates')
+        .partial('rectangular nested row `Collection` only')
+        .pure()
+        .eval('matrixq.row', 'MatrixQ[{{1, 2}}]', 'True')
+        .done(),
     feature('ListQ', 'predicates').partial('ordered `Collection` only').pure().eval('listq.1', 'ListQ[{1}]', 'True').done(),
-    feature('StringQ', 'predicates').unsupported().pure().gap('stringq.a', 'StringQ["a"]', { expected: 'True' }).done(),
+    feature('StringQ', 'predicates').partial('`Atom::String` only').pure().eval('stringq.a', 'StringQ["a"]', 'True').done(),
     feature('TrueQ', 'predicates')
         .partial('`TrueQ` on tested boolean and equality forms only')
         .pure()
@@ -28,14 +32,7 @@ export const predicatesFeatures = [
         .eval('trueq.equal', 'TrueQ[1 == 1]', 'True')
         .eval('trueq.false', 'TrueQ[False]', 'False')
         .done(),
-    feature('BooleanQ', 'predicates')
-        .unsupported('unevaluated BooleanQ[True]')
-        .pure()
-        .gap('booleanq.true', 'BooleanQ[True]', {
-            expected: 'True',
-            notes: 'stays BooleanQ[True]; True atom no longer stripped to BooleanQ[]',
-        })
-        .done(),
+    feature('BooleanQ', 'predicates').partial('`Atom::Boolean` only').pure().eval('booleanq.true', 'BooleanQ[True]', 'True').done(),
     feature('Element', 'predicates').unsupported().pure().gap('element.int', 'Element[1, Integers]', { expected: 'True' }).done(),
     feature('SymmetricMatrixQ', 'predicates')
         .partial('typed numeric matrix symmetry predicate only. Surface is `0`/`1`, not `True`/`False`')

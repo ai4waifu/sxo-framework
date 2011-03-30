@@ -1038,6 +1038,11 @@ fn even_q_select_list_convolve_and_map_all() {
     assert_eq!(h.wolfram(h.eval("NumericQ[1]")), "True");
     assert_eq!(h.wolfram(h.eval("NumberQ[1.2]")), "True");
     assert_eq!(h.wolfram(h.eval("PossibleZeroQ[0]")), "True");
+    assert_eq!(h.wolfram(h.eval("StringQ[\"a\"]")), "True");
+    assert_eq!(h.wolfram(h.eval("Positive[3]")), "True");
+    assert_eq!(h.wolfram(h.eval("VectorQ[{1, 2}]")), "True");
+    assert_eq!(h.wolfram(h.eval("MatrixQ[{{1, 2}}]")), "True");
+    assert_eq!(h.wolfram(h.eval("BooleanQ[True]")), "True");
 }
 
 #[test]
