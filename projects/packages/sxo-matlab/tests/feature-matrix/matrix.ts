@@ -78,7 +78,11 @@ export const matrixFeatures = [
         .eval('min.col', 'min([1; 3; 2])', '1')
         .eval('min.bound_col', 'A = [1; 3; 2]; min(A)', '1')
         .done(),
-    feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
+    feature('linspace', 'matrix')
+        .partial('machine-real `1×n` row from numeric endpoints and point count only')
+        .pure()
+        .eval('linspace.3', 'linspace(0, 1, 3)', '[0, 0.5, 1]')
+        .done(),
     feature('reshape', 'matrix')
         .partial('typed numeric column-major `Reshape` on tested forms only')
         .pure()

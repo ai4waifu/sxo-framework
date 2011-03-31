@@ -506,6 +506,8 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "numel"
             | "NumElements"
             | "Numel"
+            | "linspace"
+            | "Linspace"
     )
 }
 

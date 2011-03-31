@@ -364,6 +364,12 @@ fn reshape_numel_and_max_row_vector() {
 }
 
 #[test]
+fn linspace_builds_machine_row_vector() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("linspace(0, 1, 3)")), "[0, 0.5, 1]");
+}
+
+#[test]
 fn empty_matrix_constructors_render() {
     let h = H::new();
     assert_eq!(h.render(h.eval("zeros(0, 5)")), "[]");
