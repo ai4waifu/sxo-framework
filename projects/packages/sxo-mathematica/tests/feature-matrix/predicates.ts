@@ -33,7 +33,11 @@ export const predicatesFeatures = [
         .eval('trueq.false', 'TrueQ[False]', 'False')
         .done(),
     feature('BooleanQ', 'predicates').partial('`Atom::Boolean` only').pure().eval('booleanq.true', 'BooleanQ[True]', 'True').done(),
-    feature('Element', 'predicates').unsupported().pure().gap('element.int', 'Element[1, Integers]', { expected: 'True' }).done(),
+    feature('Element', 'predicates')
+        .partial('`Integers` domain on exact integer atoms only')
+        .pure()
+        .eval('element.int', 'Element[1, Integers]', 'True')
+        .done(),
     feature('SymmetricMatrixQ', 'predicates')
         .partial('typed numeric matrix symmetry predicate only. Surface is `0`/`1`, not `True`/`False`')
         .pure()
