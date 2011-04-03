@@ -38,6 +38,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Minus" => SemanticOperator::Negate,
         "Equal" => SemanticOperator::Equal,
         "SameQ" => SemanticOperator::Identical,
+        "UnsameQ" => SemanticOperator::Unidentical,
         "Unequal" => SemanticOperator::Unequal,
         "Less" => SemanticOperator::Less,
         "Greater" => SemanticOperator::Greater,

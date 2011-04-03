@@ -129,6 +129,15 @@ fn parse_mod_quotient_integer_digits() {
 }
 
 #[test]
+fn parse_sameq_unsameq_and_compare_chain() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");
+    assert_eq!(h.wolfram(h.eval("UnsameQ[1, 2]")), "True");
+    assert_eq!(h.wolfram(h.eval("LessEqual[1, 2, 3]")), "True");
+    assert_eq!(h.wolfram(h.eval("GreaterEqual[3, 2, 1]")), "True");
+}
+
+#[test]
 fn parse_plus_times() {
     let h = H::new();
     assert!(h.eq(h.eval("1 + 2 * 3"), h.i(7)));

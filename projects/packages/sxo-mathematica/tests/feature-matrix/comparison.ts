@@ -22,11 +22,11 @@ export const comparisonFeatures = [
         .done(),
     feature('Greater', 'comparison').partial('scalar `>` on tested exact integers only').pure().eval('greater.infix', '3 > 2', 'True').done(),
     feature('LessEqual', 'comparison')
-        .partial('binary <= / LessEqual returns typed Boolean; n-ary LessEqual[1,2,3] unevaluated')
+        .partial('binary and n-ary `LessEqual` on exact integer chains')
         .pure()
         .eval('le.infix', '2 <= 3', 'True')
         .eval('le.eq', 'LessEqual[1, 1]', 'True')
-        .gap('le.chain', 'LessEqual[1, 2, 3]', { expected: 'True' })
+        .eval('le.chain', 'LessEqual[1, 2, 3]', 'True')
         .done(),
     feature('GreaterEqual', 'comparison')
         .partial('binary >= / GreaterEqual returns typed Boolean; Inequality chain unevaluated')
@@ -36,13 +36,18 @@ export const comparisonFeatures = [
         .gap('ge.inequality', 'Inequality[1, Less, 2, Less, 3]', { expected: 'True' })
         .done(),
     feature('SameQ', 'comparison')
-        .partial('infix === works for numbers and symbols; head-form SameQ[1,1] unevaluated')
+        .partial('infix `===` and head-form `SameQ` structural identity on tested forms')
         .pure()
         .eval('sameq.num_infix', '1 === 1', 'True')
         .eval('sameq.sym_infix', 'x === x', 'True')
-        .gap('sameq.head', 'SameQ[1, 1]', { expected: 'True', notes: 'stays SameQ[1, 1]' })
+        .eval('sameq.head', 'SameQ[1, 1]', 'True')
         .done(),
-    feature('UnsameQ', 'comparison').unsupported().pure().gap('unsameq.12', 'UnsameQ[1, 2]', { expected: 'True' }).done(),
+    feature('UnsameQ', 'comparison')
+        .partial('head-form `UnsameQ` structural inequality on tested literals')
+        .pure()
+        .eval('unsameq.12', 'UnsameQ[1, 2]', 'True')
+        .eval('unsameq.11', 'UnsameQ[1, 1]', 'False')
+        .done(),
     feature('InequalityChain', 'comparison')
         .partial('same-op chains OK via Athena flatten; mixed ops still nest and need Inequality sugar')
         .pure()
