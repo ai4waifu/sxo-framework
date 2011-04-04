@@ -129,6 +129,13 @@ fn parse_mod_quotient_integer_digits() {
 }
 
 #[test]
+fn parse_nearest_exact_integer_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Nearest[{1, 2, 4}, 3]")), "{2, 4}");
+    assert_eq!(h.wolfram(h.eval("Nearest[{1, 5, 9}, 5]")), "{5}");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");

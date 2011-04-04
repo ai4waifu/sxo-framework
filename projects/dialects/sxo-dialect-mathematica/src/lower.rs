@@ -113,6 +113,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "PadLeft" => SemanticOperator::PadLeft,
         "Riffle" => SemanticOperator::Riffle,
         "Position" => SemanticOperator::Position,
+        "Nearest" => SemanticOperator::Nearest,
         "Array" => SemanticOperator::Array,
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
