@@ -129,6 +129,15 @@ fn parse_mod_quotient_integer_digits() {
 }
 
 #[test]
+fn parse_mixed_compare_chain_forms() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("1 < 2 < 3")), "True");
+    assert_eq!(h.wolfram(h.eval("1 < 3 > 2")), "True");
+    assert_eq!(h.wolfram(h.eval("Inequality[1, Less, 2, Less, 3]")), "True");
+    assert_eq!(h.wolfram(h.eval("Inequality[2, Less, 1, Less, 3]")), "False");
+}
+
+#[test]
 fn parse_nearest_exact_integer_list() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Nearest[{1, 2, 4}, 3]")), "{2, 4}");

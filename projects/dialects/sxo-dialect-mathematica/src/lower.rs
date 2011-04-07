@@ -192,6 +192,52 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
     }
 }
 
+fn compare_surface_operator(name: &str) -> Option<SemanticOperator> {
+    match name {
+        "Less" => Some(SemanticOperator::Less),
+        "Greater" => Some(SemanticOperator::Greater),
+        "LessEqual" => Some(SemanticOperator::LessEqual),
+        "GreaterEqual" => Some(SemanticOperator::GreaterEqual),
+        _ => None,
+    }
+}
+
+/// `Inequality[v0, op1, v1, op2, …]` → n-ary same-op compare or `And` of pairwise compares.
+fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() < 3 || args.len() % 2 == 0 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Inequality", arg_ids);
+    }
+    let mut values = Vec::new();
+    let mut ops = Vec::new();
+    values.push(lower_wexpr(session, &args[0]));
+    let mut index = 1usize;
+    while index + 1 < args.len() {
+        let WolframForm::Atom(WolframAtom::Symbol(op_name)) = &args[index]
+        else {
+            let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+            return push_surface_call(session, "Inequality", arg_ids);
+        };
+        let Some(op) = compare_surface_operator(op_name)
+        else {
+            let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+            return push_surface_call(session, "Inequality", arg_ids);
+        };
+        ops.push(op);
+        values.push(lower_wexpr(session, &args[index + 1]));
+        index += 2;
+    }
+    if ops.iter().all(|op| *op == ops[0]) {
+        return push_semantic(session, ops[0], values);
+    }
+    let conjuncts: Vec<TermId> = ops
+        .iter()
+        .enumerate()
+        .map(|(i, op)| push_semantic(session, *op, vec![values[i], values[i + 1]]))
+        .collect();
+    push_semantic(session, SemanticOperator::And, conjuncts)
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -258,6 +304,9 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                     let target = lower_wexpr(session, &args[0]);
                     let index = lower_wexpr(session, &args[1]);
                     return push_semantic(session, SemanticOperator::Extract, vec![target, index]);
+                }
+                if name == "Inequality" {
+                    return lower_inequality_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)

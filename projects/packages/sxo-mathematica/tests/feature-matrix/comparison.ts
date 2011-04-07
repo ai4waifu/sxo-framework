@@ -29,11 +29,11 @@ export const comparisonFeatures = [
         .eval('le.chain', 'LessEqual[1, 2, 3]', 'True')
         .done(),
     feature('GreaterEqual', 'comparison')
-        .partial('binary >= / GreaterEqual returns typed Boolean; Inequality chain unevaluated')
+        .partial('binary and n-ary `GreaterEqual` on exact integer chains')
         .pure()
         .eval('ge.infix', '3 >= 2', 'True')
         .eval('ge.eq', 'GreaterEqual[2, 2]', 'True')
-        .gap('ge.inequality', 'Inequality[1, Less, 2, Less, 3]', { expected: 'True' })
+        .eval('ge.inequality', 'Inequality[1, Less, 2, Less, 3]', 'True')
         .done(),
     feature('SameQ', 'comparison')
         .partial('infix `===` and head-form `SameQ` structural identity on tested forms')
@@ -49,11 +49,12 @@ export const comparisonFeatures = [
         .eval('unsameq.11', 'UnsameQ[1, 1]', 'False')
         .done(),
     feature('InequalityChain', 'comparison')
-        .partial('same-op chains OK via Athena flatten; mixed ops still nest and need Inequality sugar')
+        .partial('same-op and mixed infix chains plus head-form `Inequality` on exact integers')
         .pure()
-        .notes('nested relational ops evaluate via Athena compare-chain flattening')
+        .notes('mixed infix rewrites to `And` of pairwise compares at compile time')
         .eval('ineq.lt_chain', '1 < 2 < 3', 'True')
-        .gap('ineq.mixed', '1 < 3 > 2', { expected: 'True', notes: 'currently Greater[True, 2]' })
+        .eval('ineq.mixed', '1 < 3 > 2', 'True')
+        .eval('ineq.head', 'Inequality[1, Less, 2, Less, 3]', 'True')
         .done(),
     feature('UnsameQInfix', 'comparison')
         .partial('numeric 1=!=2 → 1; symbols lower to Unequal not UnsameQ')
