@@ -1060,6 +1060,8 @@ fn even_q_select_list_convolve_and_map_all() {
     assert_eq!(h.wolfram(h.eval("MatrixQ[{{1, 2}}]")), "True");
     assert_eq!(h.wolfram(h.eval("BooleanQ[True]")), "True");
     assert_eq!(h.wolfram(h.eval("Element[1, Integers]")), "True");
+    assert_eq!(h.wolfram(h.eval("Element[1, Reals]")), "True");
+    assert_eq!(h.wolfram(h.eval("Element[1/2, Reals]")), "True");
 }
 
 #[test]
