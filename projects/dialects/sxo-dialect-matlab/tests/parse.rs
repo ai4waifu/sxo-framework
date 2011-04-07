@@ -370,6 +370,12 @@ fn linspace_builds_machine_row_vector() {
 }
 
 #[test]
+fn logspace_builds_machine_row_vector() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("logspace(0, 2, 3)")), "[1, 10, 100]");
+}
+
+#[test]
 fn empty_matrix_constructors_render() {
     let h = H::new();
     assert_eq!(h.render(h.eval("zeros(0, 5)")), "[]");

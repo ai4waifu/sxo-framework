@@ -508,6 +508,8 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "Numel"
             | "linspace"
             | "Linspace"
+            | "logspace"
+            | "Logspace"
     )
 }
 

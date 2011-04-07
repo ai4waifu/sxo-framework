@@ -124,7 +124,11 @@ export const matrixFeatures = [
     feature('true_matrix', 'matrix').unsupported().pure().gap('true.23', 'true(2, 3)', { expected: '...' }).done(),
     feature('speye', 'matrix').unsupported().pure().gap('speye.3', 'speye(3)', { expected: '...' }).done(),
     feature('nnz', 'matrix').unsupported().pure().gap('nnz.speye2', 'nnz(speye(2))', { expected: '2' }).done(),
-    feature('logspace', 'matrix').unsupported().pure().gap('logspace.3', 'logspace(0, 2, 3)', { expected: '[1, 10, 100]' }).done(),
+    feature('logspace', 'matrix')
+        .partial('machine-real `1×n` row from log-spaced numeric endpoints and point count only')
+        .pure()
+        .eval('logspace.3', 'logspace(0, 2, 3)', '[1, 10, 100]')
+        .done(),
     feature('zeros_empty', 'matrix')
         .partial('empty `zeros(m,n)` renders as `[]` on tested zero-dim forms only')
         .pure()

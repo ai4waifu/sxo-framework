@@ -57,7 +57,7 @@ pub fn with_session_conventions<R>(session: &mut Session, f: impl FnOnce(&mut Se
 
 /// Materialize a [`MatlabForm`] into the session arena (transitional bridge).
 pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
-    if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_form(form)) {
+    if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_or_logspace_form(form)) {
         if let Ok(term) = session.term_from_matrix_literal(mat) {
             return term;
         }
@@ -130,7 +130,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let Some(name) = form_symbol_name(lhs) {
                     let symbol = session.arena.symbols_mut().intern(name);
                     // List / integer Range Form → matrix Own（含行/列向量与 `1:n`）。
-                    if let Some(mat) = matrix_from_form(rhs).or_else(|| matrix_from_range_form(rhs)).or_else(|| matrix_from_linspace_form(rhs)) {
+                    if let Some(mat) = matrix_from_form(rhs).or_else(|| matrix_from_range_form(rhs)).or_else(|| matrix_from_linspace_or_logspace_form(rhs)) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
@@ -816,7 +816,7 @@ fn eval_matlab_floor(session: &mut Session, arg: &MatlabForm) -> TermId {
 
 /// Expression term materialization with `Part` → `Extract` for runtime indexing.
 fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
-    if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_form(form)) {
+    if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_or_logspace_form(form)) {
         if let Ok(term) = session.term_from_matrix_literal(mat) {
             return term;
         }
@@ -1056,7 +1056,7 @@ fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
 /// Literal Form matrix, Eye/Zeros/Ones constructor, empty `[]`, or symbol Own binding for goals.
 fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<MatrixOperand> {
     if let Some(mat) = matrix_from_form(w)
-        .or_else(|| matrix_from_linspace_form(w))
+        .or_else(|| matrix_from_linspace_or_logspace_form(w))
         .or_else(|| matrix_from_constructor_form(w))
         .or_else(|| matrix_from_empty_form(w))
     {
@@ -1319,6 +1319,11 @@ fn matrix_from_range_form(w: &MatlabForm) -> Option<MatrixValue> {
     MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
 }
 
+/// `linspace` / `logspace` Form → `1×n` machine-real row vector.
+fn matrix_from_linspace_or_logspace_form(w: &MatlabForm) -> Option<MatrixValue> {
+    matrix_from_linspace_form(w).or_else(|| matrix_from_logspace_form(w))
+}
+
 /// `linspace(a, b, n)` Form → `1×n` machine-real row vector.
 fn matrix_from_linspace_form(w: &MatlabForm) -> Option<MatrixValue> {
     let MatlabForm::Call { head, args } = w
@@ -1345,6 +1350,36 @@ fn matrix_from_linspace_form(w: &MatlabForm) -> Option<MatrixValue> {
     else {
         let step = (b - a) / (n - 1) as f64;
         (0..n).map(|i| a + step * i as f64).collect()
+    };
+    MatrixValue::from_f64_row_major(1, n as u64, cells).ok()
+}
+
+/// `logspace(a, b, n)` Form → `1×n` machine-real row vector (`10.^linspace(a,b,n)`).
+fn matrix_from_logspace_form(w: &MatlabForm) -> Option<MatrixValue> {
+    let MatlabForm::Call { head, args } = w
+    else {
+        return None;
+    };
+    if !matches!(head.as_str(), "logspace" | "Logspace") {
+        return None;
+    }
+    let [a_form, b_form, n_form] = args.as_slice()
+    else {
+        return None;
+    };
+    let a = form_scalar_f64(a_form)?;
+    let b = form_scalar_f64(b_form)?;
+    let n = form_scalar_i64(n_form)?;
+    if n < 1 {
+        return None;
+    }
+    let n = n as usize;
+    let cells = if n == 1 {
+        vec![10f64.powf(a)]
+    }
+    else {
+        let step = (b - a) / (n - 1) as f64;
+        (0..n).map(|i| 10f64.powf(a + step * i as f64)).collect()
     };
     MatrixValue::from_f64_row_major(1, n as u64, cells).ok()
 }
