@@ -23,7 +23,7 @@ pub fn parse_mathematica(input: &str) -> Result<WolframForm, SxoError> {
     if trimmed.is_empty() {
         return Err(SxoError::new("mathematica: empty input"));
     }
-    let trimmed = desugar_sameq(trimmed);
+    let trimmed = desugar_unsameq(&desugar_sameq(trimmed));
 
     let language = WolframLanguage::default();
     let builder = WolframBuilder::new(&language);
@@ -209,6 +209,38 @@ fn desugar_sameq(input: &str) -> String {
         out.replace_range(lhs_start..rhs_end, &replacement);
     }
     out
+}
+
+/// Oak lexer folds `=!=` into [`WolframTokenType::NotEqual`]; rewrite `=!=` to `UnsameQ` before parse.
+fn desugar_unsameq(input: &str) -> String {
+    let mut out = input.to_string();
+    while let Some(pos) = find_unsameq_outside_string(&out) {
+        let (lhs_start, lhs_end) = span_expr_before(&out, pos);
+        let (rhs_start, rhs_end) = span_expr_after(&out, pos + 3);
+        let lhs = out[lhs_start..lhs_end].trim();
+        let rhs = out[rhs_start..rhs_end].trim();
+        let replacement = format!("UnsameQ[{lhs},{rhs}]");
+        out.replace_range(lhs_start..rhs_end, &replacement);
+    }
+    out
+}
+
+fn find_unsameq_outside_string(s: &str) -> Option<usize> {
+    let bytes = s.as_bytes();
+    let mut in_string = false;
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if bytes[i] == b'"' {
+            in_string = !in_string;
+            i += 1;
+            continue;
+        }
+        if !in_string && bytes[i] == b'=' && bytes[i + 1] == b'!' && bytes[i + 2] == b'=' {
+            return Some(i);
+        }
+        i += 1;
+    }
+    None
 }
 
 fn find_sameq_outside_string(s: &str) -> Option<usize> {

@@ -94,6 +94,17 @@ fn parse_max_min() {
     let h = H::new();
     assert!(h.eq(h.eval("Max[1, 7]"), h.i(7)));
     assert!(h.eq(h.eval("Min[1, 7]"), h.i(1)));
+    assert!(h.eq(h.eval("Max[1, 3, 2]"), h.i(3)));
+    assert!(h.eq(h.eval("Min[3, 1, 2]"), h.i(1)));
+}
+
+#[test]
+fn parse_unsameq_desugars_and_evaluates() {
+    let w = parse_mathematica("x =!= x").unwrap();
+    assert_eq!(w, WolframForm::call("UnsameQ", vec![WolframForm::symbol("x"), WolframForm::symbol("x")]));
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("1 =!= 2")), "True");
+    assert_eq!(h.wolfram(h.eval("x =!= x")), "False");
 }
 
 #[test]

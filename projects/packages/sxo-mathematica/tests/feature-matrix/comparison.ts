@@ -57,9 +57,9 @@ export const comparisonFeatures = [
         .eval('ineq.head', 'Inequality[1, Less, 2, Less, 3]', 'True')
         .done(),
     feature('UnsameQInfix', 'comparison')
-        .partial('numeric 1=!=2 → 1; symbols lower to Unequal not UnsameQ')
+        .partial('`1 =!= 2` and symbol `x =!= x` desugar to `UnsameQ` structural inequality')
         .pure()
         .eval('unsameq.num_infix', '1 =!= 2', 'True')
-        .gap('unsameq.sym_infix', 'x =!= x', { expected: 'False', notes: 'currently Unequal[x, x]' })
+        .eval('unsameq.sym_infix', 'x =!= x', 'False')
         .done(),
 ];
