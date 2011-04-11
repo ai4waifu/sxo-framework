@@ -34,7 +34,12 @@ export const arithmeticFeatures = [
     feature('Factorial', 'arithmetic').partial('exact integer factorial on tested forms only').pure().eval('factorial.5', '5!', '120').done(),
     feature('Sqrt', 'arithmetic').partial('exact integer square root on tested forms only').pure().eval('sqrt.4', 'Sqrt[4]', '2').done(),
     feature('Abs', 'arithmetic').partial('exact integer `Abs` on tested forms only').pure().eval('abs.neg', 'Abs[-3]', '3').done(),
-    feature('Max', 'arithmetic').unsupported().pure().gap('max.3', 'Max[1, 3, 2]', { expected: '3' }).done(),
+    feature('Max', 'arithmetic')
+        .partial('binary and n-ary `Max` on tested exact integers')
+        .pure()
+        .eval('max.2', 'Max[1, 7]', '7')
+        .eval('max.3', 'Max[1, 3, 2]', '3')
+        .done(),
     feature('Floor', 'arithmetic').unsupported().pure().gap('floor.2_7', 'Floor[2.7]', { expected: '2' }).done(),
     feature('ArithCanonical', 'arithmetic')
         .partial('tested identity folds `x+0` / `1*x` / `x^0` / like powers only')
@@ -44,7 +49,12 @@ export const arithmeticFeatures = [
         .eval('arith.x_pow_0', 'x^0', '1')
         .eval('arith.pow_combine', 'x^2 * x^3', 'x^5')
         .done(),
-    feature('Min', 'arithmetic').unsupported().pure().gap('min.3', 'Min[3, 1, 2]', { expected: '1' }).done(),
+    feature('Min', 'arithmetic')
+        .partial('binary and n-ary `Min` on tested exact integers')
+        .pure()
+        .eval('min.2', 'Min[1, 7]', '1')
+        .eval('min.3', 'Min[3, 1, 2]', '1')
+        .done(),
     feature('Sign', 'arithmetic').unsupported().pure().gap('sign.neg', 'Sign[-3]', { expected: '-1' }).done(),
     feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
     feature('Ceiling', 'arithmetic').unsupported().pure().gap('ceiling.2_1', 'Ceiling[2.1]', { expected: '3' }).done(),
