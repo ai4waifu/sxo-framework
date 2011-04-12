@@ -156,6 +156,14 @@ fn parse_nearest_exact_integer_list() {
 }
 
 #[test]
+fn parse_sign_exact_integer() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Sign[-3]")), "-1");
+    assert_eq!(h.wolfram(h.eval("Sign[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("Sign[5]")), "1");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");

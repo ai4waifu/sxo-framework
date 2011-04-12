@@ -55,7 +55,13 @@ export const arithmeticFeatures = [
         .eval('min.2', 'Min[1, 7]', '1')
         .eval('min.3', 'Min[3, 1, 2]', '1')
         .done(),
-    feature('Sign', 'arithmetic').unsupported().pure().gap('sign.neg', 'Sign[-3]', { expected: '-1' }).done(),
+    feature('Sign', 'arithmetic')
+        .partial('exact `Sign` on tested exact integers')
+        .pure()
+        .eval('sign.neg', 'Sign[-3]', '-1')
+        .eval('sign.zero', 'Sign[0]', '0')
+        .eval('sign.pos', 'Sign[5]', '1')
+        .done(),
     feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
     feature('Ceiling', 'arithmetic').unsupported().pure().gap('ceiling.2_1', 'Ceiling[2.1]', { expected: '3' }).done(),
     feature('IndeterminateForms', 'arithmetic')
