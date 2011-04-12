@@ -238,6 +238,15 @@ fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId 
     push_semantic(session, SemanticOperator::And, conjuncts)
 }
 
+fn push_imaginary_unit(session: &mut Session) -> TermId {
+    use athena::numeric::{BranchPolicy, Complex, Number, Real};
+    let unit = Complex::try_new(Real::machine(0.0), Real::machine(1.0), BranchPolicy::Principal).expect("imaginary unit");
+    session.arena.push(
+        TermNode::Atom(Atom::Number(Number::complex(unit))),
+        athena::types::SourceSpan::default(),
+    )
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -258,6 +267,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframAtom::Symbol(s) if s == "Pi" => push_constant(session, MathematicalConstant::Pi),
             WolframAtom::Symbol(s) if s == "E" => push_constant(session, MathematicalConstant::EulerNumber),
             WolframAtom::Symbol(s) if s == "Infinity" => push_constant(session, MathematicalConstant::Infinity),
+            WolframAtom::Symbol(s) if s == "I" => push_imaginary_unit(session),
             WolframAtom::Symbol(s) => push_symbol_name(session, s),
         },
         WolframForm::List(items) => {
