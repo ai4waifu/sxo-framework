@@ -87,8 +87,16 @@ export const arithmeticFeatures = [
         .pure()
         .eval('rational.add', '1/2 + 1/3', '5/6')
         .done(),
-    feature('CubeRoot', 'arithmetic').unsupported().pure().gap('cuberoot.m8', 'CubeRoot[-8]', { expected: '-2' }).done(),
-    feature('Surd', 'arithmetic').unsupported().pure().gap('surd.m8_3', 'Surd[-8, 3]', { expected: '-2' }).done(),
+    feature('CubeRoot', 'arithmetic')
+        .partial('exact integer cube root via `Power[..., 1/3]` lowering on tested forms')
+        .pure()
+        .eval('cuberoot.m8', 'CubeRoot[-8]', '-2')
+        .done(),
+    feature('Surd', 'arithmetic')
+        .partial('exact integer root via `Power[..., 1/n]` lowering on tested forms')
+        .pure()
+        .eval('surd.m8_3', 'Surd[-8, 3]', '-2')
+        .done(),
     feature('Clip', 'arithmetic')
         .unsupported()
         .pure()

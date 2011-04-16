@@ -156,6 +156,14 @@ fn parse_nearest_exact_integer_list() {
 }
 
 #[test]
+fn parse_cube_root_and_surd_exact() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("CubeRoot[-8]")), "-2");
+    assert_eq!(h.wolfram(h.eval("Surd[-8, 3]")), "-2");
+    assert_eq!(h.wolfram(h.eval("CubeRoot[8]")), "2");
+}
+
+#[test]
 fn parse_sign_exact_integer() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Sign[-3]")), "-1");

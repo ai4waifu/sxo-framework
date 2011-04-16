@@ -247,6 +247,39 @@ fn push_imaginary_unit(session: &mut Session) -> TermId {
     )
 }
 
+fn push_exact_rational_term(session: &mut Session, num: i64, den: i64) -> TermId {
+    use athena::numeric::Number;
+    let rat = Number::rational_i64(num, den).expect("exact rational literal");
+    session.arena.push(
+        TermNode::Atom(Atom::Number(clone_number(&rat))),
+        athena::types::SourceSpan::default(),
+    )
+}
+
+/// `CubeRoot[x]` → `Power[x, 1/3]` on tested exact forms.
+fn lower_cube_root_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 1 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "CubeRoot", arg_ids);
+    }
+    let base = lower_wexpr(session, &args[0]);
+    let exp = push_exact_rational_term(session, 1, 3);
+    push_semantic(session, SemanticOperator::Power, vec![base, exp])
+}
+
+/// `Surd[x, n]` → `Power[x, 1/n]` on tested exact forms.
+fn lower_surd_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 2 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Surd", arg_ids);
+    }
+    let base = lower_wexpr(session, &args[0]);
+    let root = lower_wexpr(session, &args[1]);
+    let one = push_int(session, 1);
+    let exp = push_semantic(session, SemanticOperator::Divide, vec![one, root]);
+    push_semantic(session, SemanticOperator::Power, vec![base, exp])
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -317,6 +350,12 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 }
                 if name == "Inequality" {
                     return lower_inequality_call(session, args);
+                }
+                if name == "CubeRoot" {
+                    return lower_cube_root_call(session, args);
+                }
+                if name == "Surd" {
+                    return lower_surd_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
