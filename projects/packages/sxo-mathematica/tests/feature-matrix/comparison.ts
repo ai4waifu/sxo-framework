@@ -33,6 +33,7 @@ export const comparisonFeatures = [
         .pure()
         .eval('ge.infix', '3 >= 2', 'True')
         .eval('ge.eq', 'GreaterEqual[2, 2]', 'True')
+        .eval('ge.chain', 'GreaterEqual[3, 2, 1]', 'True')
         .eval('ge.inequality', 'Inequality[1, Less, 2, Less, 3]', 'True')
         .done(),
     feature('SameQ', 'comparison')
