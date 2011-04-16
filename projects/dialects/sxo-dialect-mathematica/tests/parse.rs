@@ -172,6 +172,14 @@ fn parse_sign_exact_integer() {
 }
 
 #[test]
+fn parse_floor_exact() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Floor[5]")), "5");
+    assert_eq!(h.wolfram(h.eval("Floor[2.7]")), "2");
+    assert_eq!(h.wolfram(h.eval("Floor[-5/2]")), "-3");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");

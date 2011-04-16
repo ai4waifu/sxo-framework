@@ -40,7 +40,13 @@ export const arithmeticFeatures = [
         .eval('max.2', 'Max[1, 7]', '7')
         .eval('max.3', 'Max[1, 3, 2]', '3')
         .done(),
-    feature('Floor', 'arithmetic').unsupported().pure().gap('floor.2_7', 'Floor[2.7]', { expected: '2' }).done(),
+    feature('Floor', 'arithmetic')
+        .partial('exact `Floor` on tested integers, rationals, and machine reals')
+        .pure()
+        .eval('floor.int', 'Floor[5]', '5')
+        .eval('floor.machine', 'Floor[2.7]', '2')
+        .eval('floor.rational', 'Floor[-5/2]', '-3')
+        .done(),
     feature('ArithCanonical', 'arithmetic')
         .partial('tested identity folds `x+0` / `1*x` / `x^0` / like powers only')
         .pure()
