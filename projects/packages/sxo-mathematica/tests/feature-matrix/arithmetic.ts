@@ -69,7 +69,13 @@ export const arithmeticFeatures = [
         .eval('sign.pos', 'Sign[5]', '1')
         .done(),
     feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
-    feature('Ceiling', 'arithmetic').unsupported().pure().gap('ceiling.2_1', 'Ceiling[2.1]', { expected: '3' }).done(),
+    feature('Ceiling', 'arithmetic')
+        .partial('exact `Ceiling` on tested integers, rationals, and machine reals')
+        .pure()
+        .eval('ceiling.int', 'Ceiling[5]', '5')
+        .eval('ceiling.machine', 'Ceiling[2.1]', '3')
+        .eval('ceiling.rational', 'Ceiling[5/2]', '3')
+        .done(),
     feature('IndeterminateForms', 'arithmetic')
         .partial('tested singular forms fold to `Indeterminate` via Athena domain rules')
         .pure()

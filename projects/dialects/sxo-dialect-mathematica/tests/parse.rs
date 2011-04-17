@@ -180,6 +180,15 @@ fn parse_floor_exact() {
 }
 
 #[test]
+fn parse_ceiling_exact() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Ceiling[5]")), "5");
+    assert_eq!(h.wolfram(h.eval("Ceiling[2.1]")), "3");
+    assert_eq!(h.wolfram(h.eval("Ceiling[5/2]")), "3");
+    assert_eq!(h.wolfram(h.eval("Ceiling[-5/2]")), "-2");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");
