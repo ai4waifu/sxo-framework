@@ -198,6 +198,14 @@ fn parse_round_half_to_even() {
 }
 
 #[test]
+fn parse_clip_interval() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Clip[5, {0, 1}]")), "1");
+    assert_eq!(h.wolfram(h.eval("Clip[-1, {0, 1}]")), "0");
+    assert_eq!(h.wolfram(h.eval("Clip[1/2, {0, 1}]")), "1/2");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");

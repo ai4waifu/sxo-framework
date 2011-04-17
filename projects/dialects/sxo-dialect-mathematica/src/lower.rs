@@ -283,6 +283,27 @@ fn lower_surd_call(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_semantic(session, SemanticOperator::Power, vec![base, exp])
 }
 
+/// `Clip[x, {lo, hi}]` → `Min[Max[x, lo], hi]` on tested exact forms.
+fn lower_clip_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 2 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Clip", arg_ids);
+    }
+    let WolframForm::List(bounds) = &args[1] else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Clip", arg_ids);
+    };
+    if bounds.len() != 2 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Clip", arg_ids);
+    }
+    let x = lower_wexpr(session, &args[0]);
+    let lo = lower_wexpr(session, &bounds[0]);
+    let hi = lower_wexpr(session, &bounds[1]);
+    let clamped_lo = push_semantic(session, SemanticOperator::Max, vec![x, lo]);
+    push_semantic(session, SemanticOperator::Min, vec![clamped_lo, hi])
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -359,6 +380,9 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 }
                 if name == "Surd" {
                     return lower_surd_call(session, args);
+                }
+                if name == "Clip" {
+                    return lower_clip_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
