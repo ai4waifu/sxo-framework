@@ -68,7 +68,13 @@ export const arithmeticFeatures = [
         .eval('sign.zero', 'Sign[0]', '0')
         .eval('sign.pos', 'Sign[5]', '1')
         .done(),
-    feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
+    feature('Round', 'arithmetic')
+        .partial('half-to-even `Round` on tested machine reals and rationals')
+        .pure()
+        .eval('round.half_even', 'Round[2.5]', '2')
+        .eval('round.half_even_pos', 'Round[3.5]', '4')
+        .eval('round.rational', 'Round[5/2]', '2')
+        .done(),
     feature('Ceiling', 'arithmetic')
         .partial('exact `Ceiling` on tested integers, rationals, and machine reals')
         .pure()

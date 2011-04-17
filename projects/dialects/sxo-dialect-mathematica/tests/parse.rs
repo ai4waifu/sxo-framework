@@ -189,6 +189,15 @@ fn parse_ceiling_exact() {
 }
 
 #[test]
+fn parse_round_half_to_even() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Round[2.5]")), "2");
+    assert_eq!(h.wolfram(h.eval("Round[3.5]")), "4");
+    assert_eq!(h.wolfram(h.eval("Round[5/2]")), "2");
+    assert_eq!(h.wolfram(h.eval("Round[-5/2]")), "-2");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");
