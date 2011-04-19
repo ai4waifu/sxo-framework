@@ -122,5 +122,10 @@ export const arithmeticFeatures = [
         .eval('clip.lo', 'Clip[-1, {0, 1}]', '0')
         .eval('clip.mid', 'Clip[1/2, {0, 1}]', '1/2')
         .done(),
-    feature('Rescale', 'arithmetic').unsupported().pure().gap('rescale.mid', 'Rescale[0.5, {0, 1}, {-1, 1}]', { expected: '0' }).done(),
+    feature('Rescale', 'arithmetic')
+        .partial('affine `Rescale` on tested machine and exact intervals')
+        .pure()
+        .eval('rescale.mid', 'Rescale[0.5, {0, 1}, {-1, 1}]', '0')
+        .eval('rescale.exact', 'Rescale[1/2, {0, 1}, {0, 2}]', '1')
+        .done(),
 ];

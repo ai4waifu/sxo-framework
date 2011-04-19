@@ -304,6 +304,43 @@ fn lower_clip_call(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_semantic(session, SemanticOperator::Min, vec![clamped_lo, hi])
 }
 
+fn parse_interval_pair(form: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
+    let WolframForm::List(bounds) = form else {
+        return None;
+    };
+    if bounds.len() != 2 {
+        return None;
+    }
+    Some((&bounds[0], &bounds[1]))
+}
+
+/// `Rescale[x, {xmin, xmax}, {ymin, ymax}]` → affine map on tested exact forms.
+fn lower_rescale_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 3 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Rescale", arg_ids);
+    }
+    let Some((xmin, xmax)) = parse_interval_pair(&args[1]) else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Rescale", arg_ids);
+    };
+    let Some((ymin, ymax)) = parse_interval_pair(&args[2]) else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Rescale", arg_ids);
+    };
+    let x = lower_wexpr(session, &args[0]);
+    let xmin_id = lower_wexpr(session, xmin);
+    let xmax_id = lower_wexpr(session, xmax);
+    let ymin_id = lower_wexpr(session, ymin);
+    let ymax_id = lower_wexpr(session, ymax);
+    let x_shift = push_semantic(session, SemanticOperator::Subtract, vec![x, xmin_id]);
+    let x_span = push_semantic(session, SemanticOperator::Subtract, vec![xmax_id, xmin_id]);
+    let y_span = push_semantic(session, SemanticOperator::Subtract, vec![ymax_id, ymin_id]);
+    let ratio = push_semantic(session, SemanticOperator::Divide, vec![x_shift, x_span]);
+    let scaled = push_semantic(session, SemanticOperator::Multiply, vec![ratio, y_span]);
+    push_semantic(session, SemanticOperator::Add, vec![ymin_id, scaled])
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -383,6 +420,9 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 }
                 if name == "Clip" {
                     return lower_clip_call(session, args);
+                }
+                if name == "Rescale" {
+                    return lower_rescale_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
