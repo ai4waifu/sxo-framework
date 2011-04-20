@@ -213,6 +213,15 @@ fn parse_rescale_affine() {
 }
 
 #[test]
+fn parse_elementary_zero_specials() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ArcSin[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("Sinh[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("Cosh[0]")), "1");
+    assert_eq!(h.wolfram(h.eval("Log[E]")), "1");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");
