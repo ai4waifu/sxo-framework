@@ -10,5 +10,5 @@ export const elementaryFeatures = [
     feature('Sinh', 'elementary').partial('exact `Sinh[0]` fold').pure().eval('sinh.0', 'Sinh[0]', '0').done(),
     feature('Cosh', 'elementary').partial('exact `Cosh[0]` fold').pure().eval('cosh.0', 'Cosh[0]', '1').done(),
     feature('LogE', 'elementary').partial('exact `Log[E]` fold').pure().eval('log.e', 'Log[E]', '1').done(),
-    feature('ArcTan', 'elementary').unsupported().pure().gap('arctan.1', 'ArcTan[1]', { expected: 'Pi/4' }).done(),
+    feature('ArcTan', 'elementary').partial('exact `ArcTan[1]` fold to `Pi/4`').pure().eval('arctan.1', 'ArcTan[1]', 'Pi/4').done(),
 ];

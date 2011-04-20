@@ -17,8 +17,8 @@ export const algebraFeatures = [
         })
         .done(),
     feature('Variables', 'algebra').unsupported().pure().gap('variables.xyz', 'Variables[x*y + z]', { expected: '{x, y, z}' }).done(),
-    feature('Numerator', 'algebra').unsupported().pure().gap('numerator.half', 'Numerator[1/2]', { expected: '1' }).done(),
-    feature('Denominator', 'algebra').unsupported().pure().gap('denominator.34', 'Denominator[3/4]', { expected: '4' }).done(),
+    feature('Numerator', 'algebra').partial('exact `Numerator` on tested rationals and integers').pure().eval('numerator.half', 'Numerator[1/2]', '1').eval('numerator.int', 'Numerator[5]', '5').done(),
+    feature('Denominator', 'algebra').partial('exact `Denominator` on tested rationals and integers').pure().eval('denominator.34', 'Denominator[3/4]', '4').eval('denominator.int', 'Denominator[5]', '1').done(),
     feature('Together', 'algebra').unsupported().pure().gap('together.xy', 'Together[1/x + 1/y]', { expected: '(x + y)/(x*y)' }).done(),
     feature('Apart', 'algebra').unsupported().pure().gap('apart.partial', 'Apart[1/(x*(x + 1))]', { expected: '1/x - 1/(1 + x)' }).done(),
     feature('Coefficient', 'algebra').unsupported().pure().gap('coefficient.x', 'Coefficient[x^2 + 3*x, x]', { expected: '3' }).done(),

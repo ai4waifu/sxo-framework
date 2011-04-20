@@ -143,6 +143,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Floor" => SemanticOperator::Floor,
         "Ceiling" => SemanticOperator::Ceiling,
         "Round" => SemanticOperator::Round,
+        "Numerator" => SemanticOperator::Numerator,
+        "Denominator" => SemanticOperator::Denominator,
         "Gamma" => SemanticOperator::from_unary(UnaryFunction::Gamma),
         "Erf" => SemanticOperator::from_unary(UnaryFunction::Erf),
         "UnitStep" | "HeavisideTheta" => SemanticOperator::UnitStep,

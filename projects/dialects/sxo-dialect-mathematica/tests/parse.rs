@@ -222,6 +222,21 @@ fn parse_elementary_zero_specials() {
 }
 
 #[test]
+fn parse_arctan_one_is_pi_over_four() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ArcTan[1]")), "Pi/4");
+}
+
+#[test]
+fn parse_numerator_denominator_exact() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
+    assert_eq!(h.wolfram(h.eval("Denominator[3/4]")), "4");
+    assert_eq!(h.wolfram(h.eval("Numerator[5]")), "5");
+    assert_eq!(h.wolfram(h.eval("Denominator[5]")), "1");
+}
+
+#[test]
 fn parse_sameq_unsameq_and_compare_chain() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("SameQ[1, 1]")), "True");
