@@ -228,6 +228,12 @@ fn parse_arctan_one_is_pi_over_four() {
 }
 
 #[test]
+fn parse_arccos_zero_is_pi_over_two() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ArcCos[0]")), "Pi/2");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
