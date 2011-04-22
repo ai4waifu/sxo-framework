@@ -59,7 +59,11 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
         "Plus" if args.len() >= 2 => Some(args.iter().map(|a| maybe_paren(a, Prec::Add)).collect::<Vec<_>>().join(" + ")),
         "Times" if args.len() >= 2 => {
             if args.len() == 2 && args[0].is_neg_one() {
-                return Some(format!("-{}", maybe_paren(&args[1], Prec::Unary)));
+                let inner = match args[1].head_name() {
+                    Some("Divide") | Some("Power") | Some("Times") => render(&args[1]),
+                    _ => maybe_paren(&args[1], Prec::Unary),
+                };
+                return Some(format!("-{inner}"));
             }
             Some(args.iter().map(|a| maybe_paren(a, Prec::Mul)).collect::<Vec<_>>().join("*"))
         }

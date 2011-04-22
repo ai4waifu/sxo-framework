@@ -234,6 +234,16 @@ fn parse_arccos_zero_is_pi_over_two() {
 }
 
 #[test]
+fn parse_inverse_trig_boundary_specials() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ArcTan[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("ArcSin[1]")), "Pi/2");
+    assert_eq!(h.wolfram(h.eval("ArcSin[-1]")), "-Pi/2");
+    assert_eq!(h.wolfram(h.eval("ArcCos[1]")), "0");
+    assert_eq!(h.wolfram(h.eval("ArcCos[-1]")), "Pi");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
