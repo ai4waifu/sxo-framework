@@ -217,6 +217,7 @@ fn parse_elementary_zero_specials() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("ArcSin[0]")), "0");
     assert_eq!(h.wolfram(h.eval("Sinh[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("Tanh[0]")), "0");
     assert_eq!(h.wolfram(h.eval("Cosh[0]")), "1");
     assert_eq!(h.wolfram(h.eval("Log[E]")), "1");
 }

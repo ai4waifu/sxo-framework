@@ -14,6 +14,7 @@ export const elementaryFeatures = [
         .eval('arcsin.neg1', 'ArcSin[-1]', '-Pi/2')
         .done(),
     feature('Sinh', 'elementary').partial('exact `Sinh[0]` fold').pure().eval('sinh.0', 'Sinh[0]', '0').done(),
+    feature('Tanh', 'elementary').partial('exact `Tanh[0]` fold').pure().eval('tanh.0', 'Tanh[0]', '0').done(),
     feature('Cosh', 'elementary').partial('exact `Cosh[0]` fold').pure().eval('cosh.0', 'Cosh[0]', '1').done(),
     feature('LogE', 'elementary').partial('exact `Log[E]` fold').pure().eval('log.e', 'Log[E]', '1').done(),
     feature('ArcCos', 'elementary')
