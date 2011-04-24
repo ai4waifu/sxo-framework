@@ -28,10 +28,10 @@ export const specialFeatures = [
     feature('GammaHalf', 'special').partial('exact `Gamma[1/2]` fold to `Sqrt[Pi]`').pure().eval('gamma.half', 'Gamma[1/2]', 'Sqrt[Pi]').done(),
     feature('ZetaZero', 'special').unsupported().pure().gap('zeta.0', 'Zeta[0]', { expected: '-1/2' }).done(),
     feature('Sinc', 'special')
-        .unsupported()
+        .partial('exact `Sinc[0]` and `Sinc[Pi]` via kernel fold')
         .pure()
-        .gap('sinc.0', 'Sinc[0]', { expected: '1' })
-        .gap('sinc.pi', 'Sinc[Pi]', { expected: '0' })
+        .eval('sinc.0', 'Sinc[0]', '1')
+        .eval('sinc.pi', 'Sinc[Pi]', '0')
         .done(),
     feature('FresnelC', 'special').unsupported().pure().gap('fresnelc.inf', 'FresnelC[Infinity]', { expected: '1/2' }).done(),
     feature('InverseErf', 'special').unsupported().pure().gap('inverseerf.0', 'InverseErf[0]', { expected: '0' }).done(),

@@ -118,5 +118,9 @@ export const linearAlgebraFeatures = [
         .pure()
         .gap('matrixexp.rot', 'MatrixExp[{{0, 1}, {-1, 0}}]', { expected: '...' })
         .done(),
-    feature('Normalize', 'linear_algebra').unsupported().pure().gap('normalize.34', 'Normalize[{3, 4}]', { expected: '{3/5, 4/5}' }).done(),
+    feature('Normalize', 'linear_algebra')
+        .partial('exact integer vector `Normalize[{3, 4}]` via lowering')
+        .pure()
+        .eval('normalize.34', 'Normalize[{3, 4}]', '{3/5, 4/5}')
+        .done(),
 ];

@@ -264,6 +264,19 @@ fn parse_gamma_erf_unitstep_specials() {
 }
 
 #[test]
+fn parse_sinc_specials() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Sinc[0]")), "1");
+    assert_eq!(h.wolfram(h.eval("Sinc[Pi]")), "0");
+}
+
+#[test]
+fn parse_normalize_integer_vector() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Normalize[{3, 4}]")), "{3/5, 4/5}");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");

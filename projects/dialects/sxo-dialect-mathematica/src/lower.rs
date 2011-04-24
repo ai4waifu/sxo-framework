@@ -148,6 +148,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Gamma" => SemanticOperator::from_unary(UnaryFunction::Gamma),
         "Erf" => SemanticOperator::from_unary(UnaryFunction::Erf),
         "UnitStep" | "HeavisideTheta" => SemanticOperator::UnitStep,
+        "Sinc" => SemanticOperator::Sinc,
         "Element" => SemanticOperator::MemberOf,
         "KroneckerDelta" => SemanticOperator::KroneckerDelta,
         "DiscreteDelta" => SemanticOperator::DiscreteDelta,
@@ -343,6 +344,73 @@ fn lower_rescale_call(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_semantic(session, SemanticOperator::Add, vec![ymin_id, scaled])
 }
 
+fn perfect_square_root(n: i64) -> Option<i64> {
+    if n < 0 {
+        return None;
+    }
+    let mut root = 0i64;
+    while root.saturating_mul(root) <= n {
+        if root * root == n {
+            return Some(root);
+        }
+        root += 1;
+    }
+    None
+}
+
+/// `Normalize[{…}]` → component-wise exact rationals when norm is a perfect square.
+fn lower_normalize_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 1 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Normalize", arg_ids);
+    }
+    let WolframForm::List(items) = &args[0] else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Normalize", arg_ids);
+    };
+    if items.is_empty() {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Normalize", arg_ids);
+    }
+    let mut ints = Vec::with_capacity(items.len());
+    let mut sum_sq = 0i64;
+    for item in items {
+        let n = match exact_i64(item) {
+            Some(v) => v,
+            None => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                return push_surface_call(session, "Normalize", arg_ids);
+            }
+        };
+        sum_sq = match sum_sq.checked_add(n.checked_mul(n).unwrap_or(i64::MAX)) {
+            Some(v) => v,
+            None => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                return push_surface_call(session, "Normalize", arg_ids);
+            }
+        };
+        ints.push(n);
+    }
+    let root = match perfect_square_root(sum_sq) {
+        Some(v) => v,
+        None => {
+            let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+            return push_surface_call(session, "Normalize", arg_ids);
+        }
+    };
+    if root == 0 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Normalize", arg_ids);
+    }
+    let root_id = push_int(session, root);
+    let mut normalized = Vec::with_capacity(ints.len());
+    for n in ints {
+        let num = push_int(session, n);
+        normalized.push(push_semantic(session, SemanticOperator::Divide, vec![num, root_id]));
+    }
+    push_list(session, normalized)
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -425,6 +493,9 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 }
                 if name == "Rescale" {
                     return lower_rescale_call(session, args);
+                }
+                if name == "Normalize" {
+                    return lower_normalize_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)
