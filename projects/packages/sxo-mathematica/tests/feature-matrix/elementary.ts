@@ -1,9 +1,24 @@
 import { feature } from '@sxo/harness';
 
 export const elementaryFeatures = [
-    feature('Sin', 'elementary').partial('exact `Sin` on tested integer arguments only').pure().eval('sin.0', 'Sin[0]', '0').done(),
-    feature('Cos', 'elementary').partial('exact `Cos` on tested integer arguments only').pure().eval('cos.0', 'Cos[0]', '1').done(),
-    feature('Tan', 'elementary').partial('exact `Tan` on tested integer arguments only').pure().eval('tan.0', 'Tan[0]', '0').done(),
+    feature('Sin', 'elementary')
+        .partial('exact `Sin` on tested integer and Pi arguments')
+        .pure()
+        .eval('sin.0', 'Sin[0]', '0')
+        .eval('sin.pi', 'Sin[Pi]', '0')
+        .done(),
+    feature('Cos', 'elementary')
+        .partial('exact `Cos` on tested integer and Pi arguments')
+        .pure()
+        .eval('cos.0', 'Cos[0]', '1')
+        .eval('cos.pi', 'Cos[Pi]', '-1')
+        .done(),
+    feature('Tan', 'elementary')
+        .partial('exact `Tan` on tested integer and Pi arguments')
+        .pure()
+        .eval('tan.0', 'Tan[0]', '0')
+        .eval('tan.pi', 'Tan[Pi]', '0')
+        .done(),
     feature('Exp', 'elementary').partial('exact `Exp` on tested integer arguments only').pure().eval('exp.0', 'Exp[0]', '1').done(),
     feature('Log', 'elementary').partial('exact `Log` on tested integer arguments only').pure().eval('log.1', 'Log[1]', '0').done(),
     feature('ArcSin', 'elementary')

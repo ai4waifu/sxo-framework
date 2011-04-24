@@ -245,6 +245,25 @@ fn parse_inverse_trig_boundary_specials() {
 }
 
 #[test]
+fn parse_trig_pi_specials() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Sin[Pi]")), "0");
+    assert_eq!(h.wolfram(h.eval("Cos[Pi]")), "-1");
+    assert_eq!(h.wolfram(h.eval("Tan[Pi]")), "0");
+}
+
+#[test]
+fn parse_gamma_erf_unitstep_specials() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Gamma[1]")), "1");
+    assert_eq!(h.wolfram(h.eval("Gamma[5]")), "24");
+    assert_eq!(h.wolfram(h.eval("Gamma[1/2]")), "Sqrt[Pi]");
+    assert_eq!(h.wolfram(h.eval("Erf[0]")), "0");
+    assert_eq!(h.wolfram(h.eval("UnitStep[1]")), "1");
+    assert_eq!(h.wolfram(h.eval("HeavisideTheta[1]")), "1");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
