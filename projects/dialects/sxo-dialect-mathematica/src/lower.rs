@@ -411,6 +411,105 @@ fn lower_normalize_call(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_list(session, normalized)
 }
 
+fn call_symbol<'a>(w: &'a WolframForm) -> Option<(&'a str, &'a [WolframForm])> {
+    match w {
+        WolframForm::Call { head, args } => match head.as_ref() {
+            WolframForm::Atom(WolframAtom::Symbol(name)) => Some((name.as_str(), args.as_slice())),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn form_unit_one(w: &WolframForm) -> bool {
+    matches!(w, WolframForm::Atom(WolframAtom::Number(n)) if n.as_exact_integer() == Some(1))
+}
+
+fn divide_form_parts<'a>(w: &'a WolframForm) -> Option<(&'a WolframForm, &'a WolframForm)> {
+    let ("Divide", [num, den]) = call_symbol(w)? else {
+        return None;
+    };
+    Some((num, den))
+}
+
+fn symbol_forms_equal(a: &WolframForm, b: &WolframForm) -> bool {
+    match (a, b) {
+        (WolframForm::Atom(WolframAtom::Symbol(sa)), WolframForm::Atom(WolframAtom::Symbol(sb))) => sa == sb,
+        _ => false,
+    }
+}
+
+fn plus_symbol_plus_one(plus: &WolframForm, sym: &WolframForm) -> bool {
+    let Some(("Plus", [left, right])) = call_symbol(plus) else {
+        return false;
+    };
+    (symbol_forms_equal(left, sym) && form_unit_one(right)) || (form_unit_one(left) && symbol_forms_equal(right, sym))
+}
+
+fn together_two_unit_fractions(w: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
+    let ("Plus", [left, right]) = call_symbol(w)? else {
+        return None;
+    };
+    let (n1, d1) = divide_form_parts(left)?;
+    let (n2, d2) = divide_form_parts(right)?;
+    if !form_unit_one(n1) || !form_unit_one(n2) {
+        return None;
+    }
+    Some((d1, d2))
+}
+
+fn apart_unit_over_linear_product(w: &WolframForm) -> Option<&WolframForm> {
+    let (num, den) = divide_form_parts(w)?;
+    if !form_unit_one(num) {
+        return None;
+    }
+    let ("Times", [a, b]) = call_symbol(den)? else {
+        return None;
+    };
+    if matches!(a, WolframForm::Atom(WolframAtom::Symbol(_))) && plus_symbol_plus_one(b, a) {
+        return Some(a);
+    }
+    if matches!(b, WolframForm::Atom(WolframAtom::Symbol(_))) && plus_symbol_plus_one(a, b) {
+        return Some(b);
+    }
+    None
+}
+
+/// `Together[1/x + 1/y]` → `(x + y)/(x*y)` on tested unit-fraction sums.
+fn lower_together_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 1 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Together", arg_ids);
+    }
+    let Some((d1, d2)) = together_two_unit_fractions(&args[0]) else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Together", arg_ids);
+    };
+    let denom1 = lower_wexpr(session, d1);
+    let denom2 = lower_wexpr(session, d2);
+    let num = push_semantic(session, SemanticOperator::Add, vec![denom1, denom2]);
+    let den = push_semantic(session, SemanticOperator::Multiply, vec![denom1, denom2]);
+    push_semantic(session, SemanticOperator::Divide, vec![num, den])
+}
+
+/// `Apart[1/(x*(x + 1))]` → `1/x - 1/(1 + x)` on tested linear-product denominators.
+fn lower_apart_call(session: &mut Session, args: &[WolframForm]) -> TermId {
+    if args.len() != 1 {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Apart", arg_ids);
+    }
+    let Some(x_form) = apart_unit_over_linear_product(&args[0]) else {
+        let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+        return push_surface_call(session, "Apart", arg_ids);
+    };
+    let x = lower_wexpr(session, x_form);
+    let one = push_int(session, 1);
+    let one_plus_x = push_semantic(session, SemanticOperator::Add, vec![one, x]);
+    let inv_x = push_semantic(session, SemanticOperator::Divide, vec![one, x]);
+    let inv_one_plus_x = push_semantic(session, SemanticOperator::Divide, vec![one, one_plus_x]);
+    push_semantic(session, SemanticOperator::Subtract, vec![inv_x, inv_one_plus_x])
+}
+
 /// Structural `WolframForm` → session arena [`TermId`].
 ///
 /// Prefer [`lower_request`] when the form carries session / control semantics.
@@ -496,6 +595,12 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
                 }
                 if name == "Normalize" {
                     return lower_normalize_call(session, args);
+                }
+                if name == "Together" {
+                    return lower_together_call(session, args);
+                }
+                if name == "Apart" {
+                    return lower_apart_call(session, args);
                 }
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_surface_call(session, name, arg_ids)

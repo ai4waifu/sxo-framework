@@ -277,6 +277,18 @@ fn parse_normalize_integer_vector() {
 }
 
 #[test]
+fn parse_together_unit_fraction_sum() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Together[1/x + 1/y]")), "(x + y)/(x*y)");
+}
+
+#[test]
+fn parse_apart_linear_product() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Apart[1/(x*(x + 1))]")), "1/x - 1/(1 + x)");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
