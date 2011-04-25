@@ -149,6 +149,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Erf" => SemanticOperator::from_unary(UnaryFunction::Erf),
         "UnitStep" | "HeavisideTheta" => SemanticOperator::UnitStep,
         "Sinc" => SemanticOperator::Sinc,
+        "Variables" => SemanticOperator::Variables,
         "Element" => SemanticOperator::MemberOf,
         "KroneckerDelta" => SemanticOperator::KroneckerDelta,
         "DiscreteDelta" => SemanticOperator::DiscreteDelta,

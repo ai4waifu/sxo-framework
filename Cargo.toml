@@ -37,8 +37,8 @@ oak-core = { git = "https://github.com/ygg-lang/oaks.git", rev = "ac97f16c894b9e
 oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
 oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
 # Pinned for reproducible CI/release. Local path overlay is gitignored `.cargo/config.local.toml`.
-athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "09251b4971aad09f0072ed47879e2cca330d3c21", package = "athena" }
-athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "09251b4971aad09f0072ed47879e2cca330d3c21", package = "athena-types" }
+athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "ff46deb25222816946e21f4ae97318ce3f8a4e4e", package = "athena" }
+athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "ff46deb25222816946e21f4ae97318ce3f8a4e4e", package = "athena-types" }
 apollo = { git = "https://github.com/ai4waifu/apollo.rs.git", rev = "6af6f73ae6289d69d076004d34b432eef052e1c0", package = "apollo", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }

@@ -289,6 +289,12 @@ fn parse_apart_linear_product() {
 }
 
 #[test]
+fn parse_variables_symbol_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Variables[x*y + z]")), "{x, y, z}");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
