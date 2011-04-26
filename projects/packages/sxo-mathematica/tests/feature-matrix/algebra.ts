@@ -33,8 +33,16 @@ export const algebraFeatures = [
         .pure()
         .eval('apart.partial', 'Apart[1/(x*(x + 1))]', '1/x - 1/(1 + x)')
         .done(),
-    feature('Coefficient', 'algebra').unsupported().pure().gap('coefficient.x', 'Coefficient[x^2 + 3*x, x]', { expected: '3' }).done(),
-    feature('Exponent', 'algebra').unsupported().pure().gap('exponent.x3', 'Exponent[x^3 + x, x]', { expected: '3' }).done(),
+    feature('Coefficient', 'algebra')
+        .partial('exact `Coefficient[x^2 + 3*x, x]` via summand walk')
+        .pure()
+        .eval('coefficient.x', 'Coefficient[x^2 + 3*x, x]', '3')
+        .done(),
+    feature('Exponent', 'algebra')
+        .partial('exact `Exponent[x^3 + x, x]` via max power walk')
+        .pure()
+        .eval('exponent.x3', 'Exponent[x^3 + x, x]', '3')
+        .done(),
     feature('PolynomialGCD', 'algebra')
         .unsupported()
         .pure()

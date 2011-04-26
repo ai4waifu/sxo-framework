@@ -150,6 +150,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "UnitStep" | "HeavisideTheta" => SemanticOperator::UnitStep,
         "Sinc" => SemanticOperator::Sinc,
         "Variables" => SemanticOperator::Variables,
+        "Coefficient" => SemanticOperator::Coefficient,
+        "Exponent" => SemanticOperator::Exponent,
         "Element" => SemanticOperator::MemberOf,
         "KroneckerDelta" => SemanticOperator::KroneckerDelta,
         "DiscreteDelta" => SemanticOperator::DiscreteDelta,

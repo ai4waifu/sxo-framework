@@ -295,6 +295,13 @@ fn parse_variables_symbol_list() {
 }
 
 #[test]
+fn parse_coefficient_and_exponent_univariate() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Coefficient[x^2 + 3*x, x]")), "3");
+    assert_eq!(h.wolfram(h.eval("Exponent[x^3 + x, x]")), "3");
+}
+
+#[test]
 fn parse_numerator_denominator_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Numerator[1/2]")), "1");
