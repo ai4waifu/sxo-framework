@@ -9,12 +9,9 @@ export const algebraFeatures = [
         .gap('collect.xy', 'Collect[x^2 + 2*x*y + y^2, x]', { expected: 'x^2 + 2*x*y + y^2' })
         .done(),
     feature('Cancel', 'algebra')
-        .unsupported('Args evaluate then residual `Cancel[…]` echo; no Cancel kernel cancelation yet')
+        .partial('exact `Cancel[(x^2 - 1)/(x - 1)]` via rational cancel kernel')
         .pure()
-        .gap('cancel.x2m1', 'Cancel[(x^2 - 1)/(x - 1)]', {
-            expected: '1 + x',
-            notes: 'contract: not Hold — args evaluate first; kernel must later cancel to `1 + x`',
-        })
+        .eval('cancel.x2m1', 'Cancel[(x^2 - 1)/(x - 1)]', '1 + x')
         .done(),
     feature('Variables', 'algebra')
         .partial('exact `Variables[x*y + z]` via symbol walk')

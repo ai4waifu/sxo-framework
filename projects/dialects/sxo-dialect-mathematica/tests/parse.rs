@@ -1508,13 +1508,8 @@ fn parallel_evaluate_and_input_form_capture_args() {
 #[test]
 fn cancel_evaluates_args_then_residuals() {
     let h = H::new();
-    // Cancel is not Hold: args evaluate before residual echo (no Cancel kernel yet).
     assert_eq!(h.wolfram(h.eval("Cancel[1 + 1]")), "Cancel[2]");
-    let got = h.wolfram(h.eval("Cancel[(x^2 - 1)/(x - 1)]"));
-    assert!(got.starts_with("Cancel["), "got {got}");
-    // Must not claim algebraic cancelation (`1 + x`) without a Cancel kernel.
-    assert_ne!(got, "1 + x");
-    assert_ne!(got, "Cancel[1 + x]");
+    assert_eq!(h.wolfram(h.eval("Cancel[(x^2 - 1)/(x - 1)]")), "1 + x");
 }
 
 #[test]
