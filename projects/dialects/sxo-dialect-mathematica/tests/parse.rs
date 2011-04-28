@@ -1513,6 +1513,13 @@ fn cancel_evaluates_args_then_residuals() {
 }
 
 #[test]
+fn parse_expand_and_factor_binomial() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Expand[(x + 1)^2]")), "1 + 2*x + x^2");
+    assert_eq!(h.wolfram(h.eval("Factor[x^2 - 1]")), "(-1 + x)*(1 + x)");
+}
+
+#[test]
 fn derivative_prime_sugar_forms() {
     let y_prime = parse_mathematica("y'").unwrap();
     assert_eq!(render(&y_prime), "y'");
