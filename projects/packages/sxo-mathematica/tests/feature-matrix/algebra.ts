@@ -53,11 +53,19 @@ export const algebraFeatures = [
         .pure()
         .eval('polygcd.basic', 'PolynomialGCD[x^2 - 1, x - 1]', '-1 + x')
         .done(),
-    feature('Discriminant', 'algebra').unsupported().pure().gap('discriminant.quad', 'Discriminant[x^2 + x + 1, x]', { expected: '-3' }).done(),
-    feature('Resultant', 'algebra').unsupported().pure().gap('resultant.basic', 'Resultant[x^2 - 1, x - 1, x]', { expected: '0' }).done(),
-    feature('PolynomialRemainder', 'algebra')
-        .unsupported()
+    feature('Discriminant', 'algebra')
+        .partial('exact `Discriminant[x^2 + x + 1, x]` via quadratic formula kernel')
         .pure()
-        .gap('polyrem.basic', 'PolynomialRemainder[x^3 + 1, x + 1, x]', { expected: '0' })
+        .eval('discriminant.quad', 'Discriminant[x^2 + x + 1, x]', '-3')
+        .done(),
+    feature('Resultant', 'algebra')
+        .partial('exact `Resultant[x^2 - 1, x - 1, x]` when polynomials share linear factor')
+        .pure()
+        .eval('resultant.basic', 'Resultant[x^2 - 1, x - 1, x]', '0')
+        .done(),
+    feature('PolynomialRemainder', 'algebra')
+        .partial('exact `PolynomialRemainder[x^3 + 1, x + 1, x]` via cubic dividend kernel')
+        .pure()
+        .eval('polyrem.basic', 'PolynomialRemainder[x^3 + 1, x + 1, x]', '0')
         .done(),
 ];

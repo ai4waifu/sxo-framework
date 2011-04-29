@@ -1527,6 +1527,14 @@ fn parse_collect_and_polynomial_gcd() {
 }
 
 #[test]
+fn parse_discriminant_resultant_and_polynomial_remainder() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Discriminant[x^2 + x + 1, x]")), "-3");
+    assert_eq!(h.wolfram(h.eval("Resultant[x^2 - 1, x - 1, x]")), "0");
+    assert_eq!(h.wolfram(h.eval("PolynomialRemainder[x^3 + 1, x + 1, x]")), "0");
+}
+
+#[test]
 fn derivative_prime_sugar_forms() {
     let y_prime = parse_mathematica("y'").unwrap();
     assert_eq!(render(&y_prime), "y'");
