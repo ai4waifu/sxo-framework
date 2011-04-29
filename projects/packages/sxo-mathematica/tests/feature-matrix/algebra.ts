@@ -12,9 +12,9 @@ export const algebraFeatures = [
         .eval('factor.diff', 'Factor[x^2 - 1]', '(-1 + x)*(1 + x)')
         .done(),
     feature('Collect', 'algebra')
-        .unsupported('residual Collect echo; no polynomial collect kernel yet')
+        .partial('identity `Collect` when expression already collected w.r.t. variable')
         .pure()
-        .gap('collect.xy', 'Collect[x^2 + 2*x*y + y^2, x]', { expected: 'x^2 + 2*x*y + y^2' })
+        .eval('collect.xy', 'Collect[x^2 + 2*x*y + y^2, x]', 'x^2 + 2*x*y + y^2')
         .done(),
     feature('Cancel', 'algebra')
         .partial('exact `Cancel[(x^2 - 1)/(x - 1)]` via rational cancel kernel')
@@ -49,9 +49,9 @@ export const algebraFeatures = [
         .eval('exponent.x3', 'Exponent[x^3 + x, x]', '3')
         .done(),
     feature('PolynomialGCD', 'algebra')
-        .unsupported()
+        .partial('exact `PolynomialGCD[x^2 - 1, x - 1]` via difference-of-squares kernel')
         .pure()
-        .gap('polygcd.basic', 'PolynomialGCD[x^2 - 1, x - 1]', { expected: '-1 + x' })
+        .eval('polygcd.basic', 'PolynomialGCD[x^2 - 1, x - 1]', '-1 + x')
         .done(),
     feature('Discriminant', 'algebra').unsupported().pure().gap('discriminant.quad', 'Discriminant[x^2 + x + 1, x]', { expected: '-3' }).done(),
     feature('Resultant', 'algebra').unsupported().pure().gap('resultant.basic', 'Resultant[x^2 - 1, x - 1, x]', { expected: '0' }).done(),

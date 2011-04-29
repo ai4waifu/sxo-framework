@@ -1520,6 +1520,13 @@ fn parse_expand_and_factor_binomial() {
 }
 
 #[test]
+fn parse_collect_and_polynomial_gcd() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Collect[x^2 + 2*x*y + y^2, x]")), "x^2 + 2*x*y + y^2");
+    assert_eq!(h.wolfram(h.eval("PolynomialGCD[x^2 - 1, x - 1]")), "-1 + x");
+}
+
+#[test]
 fn derivative_prime_sugar_forms() {
     let y_prime = parse_mathematica("y'").unwrap();
     assert_eq!(render(&y_prime), "y'");

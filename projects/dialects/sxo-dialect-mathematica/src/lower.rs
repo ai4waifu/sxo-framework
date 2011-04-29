@@ -154,6 +154,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Exponent" => SemanticOperator::Exponent,
         "Expand" => SemanticOperator::Expand,
         "Factor" => SemanticOperator::Factor,
+        "Collect" => SemanticOperator::Collect,
+        "PolynomialGCD" => SemanticOperator::PolynomialGCD,
         "Element" => SemanticOperator::MemberOf,
         "KroneckerDelta" => SemanticOperator::KroneckerDelta,
         "DiscreteDelta" => SemanticOperator::DiscreteDelta,
