@@ -66,9 +66,9 @@ export const linearAlgebraFeatures = [
         .eval('matrixrank.rank1', 'MatrixRank[{{1, 2}, {2, 4}}]', '1')
         .done(),
     feature('Eigenvalues', 'linear_algebra')
-        .unsupported()
+        .partial('exact `Eigenvalues` on diagonal integer matrices only')
         .pure()
-        .gap('eigenvalues.diag', 'Eigenvalues[{{1, 0}, {0, 2}}]', { expected: '{2, 1}' })
+        .eval('eigenvalues.diag', 'Eigenvalues[{{1, 0}, {0, 2}}]', '{2, 1}')
         .done(),
     feature('DiagonalMatrix', 'linear_algebra')
         .partial('vector diagonal constructor with exact complex entries OK')
@@ -88,9 +88,9 @@ export const linearAlgebraFeatures = [
         .eval('cross.ijk', 'Cross[{1, 0, 0}, {0, 1, 0}]', '{0, 0, 1}')
         .done(),
     feature('Eigenvectors', 'linear_algebra')
-        .unsupported()
+        .partial('exact `Eigenvectors` on diagonal integer matrices only')
         .pure()
-        .gap('eigenvectors.diag', 'Eigenvectors[{{1, 0}, {0, 2}}]', { expected: '{{0, 1}, {1, 0}}' })
+        .eval('eigenvectors.diag', 'Eigenvectors[{{1, 0}, {0, 2}}]', '{{0, 1}, {1, 0}}')
         .done(),
     feature('NullSpace', 'linear_algebra')
         .partial('typed numeric nested List null space row basis only')
