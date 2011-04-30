@@ -118,6 +118,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
         "Total" => SemanticOperator::Sum,
+        "Mean" => SemanticOperator::Mean,
         "Product" => SemanticOperator::Product,
         "Determinant" | "Det" => SemanticOperator::Determinant,
         "IdentityMatrix" => SemanticOperator::Eye,

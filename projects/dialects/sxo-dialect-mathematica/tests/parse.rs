@@ -1534,6 +1534,12 @@ fn parse_collect_and_polynomial_gcd() {
 }
 
 #[test]
+fn parse_mean_integer_list() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Mean[{1, 2, 3}]")), "2");
+}
+
+#[test]
 fn parse_discriminant_resultant_and_polynomial_remainder() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Discriminant[x^2 + x + 1, x]")), "-3");
