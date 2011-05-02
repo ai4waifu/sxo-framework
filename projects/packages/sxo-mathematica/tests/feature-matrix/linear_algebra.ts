@@ -109,9 +109,14 @@ export const linearAlgebraFeatures = [
         .eval('upper.complex', 'UpperTriangularize[{{1 + I, 2}, {3, 4 - I}}]', '{{1 + I, 2}, {0, 4 - I}}')
         .done(),
     feature('KroneckerProduct', 'linear_algebra')
-        .partial('typed numeric vector Kronecker only. Matrix blocks stay open')
+        .partial('typed numeric Kronecker on vectors and matrix blocks via `LinearAlgebraRequest::Kronecker`')
         .pure()
         .eval('kron.vecs', 'KroneckerProduct[{1, 2}, {3, 4}]', '{3, 4, 6, 8}')
+        .eval(
+            'kron.2x2',
+            'KroneckerProduct[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}]',
+            '{{5, 6, 10, 12}, {7, 8, 14, 16}, {15, 18, 20, 24}, {21, 24, 28, 32}}',
+        )
         .done(),
     feature('MatrixExp', 'linear_algebra')
         .unsupported()

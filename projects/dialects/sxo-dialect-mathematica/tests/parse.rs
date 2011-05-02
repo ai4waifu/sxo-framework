@@ -971,6 +971,10 @@ fn tril_triu_and_kronecker_product() {
     assert_eq!(h.wolfram(h.eval("LowerTriangularize[{{1, 2}, {3, 4}}]")), "{{1, 0}, {3, 4}}");
     assert_eq!(h.wolfram(h.eval("UpperTriangularize[{{1, 2}, {3, 4}}]")), "{{1, 2}, {0, 4}}");
     assert_eq!(h.wolfram(h.eval("KroneckerProduct[{1, 2}, {3, 4}]")), "{3, 4, 6, 8}");
+    assert_eq!(
+        h.wolfram(h.eval("KroneckerProduct[{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}]")),
+        "{{5, 6, 10, 12}, {7, 8, 14, 16}, {15, 18, 20, 24}, {21, 24, 28, 32}}"
+    );
 }
 
 #[test]

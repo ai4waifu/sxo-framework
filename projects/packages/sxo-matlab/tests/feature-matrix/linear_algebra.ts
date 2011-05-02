@@ -54,9 +54,14 @@ export const linearAlgebraFeatures = [
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('kron', 'linear_algebra')
-        .partial('typed numeric vector Kronecker only. Matrix blocks stay open')
+        .partial('typed numeric Kronecker on vectors and matrix blocks via `LinearAlgebraRequest::Kronecker`')
         .pure()
         .eval('kron.basic', 'kron([1, 2], [3, 4])', '[3, 4, 6, 8]')
+        .eval(
+            'kron.2x2',
+            'kron([1, 2; 3, 4], [5, 6; 7, 8])',
+            '[5, 6, 10, 12; 7, 8, 14, 16; 15, 18, 20, 24; 21, 24, 28, 32]',
+        )
         .done(),
     feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),

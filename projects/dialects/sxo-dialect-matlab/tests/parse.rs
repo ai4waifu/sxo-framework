@@ -338,6 +338,10 @@ fn tril_triu_and_kron_literal_goals() {
     assert_eq!(h.render(h.eval("tril([1, 2; 3, 4])")), "[1, 0; 3, 4]");
     assert_eq!(h.render(h.eval("triu([1, 2; 3, 4])")), "[1, 2; 0, 4]");
     assert_eq!(h.render(h.eval("kron([1, 2], [3, 4])")), "[3, 4, 6, 8]");
+    assert_eq!(
+        h.render(h.eval("kron([1, 2; 3, 4], [5, 6; 7, 8])")),
+        "[5, 6, 10, 12; 7, 8, 14, 16; 15, 18, 20, 24; 21, 24, 28, 32]"
+    );
 }
 
 #[test]
