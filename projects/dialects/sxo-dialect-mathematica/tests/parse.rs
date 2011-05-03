@@ -888,6 +888,7 @@ fn eigenvalues_and_eigenvectors_diagonal() {
     assert_eq!(h.wolfram(h.eval("Eigenvalues[{{1, 0}, {0, 2}}]")), "{2, 1}");
     assert_eq!(h.wolfram(h.eval("Eigenvalues[{{1, 2}, {2, 1}}]")), "{3, -1}");
     assert_eq!(h.wolfram(h.eval("Eigenvectors[{{1, 0}, {0, 2}}]")), "{{0, 1}, {1, 0}}");
+    assert_eq!(h.wolfram(h.eval("Eigenvectors[{{1, 2}, {2, 1}}]")), "{{1, 1}, {1, -1}}");
 }
 
 #[test]

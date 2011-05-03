@@ -89,9 +89,10 @@ export const linearAlgebraFeatures = [
         .eval('cross.ijk', 'Cross[{1, 0, 0}, {0, 1, 0}]', '{0, 0, 1}')
         .done(),
     feature('Eigenvectors', 'linear_algebra')
-        .partial('exact `Eigenvectors` on diagonal integer matrices only')
+        .partial('exact `Eigenvectors` on diagonal and real symmetric `2×2` integer matrices only')
         .pure()
         .eval('eigenvectors.diag', 'Eigenvectors[{{1, 0}, {0, 2}}]', '{{0, 1}, {1, 0}}')
+        .eval('eigenvectors.sym2x2', 'Eigenvectors[{{1, 2}, {2, 1}}]', '{{1, 1}, {1, -1}}')
         .done(),
     feature('NullSpace', 'linear_algebra')
         .partial('typed numeric nested List null space row basis only')
