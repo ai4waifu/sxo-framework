@@ -66,9 +66,10 @@ export const linearAlgebraFeatures = [
         .eval('matrixrank.rank1', 'MatrixRank[{{1, 2}, {2, 4}}]', '1')
         .done(),
     feature('Eigenvalues', 'linear_algebra')
-        .partial('exact `Eigenvalues` on diagonal integer matrices only')
+        .partial('exact `Eigenvalues` on diagonal and real symmetric `2×2` integer matrices only')
         .pure()
         .eval('eigenvalues.diag', 'Eigenvalues[{{1, 0}, {0, 2}}]', '{2, 1}')
+        .eval('eigenvalues.sym2x2', 'Eigenvalues[{{1, 2}, {2, 1}}]', '{3, -1}')
         .done(),
     feature('DiagonalMatrix', 'linear_algebra')
         .partial('vector diagonal constructor with exact complex entries OK')

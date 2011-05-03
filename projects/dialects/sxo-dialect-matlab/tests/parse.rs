@@ -323,6 +323,13 @@ fn null_literal_column_basis_goals() {
 }
 
 #[test]
+fn eig_symmetric_2x2_column_goals() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("eig([1, 2; 2, 1])")), "[3; -1]");
+    assert_eq!(h.render(h.eval("A = [1, 2; 2, 1]; eig(A)")), "[3; -1]");
+}
+
+#[test]
 fn diag_and_cond_literal_goals() {
     let h = H::new();
     assert_eq!(h.render(h.eval("diag([1, 2])")), "[1, 0; 0, 2]");

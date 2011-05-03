@@ -886,6 +886,7 @@ fn matrix_rank_rank1() {
 fn eigenvalues_and_eigenvectors_diagonal() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Eigenvalues[{{1, 0}, {0, 2}}]")), "{2, 1}");
+    assert_eq!(h.wolfram(h.eval("Eigenvalues[{{1, 2}, {2, 1}}]")), "{3, -1}");
     assert_eq!(h.wolfram(h.eval("Eigenvectors[{{1, 0}, {0, 2}}]")), "{{0, 1}, {1, 0}}");
 }
 

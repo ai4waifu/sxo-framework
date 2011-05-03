@@ -401,6 +401,7 @@ fn map_matlab_head(name: &str) -> String {
         "inv" => "Inverse".to_string(),
         "rank" => "MatrixRank".to_string(),
         "trace" => "Tr".to_string(),
+        "eig" => "Eig".to_string(),
         "rref" => "RowReduce".to_string(),
         "norm" => "Norm".to_string(),
         "dot" => "Dot".to_string(),
@@ -462,6 +463,8 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "Rank"
             | "Tr"
             | "Trace"
+            | "Eig"
+            | "Eigenvalues"
             | "RowReduce"
             | "Rref"
             | "NullSpace"

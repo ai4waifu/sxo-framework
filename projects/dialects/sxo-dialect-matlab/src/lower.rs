@@ -468,6 +468,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Eig" || head == "Eigenvalues" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: true },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "NullSpace" || head == "Null" => {
             // Living 16: MATLAB `null` → column basis; Mathematica `NullSpace` stays row basis.
             if let [arg] = args.as_slice() {

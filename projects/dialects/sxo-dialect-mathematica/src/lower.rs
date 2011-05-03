@@ -1272,7 +1272,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("Eigenvalues", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix },
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: false },
                         )));
                     }
                 }
