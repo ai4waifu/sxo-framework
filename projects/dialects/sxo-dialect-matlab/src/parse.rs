@@ -465,6 +465,7 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "Trace"
             | "Eig"
             | "Eigenvalues"
+            | "Eigenvectors"
             | "RowReduce"
             | "Rref"
             | "NullSpace"

@@ -16,7 +16,14 @@ export const linearAlgebraFeatures = [
     feature('eig', 'linear_algebra')
         .partial('exact `eig` on diagonal and real symmetric `2×2` integer matrices only')
         .pure()
+        .eval('eig.diag', 'eig([1, 0; 0, 2])', '[2; 1]')
         .eval('eig.sym', 'eig([1, 2; 2, 1])', '[3; -1]')
+        .done(),
+    feature('eigenvectors', 'linear_algebra')
+        .partial('exact column-basis `Eigenvectors` on diagonal and real symmetric `2×2` integer matrices only')
+        .pure()
+        .eval('eigenvectors.diag', 'Eigenvectors([1, 0; 0, 2])', '[0, 1; 1, 0]')
+        .eval('eigenvectors.sym2x2', 'Eigenvectors([1, 2; 2, 1])', '[1, 1; 1, -1]')
         .done(),
     feature('trace', 'linear_algebra')
         .partial('typed numeric MatrixValue trace only')
