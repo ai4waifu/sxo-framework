@@ -4,6 +4,7 @@ import { arrayFeatures } from './array.js';
 import { bitwiseFeatures } from './bitwise.js';
 import { calculusFeatures } from './calculus.js';
 import { comparisonFeatures } from './comparison.js';
+import { complexFeatures } from './complex.js';
 import { constantFeatures } from './constant.js';
 import { controlFeatures } from './control.js';
 import { datetimeFeatures } from './datetime.js';
@@ -44,6 +45,7 @@ export const featureMatrix = matrix(
     ...bitwiseFeatures,
     ...calculusFeatures,
     ...comparisonFeatures,
+    ...complexFeatures,
     ...constantFeatures,
     ...controlFeatures,
     ...datetimeFeatures,

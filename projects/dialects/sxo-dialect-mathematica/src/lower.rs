@@ -165,6 +165,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "DiscreteDelta" => SemanticOperator::DiscreteDelta,
         "Indeterminate" => SemanticOperator::Indeterminate,
         "Re" => SemanticOperator::RealPart,
+        "Im" => SemanticOperator::ImaginaryPart,
+        "Conjugate" => SemanticOperator::Conjugate,
         _ => return None,
     })
 }
@@ -193,6 +195,8 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
         SemanticOperator::Head => "Head",
         SemanticOperator::MemberOf => "Element",
         SemanticOperator::RealPart => "Re",
+        SemanticOperator::ImaginaryPart => "Im",
+        SemanticOperator::Conjugate => "Conjugate",
         SemanticOperator::Unary(f) => f.debug_label(),
         other => other.debug_label(),
     }

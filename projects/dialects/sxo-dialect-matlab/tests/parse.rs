@@ -333,6 +333,14 @@ fn eig_symmetric_2x2_column_goals() {
 }
 
 #[test]
+fn complex_part_exact_on_1i() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("real(1i)")), "0");
+    assert_eq!(h.render(h.eval("imag(1i)")), "1");
+    assert_eq!(h.render(h.eval("conj(1i)")), "-1i");
+}
+
+#[test]
 fn diag_and_cond_literal_goals() {
     let h = H::new();
     assert_eq!(h.render(h.eval("diag([1, 2])")), "[1, 0; 0, 2]");

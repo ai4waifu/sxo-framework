@@ -421,6 +421,9 @@ fn map_matlab_head(name: &str) -> String {
         "cumsum" => "Accumulate".to_string(),
         "linsolve" => "LinearSolve".to_string(),
         "mod" => "Mod".to_string(),
+        "real" => "Re".to_string(),
+        "imag" => "Im".to_string(),
+        "conj" => "Conjugate".to_string(),
         other => other.to_string(),
     }
 }

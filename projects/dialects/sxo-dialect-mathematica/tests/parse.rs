@@ -172,6 +172,14 @@ fn parse_sign_exact_integer() {
 }
 
 #[test]
+fn parse_complex_part_exact_on_i() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Re[I]")), "0");
+    assert_eq!(h.wolfram(h.eval("Im[I]")), "1");
+    assert_eq!(h.wolfram(h.eval("Conjugate[I]")), "-I");
+}
+
+#[test]
 fn parse_floor_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Floor[5]")), "5");

@@ -59,6 +59,9 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Log" => SemanticOperator::from_unary(UnaryFunction::Log),
         "Sqrt" => SemanticOperator::from_unary(UnaryFunction::Sqrt),
         "Abs" => SemanticOperator::from_unary(UnaryFunction::Abs),
+        "Re" | "real" => SemanticOperator::RealPart,
+        "Im" | "imag" => SemanticOperator::ImaginaryPart,
+        "Conjugate" | "conj" => SemanticOperator::Conjugate,
         _ => return None,
     })
 }

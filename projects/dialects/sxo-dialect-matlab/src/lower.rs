@@ -12,7 +12,7 @@ use athena::{
         linear_algebra::{MatrixOperand, MatrixValue},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode},
-    numeric::{Integer, Rational, to_f64_lossy},
+    numeric::{BranchPolicy, Complex, Integer, Number, Rational, Real, to_f64_lossy},
     reasoning::trs::TermPattern,
     runtime::{
         MatrixListSurface, ZeroPowerZeroConvention,
@@ -57,6 +57,11 @@ pub fn with_session_conventions<R>(session: &mut Session, f: impl FnOnce(&mut Se
 
 /// Materialize a [`MatlabForm`] into the session arena (transitional bridge).
 pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
+    if !matches!(form, MatlabForm::List(_)) {
+        if let Some(term) = push_machine_complex_atom_from_form(session, form) {
+            return term;
+        }
+    }
     if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_or_logspace_form(form)) {
         if let Ok(term) = session.term_from_matrix_literal(mat) {
             return term;
@@ -834,6 +839,11 @@ fn eval_matlab_floor(session: &mut Session, arg: &MatlabForm) -> TermId {
 
 /// Expression term materialization with `Part` → `Extract` for runtime indexing.
 fn form_to_eval_term(session: &mut Session, form: &MatlabForm) -> TermId {
+    if !matches!(form, MatlabForm::List(_)) {
+        if let Some(term) = push_machine_complex_atom_from_form(session, form) {
+            return term;
+        }
+    }
     if let Some(mat) = matrix_from_form(form).or_else(|| matrix_from_linspace_or_logspace_form(form)) {
         if let Ok(term) = session.term_from_matrix_literal(mat) {
             return term;
@@ -976,6 +986,24 @@ fn expand_span(start: i64, step: i64, end: i64) -> Option<Vec<i64>> {
         }
     }
     Some(out)
+}
+
+/// Non-ambiguous scalar complex literals (`1i`, `2+3i`, …) → machine [`Number::Complex`] atom.
+fn push_machine_complex_atom_from_form(session: &mut Session, form: &MatlabForm) -> Option<TermId> {
+    if is_ambiguous_matlab_scalar_symbol(form) {
+        return None;
+    }
+    let (re, im) = form_scalar_complex(form)?;
+    if im.is_zero() {
+        return None;
+    }
+    let re_f = to_f64_lossy(&Number::rational(clone_rational(&re)))?;
+    let im_f = to_f64_lossy(&Number::rational(clone_rational(&im)))?;
+    let unit = Complex::try_new(Real::machine(re_f), Real::machine(im_f), BranchPolicy::Principal).expect("machine complex");
+    Some(session.arena.push(
+        TermNode::Atom(Atom::Number(Number::complex(unit))),
+        SourceSpan::default(),
+    ))
 }
 
 fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
