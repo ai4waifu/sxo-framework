@@ -338,6 +338,7 @@ fn complex_part_exact_on_1i() {
     assert_eq!(h.render(h.eval("real(1i)")), "0");
     assert_eq!(h.render(h.eval("imag(1i)")), "1");
     assert_eq!(h.render(h.eval("conj(1i)")), "-1i");
+    assert_eq!(h.render(h.eval("angle(1i)")), "pi/2");
 }
 
 #[test]

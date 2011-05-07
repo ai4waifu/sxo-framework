@@ -8,4 +8,5 @@ export const complexFeatures = [
         .pure()
         .eval('conj.1i', 'conj(1i)', '-1i')
         .done(),
+    feature('angle', 'complex').partial('exact `angle` on principal-axis machine-complex atoms only').pure().eval('angle.1i', 'angle(1i)', 'pi/2').done(),
 ];

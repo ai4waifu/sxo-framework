@@ -8,7 +8,7 @@ export const complexFeatures = [
         .pure()
         .eval('conj.i', 'Conjugate[I]', '-I')
         .done(),
-    feature('Arg', 'complex').unsupported().pure().gap('arg.i', 'Arg[I]', { expected: 'Pi/2' }).done(),
+    feature('Arg', 'complex').partial('exact `Arg` on principal-axis machine-complex atoms only').pure().eval('arg.i', 'Arg[I]', 'Pi/2').done(),
     feature('ComplexMul', 'complex')
         .unsupported('(1+I)*(1-I) → 1+-(I^2) not folded to 2')
         .pure()

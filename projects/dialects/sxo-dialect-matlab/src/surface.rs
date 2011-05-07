@@ -62,6 +62,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Re" | "real" => SemanticOperator::RealPart,
         "Im" | "imag" => SemanticOperator::ImaginaryPart,
         "Conjugate" | "conj" => SemanticOperator::Conjugate,
+        "Arg" | "angle" => SemanticOperator::Arg,
         _ => return None,
     })
 }
@@ -83,6 +84,7 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
         SemanticOperator::Accumulate => "Accumulate",
         SemanticOperator::Differences => "Differences",
         SemanticOperator::ApplyHead => "Application",
+        SemanticOperator::Arg => "angle",
         SemanticOperator::Unary(f) => f.debug_label(),
         other => other.debug_label(),
     }

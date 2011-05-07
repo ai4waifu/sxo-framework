@@ -177,6 +177,7 @@ fn parse_complex_part_exact_on_i() {
     assert_eq!(h.wolfram(h.eval("Re[I]")), "0");
     assert_eq!(h.wolfram(h.eval("Im[I]")), "1");
     assert_eq!(h.wolfram(h.eval("Conjugate[I]")), "-I");
+    assert_eq!(h.wolfram(h.eval("Arg[I]")), "Pi/2");
 }
 
 #[test]

@@ -105,6 +105,8 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             Atom::Boolean(false) => "false".into(),
             Atom::Null => "[]".into(),
             Atom::Constant(MathematicalConstant::Infinity) => "Inf".into(),
+            Atom::Constant(MathematicalConstant::Pi) => "pi".into(),
+            Atom::Constant(MathematicalConstant::EulerNumber) => "exp(1)".into(),
             Atom::Constant(c) => c.debug_label().into(),
         },
         Some(TermNode::Collection { elements: items, .. }) => {

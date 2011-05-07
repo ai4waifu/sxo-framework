@@ -424,6 +424,7 @@ fn map_matlab_head(name: &str) -> String {
         "real" => "Re".to_string(),
         "imag" => "Im".to_string(),
         "conj" => "Conjugate".to_string(),
+        "angle" => "Arg".to_string(),
         other => other.to_string(),
     }
 }
