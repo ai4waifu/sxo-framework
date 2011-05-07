@@ -342,6 +342,12 @@ fn complex_part_exact_on_1i() {
 }
 
 #[test]
+fn complex_mul_conjugate_pair() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("(1 + 1i)*(1 - 1i)")), "2");
+}
+
+#[test]
 fn diag_and_cond_literal_goals() {
     let h = H::new();
     assert_eq!(h.render(h.eval("diag([1, 2])")), "[1, 0; 0, 2]");

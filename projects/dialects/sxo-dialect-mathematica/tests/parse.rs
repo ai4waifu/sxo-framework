@@ -181,6 +181,12 @@ fn parse_complex_part_exact_on_i() {
 }
 
 #[test]
+fn parse_complex_mul_conjugate_pair() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("(1 + I)*(1 - I)")), "2");
+}
+
+#[test]
 fn parse_floor_exact() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Floor[5]")), "5");

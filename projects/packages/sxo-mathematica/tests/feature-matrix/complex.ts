@@ -10,8 +10,8 @@ export const complexFeatures = [
         .done(),
     feature('Arg', 'complex').partial('exact `Arg` on principal-axis machine-complex atoms only').pure().eval('arg.i', 'Arg[I]', 'Pi/2').done(),
     feature('ComplexMul', 'complex')
-        .unsupported('(1+I)*(1-I) → 1+-(I^2) not folded to 2')
+        .partial('exact machine-complex multiply on tested `1±I` conjugate pair only')
         .pure()
-        .gap('complexmul.conj', '(1 + I)*(1 - I)', { expected: '2', notes: 'currently 1 + -(I^2)' })
+        .eval('complexmul.conj', '(1 + I)*(1 - I)', '2')
         .done(),
 ];

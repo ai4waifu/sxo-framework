@@ -9,4 +9,9 @@ export const complexFeatures = [
         .eval('conj.1i', 'conj(1i)', '-1i')
         .done(),
     feature('angle', 'complex').partial('exact `angle` on principal-axis machine-complex atoms only').pure().eval('angle.1i', 'angle(1i)', 'pi/2').done(),
+    feature('complex_mul', 'complex')
+        .partial('exact machine-complex multiply on tested `1±1i` conjugate pair only')
+        .pure()
+        .eval('complexmul.conj', '(1 + 1i)*(1 - 1i)', '2')
+        .done(),
 ];
