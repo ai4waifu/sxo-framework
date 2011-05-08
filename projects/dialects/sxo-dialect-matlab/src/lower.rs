@@ -491,6 +491,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "MatrixExp" || head == "Expm" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "NullSpace" || head == "Null" => {
             // Living 16: MATLAB `null` → column basis; Mathematica `NullSpace` stays row basis.
             if let [arg] = args.as_slice() {
@@ -1007,15 +1016,37 @@ fn push_machine_complex_atom_from_form(session: &mut Session, form: &MatlabForm)
 }
 
 fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
-    match w {
-        MatlabForm::Atom(MatlabAtom::Number(n)) => {
-            if let Some(i) = n.as_exact_integer() {
-                return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+    if let MatlabForm::Atom(MatlabAtom::Number(n)) = w {
+        if let Some(i) = n.as_exact_integer() {
+            return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+        }
+        if let Some(i) = n.as_integer() {
+            return Some(Rational::from_integer(clone_integer(i)));
+        }
+        return n.as_rational().map(clone_rational);
+    }
+    let MatlabForm::Call { head, args } = w
+    else {
+        return None;
+    };
+    match (head.as_str(), args.as_slice()) {
+        ("Minus", [arg]) => form_scalar_rational(arg).map(|q| q.neg()),
+        ("Plus" | "Add", args) if !args.is_empty() => {
+            let mut acc = Rational::zero();
+            for arg in args {
+                acc = acc.add(&form_scalar_rational(arg)?);
             }
-            if let Some(i) = n.as_integer() {
-                return Some(Rational::from_integer(clone_integer(i)));
-            }
-            n.as_rational().map(clone_rational)
+            Some(acc)
+        }
+        ("Minus" | "Subtract", [lhs, rhs]) => {
+            let a = form_scalar_rational(lhs)?;
+            let b = form_scalar_rational(rhs)?;
+            Some(a.add(&b.neg()))
+        }
+        ("Times" | "Multiply", [lhs, rhs]) => {
+            let a = form_scalar_rational(lhs)?;
+            let b = form_scalar_rational(rhs)?;
+            Some(a.mul(&b))
         }
         _ => None,
     }

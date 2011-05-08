@@ -222,6 +222,7 @@ fn head_matlab_name(name: &str) -> String {
         "LowerTriangularize" | "Tril" => "tril",
         "UpperTriangularize" | "Triu" => "triu",
         "KroneckerProduct" | "Kron" => "kron",
+        "MatrixExp" | "Expm" => "expm",
         "IsDiagonalMatrix" | "IsDiag" => "isdiag",
         "IsLowerTriangular" | "IsTril" => "istril",
         "IsUpperTriangular" | "IsTriu" => "istriu",

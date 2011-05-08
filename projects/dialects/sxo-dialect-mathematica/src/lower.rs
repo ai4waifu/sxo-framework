@@ -1289,6 +1289,13 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("MatrixExp", [arg]) => {
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
+                        )));
+                    }
+                }
                 ("Norm", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -1597,15 +1604,40 @@ fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
 }
 
 fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
-    match w {
-        WolframForm::Atom(WolframAtom::Number(n)) => {
-            if let Some(i) = n.as_exact_integer() {
-                return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+    if let WolframForm::Atom(WolframAtom::Number(n)) = w {
+        if let Some(i) = n.as_exact_integer() {
+            return Some(Rational::new(Integer::from_i64(i), Integer::one()));
+        }
+        if let Some(i) = n.as_integer() {
+            return Some(Rational::from_integer(clone_integer(i)));
+        }
+        return n.as_rational().map(clone_rational);
+    }
+    let WolframForm::Call { head, args } = w else {
+        return None;
+    };
+    let name = match head.as_ref() {
+        WolframForm::Atom(WolframAtom::Symbol(s)) => s.as_str(),
+        _ => return None,
+    };
+    match (name, args.as_slice()) {
+        ("Minus", [arg]) => form_scalar_rational(arg).map(|q| q.neg()),
+        ("Plus", args) if !args.is_empty() => {
+            let mut acc = Rational::zero();
+            for arg in args {
+                acc = acc.add(&form_scalar_rational(arg)?);
             }
-            if let Some(i) = n.as_integer() {
-                return Some(Rational::from_integer(clone_integer(i)));
-            }
-            n.as_rational().map(clone_rational)
+            Some(acc)
+        }
+        ("Minus" | "Subtract", [lhs, rhs]) => {
+            let a = form_scalar_rational(lhs)?;
+            let b = form_scalar_rational(rhs)?;
+            Some(a.add(&b.neg()))
+        }
+        ("Times", [lhs, rhs]) => {
+            let a = form_scalar_rational(lhs)?;
+            let b = form_scalar_rational(rhs)?;
+            Some(a.mul(&b))
         }
         _ => None,
     }
@@ -2375,3 +2407,4 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
         None => WolframForm::Atom(WolframAtom::Symbol(format!("TermId({})", id.0))),
     }
 }
+

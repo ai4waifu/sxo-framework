@@ -121,9 +121,13 @@ export const linearAlgebraFeatures = [
         )
         .done(),
     feature('MatrixExp', 'linear_algebra')
-        .unsupported()
+        .partial('exact `MatrixExp` on `2×2` skew-symmetric integer rotation generators only')
         .pure()
-        .gap('matrixexp.rot', 'MatrixExp[{{0, 1}, {-1, 0}}]', { expected: '...' })
+        .eval(
+            'matrixexp.rot',
+            'MatrixExp[{{0, 1}, {-1, 0}}]',
+            '{{0.5403023058681398, 0.8414709848078965}, {-0.8414709848078965, 0.5403023058681398}}',
+        )
         .done(),
     feature('Normalize', 'linear_algebra')
         .partial('exact integer vector `Normalize[{3, 4}]` via lowering')

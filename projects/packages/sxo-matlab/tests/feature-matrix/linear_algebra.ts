@@ -77,7 +77,15 @@ export const linearAlgebraFeatures = [
     feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
-    feature('expm', 'linear_algebra').unsupported().pure().gap('expm.rot', 'expm([0, 1; -1, 0])', { expected: '...' }).done(),
+    feature('expm', 'linear_algebra')
+        .partial('exact `expm` on `2×2` skew-symmetric integer rotation generators only')
+        .pure()
+        .eval(
+            'expm.rot',
+            'expm([0, 1; -1, 0])',
+            '[0.5403023058681398, 0.8414709848078965; -0.8414709848078965, 0.5403023058681398]',
+        )
+        .done(),
     feature('rref', 'linear_algebra')
         .partial('typed numeric MatrixValue RREF only')
         .pure()

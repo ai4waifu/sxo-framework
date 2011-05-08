@@ -425,6 +425,7 @@ fn map_matlab_head(name: &str) -> String {
         "imag" => "Im".to_string(),
         "conj" => "Conjugate".to_string(),
         "angle" => "Arg".to_string(),
+        "expm" => "MatrixExp".to_string(),
         other => other.to_string(),
     }
 }
@@ -470,6 +471,8 @@ pub(crate) fn is_known_call_head(name: &str) -> bool {
             | "Eig"
             | "Eigenvalues"
             | "Eigenvectors"
+            | "MatrixExp"
+            | "Expm"
             | "RowReduce"
             | "Rref"
             | "NullSpace"
