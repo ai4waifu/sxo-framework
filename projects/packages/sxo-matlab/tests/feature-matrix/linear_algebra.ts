@@ -78,8 +78,9 @@ export const linearAlgebraFeatures = [
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
     feature('expm', 'linear_algebra')
-        .partial('exact `expm` on `2×2` skew-symmetric integer rotation generators only')
+        .partial('exact `expm` on diagonal and `2×2` skew-symmetric integer generators only')
         .pure()
+        .eval('expm.zero', 'expm([0, 0; 0, 0])', '[1, 0; 0, 1]')
         .eval(
             'expm.rot',
             'expm([0, 1; -1, 0])',

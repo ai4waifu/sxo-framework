@@ -121,8 +121,9 @@ export const linearAlgebraFeatures = [
         )
         .done(),
     feature('MatrixExp', 'linear_algebra')
-        .partial('exact `MatrixExp` on `2×2` skew-symmetric integer rotation generators only')
+        .partial('exact `MatrixExp` on diagonal and `2×2` skew-symmetric integer generators only')
         .pure()
+        .eval('matrixexp.zero', 'MatrixExp[{{0, 0}, {0, 0}}]', '{{1, 0}, {0, 1}}')
         .eval(
             'matrixexp.rot',
             'MatrixExp[{{0, 1}, {-1, 0}}]',
