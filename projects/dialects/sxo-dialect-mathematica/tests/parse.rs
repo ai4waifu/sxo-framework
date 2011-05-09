@@ -178,6 +178,9 @@ fn parse_complex_part_exact_on_i() {
     assert_eq!(h.wolfram(h.eval("Im[I]")), "1");
     assert_eq!(h.wolfram(h.eval("Conjugate[I]")), "-I");
     assert_eq!(h.wolfram(h.eval("Arg[I]")), "Pi/2");
+    assert_eq!(h.wolfram(h.eval("Arg[1]")), "0");
+    assert_eq!(h.wolfram(h.eval("Arg[-1]")), "Pi");
+    assert_eq!(h.wolfram(h.eval("Arg[-I]")), "-Pi/2");
 }
 
 #[test]
@@ -196,6 +199,14 @@ fn parse_matrix_exp_rotation_generator() {
     let s = 1.0_f64.sin();
     assert!(out.contains(&format!("{c}")), "got {out}");
     assert!(out.contains(&format!("{s}")), "got {out}");
+}
+
+#[test]
+fn parse_matrix_exp_diagonal_generator() {
+    let h = H::new();
+    let out = h.wolfram(h.eval("MatrixExp[{{1, 0}, {0, 2}}]"));
+    assert!(out.contains(&format!("{}", 1.0_f64.exp())));
+    assert!(out.contains(&format!("{}", 2.0_f64.exp())));
 }
 
 #[test]

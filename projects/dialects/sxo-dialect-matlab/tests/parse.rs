@@ -339,6 +339,9 @@ fn complex_part_exact_on_1i() {
     assert_eq!(h.render(h.eval("imag(1i)")), "1");
     assert_eq!(h.render(h.eval("conj(1i)")), "-1i");
     assert_eq!(h.render(h.eval("angle(1i)")), "pi/2");
+    assert_eq!(h.render(h.eval("angle(1)")), "0");
+    assert_eq!(h.render(h.eval("angle(-1)")), "pi");
+    assert_eq!(h.render(h.eval("angle(-1i)")), "-pi/2");
 }
 
 #[test]
@@ -357,6 +360,14 @@ fn matrix_exp_rotation_generator() {
     let s = 1.0_f64.sin();
     assert!(out.contains(&format!("{c}")), "got {out}");
     assert!(out.contains(&format!("{s}")), "got {out}");
+}
+
+#[test]
+fn parse_matrix_exp_diagonal_generator() {
+    let h = H::new();
+    let out = h.render(h.eval("expm([1, 0; 0, 2])"));
+    assert!(out.contains(&format!("{}", 1.0_f64.exp())));
+    assert!(out.contains(&format!("{}", 2.0_f64.exp())));
 }
 
 #[test]

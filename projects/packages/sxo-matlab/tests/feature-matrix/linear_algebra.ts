@@ -86,6 +86,11 @@ export const linearAlgebraFeatures = [
             'expm([0, 1; -1, 0])',
             '[0.5403023058681398, 0.8414709848078965; -0.8414709848078965, 0.5403023058681398]',
         )
+        .eval(
+            'expm.diag',
+            'expm([1, 0; 0, 2])',
+            '[2.718281828459045, 0; 0, 7.38905609893065]',
+        )
         .done(),
     feature('rref', 'linear_algebra')
         .partial('typed numeric MatrixValue RREF only')
