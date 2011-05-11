@@ -8,7 +8,14 @@ export const complexFeatures = [
         .pure()
         .eval('conj.1i', 'conj(1i)', '-1i')
         .done(),
-    feature('angle', 'complex').partial('exact `angle` on principal-axis machine-complex atoms only').pure().eval('angle.1i', 'angle(1i)', 'pi/2').done(),
+    feature('angle', 'complex')
+        .partial('exact `angle` on principal-axis machine-complex atoms and exact real scalars only')
+        .pure()
+        .eval('angle.1i', 'angle(1i)', 'pi/2')
+        .eval('angle.1', 'angle(1)', '0')
+        .eval('angle.neg1', 'angle(-1)', 'pi')
+        .eval('angle.neg1i', 'angle(-1i)', '-pi/2')
+        .done(),
     feature('complex_mul', 'complex')
         .partial('exact machine-complex multiply on tested `1±1i` conjugate pair only')
         .pure()

@@ -8,7 +8,14 @@ export const complexFeatures = [
         .pure()
         .eval('conj.i', 'Conjugate[I]', '-I')
         .done(),
-    feature('Arg', 'complex').partial('exact `Arg` on principal-axis machine-complex atoms only').pure().eval('arg.i', 'Arg[I]', 'Pi/2').done(),
+    feature('Arg', 'complex')
+        .partial('exact `Arg` on principal-axis machine-complex atoms and exact real scalars only')
+        .pure()
+        .eval('arg.i', 'Arg[I]', 'Pi/2')
+        .eval('arg.1', 'Arg[1]', '0')
+        .eval('arg.neg1', 'Arg[-1]', 'Pi')
+        .eval('arg.negi', 'Arg[-I]', '-Pi/2')
+        .done(),
     feature('ComplexMul', 'complex')
         .partial('exact machine-complex multiply on tested `1±I` conjugate pair only')
         .pure()
