@@ -190,6 +190,13 @@ fn parse_complex_mul_conjugate_pair() {
 }
 
 #[test]
+fn parse_complex_scalar_times_imaginary_unit() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("(-1)*I")), "-I");
+    assert_eq!(h.wolfram(h.eval("2*I")), "2*I");
+}
+
+#[test]
 fn parse_matrix_exp_rotation_generator() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatrixExp[{{0, 0}, {0, 0}}]")), "{{1, 0}, {0, 1}}");

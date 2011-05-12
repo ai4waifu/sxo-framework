@@ -21,4 +21,10 @@ export const complexFeatures = [
         .pure()
         .eval('complexmul.conj', '(1 + 1i)*(1 - 1i)', '2')
         .done(),
+    feature('complex_scalar_times', 'complex')
+        .partial('exact integer scalar times imaginary unit on tested atoms only')
+        .pure()
+        .eval('neg.1i', '(-1)*1i', '-1i')
+        .eval('two.1i', '2*1i', '2i')
+        .done(),
 ];

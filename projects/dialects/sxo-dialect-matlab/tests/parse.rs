@@ -351,6 +351,13 @@ fn complex_mul_conjugate_pair() {
 }
 
 #[test]
+fn complex_scalar_times_imaginary_unit() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("(-1)*1i")), "-1i");
+    assert_eq!(h.render(h.eval("2*1i")), "2i");
+}
+
+#[test]
 fn matrix_exp_rotation_generator() {
     let h = H::new();
     assert_eq!(h.render(h.eval("expm([0, 0; 0, 0])")), "[1, 0; 0, 1]");
