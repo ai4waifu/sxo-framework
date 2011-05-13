@@ -127,6 +127,7 @@ dependencies = [
 [[package]]
 name = "athena"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-engine",
  "athena-ir",
@@ -138,6 +139,7 @@ dependencies = [
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-gc",
  "athena-graph",
@@ -152,6 +154,7 @@ dependencies = [
 [[package]]
 name = "athena-gc"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-types",
 ]
@@ -159,6 +162,7 @@ dependencies = [
 [[package]]
 name = "athena-graph"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-gc",
  "athena-ndarray",
@@ -167,6 +171,7 @@ dependencies = [
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-numeric",
  "athena-types",
@@ -175,6 +180,7 @@ dependencies = [
 [[package]]
 name = "athena-ndarray"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-gc",
 ]
@@ -182,6 +188,7 @@ dependencies = [
 [[package]]
 name = "athena-numeric"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-gc",
  "athena-types",
@@ -190,6 +197,7 @@ dependencies = [
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-ir",
  "athena-numeric",
@@ -199,10 +207,12 @@ dependencies = [
 [[package]]
 name = "athena-types"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 
 [[package]]
 name = "athena-vm"
 version = "0.1.0"
+source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
 dependencies = [
  "athena-gc",
  "athena-types",
@@ -698,8 +708,8 @@ dependencies = [
 name = "oak-core"
 version = "0.0.12"
 dependencies = [
+ "serde",
  "smallvec",
- "tracing",
  "triomphe",
  "twox-hash",
 ]
@@ -709,7 +719,16 @@ name = "oak-matlab"
 version = "0.0.12"
 dependencies = [
  "oak-core",
- "tracing",
+ "serde",
+]
+
+[[package]]
+name = "oak-testing"
+version = "0.0.12"
+dependencies = [
+ "oak-core",
+ "triomphe",
+ "walkdir",
 ]
 
 [[package]]
@@ -717,6 +736,7 @@ name = "oak-wolfram"
 version = "0.0.12"
 dependencies = [
  "oak-core",
+ "serde",
 ]
 
 [[package]]
@@ -896,6 +916,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08ae9d01b806e889f90d47e13c18fb95edd95a2222b42eee5e671679bc3476d7"
 
 [[package]]
+name = "same-file"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+dependencies = [
+ "winapi-util",
+]
+
+[[package]]
 name = "scc"
 version = "3.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1032,7 +1061,9 @@ version = "0.0.9"
 dependencies = [
  "athena",
  "oak-core",
+ "oak-testing",
  "oak-wolfram",
+ "serde_json",
  "sxo-adapter-apollo",
  "sxo-dialect-matrix-literal",
  "sxo-types",
@@ -1045,6 +1076,7 @@ dependencies = [
  "athena",
  "oak-core",
  "oak-matlab",
+ "oak-testing",
  "sxo-adapter-apollo",
  "sxo-dialect-matrix-literal",
  "sxo-types",
@@ -1202,37 +1234,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tracing"
-version = "0.1.44"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
-dependencies = [
- "pin-project-lite",
- "tracing-attributes",
- "tracing-core",
-]
-
-[[package]]
-name = "tracing-attributes"
-version = "0.1.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "tracing-core"
-version = "0.1.36"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
-dependencies = [
- "once_cell",
-]
-
-[[package]]
 name = "triomphe"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1277,6 +1278,16 @@ dependencies = [
  "getrandom 0.4.3",
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "walkdir"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b"
+dependencies = [
+ "same-file",
+ "winapi-util",
 ]
 
 [[package]]
@@ -1337,6 +1348,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "81941cd78d0c92026c33e5e01312845a4cb1e9af3407f9134b100dd03144103e"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "winapi-util"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
+dependencies = [
+ "windows-sys",
 ]
 
 [[package]]

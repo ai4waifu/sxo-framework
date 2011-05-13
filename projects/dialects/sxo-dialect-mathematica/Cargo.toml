@@ -22,3 +22,7 @@ oak-wolfram = { workspace = true }
 
 [dev-dependencies]
 athena = { workspace = true }
+oak-core = { workspace = true }
+oak-wolfram = { workspace = true, features = ["serde"] }
+oak-testing = { workspace = true }
+serde_json = { workspace = true }

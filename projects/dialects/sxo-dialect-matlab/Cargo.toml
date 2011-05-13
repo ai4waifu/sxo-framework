@@ -22,3 +22,6 @@ oak-matlab = { workspace = true }
 
 [dev-dependencies]
 athena = { workspace = true }
+oak-core = { workspace = true }
+oak-matlab = { workspace = true, features = ["serde"] }
+oak-testing = { workspace = true }
