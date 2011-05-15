@@ -14,6 +14,7 @@
 | `v0.0.7` | `96997da` | bump publishable packages to `0.0.7` (SameQ/Mod matrix work in range) |
 | `v0.0.8` | `ffcfd69` | release `@sxo/*` `0.0.8` (MATLAB while control-flow closure) |
 | `v0.0.9` | `c5e5190` | release `@sxo/*` `0.0.9` (Living 16 matrix and list vertical slice) |
+| `v0.0.10` | bump commit | release `@sxo/*` `0.0.10` (complex vertical, polynomial algebra, MMA predicates) |
 
 Re-apply tags locally (coordinate before `--force` push):
 
@@ -28,4 +29,5 @@ git tag -f v0.0.6 3227b83
 git tag -f v0.0.7 96997da
 git tag -f v0.0.8 ffcfd69
 git tag -f v0.0.9 c5e5190
+git tag -f v0.0.10 <bump-commit>
 ```
