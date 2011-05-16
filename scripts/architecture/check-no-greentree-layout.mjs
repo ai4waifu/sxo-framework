@@ -79,9 +79,15 @@ function walkRsFiles(dir, acc = []) {
     return acc;
 }
 
+/** Upstream oak parser conformance — CST walks are intentional, not dialect lowering. */
+function isOakParserConformanceTest(rel) {
+    return /\/tests\/oak_[^/]*_parser\.rs$/.test(rel);
+}
+
 const findings = [];
 for (const file of walkRsFiles(SCAN_ROOT)) {
     const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+    if (isOakParserConformanceTest(rel)) continue;
     const raw = fs.readFileSync(file, 'utf8');
     const code = stripRustNoise(raw);
     const lines = code.split(/\r?\n/);
