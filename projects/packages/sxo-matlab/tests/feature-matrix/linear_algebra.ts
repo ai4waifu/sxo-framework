@@ -68,11 +68,7 @@ export const linearAlgebraFeatures = [
         .partial('typed numeric Kronecker on vectors and matrix blocks via `LinearAlgebraRequest::Kronecker`')
         .pure()
         .eval('kron.basic', 'kron([1, 2], [3, 4])', '[3, 4, 6, 8]')
-        .eval(
-            'kron.2x2',
-            'kron([1, 2; 3, 4], [5, 6; 7, 8])',
-            '[5, 6, 10, 12; 7, 8, 14, 16; 15, 18, 20, 24; 21, 24, 28, 32]',
-        )
+        .eval('kron.2x2', 'kron([1, 2; 3, 4], [5, 6; 7, 8])', '[5, 6, 10, 12; 7, 8, 14, 16; 15, 18, 20, 24; 21, 24, 28, 32]')
         .done(),
     feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
@@ -81,16 +77,8 @@ export const linearAlgebraFeatures = [
         .partial('exact `expm` on diagonal and `2×2` skew-symmetric integer generators only')
         .pure()
         .eval('expm.zero', 'expm([0, 0; 0, 0])', '[1, 0; 0, 1]')
-        .eval(
-            'expm.rot',
-            'expm([0, 1; -1, 0])',
-            '[0.5403023058681398, 0.8414709848078965; -0.8414709848078965, 0.5403023058681398]',
-        )
-        .eval(
-            'expm.diag',
-            'expm([1, 0; 0, 2])',
-            '[2.718281828459045, 0; 0, 7.38905609893065]',
-        )
+        .eval('expm.rot', 'expm([0, 1; -1, 0])', '[0.5403023058681398, 0.8414709848078965; -0.8414709848078965, 0.5403023058681398]')
+        .eval('expm.diag', 'expm([1, 0; 0, 2])', '[2.718281828459045, 0; 0, 7.38905609893065]')
         .done(),
     feature('rref', 'linear_algebra')
         .partial('typed numeric MatrixValue RREF only')

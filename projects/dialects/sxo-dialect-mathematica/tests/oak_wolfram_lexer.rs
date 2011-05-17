@@ -15,10 +15,7 @@ fn generate_baseline() {
     let here = Path::new(env!("CARGO_MANIFEST_DIR"));
     let fixture_dir = here.join("tests/fixtures/oak_wolfram_lexer");
     let source_path = fixture_dir.join("basic.wl");
-    let source_text = fs::read_to_string(source_path)
-        .expect("Failed to read source")
-        .replace("\r\n", "\n")
-        .replace('\r', "\n");
+    let source_text = fs::read_to_string(source_path).expect("Failed to read source").replace("\r\n", "\n").replace('\r', "\n");
     let source = SourceText::new(source_text);
     let language = WolframLanguage::default();
     let lexer = WolframLexer::new(&language);
@@ -68,22 +65,10 @@ fn test_slot_n_and_message_name_tokens() {
         .map(|t| (format!("{:?}", t.kind), source.get_text_in(t.span.clone()).to_string()))
         .collect();
 
-    assert!(
-        kinds.iter().any(|(k, t)| k == "Slot" && t == "#2"),
-        "expected Slot #2 token, got {kinds:?}"
-    );
-    assert!(
-        kinds.iter().any(|(k, t)| k == "SlotSequence" && t == "##3"),
-        "expected SlotSequence ##3 token, got {kinds:?}"
-    );
-    assert!(
-        kinds.iter().any(|(k, _)| k == "MessageName"),
-        "expected MessageName :: token, got {kinds:?}"
-    );
-    assert!(
-        kinds.iter().any(|(k, _)| k == "DoubleQuestion"),
-        "expected DoubleQuestion ?? token, got {kinds:?}"
-    );
+    assert!(kinds.iter().any(|(k, t)| k == "Slot" && t == "#2"), "expected Slot #2 token, got {kinds:?}");
+    assert!(kinds.iter().any(|(k, t)| k == "SlotSequence" && t == "##3"), "expected SlotSequence ##3 token, got {kinds:?}");
+    assert!(kinds.iter().any(|(k, _)| k == "MessageName"), "expected MessageName :: token, got {kinds:?}");
+    assert!(kinds.iter().any(|(k, _)| k == "DoubleQuestion"), "expected DoubleQuestion ?? token, got {kinds:?}");
 }
 
 #[test]

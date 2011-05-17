@@ -151,7 +151,9 @@ fn ast_unary_minus_power_precedence() {
             match &arguments[0] {
                 Expression::Call { head, arguments: targs, .. } => {
                     assert!(matches!(head.as_ref(), Expression::Symbol(id) if id.name == "Times"));
-                    assert!(matches!(&targs[1], Expression::Call { head, .. } if matches!(head.as_ref(), Expression::Symbol(id) if id.name == "Power")));
+                    assert!(
+                        matches!(&targs[1], Expression::Call { head, .. } if matches!(head.as_ref(), Expression::Symbol(id) if id.name == "Power"))
+                    );
                 }
                 other => panic!("expected Times inside Exp, got {other:?}"),
             }

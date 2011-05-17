@@ -41,12 +41,7 @@ fn near_zero(x: f64) -> bool {
 }
 
 fn fmt_scalar(x: f64) -> String {
-    if near_zero(x.fract()) && x.abs() < 1e15 {
-        format!("{}", x as i64)
-    }
-    else {
-        format!("{x}")
-    }
+    if near_zero(x.fract()) && x.abs() < 1e15 { format!("{}", x as i64) } else { format!("{x}") }
 }
 
 fn render_machine_complex(re: f64, im: f64) -> String {

@@ -129,11 +129,7 @@ export const linearAlgebraFeatures = [
             'MatrixExp[{{0, 1}, {-1, 0}}]',
             '{{0.5403023058681398, 0.8414709848078965}, {-0.8414709848078965, 0.5403023058681398}}',
         )
-        .eval(
-            'matrixexp.diag',
-            'MatrixExp[{{1, 0}, {0, 2}}]',
-            '{{2.718281828459045, 0}, {0, 7.38905609893065}}',
-        )
+        .eval('matrixexp.diag', 'MatrixExp[{{1, 0}, {0, 2}}]', '{{2.718281828459045, 0}, {0, 7.38905609893065}}')
         .done(),
     feature('Normalize', 'linear_algebra')
         .partial('exact integer vector `Normalize[{3, 4}]` via lowering')

@@ -26,8 +26,18 @@ export const algebraFeatures = [
         .pure()
         .eval('variables.xyz', 'Variables[x*y + z]', '{x, y, z}')
         .done(),
-    feature('Numerator', 'algebra').partial('exact `Numerator` on tested rationals and integers').pure().eval('numerator.half', 'Numerator[1/2]', '1').eval('numerator.int', 'Numerator[5]', '5').done(),
-    feature('Denominator', 'algebra').partial('exact `Denominator` on tested rationals and integers').pure().eval('denominator.34', 'Denominator[3/4]', '4').eval('denominator.int', 'Denominator[5]', '1').done(),
+    feature('Numerator', 'algebra')
+        .partial('exact `Numerator` on tested rationals and integers')
+        .pure()
+        .eval('numerator.half', 'Numerator[1/2]', '1')
+        .eval('numerator.int', 'Numerator[5]', '5')
+        .done(),
+    feature('Denominator', 'algebra')
+        .partial('exact `Denominator` on tested rationals and integers')
+        .pure()
+        .eval('denominator.34', 'Denominator[3/4]', '4')
+        .eval('denominator.int', 'Denominator[5]', '1')
+        .done(),
     feature('Together', 'algebra')
         .partial('exact `Together[1/x + 1/y]` via common-denominator lowering')
         .pure()

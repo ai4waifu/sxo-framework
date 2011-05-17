@@ -253,20 +253,14 @@ fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId 
     if ops.iter().all(|op| *op == ops[0]) {
         return push_semantic(session, ops[0], values);
     }
-    let conjuncts: Vec<TermId> = ops
-        .iter()
-        .enumerate()
-        .map(|(i, op)| push_semantic(session, *op, vec![values[i], values[i + 1]]))
-        .collect();
+    let conjuncts: Vec<TermId> =
+        ops.iter().enumerate().map(|(i, op)| push_semantic(session, *op, vec![values[i], values[i + 1]])).collect();
     push_semantic(session, SemanticOperator::And, conjuncts)
 }
 
 fn push_imaginary_unit(session: &mut Session) -> TermId {
     let unit = Complex::try_new(Real::machine(0.0), Real::machine(1.0), BranchPolicy::Principal).expect("imaginary unit");
-    session.arena.push(
-        TermNode::Atom(Atom::Number(Number::complex(unit))),
-        athena::types::SourceSpan::default(),
-    )
+    session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), athena::types::SourceSpan::default())
 }
 
 /// Materialize exact Gaussian scalar Form as a machine-complex atom (`-I`, `Times[-1, I]`, …).
@@ -277,21 +271,14 @@ fn push_machine_complex_atom_from_form(session: &mut Session, w: &WolframForm) -
     }
     let re_f = to_f64_lossy(&Number::rational(clone_rational(&re)))?;
     let im_f = to_f64_lossy(&Number::rational(clone_rational(&im)))?;
-    let unit = Complex::try_new(Real::machine(re_f), Real::machine(im_f), BranchPolicy::Principal)
-        .expect("machine complex");
-    Some(session.arena.push(
-        TermNode::Atom(Atom::Number(Number::complex(unit))),
-        athena::types::SourceSpan::default(),
-    ))
+    let unit = Complex::try_new(Real::machine(re_f), Real::machine(im_f), BranchPolicy::Principal).expect("machine complex");
+    Some(session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), athena::types::SourceSpan::default()))
 }
 
 fn push_exact_rational_term(session: &mut Session, num: i64, den: i64) -> TermId {
     use athena::numeric::Number;
     let rat = Number::rational_i64(num, den).expect("exact rational literal");
-    session.arena.push(
-        TermNode::Atom(Atom::Number(clone_number(&rat))),
-        athena::types::SourceSpan::default(),
-    )
+    session.arena.push(TermNode::Atom(Atom::Number(clone_number(&rat))), athena::types::SourceSpan::default())
 }
 
 /// `CubeRoot[x]` → `Power[x, 1/3]` on tested exact forms.
@@ -324,7 +311,8 @@ fn lower_clip_call(session: &mut Session, args: &[WolframForm]) -> TermId {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Clip", arg_ids);
     }
-    let WolframForm::List(bounds) = &args[1] else {
+    let WolframForm::List(bounds) = &args[1]
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Clip", arg_ids);
     };
@@ -340,7 +328,8 @@ fn lower_clip_call(session: &mut Session, args: &[WolframForm]) -> TermId {
 }
 
 fn parse_interval_pair(form: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
-    let WolframForm::List(bounds) = form else {
+    let WolframForm::List(bounds) = form
+    else {
         return None;
     };
     if bounds.len() != 2 {
@@ -355,11 +344,13 @@ fn lower_rescale_call(session: &mut Session, args: &[WolframForm]) -> TermId {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Rescale", arg_ids);
     }
-    let Some((xmin, xmax)) = parse_interval_pair(&args[1]) else {
+    let Some((xmin, xmax)) = parse_interval_pair(&args[1])
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Rescale", arg_ids);
     };
-    let Some((ymin, ymax)) = parse_interval_pair(&args[2]) else {
+    let Some((ymin, ymax)) = parse_interval_pair(&args[2])
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Rescale", arg_ids);
     };
@@ -396,7 +387,8 @@ fn lower_normalize_call(session: &mut Session, args: &[WolframForm]) -> TermId {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Normalize", arg_ids);
     }
-    let WolframForm::List(items) = &args[0] else {
+    let WolframForm::List(items) = &args[0]
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Normalize", arg_ids);
     };
@@ -458,7 +450,8 @@ fn form_unit_one(w: &WolframForm) -> bool {
 }
 
 fn divide_form_parts<'a>(w: &'a WolframForm) -> Option<(&'a WolframForm, &'a WolframForm)> {
-    let ("Divide", [num, den]) = call_symbol(w)? else {
+    let ("Divide", [num, den]) = call_symbol(w)?
+    else {
         return None;
     };
     Some((num, den))
@@ -472,14 +465,16 @@ fn symbol_forms_equal(a: &WolframForm, b: &WolframForm) -> bool {
 }
 
 fn plus_symbol_plus_one(plus: &WolframForm, sym: &WolframForm) -> bool {
-    let Some(("Plus", [left, right])) = call_symbol(plus) else {
+    let Some(("Plus", [left, right])) = call_symbol(plus)
+    else {
         return false;
     };
     (symbol_forms_equal(left, sym) && form_unit_one(right)) || (form_unit_one(left) && symbol_forms_equal(right, sym))
 }
 
 fn together_two_unit_fractions(w: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
-    let ("Plus", [left, right]) = call_symbol(w)? else {
+    let ("Plus", [left, right]) = call_symbol(w)?
+    else {
         return None;
     };
     let (n1, d1) = divide_form_parts(left)?;
@@ -495,7 +490,8 @@ fn apart_unit_over_linear_product(w: &WolframForm) -> Option<&WolframForm> {
     if !form_unit_one(num) {
         return None;
     }
-    let ("Times", [a, b]) = call_symbol(den)? else {
+    let ("Times", [a, b]) = call_symbol(den)?
+    else {
         return None;
     };
     if matches!(a, WolframForm::Atom(WolframAtom::Symbol(_))) && plus_symbol_plus_one(b, a) {
@@ -513,7 +509,8 @@ fn lower_together_call(session: &mut Session, args: &[WolframForm]) -> TermId {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Together", arg_ids);
     }
-    let Some((d1, d2)) = together_two_unit_fractions(&args[0]) else {
+    let Some((d1, d2)) = together_two_unit_fractions(&args[0])
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Together", arg_ids);
     };
@@ -530,7 +527,8 @@ fn lower_apart_call(session: &mut Session, args: &[WolframForm]) -> TermId {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Apart", arg_ids);
     }
-    let Some(x_form) = apart_unit_over_linear_product(&args[0]) else {
+    let Some(x_form) = apart_unit_over_linear_product(&args[0])
+    else {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Apart", arg_ids);
     };
@@ -1633,7 +1631,8 @@ fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
         }
         return n.as_rational().map(clone_rational);
     }
-    let WolframForm::Call { head, args } = w else {
+    let WolframForm::Call { head, args } = w
+    else {
         return None;
     };
     let name = match head.as_ref() {
@@ -2427,4 +2426,3 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
         None => WolframForm::Atom(WolframAtom::Symbol(format!("TermId({})", id.0))),
     }
 }
-

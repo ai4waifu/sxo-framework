@@ -9,11 +9,7 @@ export const specialFeatures = [
         .done(),
     feature('Zeta', 'special').unsupported().pure().gap('zeta.2', 'Zeta[2]', { expected: 'Pi^2/6' }).done(),
     feature('Erf', 'special').partial('exact `Erf[0]` fold').pure().eval('erf.0', 'Erf[0]', '0').done(),
-    feature('UnitStep', 'special')
-        .partial('exact `UnitStep` on tested positive integers')
-        .pure()
-        .eval('unitstep.1', 'UnitStep[1]', '1')
-        .done(),
+    feature('UnitStep', 'special').partial('exact `UnitStep` on tested positive integers').pure().eval('unitstep.1', 'UnitStep[1]', '1').done(),
     feature('UnitStepDerivative', 'special')
         .unsupported('D[UnitStep[x],x] host stack-overflow crash')
         .pure()
@@ -22,7 +18,11 @@ export const specialFeatures = [
             notes: 'host crash (stack overflow) observed — do not promote to eval',
         })
         .done(),
-    feature('HeavisideTheta', 'special').partial('exact `HeavisideTheta[1]` via `UnitStep`').pure().eval('heaviside.1', 'HeavisideTheta[1]', '1').done(),
+    feature('HeavisideTheta', 'special')
+        .partial('exact `HeavisideTheta[1]` via `UnitStep`')
+        .pure()
+        .eval('heaviside.1', 'HeavisideTheta[1]', '1')
+        .done(),
     feature('BesselJ', 'special').unsupported().pure().gap('besselj.10', 'BesselJ[1, 0]', { expected: '0' }).done(),
     feature('LegendreP', 'special').unsupported().pure().gap('legendrep.2', 'LegendreP[2, x]', { expected: '(-1 + 3*x^2)/2' }).done(),
     feature('GammaHalf', 'special').partial('exact `Gamma[1/2]` fold to `Sqrt[Pi]`').pure().eval('gamma.half', 'Gamma[1/2]', 'Sqrt[Pi]').done(),

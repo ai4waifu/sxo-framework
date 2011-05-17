@@ -138,7 +138,10 @@ fn test_parser_part_double_bracket() {
     assert!(parts >= 1, "expected Part node for list[[0]], got root={root:?}");
 }
 
-fn count_kind(node: &oak_core::tree::GreenNode<'_, oak_wolfram::WolframLanguage>, kind: oak_wolfram::parser::element_type::WolframElementType) -> usize {
+fn count_kind(
+    node: &oak_core::tree::GreenNode<'_, oak_wolfram::WolframLanguage>,
+    kind: oak_wolfram::parser::element_type::WolframElementType,
+) -> usize {
     use oak_core::tree::GreenTree;
     let mut n = if node.kind == kind { 1 } else { 0 };
     for child in node.children {

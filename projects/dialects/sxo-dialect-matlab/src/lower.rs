@@ -135,7 +135,10 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let Some(name) = form_symbol_name(lhs) {
                     let symbol = session.arena.symbols_mut().intern(name);
                     // List / integer Range Form → matrix Own（含行/列向量与 `1:n`）。
-                    if let Some(mat) = matrix_from_form(rhs).or_else(|| matrix_from_range_form(rhs)).or_else(|| matrix_from_linspace_or_logspace_form(rhs)) {
+                    if let Some(mat) = matrix_from_form(rhs)
+                        .or_else(|| matrix_from_range_form(rhs))
+                        .or_else(|| matrix_from_linspace_or_logspace_form(rhs))
+                    {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
@@ -1009,10 +1012,7 @@ fn push_machine_complex_atom_from_form(session: &mut Session, form: &MatlabForm)
     let re_f = to_f64_lossy(&Number::rational(clone_rational(&re)))?;
     let im_f = to_f64_lossy(&Number::rational(clone_rational(&im)))?;
     let unit = Complex::try_new(Real::machine(re_f), Real::machine(im_f), BranchPolicy::Principal).expect("machine complex");
-    Some(session.arena.push(
-        TermNode::Atom(Atom::Number(Number::complex(unit))),
-        SourceSpan::default(),
-    ))
+    Some(session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), SourceSpan::default()))
 }
 
 fn form_scalar_rational(w: &MatlabForm) -> Option<Rational> {
