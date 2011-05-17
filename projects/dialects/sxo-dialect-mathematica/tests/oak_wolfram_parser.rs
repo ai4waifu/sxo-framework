@@ -108,7 +108,7 @@ fn test_parser_keyword_call_if() {
     let parser = WolframParser::new(&language);
     let output = parser.parse(&source, &[], &mut cache);
     let root = output.result.expect("parse If call");
-    let calls = count_kind(&root, oak_wolfram::parser::element_type::WolframElementType::Call);
+    let calls = count_kind(root, oak_wolfram::parser::element_type::WolframElementType::Call);
     assert!(calls >= 1, "expected Call node for If[…], got root={root:?}");
 }
 
@@ -121,7 +121,7 @@ fn test_parser_keyword_call_import() {
     let parser = WolframParser::new(&language);
     let output = parser.parse(&source, &[], &mut cache);
     let root = output.result.expect("parse Import call");
-    let calls = count_kind(&root, oak_wolfram::parser::element_type::WolframElementType::Call);
+    let calls = count_kind(root, oak_wolfram::parser::element_type::WolframElementType::Call);
     assert!(calls >= 1, "expected Call node for Import[…], got root={root:?}");
 }
 
@@ -134,7 +134,7 @@ fn test_parser_part_double_bracket() {
     let parser = WolframParser::new(&language);
     let output = parser.parse(&source, &[], &mut cache);
     let root = output.result.expect("parse Part");
-    let parts = count_kind(&root, oak_wolfram::parser::element_type::WolframElementType::Part);
+    let parts = count_kind(root, oak_wolfram::parser::element_type::WolframElementType::Part);
     assert!(parts >= 1, "expected Part node for list[[0]], got root={root:?}");
 }
 

@@ -27,7 +27,7 @@ fn generate_baseline() {
         .iter()
         .filter(|t| !t.kind.is_ignored())
         .map(|t| {
-            let text = source.get_text_in(t.span.clone()).to_string();
+            let text = source.get_text_in(t.span).to_string();
             json!({
                 "kind": format!("{:?}", t.kind),
                 "text": text,
@@ -62,7 +62,7 @@ fn test_slot_n_and_message_name_tokens() {
     let kinds: Vec<_> = tokens
         .iter()
         .filter(|t| !t.kind.is_ignored())
-        .map(|t| (format!("{:?}", t.kind), source.get_text_in(t.span.clone()).to_string()))
+        .map(|t| (format!("{:?}", t.kind), source.get_text_in(t.span).to_string()))
         .collect();
 
     assert!(kinds.iter().any(|(k, t)| k == "Slot" && t == "#2"), "expected Slot #2 token, got {kinds:?}");
@@ -112,7 +112,7 @@ fn test_wolfram_function_parsing() {
     assert!(!tokens.is_empty(), "Should parse at least one token");
 
     let first_token = &tokens[0];
-    let token_text = source.get_text_in(first_token.span.clone());
+    let token_text = source.get_text_in(first_token.span);
 
     assert_eq!(token_text, "Module", "Identifier should be parsed as Module");
     assert_eq!(first_token.span.start, 0, "Token should start at position 0");

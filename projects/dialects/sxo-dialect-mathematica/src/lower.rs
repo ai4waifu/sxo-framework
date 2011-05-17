@@ -227,7 +227,7 @@ fn compare_surface_operator(name: &str) -> Option<SemanticOperator> {
 
 /// `Inequality[v0, op1, v1, op2, …]` → n-ary same-op compare or `And` of pairwise compares.
 fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId {
-    if args.len() < 3 || args.len() % 2 == 0 {
+    if args.len() < 3 || args.len().is_multiple_of(2) {
         let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
         return push_surface_call(session, "Inequality", arg_ids);
     }
@@ -435,7 +435,7 @@ fn lower_normalize_call(session: &mut Session, args: &[WolframForm]) -> TermId {
     push_list(session, normalized)
 }
 
-fn call_symbol<'a>(w: &'a WolframForm) -> Option<(&'a str, &'a [WolframForm])> {
+fn call_symbol(w: &WolframForm) -> Option<(&str, &[WolframForm])> {
     match w {
         WolframForm::Call { head, args } => match head.as_ref() {
             WolframForm::Atom(WolframAtom::Symbol(name)) => Some((name.as_str(), args.as_slice())),
@@ -449,7 +449,7 @@ fn form_unit_one(w: &WolframForm) -> bool {
     matches!(w, WolframForm::Atom(WolframAtom::Number(n)) if n.as_exact_integer() == Some(1))
 }
 
-fn divide_form_parts<'a>(w: &'a WolframForm) -> Option<(&'a WolframForm, &'a WolframForm)> {
+fn divide_form_parts(w: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
     let ("Divide", [num, den]) = call_symbol(w)?
     else {
         return None;
