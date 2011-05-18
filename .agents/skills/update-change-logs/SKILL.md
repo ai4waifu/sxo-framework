@@ -15,7 +15,7 @@ description: >-
    git-change-logs     releases/vX.Y.Z.md     gh release edit
 ```
 
-Tag 锚点见 [documentation/maintenance/tags.md](../../../documentation/maintenance/tags.md)（bump commit，非 `dev` 尖端）。
+版本 tag 用 `git tag -l 'v*'` / `git-change-logs --tags` 查看（打在 publish-ready commit，非 `dev` 尖端）。
 
 ## Prerequisite: install `git-change-logs`
 
@@ -56,7 +56,7 @@ git-change-logs --from vA.B.C --to vX.Y.Z
 
 ### `v0.0.0` edge case
 
-When there is no `--from`, the first tag spans **all history** to that tag. Do not paste every line into release notes. Keep milestones aligned with [tags.md](../../../documentation/maintenance/tags.md).
+When there is no `--from`, the first tag spans **all history** to that tag. Do not paste every line into release notes. Keep milestones aligned with existing annotated version tags and `documentation/maintenance/releases/vX.Y.Z.md`.
 
 ## ② 提炼发布稿
 
@@ -78,7 +78,7 @@ When there is no `--from`, the first tag spans **all history** to that tag. Do n
 | 方言新 lowering / Feature Matrix 能力 | 合并为 1 条英文 |
 | 同主题多条 commit | 合并为 1 条 |
 
-**禁止**：reference 整段粘贴、hash 清单、「正式发布 npm」空话。
+**禁止**：reference 整段粘贴、hash 清单、「正式发布 npm」空话、内部里程碑代号（`Living N`、`I-N`、`S-NNN`、`Phase N`、`Gate-N` 等）进入发布稿正文。
 
 ### 标题 emoji
 
