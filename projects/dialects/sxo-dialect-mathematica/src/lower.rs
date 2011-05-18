@@ -9,7 +9,7 @@ use athena::{
         linear_algebra::{MatrixOperand, MatrixValue},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
-    numeric::{BranchPolicy, Complex, Integer, Number, Rational, Real, to_f64_lossy},
+    numeric::{BranchPolicy, Complex, Integer, Number, Rational, Real},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::{
         arena::{push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name},
@@ -258,21 +258,58 @@ fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId 
     push_semantic(session, SemanticOperator::And, conjuncts)
 }
 
+/// Bare `I` and part/domain ops need a machine-complex atom.
 fn push_imaginary_unit(session: &mut Session) -> TermId {
     let unit = Complex::try_new(Real::machine(0.0), Real::machine(1.0), BranchPolicy::Principal).expect("imaginary unit");
     session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), athena::types::SourceSpan::default())
 }
 
-/// Materialize exact Gaussian scalar Form as a machine-complex atom (`-I`, `Times[-1, I]`, …).
-fn push_machine_complex_atom_from_form(session: &mut Session, w: &WolframForm) -> Option<TermId> {
+/// Symbol `I` inside exact `re ± im I` semantic terms.
+fn push_imaginary_unit_symbol(session: &mut Session) -> TermId {
+    push_symbol_name(session, "I")
+}
+
+fn push_rational_term(session: &mut Session, q: &Rational) -> TermId {
+    session.arena.push(TermNode::Atom(Atom::Number(Number::rational(clone_rational(q)))), athena::types::SourceSpan::default())
+}
+
+/// Exact Gaussian scalar Form → `re ± im I` semantic terms (not machine-complex atoms).
+fn push_exact_complex_from_form(session: &mut Session, w: &WolframForm) -> Option<TermId> {
     let (re, im) = form_scalar_complex(w)?;
     if im.is_zero() {
         return None;
     }
-    let re_f = to_f64_lossy(&Number::rational(clone_rational(&re)))?;
-    let im_f = to_f64_lossy(&Number::rational(clone_rational(&im)))?;
-    let unit = Complex::try_new(Real::machine(re_f), Real::machine(im_f), BranchPolicy::Principal).expect("machine complex");
-    Some(session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), athena::types::SourceSpan::default()))
+    // Bare `±I` stays a machine-complex atom (`Re`/`Element`/`Arg` paths).
+    if re.is_zero() && (im == Rational::one() || im == Rational::one().neg()) {
+        return None;
+    }
+    let re_t = push_rational_term(session, &re);
+    let i = push_imaginary_unit_symbol(session);
+    let imag_factor = |session: &mut Session, abs_im: &Rational, i: TermId| -> TermId {
+        if *abs_im == Rational::one() {
+            i
+        }
+        else {
+            let im_t = push_rational_term(session, abs_im);
+            push_semantic(session, SemanticOperator::Multiply, vec![im_t, i])
+        }
+    };
+    Some(if im.is_negative() {
+        let times = imag_factor(session, &im.neg(), i);
+        if re.is_zero() {
+            push_semantic(session, SemanticOperator::Negate, vec![times])
+        }
+        else {
+            push_semantic(session, SemanticOperator::Subtract, vec![re_t, times])
+        }
+    }
+    else if re.is_zero() {
+        imag_factor(session, &im, i)
+    }
+    else {
+        let times = imag_factor(session, &im, i);
+        push_semantic(session, SemanticOperator::Add, vec![re_t, times])
+    })
 }
 
 fn push_exact_rational_term(session: &mut Session, num: i64, den: i64) -> TermId {
@@ -545,7 +582,7 @@ fn lower_apart_call(session: &mut Session, args: &[WolframForm]) -> TermId {
 /// Prefer [`lower_request`] when the form carries session / control semantics.
 pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
     if !matches!(w, WolframForm::List(_)) {
-        if let Some(term) = push_machine_complex_atom_from_form(session, w) {
+        if let Some(term) = push_exact_complex_from_form(session, w) {
             return term;
         }
     }

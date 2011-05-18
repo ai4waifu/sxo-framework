@@ -56,11 +56,33 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
         _ => return None,
     };
     match name {
-        "Plus" if args.len() >= 2 => Some(args.iter().map(|a| maybe_paren(a, Prec::Add)).collect::<Vec<_>>().join(" + ")),
+        "Plus" if args.len() == 2 => {
+            if let (Some((den1, n1)), Some((den2, n2))) = (times_inverse_factor(&args[0]), times_inverse_factor(&args[1])) {
+                if den1 == den2 {
+                    let sum = format!("{} + {}", maybe_paren(n1, Prec::Add), maybe_paren(n2, Prec::Add));
+                    return Some(format!("({})/{}", sum, maybe_paren(den1, Prec::Pow)));
+                }
+            }
+            if let Some(rhs) = times_negated_operand(&args[1]) {
+                let rhs_s = if let Some(base) = inverse_power_base(rhs) {
+                    format!("1/{}", maybe_paren(base, Prec::Pow))
+                }
+                else {
+                    maybe_paren(rhs, Prec::Add)
+                };
+                return Some(format!("{} - {}", maybe_paren(&args[0], Prec::Add), rhs_s));
+            }
+            Some(format!("{} + {}", maybe_paren(&args[0], Prec::Add), maybe_paren(&args[1], Prec::Add),))
+        }
+        "Plus" if args.len() > 2 => Some(args.iter().map(|a| maybe_paren(a, Prec::Add)).collect::<Vec<_>>().join(" + ")),
         "Times" if args.len() >= 2 => {
             if args.len() == 2 && args[0].is_neg_one() {
+                if let Some(base) = inverse_power_base(&args[1]) {
+                    return Some(format!("-1/{}", maybe_paren(base, Prec::Pow)));
+                }
                 let inner = match args[1].head_name() {
-                    Some("Divide") | Some("Power") | Some("Times") => render(&args[1]),
+                    Some("Divide") | Some("Times") => render(&args[1]),
+                    Some("Power") => maybe_paren(&args[1], Prec::Unary),
                     _ => maybe_paren(&args[1], Prec::Unary),
                 };
                 return Some(format!("-{inner}"));
@@ -68,12 +90,18 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
             Some(args.iter().map(|a| maybe_paren(a, Prec::Mul)).collect::<Vec<_>>().join("*"))
         }
         "Power" if args.len() == 2 => {
+            if is_power_neg_one(&args[1]) {
+                if matches!(args[0], WolframForm::Atom(WolframAtom::Symbol(_))) {
+                    return Some(format!("1/{}", render(&args[0])));
+                }
+                return Some(format!("{}^(-1)", power_operand(&args[0])));
+            }
             // Negative / rational number atoms print with leading `-` or `/`.
             // Without parens, Wolfram re-parses `(-8)^(1/3)` as `-8^1/3`.
             Some(format!("{}^{}", power_operand(&args[0]), power_operand(&args[1])))
         }
         "Subtract" if args.len() == 2 => {
-            Some(format!("{} - {}", maybe_paren(&args[0], Prec::Add), maybe_paren(&args[1], Prec::Mul)))
+            Some(format!("{} - {}", maybe_paren(&args[0], Prec::Add), maybe_paren(&args[1], Prec::Add)))
         }
         "Divide" if args.len() == 2 => {
             Some(format!("{}/{}", maybe_paren(&args[0], Prec::Mul), maybe_paren(&args[1], Prec::Pow)))
@@ -104,6 +132,49 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
         },
         _ => None,
     }
+}
+
+fn is_power_neg_one(exp: &WolframForm) -> bool {
+    matches!(exp, WolframForm::Atom(WolframAtom::Number(n)) if n.as_exact_integer() == Some(-1))
+}
+
+fn inverse_power_base(form: &WolframForm) -> Option<&WolframForm> {
+    let WolframForm::Call { head, args } = form
+    else {
+        return None;
+    };
+    if !head.is_symbol("Power") || args.len() != 2 || !is_power_neg_one(&args[1]) {
+        return None;
+    }
+    Some(&args[0])
+}
+
+fn times_negated_operand(form: &WolframForm) -> Option<&WolframForm> {
+    let WolframForm::Call { head, args } = form
+    else {
+        return None;
+    };
+    if !head.is_symbol("Times") || args.len() != 2 || !args[0].is_neg_one() {
+        return None;
+    }
+    Some(&args[1])
+}
+
+fn times_inverse_factor(form: &WolframForm) -> Option<(&WolframForm, &WolframForm)> {
+    let WolframForm::Call { head, args } = form
+    else {
+        return None;
+    };
+    if !head.is_symbol("Times") || args.len() != 2 {
+        return None;
+    }
+    if let Some(den) = inverse_power_base(&args[0]) {
+        return Some((den, &args[1]));
+    }
+    if let Some(den) = inverse_power_base(&args[1]) {
+        return Some((den, &args[0]));
+    }
+    None
 }
 
 fn exact_slot_index(expr: &WolframForm) -> Option<i64> {

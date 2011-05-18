@@ -61,16 +61,16 @@ fn render_machine_complex(re: f64, im: f64) -> String {
         return fmt_scalar(re);
     }
     if near_zero(im - 1.0) {
-        return format!("{}+I", fmt_scalar(re));
+        return format!("{} + I", fmt_scalar(re));
     }
     if near_zero(im + 1.0) {
-        return format!("{}-I", fmt_scalar(re));
+        return format!("{} - I", fmt_scalar(re));
     }
     if im > 0.0 {
-        format!("{}+{}*I", fmt_scalar(re), fmt_scalar(im))
+        format!("{} + {}*I", fmt_scalar(re), fmt_scalar(im))
     }
     else {
-        format!("{}-{}*I", fmt_scalar(re), fmt_scalar(-im))
+        format!("{} - {}*I", fmt_scalar(re), fmt_scalar(-im))
     }
 }
 
