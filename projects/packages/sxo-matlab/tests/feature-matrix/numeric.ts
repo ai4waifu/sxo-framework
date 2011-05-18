@@ -10,7 +10,7 @@ export const numericFeatures = [
     feature('imag_unit_literal', 'numeric')
         .unsupported('oak bad literal on bare 1i (also 2i in complex entry)')
         .pure()
-        .gap('imag.1i', '1i', { expected: '1i' })
+        .gap('imag_unit_literal.1i', '1i', { expected: '1i' })
         .done(),
     feature('complex_ctor', 'numeric').unsupported().pure().gap('complex.ctor', 'complex(1, 2)', { expected: '1+2i' }).done(),
     feature('single', 'numeric').unsupported().pure().gap('single.1', 'single(1)', { expected: '1' }).done(),

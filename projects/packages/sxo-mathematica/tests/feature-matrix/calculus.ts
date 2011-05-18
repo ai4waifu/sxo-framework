@@ -73,10 +73,10 @@ export const calculusFeatures = [
         .gap('ilaplace.exp', 'InverseLaplaceTransform[1/(s + a), s, t]', { expected: 'Exp[-a*t]' })
         .done(),
     feature('DAbs', 'calculus')
-        .partial('D[Abs[x],x] → Abs[x]/x form (`x^(-1)*Abs[x]`); acceptable rewrite, not `Sign[x]`')
+        .partial('D[Abs[x],x] → Abs[x]/x form (`1/x*Abs[x]`); acceptable rewrite, not `Sign[x]`')
         .pure()
-        .suboptimal('dabs.x', 'D[Abs[x], x]', 'x^(-1)*Abs[x]', {
-            notes: 'ideal is `Sign[x]` or Abs[x]/x canonical; current Power paren form is locked',
+        .suboptimal('dabs.x', 'D[Abs[x], x]', '1/x*Abs[x]', {
+            notes: 'ideal is `Sign[x]` or Abs[x]/x canonical; current inverse-power render is locked',
         })
         .done(),
     feature('Curl', 'calculus')
