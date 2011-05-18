@@ -80,15 +80,11 @@ When there is no `--from`, the first tag spans **all history** to that tag. Do n
 
 **禁止**：reference 整段粘贴、hash 清单、「正式发布 npm」空话、内部里程碑代号（`Living N`、`I-N`、`S-NNN`、`Phase N`、`Gate-N` 等）进入发布稿正文。
 
-### 标题 emoji
+### 正文结构
 
-发布稿首行**固定**：
+发布稿**不要**写 `# 🚀 vX.Y.Z` 首行标题。GitHub Release 页面已有版本标题，正文重复会显得冗余。
 
-```markdown
-# 🚀 vX.Y.Z
-```
-
-🐛 / ✨ / 🔧 只出现在正文小节标题里。
+正文从 `## ✨ Features` 等小节开始。🐛 / ✨ / 🔧 只出现在小节标题里。
 
 ## Contributor email map
 

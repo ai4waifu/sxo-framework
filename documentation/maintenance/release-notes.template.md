@@ -1,5 +1,3 @@
-# 🚀 vX.Y.Z
-
 <!--
 Drafting: `git-change-logs --version X.Y.Z` (`--write` → `releases/vX.Y.Z.reference.md`, gitignored). `pnpm change-logs` is a shortcut.
 Merge reference bullets into user-facing `releases/vX.Y.Z.md` — do not publish the reference file.
