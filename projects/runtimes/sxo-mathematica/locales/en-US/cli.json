@@ -1,5 +1,5 @@
 {
-    "cli.intro": "wolframscript — Mathematica Form CLI (WolframScript-shaped; local evaluate)",
+    "cli.intro": "wolframscript -- Mathematica Form CLI (WolframScript-shaped; local evaluate)",
     "cli.cmd.version": "Print wolframscript and engine versions",
     "cli.cmd.code": "Evaluate Mathematica Form code and print the result",
     "cli.cmd.file": "Evaluate a .wl/.wls file and print the last result",

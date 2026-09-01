@@ -318,9 +318,7 @@ function publishJs(version) {
         } else if (outcome === 'auth') {
             fail(`OIDC/auth failed for ${name}. ${trustedPublisherHint()}`);
         } else if (outcome === 'missing') {
-            fail(
-                `${name} is not on the registry yet. Run pnpm placeholder:publish then pnpm placeholder:trust, then retry.`,
-            );
+            fail(`${name} is not on the registry yet. Run pnpm placeholder:publish then pnpm placeholder:trust, then retry.`);
         } else fail(`publish failed for ${name}`);
     }
     return { published, skipped };
