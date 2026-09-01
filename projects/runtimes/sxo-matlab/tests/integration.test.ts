@@ -1,0 +1,34 @@
+import { describe, expect, it } from 'vitest';
+import { Matlab, matlab } from '@sxo/matlab';
+
+describe('@sxo/matlab integration', () => {
+    it('differentiates polynomials', () => {
+        const ml = matlab.d('x^3', 'x').toMatlab();
+        expect(ml.includes('x') || ml.includes('3')).toBe(true);
+    });
+
+    it('simplifies trig identity', () => {
+        expect(matlab.evaluate('sin(x)^2 + cos(x)^2').toMatlab()).toBe('1');
+    });
+
+    it('evaluates multi-statement input', () => {
+        expect(matlab.evaluate('1; 2+2').toMatlab()).toBe('4');
+    });
+
+    it('parses matrices', () => {
+        expect(matlab.parse('[1, 2; 3, 4]').toMatlab()).toBe('[1, 2; 3, 4]');
+    });
+
+    it('integrates polynomials', () => {
+        expect(matlab.evaluate('int(x^2, x)').toMatlab()).toContain('x');
+    });
+
+    it('evaluates comparisons', () => {
+        expect(matlab.evaluate('3 > 2').toMatlab()).toBe('1');
+    });
+
+    it('shares engine version across instances', () => {
+        const mlInst = Matlab.create({ autoSimplify: false });
+        expect(mlInst.version()).toBe(matlab.version());
+    });
+});

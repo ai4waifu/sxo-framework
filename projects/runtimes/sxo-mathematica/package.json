@@ -18,6 +18,10 @@
         "./cli": {
             "types": "./dist/cli.d.ts",
             "default": "./dist/cli.js"
+        },
+        "./jupyter": {
+            "types": "./dist/jupyter/install.d.ts",
+            "default": "./dist/jupyter/install.js"
         }
     },
     "files": [
@@ -31,7 +35,7 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "test": "node ./tests/integration.mjs && node ./tests/numeric.mjs && node ./tests/cli.mjs"
+        "test": "vitest run"
     },
     "dependencies": {
         "@vmz/commander": "0.1.26",
@@ -45,6 +49,7 @@
     },
     "devDependencies": {
         "@types/node": "^22.15.0",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.4"
     }
 }
