@@ -5,6 +5,7 @@ members = [
     "projects/compilers/sxo-dialects",
     "projects/compilers/sxo-dialect-mathematica",
     "projects/compilers/sxo-dialect-matlab",
+    "projects/compilers/sxo-dialect-simple-math",
     "projects/compilers/sxo-adapter-apollo",
     "projects/compilers/sxo-napi",
     "projects/compilers/sxo-lite-wasm",
@@ -24,6 +25,7 @@ sxo-types = { path = "projects/compilers/sxo-types" }
 sxo-dialects = { path = "projects/compilers/sxo-dialects" }
 sxo-dialect-mathematica = { path = "projects/compilers/sxo-dialect-mathematica" }
 sxo-dialect-matlab = { path = "projects/compilers/sxo-dialect-matlab" }
+sxo-dialect-simple-math = { path = "projects/compilers/sxo-dialect-simple-math" }
 sxo-adapter-apollo = { path = "projects/compilers/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"

@@ -1,0 +1,19 @@
+[package]
+name = "sxo-dialect-simple-math"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Simple Math dialect: flat Form, lower, render"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+athena = { workspace = true }
+athena-ir = { workspace = true }
+athena-types = { workspace = true }
+sxo-types = { workspace = true }
