@@ -465,9 +465,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 6.0.0",
  "rand_core 0.10.1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -985,7 +987,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-adapter-apollo"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "apollo",
  "athena",
@@ -993,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-mathematica"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1006,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-matlab"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1020,7 +1022,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-simple-math"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1030,10 +1032,11 @@ dependencies = [
 
 [[package]]
 name = "sxo-lite-wasm"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena",
  "console_error_panic_hook",
+ "getrandom 0.4.3",
  "sxo-dialect-mathematica",
  "sxo-dialect-matlab",
  "sxo-types",
@@ -1042,7 +1045,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-napi"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena",
  "bytes",
@@ -1066,7 +1069,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-types"
-version = "0.1.0"
+version = "0.0.2"
 dependencies = [
  "athena-types",
 ]
