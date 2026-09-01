@@ -1,0 +1,31 @@
+//! Frontend number literal parse/render (SXO-owned; Athena holds [`Number`] only).
+
+use athena::{Number, Term, WireNumber, number_from_wire};
+
+/// Parse source text into kernel [`Number`] via wire (integer, rational, or machine float).
+pub fn parse_number_literal(text: &str) -> Option<Number> {
+    let source = text.trim();
+    if source.is_empty() {
+        return None;
+    }
+    let is_machine =
+        source.contains('.') || source.contains('e') || source.contains('E') || (source.ends_with('.') && source.len() > 1);
+    if is_machine {
+        let n: f64 = source.parse().ok()?;
+        Some(Number::machine(n))
+    }
+    else {
+        let wire = WireNumber::from_exact_literal(source)?;
+        number_from_wire(&wire).ok()
+    }
+}
+
+/// Parse a numeric literal into an Athena [`Term`] number atom.
+pub fn term_from_number_literal(text: &str) -> Option<Term> {
+    parse_number_literal(text).map(Term::number)
+}
+
+/// Baseline numeric render (dialect renderers may override formatting).
+pub fn render_number(n: &Number) -> String {
+    n.to_render_string()
+}
