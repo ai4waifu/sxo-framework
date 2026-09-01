@@ -10,9 +10,13 @@ use oak_wolfram::{
     WolframLanguage, WolframParser, lexer::token_type::WolframTokenType, parser::element_type::WolframElementType,
 };
 
-use crate::wexpr::{WAtom, WExpr};
-use crate::{mma_bridge::term_to_wexpr, term::Term};
 use sxo_types::SxoError;
+
+use crate::{
+    mma_bridge::term_to_wexpr,
+    number_literal::term_from_number_literal,
+    wexpr::{WAtom, WExpr},
+};
 
 /// Parse Mathematica / Wolfram text into a structural [`WExpr`] (no evaluate).
 pub fn parse_mathematica(input: &str) -> Result<WExpr, SxoError> {
@@ -66,7 +70,7 @@ fn lower_node(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
         }
         WolframElementType::Literal => {
             let text = slice(src, start, node.byte_length)?.trim();
-            if let Some(t) = Term::from_number_literal(text) {
+            if let Some(t) = term_from_number_literal(text) {
                 return Ok(term_to_wexpr(&t));
             }
             if text.starts_with('"') {
@@ -312,7 +316,9 @@ fn is_trivia(kind: WolframTokenType) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{mma_bridge::wexpr_to_term, term::Term, weval::evaluate};
+    use athena::{Term, evaluate};
+
+    use crate::mma_bridge::wexpr_to_term;
 
     #[test]
     fn parse_plus_times() {
@@ -376,13 +382,10 @@ mod tests {
 
     #[test]
     fn parse_big_integer() {
+        use athena::Number;
         use num_bigint::BigInt;
-        use euler::Number;
         let w = parse_mathematica("99999999999999999999").unwrap();
-        assert_eq!(
-            w,
-            WExpr::number(Number::integer(BigInt::parse_bytes(b"99999999999999999999", 10).unwrap()))
-        );
+        assert_eq!(w, WExpr::number(Number::integer(BigInt::parse_bytes(b"99999999999999999999", 10).unwrap())));
     }
 
     #[test]

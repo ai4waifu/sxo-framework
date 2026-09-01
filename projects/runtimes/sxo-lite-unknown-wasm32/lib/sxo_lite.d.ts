@@ -24,7 +24,7 @@ export class Expression {
      */
     constructor(input: string, dialect?: string | null);
     /**
-     * Simplify via `SxoEngine`.
+     * Simplify via `SxoFrontend`.
      */
     simplify(): Expression;
     /**

@@ -1,4 +1,4 @@
-//! Node N-API bindings for SXO (`SxoEngine` + engine [`Term`]).
+//! Node N-API bindings for SXO (`SxoFrontend` + engine [`Term`]).
 //!
 //! Mathematica callers go through Wolfram text ↔ `WExpr` ↔ `Term` inside the engine.
 //! This crate does **not** expose `WExpr` to JS.
@@ -7,7 +7,7 @@
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use sxo_engine::{Dialect, SxoEngine, SxoError, Term, VERSION as CORE_VERSION};
+use sxo_dialects::{Dialect, SxoError, SxoFrontend, Term, VERSION as CORE_VERSION};
 
 fn map_err(err: SxoError) -> Error {
     Error::from_reason(err.message)
@@ -32,7 +32,7 @@ fn dialect_to_str(d: Dialect) -> &'static str {
     }
 }
 
-fn parse_to_term(eng: &SxoEngine, input: &str, dialect: Dialect) -> Result<(Term, Dialect)> {
+fn parse_to_term(eng: &SxoFrontend, input: &str, dialect: Dialect) -> Result<(Term, Dialect)> {
     let resolved = match eng.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
@@ -70,7 +70,7 @@ impl Expression {
     #[napi(factory)]
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         let (term, resolved) = parse_to_term(&eng, &input, d)?;
         Ok(Self { inner: term, dialect: resolved })
     }
@@ -78,7 +78,7 @@ impl Expression {
     /// Differentiate with respect to `var`.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         let out = eng.differentiate_term(&self.inner, &var);
         Ok(Self { inner: out, dialect: self.dialect })
     }
@@ -86,21 +86,21 @@ impl Expression {
     /// Simplify via the engine (`Simplify` head).
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Ok(Self { inner: eng.simplify_term(&self.inner), dialect: self.dialect })
     }
 
     /// Evaluate (canonical rewrite) this expression.
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Ok(Self { inner: eng.evaluate(&self.inner), dialect: self.dialect })
     }
 
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Ok(match self.dialect {
             Dialect::Matlab => eng.render_as_matlab(&self.inner),
             _ => eng.render_as_wolfram(&self.inner),
@@ -110,14 +110,14 @@ impl Expression {
     /// Render as Mathematica / Wolfram text.
     #[napi(js_name = "toWolfram")]
     pub fn to_wolfram(&self) -> Result<String> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Ok(eng.render_as_wolfram(&self.inner))
     }
 
     /// Render as MATLAB text.
     #[napi(js_name = "toMatlab")]
     pub fn to_matlab(&self) -> Result<String> {
-        let eng = SxoEngine::new();
+        let eng = SxoFrontend::new();
         Ok(eng.render_as_matlab(&self.inner))
     }
 
@@ -138,7 +138,7 @@ impl Expression {
 #[napi]
 pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoEngine::new();
+    let eng = SxoFrontend::new();
     let (term, resolved) = parse_to_term(&eng, &input, d)?;
     Ok(Expression { inner: eng.differentiate_term(&term, &var), dialect: resolved })
 }
@@ -147,7 +147,7 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
 #[napi]
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoEngine::new();
+    let eng = SxoFrontend::new();
     let (term, resolved) = parse_to_term(&eng, &input, d)?;
     Ok(Expression { inner: eng.simplify_term(&eng.evaluate(&term)), dialect: resolved })
 }

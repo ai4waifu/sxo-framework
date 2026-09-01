@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "N-API bridge: Node.js ↔ SXO SxoEngine"
+description = "N-API bridge: Node.js ↔ SXO SxoFrontend"
 publish = false
 
 [lib]
@@ -17,7 +17,7 @@ name = "sxo_napi"
 workspace = true
 
 [dependencies]
-sxo-engine = { workspace = true }
+sxo-dialects = { workspace = true }
 napi.workspace = true
 napi-derive.workspace = true
 

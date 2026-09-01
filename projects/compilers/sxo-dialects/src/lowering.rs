@@ -1,13 +1,11 @@
-//! Lower bridge [`Term`](crate::term::Term) into Euler kernel IR ([`TermArena`](euler::TermArena)).
+//! Lower Athena [`Term`] into kernel IR ([`TermArena`](athena::TermArena)).
 
 use std::collections::HashMap;
 
-use euler::{AtomKind, OperatorId, SourceSpan, TermArena, TermId, TermKind};
+use athena::{Atom, AtomKind, OperatorId, SourceSpan, Term, TermArena, TermId, TermKind};
 use sxo_types::SxoError;
 
-use crate::term::{Atom, Term};
-
-/// Euler kernel IR bundle after lowering.
+/// Athena kernel IR bundle after lowering.
 #[derive(Debug)]
 pub struct KernelTerm {
     /// Owning arena.
@@ -16,7 +14,7 @@ pub struct KernelTerm {
     pub root: TermId,
 }
 
-/// Map bridge tree into kernel IR.
+/// Map Athena tree into kernel IR.
 pub fn lower_to_kernel(term: &Term) -> Result<KernelTerm, SxoError> {
     let mut arena = TermArena::new();
     let mut ops = OperatorRegistry::default();
@@ -25,12 +23,7 @@ pub fn lower_to_kernel(term: &Term) -> Result<KernelTerm, SxoError> {
     Ok(KernelTerm { arena, root })
 }
 
-fn lower_term(
-    arena: &mut TermArena,
-    ops: &mut OperatorRegistry,
-    term: &Term,
-    span: SourceSpan,
-) -> Result<TermId, SxoError> {
+fn lower_term(arena: &mut TermArena, ops: &mut OperatorRegistry, term: &Term, span: SourceSpan) -> Result<TermId, SxoError> {
     match term {
         Term::Atom(Atom::Number(n)) => Ok(arena.push(TermKind::Atom(AtomKind::Number(n.clone())), span)),
         Term::Atom(Atom::String(s)) => Ok(arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)),
@@ -45,10 +38,8 @@ fn lower_term(
             }
             Ok(arena.push(TermKind::List(ids), span))
         }
-        Term::App { head, args } => {
-            let head_name = head
-                .head_name()
-                .ok_or_else(|| SxoError::new("lowering: application head must be a symbol"))?;
+        Term::Application { head, arguments: args } => {
+            let head_name = head.head_name().ok_or_else(|| SxoError::new("lowering: application head must be a symbol"))?;
             let op = ops.intern(head_name);
             let mut arg_ids = Vec::with_capacity(args.len());
             for arg in args {

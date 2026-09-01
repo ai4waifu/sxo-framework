@@ -1,7 +1,8 @@
 //! Render engine [`Term`] as MATLAB text (no `WExpr`).
 
+use athena::{Atom, Term};
+
 use crate::number_literal::render_number;
-use crate::term::{Atom, Term};
 
 /// Render engine IR as MATLAB-ish source.
 pub fn render_matlab(expr: &Term) -> String {
@@ -27,7 +28,7 @@ pub fn render_matlab(expr: &Term) -> String {
                 format!("[{inner}]")
             }
         }
-        Term::App { head, args } => {
+        Term::Application { head, arguments: args } => {
             if let Some(infix) = try_infix(head, args) {
                 return infix;
             }

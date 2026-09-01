@@ -8,8 +8,10 @@ use oak_core::{
 };
 use oak_matlab::{MatlabLanguage, MatlabParser, lexer::token_type::MatlabTokenType, parser::element_type::MatlabElementType};
 
-use crate::term::Term;
+use athena::{Atom, Term};
 use sxo_types::SxoError;
+
+use crate::number_literal::term_from_number_literal;
 
 /// Parse MATLAB text into engine [`Term`] (no evaluate).
 pub fn parse_matlab(input: &str) -> Result<Term, SxoError> {
@@ -63,13 +65,13 @@ fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
         }
         MatlabElementType::Literal => {
             let text = slice(src, start, node.byte_length)?.trim();
-            if let Some(t) = Term::from_number_literal(text) {
+            if let Some(t) = term_from_number_literal(text) {
                 return Ok(t);
             }
             if (text.starts_with('"') && text.ends_with('"'))
                 || (text.starts_with('\'') && text.ends_with('\'') && text.len() >= 2)
             {
-                Ok(Term::Atom(crate::term::Atom::String(text[1..text.len() - 1].to_string())))
+                Ok(Term::Atom(Atom::String(text[1..text.len() - 1].to_string())))
             }
             else {
                 Err(SxoError::new(format!("matlab(oak): bad literal `{text}`")))
@@ -110,12 +112,7 @@ fn lower_array(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) ->
             }
         }
     }
-    if rows.len() == 1 {
-        Ok(Term::List(rows.remove(0)))
-    }
-    else {
-        Ok(Term::List(rows.into_iter().map(Term::List).collect()))
-    }
+    if rows.len() == 1 { Ok(Term::List(rows.remove(0))) } else { Ok(Term::List(rows.into_iter().map(Term::List).collect())) }
 }
 
 fn lower_prefix(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
@@ -240,7 +237,7 @@ fn lower_call(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
             GreenTree::Node(n) => {
                 match n.kind {
                     MatlabElementType::Symbol if head.is_none() => {
-                        if let Term::Atom(crate::term::Atom::Symbol(name)) = lower_node(n, src, offset)? {
+                        if let Term::Atom(Atom::Symbol(name)) = lower_node(n, src, offset)? {
                             head = Some(Term::symbol(map_matlab_head(&name)));
                         }
                     }
@@ -262,10 +259,10 @@ fn lower_call(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
 
     let mut expr = head.ok_or_else(|| SxoError::new("matlab(oak): call missing head"))?;
     if arg_groups.is_empty() {
-        return Ok(Term::App { head: Box::new(expr), args: vec![] });
+        return Ok(Term::Application { head: Box::new(expr), arguments: vec![] });
     }
     for args in arg_groups {
-        expr = Term::App { head: Box::new(expr), args };
+        expr = Term::Application { head: Box::new(expr), arguments: args };
     }
     Ok(expr)
 }
@@ -324,7 +321,7 @@ fn is_trivia(kind: MatlabTokenType) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::weval::evaluate;
+    use athena::evaluate;
 
     #[test]
     fn parse_plus_times() {
@@ -375,10 +372,7 @@ mod tests {
         let t = parse_matlab("[1, 2; 3, 4]").unwrap();
         assert_eq!(
             t,
-            Term::List(vec![
-                Term::List(vec![Term::int(1), Term::int(2)]),
-                Term::List(vec![Term::int(3), Term::int(4)]),
-            ])
+            Term::List(vec![Term::List(vec![Term::int(1), Term::int(2)]), Term::List(vec![Term::int(3), Term::int(4)]),])
         );
         assert_eq!(crate::render_matlab::render_matlab(&t), "[1, 2; 3, 4]");
     }

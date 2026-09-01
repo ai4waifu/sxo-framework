@@ -1,20 +1,19 @@
 [package]
-name = "sxo-engine"
+name = "sxo-dialects"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "SXO bridge: oak parse, frontend forms, lowering to Euler kernel IR"
+description = "SXO dialect layer: oak parse, Form, lowering, render (no math engine)"
 publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
-euler = { workspace = true }
-euler-ir = { workspace = true }
+athena = { workspace = true }
 sxo-types = { workspace = true }
 oak-core = { workspace = true }
 oak-wolfram = { workspace = true }

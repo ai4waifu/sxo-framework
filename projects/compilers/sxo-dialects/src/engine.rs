@@ -1,9 +1,13 @@
-//! Product facade: parse → bridge [`Term`] → evaluate/render.
+//! Product facade: parse → Athena [`Term`] → evaluate/render.
 //!
-//! Math semantics live in **`euler`**; this type wires oak frontends and transitional `weval`.
+//! Math semantics live in **`athena::AthenaEngine`**; this type wires oak frontends.
+
+use athena::{AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, Term};
+use sxo_types::{Dialect, SxoError, detect_dialect};
 
 use crate::{
     diff,
+    domain_lower::try_evaluate_calculus,
     expr::Expr,
     lowering::{KernelTerm, lower_to_kernel},
     mma_bridge::{term_to_wexpr, wexpr_to_term},
@@ -13,28 +17,29 @@ use crate::{
     render_matlab::render_matlab,
     render_wexpr::render_wexpr,
     simplify,
-    term::Term,
-    weval,
     wexpr::WExpr,
 };
-use sxo_types::{Dialect, SxoError, detect_dialect};
 
-/// SXO engine: frontend parse, bridge IR, host-facing evaluate/render.
+/// SXO dialect frontend: oak parse, Form bridge, render; math via Athena.
 #[derive(Debug, Default, Clone)]
-pub struct SxoEngine {
+pub struct SxoFrontend {
     /// Preferred render dialect when callers do not override.
     pub default_dialect: Dialect,
 }
 
-impl SxoEngine {
-    /// Create an engine with `Auto` as the default dialect preference.
+impl SxoFrontend {
+    /// Create a frontend with `Auto` as the default dialect preference.
     pub fn new() -> Self {
         Self { default_dialect: Dialect::Auto }
     }
 
-    /// Create an engine with an explicit default dialect.
+    /// Create a frontend with an explicit default dialect.
     pub fn with_dialect(dialect: Dialect) -> Self {
         Self { default_dialect: dialect }
+    }
+
+    fn math(&self) -> AthenaEngine {
+        AthenaEngine::new()
     }
 
     /// Resolve `Auto` against `input`, otherwise return `dialect`.
@@ -45,24 +50,50 @@ impl SxoEngine {
         }
     }
 
-    /// Lower bridge [`Term`] into Euler kernel IR.
+    /// Lower Athena [`Term`] into kernel arena IR.
     pub fn lower_to_kernel(&self, term: &Term) -> Result<KernelTerm, SxoError> {
         lower_to_kernel(term)
     }
 
-    /// Evaluate bridge [`Term`] (transitional builtin evaluator).
+    /// Evaluate Athena [`Term`], preferring calculus [`DomainRequest`] lowering.
     pub fn evaluate(&self, expr: &Term) -> Term {
-        weval::evaluate(expr)
+        if let Some(Ok(term)) = try_evaluate_calculus(expr, |req| self.math().execute_domain(req)) {
+            return term;
+        }
+        self.math().evaluate_term(expr)
     }
 
-    /// Differentiate bridge [`Term`].
+    /// Differentiate Athena [`Term`] through calculus domain dispatch.
     pub fn differentiate_term(&self, expr: &Term, var: &str) -> Term {
-        self.evaluate(&weval::differentiate(expr, var))
+        match self.execute_domain(DomainRequest::Calculus(CalculusRequest::Derivative {
+            expression: expr.clone(),
+            variable: var.to_string(),
+            order: athena::DerivativeOrder::First,
+            assumptions: athena::AssumptionSet::empty(),
+        })) {
+            Ok(r) => athena::calculus_result_bridge_term(&r),
+            Err(_) => self.math().differentiate_term(expr, var),
+        }
     }
 
-    /// `Simplify` builtin on bridge [`Term`].
+    /// Domain dispatch through Athena (calculus returns conditioned results).
+    pub fn execute_domain(&self, request: DomainRequest) -> Result<CalculusResult<CalculusValue>, Diagnostic> {
+        self.math().execute_domain(request)
+    }
+
+    /// Convenience: indefinite integral via [`DomainRequest::Calculus`].
+    pub fn integrate_term(&self, expr: &Term, var: &str) -> CalculusResult<CalculusValue> {
+        self.execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
+            expression: expr.clone(),
+            variable: var.to_string(),
+            assumptions: athena::AssumptionSet::empty(),
+        }))
+        .expect("calculus Integral dispatch is infallible")
+    }
+
+    /// `Simplify` builtin on Athena [`Term`].
     pub fn simplify_term(&self, expr: &Term) -> Term {
-        self.evaluate(&Term::app("Simplify", vec![expr.clone()]))
+        self.math().simplify_term(expr)
     }
 
     // ---- Mathematica frontend (WExpr) ----
@@ -72,12 +103,12 @@ impl SxoEngine {
         parse_mathematica(input)
     }
 
-    /// MMA frontend form → bridge [`Term`].
+    /// MMA frontend form → Athena [`Term`].
     pub fn from_mathematica(&self, w: &WExpr) -> Term {
         wexpr_to_term(w)
     }
 
-    /// Bridge [`Term`] → MMA frontend form.
+    /// Athena [`Term`] → MMA frontend form.
     pub fn to_mathematica(&self, t: &Term) -> WExpr {
         term_to_wexpr(t)
     }
@@ -88,20 +119,20 @@ impl SxoEngine {
         Ok(self.evaluate(&self.from_mathematica(&w)))
     }
 
-    /// Differentiate Wolfram input (via bridge [`Term`]).
+    /// Differentiate Wolfram input (via Athena [`Term`]).
     pub fn d_mathematica(&self, input: &str, var: &str) -> Result<Term, SxoError> {
         let w = self.parse_mathematica(input)?;
         Ok(self.differentiate_term(&self.from_mathematica(&w), var))
     }
 
-    /// Render bridge [`Term`] as Wolfram text (via MMA frontend form).
+    /// Render Athena [`Term`] as Wolfram text (via MMA frontend form).
     pub fn render_as_wolfram(&self, t: &Term) -> String {
         render_wexpr(&self.to_mathematica(t))
     }
 
     // ---- MATLAB frontend ----
 
-    /// Parse MATLAB text into bridge [`Term`] (no evaluate).
+    /// Parse MATLAB text into Athena [`Term`] (no evaluate).
     pub fn parse_matlab(&self, input: &str) -> Result<Term, SxoError> {
         parse_matlab(input)
     }
@@ -116,7 +147,7 @@ impl SxoEngine {
         Ok(self.differentiate_term(&self.parse_matlab(input)?, var))
     }
 
-    /// Render bridge [`Term`] as MATLAB text.
+    /// Render Athena [`Term`] as MATLAB text.
     pub fn render_as_matlab(&self, t: &Term) -> String {
         render_matlab(t)
     }
