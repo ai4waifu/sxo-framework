@@ -5,6 +5,8 @@
 
 #![deny(missing_docs)]
 
+mod jupyter;
+
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use sxo_dialects::{Dialect, SxoError, SxoFrontend, Term, VERSION as CORE_VERSION};
@@ -156,4 +158,14 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
 #[napi]
 pub fn expression(input: String, dialect: Option<String>) -> Result<Expression> {
     Expression::parse(input, dialect)
+}
+
+/// Run a Jupyter kernel until shutdown (blocks the calling thread).
+#[napi]
+pub fn run_jupyter_kernel(connection_file: String) -> Result<()> {
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| Error::from_reason(format!("tokio runtime: {e}")))?;
+    rt.block_on(jupyter::run(&connection_file)).map_err(Error::from_reason)
 }

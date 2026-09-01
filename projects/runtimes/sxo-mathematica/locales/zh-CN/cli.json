@@ -1,10 +1,10 @@
 {
-    "cli.intro": "wolframscript �?Mathematica Form 命令行（对标 WolframScript；本地求值）",
-    "cli.cmd.version": "打印 wolframscript 与引擎版�?,
-    "cli.cmd.code": "求�?Mathematica Form 并打印结�?,
-    "cli.cmd.file": "执行 .wl/.wls 文件并打印最后结�?,
+    "cli.intro": "wolframscript �?Mathematica Form 命令行（对标 WolframScript；本地求值）",
+    "cli.cmd.version": "打印 wolframscript 与引擎版�?,
+    "cli.cmd.code": "求�?Mathematica Form 并打印结�?,
+    "cli.cmd.file": "执行 .wl/.wls 文件并打印最后结�?,
     "cli.cmd.script": "脚本模式（默认不打印；Print / --print 才输出）",
-    "cli.cmd.repl": "交互�?In[n]:= / Out[n]=",
-    "cli.opt.print": "打印最后结果；mode=all 时打印每一行结�?,
-    "cli.opt.json": "�?stdout 输出一�?JSON 文档"
+    "cli.cmd.repl": "交互�?In[n]:= / Out[n]=",
+    "cli.opt.print": "打印最后结果；mode=all 时打印每一行结�?,
+    "cli.opt.json": "�?stdout 输出一�?JSON 文档"
 }
