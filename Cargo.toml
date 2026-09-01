@@ -2,7 +2,6 @@
 resolver = "2"
 members = [
     "projects/compilers/sxo-types",
-    "projects/compilers/sxo-dialects",
     "projects/compilers/sxo-dialect-mathematica",
     "projects/compilers/sxo-dialect-matlab",
     "projects/compilers/sxo-dialect-simple-math",
@@ -10,7 +9,7 @@ members = [
     "projects/compilers/sxo-napi",
     "projects/compilers/sxo-lite-wasm",
 ]
-default-members = ["projects/compilers/sxo-dialects"]
+default-members = ["projects/compilers/sxo-dialect-mathematica"]
 
 [workspace.package]
 version = "0.1.0"
@@ -22,7 +21,6 @@ rust-version = "1.89"
 
 [workspace.dependencies]
 sxo-types = { path = "projects/compilers/sxo-types" }
-sxo-dialects = { path = "projects/compilers/sxo-dialects" }
 sxo-dialect-mathematica = { path = "projects/compilers/sxo-dialect-mathematica" }
 sxo-dialect-matlab = { path = "projects/compilers/sxo-dialect-matlab" }
 sxo-dialect-simple-math = { path = "projects/compilers/sxo-dialect-simple-math" }
