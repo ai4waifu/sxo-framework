@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { mathematica } from '@sxo/mathematica';
+import { describe, expect, it } from 'vitest';
 
 describe('@sxo/mathematica numeric', () => {
     it('keeps exact big integers', () => {

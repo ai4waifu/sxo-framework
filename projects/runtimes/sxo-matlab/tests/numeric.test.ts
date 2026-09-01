@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { matlab } from '@sxo/matlab';
+import { describe, expect, it } from 'vitest';
 
 describe('@sxo/matlab numeric', () => {
     it('keeps exact big integers', () => {

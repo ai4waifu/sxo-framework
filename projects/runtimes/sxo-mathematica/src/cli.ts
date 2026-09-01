@@ -6,9 +6,9 @@
  * subcommands before `parse` — help/catalog/i18n stay on the commander tree.
  */
 
-import { createInterface } from 'node:readline';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { assertCatalogCoverage, createCli, loadCatalog, loadLocalesManifest, resolveLocale } from '@vmz/commander';
 import { formatDiagnostic, type LocaleCatalog } from '@vmz/diagnostic';

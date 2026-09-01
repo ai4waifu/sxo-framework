@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { d, version } from '@sxo/simple-math';
+import { describe, expect, it } from 'vitest';
 
 describe('@sxo/simple-math', () => {
     it('returns a semver version', () => {
