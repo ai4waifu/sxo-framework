@@ -252,6 +252,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -455,11 +465,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "r-efi 6.0.0",
  "rand_core 0.10.1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -638,36 +646,6 @@ name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
-
-[[package]]
-name = "num-bigint"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
-dependencies = [
- "num-integer",
- "num-traits",
-]
-
-[[package]]
-name = "num-integer"
-version = "0.1.47"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
-name = "num-rational"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
-dependencies = [
- "num-bigint",
- "num-integer",
- "num-traits",
-]
 
 [[package]]
 name = "num-traits"
@@ -1051,27 +1029,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "sxo-dialects"
-version = "0.1.0"
-dependencies = [
- "athena",
- "num-bigint",
- "num-integer",
- "num-rational",
- "num-traits",
- "oak-core",
- "oak-matlab",
- "oak-wolfram",
- "sxo-adapter-apollo",
- "sxo-types",
-]
-
-[[package]]
 name = "sxo-lite-wasm"
 version = "0.1.0"
 dependencies = [
- "getrandom 0.4.3",
- "sxo-dialects",
+ "athena",
+ "console_error_panic_hook",
+ "sxo-dialect-mathematica",
+ "sxo-dialect-matlab",
+ "sxo-types",
  "wasm-bindgen",
 ]
 
@@ -1079,6 +1044,7 @@ dependencies = [
 name = "sxo-napi"
 version = "0.1.0"
 dependencies = [
+ "athena",
  "bytes",
  "chrono",
  "futures-util",
@@ -1090,7 +1056,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "sxo-dialects",
+ "sxo-dialect-mathematica",
+ "sxo-dialect-matlab",
+ "sxo-types",
  "tokio",
  "uuid",
  "zeromq",
