@@ -1,15 +1,16 @@
-//! Node N-API bindings for SXO (`SxoFrontend` + engine [`Term`]).
-//!
-//! Mathematica callers go through Wolfram text ↔ `WExpr` ↔ `Term` inside the engine.
-//! This crate does **not** expose `WExpr` to JS.
+//! Node N-API bindings for SXO (`Session` + engine [`Term`]).
 
 #![deny(missing_docs)]
 
 mod jupyter;
+pub mod session;
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use sxo_dialects::{Dialect, SxoError, SxoFrontend, Term, VERSION as CORE_VERSION};
+use session::Session;
+use sxo_types::{Dialect, SxoError, VERSION as CORE_VERSION};
+
+pub use athena::Term;
 
 fn map_err(err: SxoError) -> Error {
     Error::from_reason(err.message)
@@ -34,17 +35,17 @@ fn dialect_to_str(d: Dialect) -> &'static str {
     }
 }
 
-fn parse_to_term(eng: &SxoFrontend, input: &str, dialect: Dialect) -> Result<(Term, Dialect)> {
-    let resolved = match eng.resolve_dialect(input, dialect) {
+fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Term, Dialect)> {
+    let resolved = match session.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
     };
     let term = match resolved {
         Dialect::Mathematica => {
-            let w = eng.parse_mathematica(input).map_err(map_err)?;
-            eng.from_mathematica(&w)
+            let w = session.parse_mathematica(input).map_err(map_err)?;
+            session.from_mathematica(&w)
         }
-        Dialect::Matlab => eng.parse_matlab(input).map_err(map_err)?,
+        Dialect::Matlab => session.parse_matlab(input).map_err(map_err)?,
         Dialect::SimpleMath | Dialect::Auto => {
             return Err(Error::from_reason("simple-math dialect is off the current delivery route"));
         }
@@ -72,55 +73,55 @@ impl Expression {
     #[napi(factory)]
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
-        let eng = SxoFrontend::new();
-        let (term, resolved) = parse_to_term(&eng, &input, d)?;
+        let session = Session::new();
+        let (term, resolved) = parse_to_term(&session, &input, d)?;
         Ok(Self { inner: term, dialect: resolved })
     }
 
     /// Differentiate with respect to `var`.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let eng = SxoFrontend::new();
-        let out = eng.differentiate_term(&self.inner, &var);
+        let session = Session::new();
+        let out = session.differentiate_term(&self.inner, &var);
         Ok(Self { inner: out, dialect: self.dialect })
     }
 
     /// Simplify via the engine (`Simplify` head).
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let eng = SxoFrontend::new();
-        Ok(Self { inner: eng.simplify_term(&self.inner), dialect: self.dialect })
+        let session = Session::new();
+        Ok(Self { inner: session.simplify_term(&self.inner), dialect: self.dialect })
     }
 
     /// Evaluate (canonical rewrite) this expression.
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        let eng = SxoFrontend::new();
-        Ok(Self { inner: eng.evaluate(&self.inner), dialect: self.dialect })
+        let session = Session::new();
+        Ok(Self { inner: session.evaluate(&self.inner), dialect: self.dialect })
     }
 
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
-        let eng = SxoFrontend::new();
+        let session = Session::new();
         Ok(match self.dialect {
-            Dialect::Matlab => eng.render_as_matlab(&self.inner),
-            _ => eng.render_as_wolfram(&self.inner),
+            Dialect::Matlab => session.render_as_matlab(&self.inner),
+            _ => session.render_as_wolfram(&self.inner),
         })
     }
 
     /// Render as Mathematica / Wolfram text.
     #[napi(js_name = "toWolfram")]
     pub fn to_wolfram(&self) -> Result<String> {
-        let eng = SxoFrontend::new();
-        Ok(eng.render_as_wolfram(&self.inner))
+        let session = Session::new();
+        Ok(session.render_as_wolfram(&self.inner))
     }
 
     /// Render as MATLAB text.
     #[napi(js_name = "toMatlab")]
     pub fn to_matlab(&self) -> Result<String> {
-        let eng = SxoFrontend::new();
-        Ok(eng.render_as_matlab(&self.inner))
+        let session = Session::new();
+        Ok(session.render_as_matlab(&self.inner))
     }
 
     /// Structural equality.
@@ -140,18 +141,18 @@ impl Expression {
 #[napi]
 pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoFrontend::new();
-    let (term, resolved) = parse_to_term(&eng, &input, d)?;
-    Ok(Expression { inner: eng.differentiate_term(&term, &var), dialect: resolved })
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, &input, d)?;
+    Ok(Expression { inner: session.differentiate_term(&term, &var), dialect: resolved })
 }
 
 /// Top-level `simplify(expr, dialect?)`.
 #[napi]
 pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
-    let eng = SxoFrontend::new();
-    let (term, resolved) = parse_to_term(&eng, &input, d)?;
-    Ok(Expression { inner: eng.simplify_term(&eng.evaluate(&term)), dialect: resolved })
+    let session = Session::new();
+    let (term, resolved) = parse_to_term(&session, &input, d)?;
+    Ok(Expression { inner: session.simplify_term(&session.evaluate(&term)), dialect: resolved })
 }
 
 /// Top-level `expression(input, dialect?)` — parse only (no evaluate).

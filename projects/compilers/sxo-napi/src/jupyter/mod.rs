@@ -7,7 +7,8 @@ mod wire;
 
 use connection::ConnectionFile;
 use serde_json::{Value, json};
-use sxo_dialects::{SxoFrontend, VERSION as CORE_VERSION};
+use crate::session::Session;
+use sxo_types::VERSION as CORE_VERSION;
 use wire::JupyterMessage;
 use zeromq::{PubSocket, RepSocket, RouterSocket, Socket, SocketRecv, SocketSend};
 
@@ -54,7 +55,7 @@ pub async fn run(connection_file: &str) -> Result<(), String> {
         }
     });
 
-    let eng = SxoFrontend::new();
+    let eng = Session::new();
     let mut execution_count: i64 = 0;
     let mut shutting_down = false;
 
@@ -101,7 +102,7 @@ enum Channel {
 async fn handle_request(
     request: &JupyterMessage,
     key: &str,
-    eng: &SxoFrontend,
+    eng: &Session,
     execution_count: &mut i64,
     reply_sock: &mut RouterSocket,
     iopub: &mut PubSocket,
@@ -148,7 +149,7 @@ async fn handle_request(
 async fn handle_execute(
     request: &JupyterMessage,
     key: &str,
-    eng: &SxoFrontend,
+    eng: &Session,
     execution_count: &mut i64,
     shell: &mut RouterSocket,
     iopub: &mut PubSocket,
@@ -243,7 +244,7 @@ async fn handle_execute(
     Ok(())
 }
 
-fn evaluate_mathematica(eng: &SxoFrontend, code: &str) -> Result<String, String> {
+fn evaluate_mathematica(eng: &Session, code: &str) -> Result<String, String> {
     let trimmed = code.trim();
     if trimmed.is_empty() {
         return Ok(String::new());
