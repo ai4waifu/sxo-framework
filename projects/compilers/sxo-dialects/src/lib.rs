@@ -26,8 +26,9 @@ mod wexpr;
 
 pub use athena::{
     AssumptionSet, AthenaEngine, Atom, CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, Diagnostic,
-    DiagnosticCode, DomainRequest, ExactNumber, LimitApproach, LimitDirection, Number, RealNumber, Remainder, Series, Term,
-    TermArena, TermBuilder, TermId, TermKind, differentiate_term, evaluate, number_from_term, try_calculus_request,
+    DiagnosticCode, DomainRequest, DomainResult, ExactNumber, LimitApproach, LimitDirection, Number, RealNumber, Remainder,
+    Series, Term, TermArena, TermBuilder, TermId, TermKind, differentiate_term, evaluate, number_from_term,
+    try_calculus_request,
 };
 pub use domain_lower::{derivative_request, limit_request, lower_calculus_term, series_request, try_evaluate_calculus};
 pub use engine::SxoFrontend;
@@ -85,7 +86,7 @@ mod tests {
     fn wexpr_is_not_term() {
         let w = WExpr::call("Sin", vec![WExpr::symbol("x")]);
         let t = wexpr_to_term(&w);
-        assert_eq!(t, Term::app("Sin", vec![Term::symbol("x")]));
+        assert_eq!(t, Term::apply("Sin", vec![Term::symbol("x")]));
         assert_eq!(term_to_wexpr(&t), w);
     }
 
@@ -121,7 +122,7 @@ mod tests {
             }))
             .expect("ok");
         match d {
-            CalculusResult::Exact { value: CalculusValue::Expression(v), .. } => {
+            DomainResult::Calculus(CalculusResult::Exact { value: CalculusValue::Expression(v), .. }) => {
                 let s = eng.render_as_wolfram(&v);
                 assert!(s.contains('x'), "got {s}");
             }
@@ -138,7 +139,9 @@ mod tests {
             }))
             .expect("ok");
         match integ {
-            CalculusResult::Exact { value: CalculusValue::Expression(v), .. } => assert_eq!(v, Term::int(2)),
+            DomainResult::Calculus(CalculusResult::Exact { value: CalculusValue::Expression(v), .. }) => {
+                assert_eq!(v, Term::int(2))
+            }
             other => panic!("expected Exact 2, got {other:?}"),
         }
     }
@@ -148,7 +151,10 @@ mod tests {
         let eng = SxoFrontend::new();
         let lim = eng
             .execute_domain(DomainRequest::Calculus(CalculusRequest::Limit {
-                expression: Term::app("Plus", vec![Term::app("Power", vec![Term::symbol("x"), Term::int(2)]), Term::int(1)]),
+                expression: Term::apply(
+                    "Plus",
+                    vec![Term::apply("Power", vec![Term::symbol("x"), Term::int(2)]), Term::int(1)],
+                ),
                 variable: "x".into(),
                 approach: LimitApproach::Finite(Term::int(2)),
                 direction: LimitDirection::TwoSided,
@@ -156,13 +162,15 @@ mod tests {
             }))
             .expect("ok");
         match lim {
-            CalculusResult::Exact { value: CalculusValue::Expression(v), .. } => assert_eq!(v, Term::int(5)),
+            DomainResult::Calculus(CalculusResult::Exact { value: CalculusValue::Expression(v), .. }) => {
+                assert_eq!(v, Term::int(5))
+            }
             other => panic!("expected Exact 5, got {other:?}"),
         }
 
         let series = eng
             .execute_domain(DomainRequest::Calculus(CalculusRequest::Series {
-                expression: Term::app("Power", vec![Term::symbol("x"), Term::int(2)]),
+                expression: Term::apply("Power", vec![Term::symbol("x"), Term::int(2)]),
                 variable: "x".into(),
                 center: Term::int(0),
                 order: 3,
@@ -170,7 +178,7 @@ mod tests {
             }))
             .expect("ok");
         match series {
-            CalculusResult::Exact { value: CalculusValue::Series(s), .. } => {
+            DomainResult::Calculus(CalculusResult::Exact { value: CalculusValue::Series(s), .. }) => {
                 assert_eq!(s.remainder, Remainder::ExactTruncation)
             }
             other => panic!("expected Exact Series, got {other:?}"),
@@ -187,20 +195,20 @@ mod tests {
         let d_s = eng.render_as_wolfram(&d_out);
         assert!(d_s.contains('x'), "got {d_s}");
 
-        let lim = Term::app(
+        let lim = Term::apply(
             "Limit",
             vec![
-                Term::app("Plus", vec![Term::app("Power", vec![Term::symbol("x"), Term::int(2)]), Term::int(1)]),
-                Term::app("Rule", vec![Term::symbol("x"), Term::int(2)]),
+                Term::apply("Plus", vec![Term::apply("Power", vec![Term::symbol("x"), Term::int(2)]), Term::int(1)]),
+                Term::apply("Rule", vec![Term::symbol("x"), Term::int(2)]),
             ],
         );
         assert!(matches!(lower_calculus_term(&lim), Some(DomainRequest::Calculus(CalculusRequest::Limit { .. }))));
         assert_eq!(eng.evaluate(&lim), Term::int(5));
 
-        let series = Term::app(
+        let series = Term::apply(
             "Series",
             vec![
-                Term::app("Power", vec![Term::symbol("x"), Term::int(2)]),
+                Term::apply("Power", vec![Term::symbol("x"), Term::int(2)]),
                 Term::List(vec![Term::symbol("x"), Term::int(0), Term::int(3)]),
             ],
         );

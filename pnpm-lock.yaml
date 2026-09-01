@@ -95,6 +95,13 @@ importers:
         version: 5.9.3
 
   projects/runtimes/sxo-mathematica:
+    dependencies:
+      '@vmz/commander':
+        specifier: 0.1.26
+        version: 0.1.26
+      '@vmz/diagnostic':
+        specifier: 0.1.26
+        version: 0.1.26
     optionalDependencies:
       '@sxo/sxo-darwin-arm64':
         specifier: workspace:*

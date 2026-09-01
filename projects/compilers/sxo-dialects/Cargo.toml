@@ -15,6 +15,7 @@ workspace = true
 [dependencies]
 athena = { workspace = true }
 sxo-types = { workspace = true }
+sxo-adapter-apollo = { workspace = true }
 oak-core = { workspace = true }
 oak-wolfram = { workspace = true }
 oak-matlab = { workspace = true }

@@ -4,8 +4,8 @@
 //! produced by oak parse + Form bridges (no source-text parse).
 
 use athena::{
-    AssumptionSet, CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, Diagnostic, DomainRequest, DomainResult,
-    LimitApproach, LimitDirection, Term, calculus_result_bridge_term, try_calculus_request,
+    AssumptionSet, CalculusRequest, DerivativeOrder, Diagnostic, DiagnosticCode, DomainRequest, DomainResult, LimitApproach,
+    LimitDirection, Term, calculus_result_bridge_term, try_calculus_request,
 };
 
 /// Attempt to lower a calculus head into [`DomainRequest::Calculus`].
@@ -22,12 +22,14 @@ pub fn try_evaluate_calculus(
     execute: impl FnOnce(DomainRequest) -> Result<DomainResult, Diagnostic>,
 ) -> Option<Result<Term, Diagnostic>> {
     let request = lower_calculus_term(term)?;
-    Some(execute(request).and_then(|r| match r {
-        DomainResult::Calculus(c) => Ok(calculus_result_bridge_term(&c)),
-        other => Err(Diagnostic::error(
-            athena::DiagnosticCode::TypeMismatch,
-            format!("expected Calculus domain result, got {other:?}"),
-        )),
+    Some(execute(request).and_then(|r| {
+        match r {
+            DomainResult::Calculus(c) => Ok(calculus_result_bridge_term(&c)),
+            other => Err(Diagnostic::new(DiagnosticCode::TypeMismatch)
+                .detail("domain", "calculus")
+                .detail("operation", "try_evaluate_calculus")
+                .detail("got", format!("{other:?}"))),
+        }
     }))
 }
 

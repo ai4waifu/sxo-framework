@@ -1,0 +1,8 @@
+{
+    "diag.native_unavailable": "Native engine unavailable: {detail}",
+    "diag.file_not_found": "File not found: {detail}",
+    "diag.missing_code": "Missing code expression (wolframscript code <expr>)",
+    "diag.missing_file": "Missing file path",
+    "diag.eval_failed": "Evaluation failed: {detail}",
+    "diag.bad_argv": "Bad arguments: {detail}"
+}

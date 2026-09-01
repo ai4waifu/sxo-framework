@@ -61,13 +61,13 @@ pub fn expr_to_term(e: &Expr) -> Term {
     match e {
         Expr::Num(n) => Term::number(Number::machine(*n)),
         Expr::Var(v) => Term::symbol(v.clone()),
-        Expr::Neg(a) => Term::app("Times", vec![Term::int(-1), expr_to_term(a)]),
-        Expr::Add(a, b) => Term::app("Plus", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Sub(a, b) => Term::app("Subtract", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Mul(a, b) => Term::app("Times", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Div(a, b) => Term::app("Divide", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Pow(a, b) => Term::app("Power", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Sin(a) => Term::app("Sin", vec![expr_to_term(a)]),
-        Expr::Cos(a) => Term::app("Cos", vec![expr_to_term(a)]),
+        Expr::Neg(a) => Term::apply("Times", vec![Term::int(-1), expr_to_term(a)]),
+        Expr::Add(a, b) => Term::apply("Plus", vec![expr_to_term(a), expr_to_term(b)]),
+        Expr::Sub(a, b) => Term::apply("Subtract", vec![expr_to_term(a), expr_to_term(b)]),
+        Expr::Mul(a, b) => Term::apply("Times", vec![expr_to_term(a), expr_to_term(b)]),
+        Expr::Div(a, b) => Term::apply("Divide", vec![expr_to_term(a), expr_to_term(b)]),
+        Expr::Pow(a, b) => Term::apply("Power", vec![expr_to_term(a), expr_to_term(b)]),
+        Expr::Sin(a) => Term::apply("Sin", vec![expr_to_term(a)]),
+        Expr::Cos(a) => Term::apply("Cos", vec![expr_to_term(a)]),
     }
 }
