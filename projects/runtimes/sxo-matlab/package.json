@@ -1,6 +1,6 @@
 {
     "name": "@sxo/matlab",
-    "version": "0.1.0",
+    "version": "0.0.2",
     "private": true,
     "type": "module",
     "description": "SXO MATLAB dialect frontend (oak-matlab → Athena Term); not a kernel",

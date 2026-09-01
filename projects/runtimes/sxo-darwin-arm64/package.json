@@ -1,6 +1,6 @@
 {
     "name": "@sxo/sxo-darwin-arm64",
-    "version": "0.1.0",
+    "version": "0.0.2",
     "private": true,
     "description": "SXO native N-API addon (darwin-arm64)",
     "license": "Apache-2.0",
