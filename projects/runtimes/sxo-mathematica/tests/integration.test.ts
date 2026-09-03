@@ -18,7 +18,7 @@ describe('@sxo/mathematica integration', () => {
     });
 
     it('evaluates equality', () => {
-        expect(mathematica.evaluate('2 == 2').toWolfram()).toBe('1');
+        expect(mathematica.evaluate('2 == 2').toWolfram()).toBe('True');
     });
 
     it('integrates polynomials', () => {
@@ -26,9 +26,9 @@ describe('@sxo/mathematica integration', () => {
         expect(integral.toWolfram()).toBe('1/3*x^3');
     });
 
-    it('maps over lists', () => {
-        const mapped = mathematica.evaluate('Map[Sin, {0, 1}]');
-        expect(mapped.toWolfram()).toBe('{0, 1}');
+    it('maps slot pure functions over lists', () => {
+        const mapped = mathematica.evaluate('Map[#^2 &, {1, 2, 3}]');
+        expect(mapped.toWolfram()).toBe('{1, 4, 9}');
     });
 
     it('shares engine version across instances', () => {
