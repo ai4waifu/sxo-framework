@@ -2723,23 +2723,21 @@ export const featureMatrix = [
     {
         name: 'InequalityChain',
         category: 'comparison',
-        status: 'partial',
+        status: 'supported',
         effect: 'pure',
-        notes: '1<2<3 currently lowers to Less[True,3]',
+        notes: 'nested relational ops evaluate via Athena compare-chain flattening',
         cases: [
             {
                 id: 'ineq.lt_chain',
-                kind: 'gap',
+                kind: 'eval',
                 input: '1 < 2 < 3',
                 expected: 'True',
-                notes: 'currently Less[True, 3]',
             },
             {
                 id: 'ineq.mixed',
-                kind: 'gap',
+                kind: 'eval',
                 input: '1 < 3 > 2',
                 expected: 'True',
-                notes: 'currently 0',
             },
         ],
     },
