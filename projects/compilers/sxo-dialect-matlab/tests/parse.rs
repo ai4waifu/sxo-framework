@@ -153,3 +153,27 @@ fn parse_col_all_colon() {
     let t = parse_matlab("[1, 2; 3, 4](:,2)").unwrap();
     assert_eq!(evaluate(&t), Term::List(vec![Term::int(2), Term::int(4)]));
 }
+
+#[test]
+fn parse_column_vector_and_mldivide_shape() {
+    let col = parse_matlab("[5; 6]").unwrap();
+    assert_eq!(
+        col,
+        Term::List(vec![Term::List(vec![Term::int(5)]), Term::List(vec![Term::int(6)])])
+    );
+    let t = parse_matlab("[1, 2; 3, 4] \\ [5; 6]").unwrap();
+    assert_eq!(t.head_name(), Some("Mldivide"));
+}
+
+#[test]
+fn parse_mldivide_2x2_evaluates() {
+    let t = parse_matlab("[1, 2; 3, 4] \\ [5; 6]").unwrap();
+    let e = evaluate(&t);
+    assert_eq!(
+        e,
+        Term::List(vec![
+            Term::List(vec![Term::int(-4)]),
+            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
+        ])
+    );
+}

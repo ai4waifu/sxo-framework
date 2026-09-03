@@ -447,14 +447,14 @@ export const featureMatrix = [
         category: 'solve',
         status: 'partial',
         effect: 'pure',
-        notes: 'SILENT WRONG: A\\b becomes A^-1*b text',
+        notes: 'exact numeric nested-list A\\b via Athena solve_exact; symbolic / singular stay unevaluated+diagnostic',
         cases: [
             {
                 id: 'mldivide.2x2',
-                kind: 'gap',
+                kind: 'eval',
                 input: '[1,2;3,4] \\ [5;6]',
-                expected: '[-4; 4.5]',
-                notes: 'currently [1, 2; 3, 4]^-1*[5; 6]',
+                expected: '[-4; 9/2]',
+                notes: 'exact rational column; not A^-1*b text',
             },
         ],
     },
