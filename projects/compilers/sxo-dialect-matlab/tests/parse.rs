@@ -146,3 +146,10 @@ fn parse_row_all_colon() {
     let t = parse_matlab("[1, 2; 3, 4](1,:)").unwrap();
     assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(2)]));
 }
+
+#[test]
+fn parse_col_all_colon() {
+    // `A(:,2)` → second column as a list of row picks
+    let t = parse_matlab("[1, 2; 3, 4](:,2)").unwrap();
+    assert_eq!(evaluate(&t), Term::List(vec![Term::int(2), Term::int(4)]));
+}

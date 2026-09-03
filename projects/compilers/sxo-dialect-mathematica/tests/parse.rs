@@ -159,3 +159,11 @@ fn parse_and_or_not_bool_atoms() {
     );
     assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("1 == 1").unwrap())), Term::boolean(true));
 }
+
+#[test]
+fn parse_with_module_block_local_bindings() {
+    for src in ["With[{x = 1}, x + 1]", "Module[{x = 1}, x + 1]", "Block[{x = 1}, x + 1]"] {
+        let e = evaluate(&wexpr_to_term(&parse_mathematica(src).unwrap()));
+        assert_eq!(e, Term::int(2), "{src}");
+    }
+}
