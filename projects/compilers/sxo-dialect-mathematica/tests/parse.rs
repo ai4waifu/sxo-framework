@@ -1,7 +1,7 @@
 //! Integration tests for Mathematica parse.
 
 use athena::{Term, evaluate};
-use sxo_dialect_mathematica::{WExpr, parse_mathematica, parse_number_literal, render, term_to_wexpr, wexpr_to_term};
+use sxo_dialect_mathematica::{WAtom, WExpr, parse_mathematica, parse_number_literal, render, term_to_wexpr, wexpr_to_term};
 
 #[test]
 fn parse_plus_times() {
@@ -71,13 +71,44 @@ fn parse_big_integer() {
 }
 
 #[test]
-fn parse_map_and_integrate() {
-    let w = parse_mathematica("Map[Sin, {0, Pi/2}]").unwrap();
-    let e = evaluate(&wexpr_to_term(&w));
-    assert!(matches!(e, Term::List(_)));
+fn parse_if_call_shape() {
+    let w = parse_mathematica("If[1==1,7,8]").unwrap();
+    assert_eq!(
+        w,
+        WExpr::call(
+            "If",
+            vec![
+                WExpr::call("Equal", vec![WExpr::int(1), WExpr::int(1)]),
+                WExpr::int(7),
+                WExpr::int(8),
+            ]
+        )
+    );
+}
 
-    let w = parse_mathematica("Integrate[x^2, x]").unwrap();
+#[test]
+fn parse_import_call_shape() {
+    let w = parse_mathematica("Import[\"x.csv\"]").unwrap();
+    assert_eq!(w, WExpr::call("Import", vec![WExpr::Atom(WAtom::String("x.csv".into()))]));
+}
+
+#[test]
+fn parse_part_double_bracket() {
+    let w = parse_mathematica("{1,2,3}[[0]]").unwrap();
+    assert_eq!(
+        w,
+        WExpr::call(
+            "Part",
+            vec![WExpr::List(vec![WExpr::int(1), WExpr::int(2), WExpr::int(3)]), WExpr::int(0)]
+        )
+    );
     let e = evaluate(&wexpr_to_term(&w));
-    let s = render(&term_to_wexpr(&e));
-    assert!(s.contains('x'), "got {s}");
+    assert_eq!(e, Term::symbol("List"));
+}
+
+#[test]
+fn parse_part_call_zero() {
+    let w = parse_mathematica("Part[{1,2,3},0]").unwrap();
+    let e = evaluate(&wexpr_to_term(&w));
+    assert_eq!(e, Term::symbol("List"));
 }

@@ -2,7 +2,7 @@
 
 use athena::{
     AthenaEngine, CalculusRequest, CalculusResult, CalculusValue, Diagnostic, DomainRequest, DomainResult, Term,
-    calculus_result_bridge_term, try_calculus_request,
+    calculus_result_bridge_term, clone_term, try_calculus_request,
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
@@ -57,7 +57,7 @@ impl Session {
     /// Differentiate via Athena calculus domain dispatch.
     pub fn differentiate_term(&self, expr: &Term, var: &str) -> Term {
         match self.execute_domain(DomainRequest::Calculus(CalculusRequest::Derivative {
-            expression: expr.clone(),
+            expression: clone_term(expr),
             variable: var.to_string(),
             order: athena::DerivativeOrder::First,
             assumptions: athena::AssumptionSet::empty(),
@@ -144,7 +144,7 @@ impl Session {
     pub fn integrate_term(&self, expr: &Term, var: &str) -> CalculusResult<CalculusValue> {
         match self
             .execute_domain(DomainRequest::Calculus(CalculusRequest::Integral {
-                expression: expr.clone(),
+                expression: clone_term(expr),
                 variable: var.to_string(),
                 assumptions: athena::AssumptionSet::empty(),
             }))

@@ -1,7 +1,8 @@
 //! Host integration tests across dialect crates and Athena.
 
 use athena::{
-    Atom, AtomKind, CalculusRequest, DomainRequest, OperatorId, SourceSpan, Term, TermArena, TermKind, try_calculus_request,
+    Atom, AtomKind, CalculusRequest, DomainRequest, OperatorId, SourceSpan, Term, TermArena, TermKind, clone_number,
+    try_calculus_request,
 };
 use sxo_dialect_mathematica::{WExpr, parse_number_literal, term_to_wexpr, wexpr_to_term};
 use sxo_napi::session::Session;
@@ -22,7 +23,7 @@ fn lower_to_kernel(term: &Term) -> Result<(TermArena, athena::TermId), SxoError>
         span: SourceSpan,
     ) -> Result<athena::TermId, SxoError> {
         match term {
-            Term::Atom(Atom::Number(n)) => Ok(arena.push(TermKind::Atom(AtomKind::Number(n.clone())), span)),
+            Term::Atom(Atom::Number(n)) => Ok(arena.push(TermKind::Atom(AtomKind::Number(clone_number(n))), span)),
             Term::Atom(Atom::String(s)) => Ok(arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)),
             Term::Atom(Atom::Symbol(s)) => {
                 let sym = arena.symbols_mut().intern(s.clone());

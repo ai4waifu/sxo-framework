@@ -2,10 +2,10 @@
 
 use std::fmt;
 
-use athena::{Number, numeric::to_f64_lossy};
+use athena::{Number, clone_number, numeric::to_f64_lossy};
 
 /// Atomic Wolfram-facing value.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum WAtom {
     /// Unified number (same tower as kernel).
     Number(Number),
@@ -13,6 +13,16 @@ pub enum WAtom {
     String(String),
     /// Symbol name.
     Symbol(String),
+}
+
+impl Clone for WAtom {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Number(n) => Self::Number(clone_number(n)),
+            Self::String(s) => Self::String(s.clone()),
+            Self::Symbol(s) => Self::Symbol(s.clone()),
+        }
+    }
 }
 
 /// Wolfram-shaped tree for the Mathematica frontend (`Head[args…]`).

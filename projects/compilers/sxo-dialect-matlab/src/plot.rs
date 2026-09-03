@@ -1,6 +1,6 @@
 //! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
 
-use athena::{Atom, SampleDomain, SamplingPolicy, Term, number_from_term, numeric::to_f64_lossy};
+use athena::{Atom, SampleDomain, SamplingPolicy, Term, clone_term, number_from_term, numeric::to_f64_lossy};
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 
@@ -48,5 +48,5 @@ fn extract_plot_1d(term: &Term) -> Option<Plot1dSpec> {
     };
     let start = to_f64_lossy(number_from_term(&args[2])?)?;
     let end = to_f64_lossy(number_from_term(&args[3])?)?;
-    Some(Plot1dSpec { expr: args[0].clone(), var, start, end })
+    Some(Plot1dSpec { expr: clone_term(&args[0]), var, start, end })
 }
