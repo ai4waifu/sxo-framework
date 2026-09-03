@@ -32,7 +32,7 @@ pub fn parse_matlab(input: &str) -> Result<Term, SxoError> {
 
 fn lower_root(root: &GreenNode<'_, MatlabLanguage>, src: &str) -> Result<Term, SxoError> {
     let mut offset = 0usize;
-    let mut last: Option<Term> = None;
+    let mut items = Vec::new();
     for child in root.children {
         match child {
             GreenTree::Leaf(leaf) => {
@@ -43,12 +43,16 @@ fn lower_root(root: &GreenNode<'_, MatlabLanguage>, src: &str) -> Result<Term, S
                     offset += node.byte_length as usize;
                     continue;
                 }
-                last = Some(lower_node(node, src, offset)?);
+                items.push(lower_node(node, src, offset)?);
                 offset += node.byte_length as usize;
             }
         }
     }
-    last.ok_or_else(|| SxoError::new("matlab(oak): empty root"))
+    match items.len() {
+        0 => Err(SxoError::new("matlab(oak): empty root")),
+        1 => Ok(items.remove(0)),
+        _ => Ok(Term::apply("CompoundExpression", items)),
+    }
 }
 
 fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> Result<Term, SxoError> {
@@ -78,8 +82,17 @@ fn lower_node(node: &GreenNode<'_, MatlabLanguage>, src: &str, start: usize) -> 
             }
         }
         MatlabElementType::Symbol => {
-            let name = slice(src, start, node.byte_length)?.trim().to_string();
-            Ok(Term::symbol(name))
+            let name = slice(src, start, node.byte_length)?.trim();
+            // Lone `:` in index position → All (MATLAB "whole dimension").
+            if name == ":" {
+                Ok(Term::symbol("All"))
+            }
+            else if name == "end" {
+                Ok(Term::symbol("End"))
+            }
+            else {
+                Ok(Term::symbol(name))
+            }
         }
         MatlabElementType::Array => lower_array(node, src, start),
         MatlabElementType::PrefixExpr => lower_prefix(node, src, start),

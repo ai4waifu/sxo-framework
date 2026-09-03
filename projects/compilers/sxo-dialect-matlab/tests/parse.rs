@@ -127,3 +127,22 @@ fn parse_dot_times_distinct_head() {
     assert_eq!(t, Term::apply("DotTimes", vec![Term::symbol("x"), Term::symbol("y")]));
     assert!(render_matlab(&t).contains(".*"));
 }
+
+#[test]
+fn parse_end_index() {
+    let t = parse_matlab("[1, 2, 3](end)").unwrap();
+    assert_eq!(evaluate(&t), Term::int(3));
+}
+
+#[test]
+fn parse_assign_persists_in_sequence() {
+    let t = parse_matlab("x = 5; x + 1").unwrap();
+    assert_eq!(evaluate(&t), Term::int(6));
+}
+
+#[test]
+fn parse_row_all_colon() {
+    // `A(1,:)` on a matrix → first row
+    let t = parse_matlab("[1, 2; 3, 4](1,:)").unwrap();
+    assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(2)]));
+}
