@@ -72,7 +72,7 @@ fn parse_integrate_and_sqrt() {
 #[test]
 fn parse_comparison() {
     let t = parse_matlab("3 > 2").unwrap();
-    assert_eq!(evaluate(&t), Term::int(1));
+    assert_eq!(evaluate(&t), Term::boolean(true));
 }
 
 #[test]
@@ -84,7 +84,7 @@ fn parse_if_else_end() {
 #[test]
 fn parse_while_false_skips_body() {
     let t = parse_matlab("while 0, 1, end").unwrap();
-    assert_eq!(evaluate(&t), Term::symbol("Null"));
+    assert_eq!(evaluate(&t), Term::null());
 }
 
 #[test]

@@ -331,7 +331,7 @@ fn collect_stmt_children(node: &GreenNode<'_, MatlabLanguage>, src: &str, start:
 
 fn compound_or_single(mut items: Vec<Term>) -> Term {
     match items.len() {
-        0 => Term::symbol("Null"),
+        0 => Term::null(),
         1 => items.remove(0),
         _ => Term::apply("CompoundExpression", items),
     }

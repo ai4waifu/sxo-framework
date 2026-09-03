@@ -56,7 +56,7 @@ fn parse_equal_and_factorial() {
     let w = parse_mathematica("2 == 2").unwrap();
     assert_eq!(w, WExpr::call("Equal", vec![WExpr::int(2), WExpr::int(2)]));
     let e = evaluate(&wexpr_to_term(&w));
-    assert_eq!(e, Term::int(1));
+    assert_eq!(e, Term::boolean(true));
 
     let w = parse_mathematica("5!").unwrap();
     let e = evaluate(&wexpr_to_term(&w));
@@ -128,4 +128,34 @@ fn parse_part_call_zero() {
     let w = parse_mathematica("Part[{1,2,3},0]").unwrap();
     let e = evaluate(&wexpr_to_term(&w));
     assert_eq!(e, Term::symbol("List"));
+}
+
+#[test]
+fn parse_true_false_null_atoms() {
+    assert_eq!(parse_mathematica("True").unwrap(), WExpr::symbol("True"));
+    assert_eq!(parse_mathematica("False").unwrap(), WExpr::symbol("False"));
+    assert_eq!(parse_mathematica("Null").unwrap(), WExpr::symbol("Null"));
+    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("True").unwrap())), Term::boolean(true));
+    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("False").unwrap())), Term::boolean(false));
+    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("Null").unwrap())), Term::null());
+    assert_eq!(render(&term_to_wexpr(&Term::boolean(true))), "True");
+    assert_eq!(render(&term_to_wexpr(&Term::null())), "Null");
+}
+
+#[test]
+fn parse_and_or_not_bool_atoms() {
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("And[True, False]").unwrap())),
+        Term::boolean(false)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Or[False, True]").unwrap())),
+        Term::boolean(true)
+    );
+    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("Not[True]").unwrap())), Term::boolean(false));
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Which[False, 1, True, 2]").unwrap())),
+        Term::int(2)
+    );
+    assert_eq!(evaluate(&wexpr_to_term(&parse_mathematica("1 == 1").unwrap())), Term::boolean(true));
 }

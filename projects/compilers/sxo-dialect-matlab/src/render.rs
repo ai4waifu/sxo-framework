@@ -11,6 +11,9 @@ pub fn render_matlab(expr: &Term) -> String {
             Atom::Number(n) => render_number(n),
             Atom::String(s) => format!("'{s}'"),
             Atom::Symbol(s) => s.clone(),
+            Atom::Boolean(true) => "true".into(),
+            Atom::Boolean(false) => "false".into(),
+            Atom::Null => "[]".into(),
         },
         Term::List(items) => {
             if is_matrix_rows(items) {

@@ -17,6 +17,9 @@ pub fn term_to_expr(t: &Term) -> Result<Expr, SxoError> {
             Ok(Expr::num(to_f64_lossy(n).ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?))
         }
         Term::Atom(Atom::Symbol(s)) => Ok(Expr::var(s.clone())),
+        Term::Atom(Atom::Boolean(true)) => Ok(Expr::var("True".into())),
+        Term::Atom(Atom::Boolean(false)) => Ok(Expr::var("False".into())),
+        Term::Atom(Atom::Null) => Ok(Expr::var("Null".into())),
         Term::Atom(Atom::String(_)) => Err(SxoError::new("bridge: strings not in Expr")),
         Term::List(_) => Err(SxoError::new("bridge: List not in Expr")),
         Term::Application { head, arguments: args } => {
