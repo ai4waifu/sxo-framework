@@ -17,7 +17,8 @@
  * Usage:
  *   node scripts/ci/publish-placeholder.mjs
  *   node scripts/ci/publish-placeholder.mjs --refresh
- *   node scripts/ci/publish-placeholder.mjs --otp 123456
+ *   node scripts/ci/publish-placeholder.mjs publish --only @sxo/pari-gp
+ *   node scripts/ci/publish-placeholder.mjs trust --only @sxo/pari-gp
  *   # or in .env.placeholder.local:
  *   #   NPM_TOTP_SECRET=<authenticator base32>
  *   #   NPM_TOKEN=npm_xxx
@@ -66,8 +67,17 @@ function loadLocalEnv(filePath) {
 
 const localEnv = loadLocalEnv(ENV_PATH);
 
-/** Keep in sync with scripts/ci/publish-npm.mjs (real publish package set). */
-const JS_STUBS = ['@sxo/lite-unknown-wasm32', '@sxo/lite', '@sxo/core', '@sxo/simple-math', '@sxo/mathematica', '@sxo/matlab', '@sxo/sxo'];
+/** Real-release set lives in publish-npm.mjs; placeholders may include reserved names not yet in that set. */
+const JS_STUBS = [
+    '@sxo/lite-unknown-wasm32',
+    '@sxo/lite',
+    '@sxo/core',
+    '@sxo/simple-math',
+    '@sxo/mathematica',
+    '@sxo/matlab',
+    '@sxo/sxo',
+    '@sxo/pari-gp',
+];
 const NATIVE_STUBS = [
     { name: '@sxo/sxo-win32-x64', os: ['win32'], cpu: ['x64'] },
     { name: '@sxo/sxo-linux-x64', os: ['linux'], cpu: ['x64'] },
@@ -104,6 +114,7 @@ function takeFlag(args, flag) {
 
 const dryRun = rest.includes('--dry-run');
 const refresh = rest.includes('--refresh');
+const onlyFlag = takeFlag(rest, '--only');
 const token = takeFlag(rest, '--token') ?? process.env.NPM_TOKEN ?? localEnv.NPM_TOKEN ?? localEnv.TOKEN;
 
 const otpFlag = takeFlag(rest, '--otp') ?? process.env.NPM_OTP ?? localEnv.NPM_OTP ?? localEnv.OTP;
@@ -162,13 +173,31 @@ if (rest.includes('--publish') || rest.includes('--trust')) {
 }
 
 /** @type {StubSpec[]} */
-const STUBS = [
-    ...JS_STUBS.map((name) => ({ name })),
+const ALL_STUBS = [
+    ...JS_STUBS.map((name) => ({
+        name,
+        description:
+            name === '@sxo/pari-gp'
+                ? 'SXO PARI/GP dialect placeholder. No parser or evaluator is shipped yet.'
+                : 'SXO placeholder — not for production use.',
+    })),
     ...NATIVE_STUBS.map((s) => ({
         ...s,
         description: `Optional native binary for @sxo/core (${s.name.replace(/^@sxo\//, '')}). Placeholder only.`,
     })),
 ];
+
+/** @type {StubSpec[]} */
+const STUBS = (() => {
+    if (!onlyFlag) return ALL_STUBS;
+    const wanted = onlyFlag.split(',').map((s) => s.trim()).filter(Boolean);
+    const selected = ALL_STUBS.filter((s) => wanted.includes(s.name));
+    if (selected.length !== wanted.length) {
+        const known = ALL_STUBS.map((s) => s.name).join(', ');
+        fail(`--only unknown package(s). Known: ${known}`);
+    }
+    return selected;
+})();
 
 /** @returns {CacheFile} */
 function loadCache() {
