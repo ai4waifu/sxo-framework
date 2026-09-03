@@ -11,6 +11,10 @@
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
+        },
+        "./feature-matrix": {
+            "types": "./dist/feature-matrix/index.d.ts",
+            "default": "./dist/feature-matrix/index.js"
         }
     },
     "files": [
@@ -19,7 +23,8 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "test": "vitest run"
+        "test": "vitest run",
+        "report:features": "node ./dist/feature-matrix/cli.js"
     },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",

@@ -134,6 +134,15 @@ impl Session {
         matlab::render_matlab(t)
     }
 
+    /// Try dialect `Plot` / `plot` → SVG via Athena sampling + Apollo.
+    pub fn try_plot_svg(&self, term: &Term, dialect: Dialect) -> Option<Result<String, SxoError>> {
+        match dialect {
+            Dialect::Mathematica => mathematica::try_plot_svg(term),
+            Dialect::Matlab => matlab::try_plot_svg(term),
+            Dialect::SimpleMath | Dialect::Auto => None,
+        }
+    }
+
     /// Convenience: indefinite integral via calculus domain.
     #[allow(dead_code)]
     pub fn integrate_term(&self, expr: &Term, var: &str) -> CalculusResult<CalculusValue> {

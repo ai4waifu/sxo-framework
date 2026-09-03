@@ -15,6 +15,10 @@
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
         },
+        "./feature-matrix": {
+            "types": "./dist/feature-matrix/index.d.ts",
+            "default": "./dist/feature-matrix/index.js"
+        },
         "./cli": {
             "types": "./dist/cli.d.ts",
             "default": "./dist/cli.js"
@@ -35,7 +39,8 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "test": "vitest run"
+        "test": "vitest run",
+        "report:features": "node ./dist/feature-matrix/cli.js"
     },
     "dependencies": {
         "@vmz/commander": "0.1.26",

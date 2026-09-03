@@ -79,10 +79,19 @@ function unwrapPrint(line: string): { print: boolean; expr: string } {
     return { print: false, expr: semi };
 }
 
-function evaluateLine(mma: Mathematica, line: string): { text: string; suppressed: boolean } {
+function evaluateLine(mma: Mathematica, line: string): { text: string; suppressed: boolean; svg?: string } {
     const { print, expr } = unwrapPrint(line);
     const suppressed = line.trimEnd().endsWith(';') && !print;
     if (!expr) return { text: '', suppressed: true };
+    const trimmed = expr.trim();
+    if (/^Plot\s*\[/i.test(trimmed)) {
+        try {
+            const svg = mma.plot(trimmed);
+            return { text: svg, suppressed: suppressed && !print, svg };
+        } catch {
+            // fall through to ordinary evaluate
+        }
+    }
     const result = mma.evaluate(expr).toWolfram();
     return { text: result, suppressed: suppressed && !print };
 }

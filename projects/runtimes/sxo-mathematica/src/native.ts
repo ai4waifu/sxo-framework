@@ -12,6 +12,7 @@ export type NativeExpression = {
     toWolfram(): string;
     toMatlab(): string;
     isEqual(other: NativeExpression): boolean;
+    plotSvg(): string;
     dialect: string;
 };
 
@@ -20,6 +21,7 @@ export type NativeBinding = {
     expression(input: string, dialect?: string | null): NativeExpression;
     d(input: string, varName: string, dialect?: string | null): NativeExpression;
     simplify(input: string, dialect?: string | null): NativeExpression;
+    plotSvg(input: string, dialect?: string | null): string;
     /** Block until Jupyter kernel shutdown (connection file path). */
     runJupyterKernel(connectionFile: string): void;
 };
