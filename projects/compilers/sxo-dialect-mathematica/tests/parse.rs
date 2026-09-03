@@ -220,3 +220,39 @@ fn parse_match_q_and_cases() {
         Term::List(vec![Term::int(1), Term::int(2)])
     );
 }
+
+#[test]
+fn parse_table_range_apply_list_primitives() {
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Table[i, {i, 3}]").unwrap())),
+        Term::List(vec![Term::int(1), Term::int(2), Term::int(3)])
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Range[3]").unwrap())),
+        Term::List(vec![Term::int(1), Term::int(2), Term::int(3)])
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Apply[Plus, {1, 2, 3}]").unwrap())),
+        Term::int(6)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Length[{1, 2, 3}]").unwrap())),
+        Term::int(3)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Join[{1}, {2}]").unwrap())),
+        Term::List(vec![Term::int(1), Term::int(2)])
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("First[{a, b}]").unwrap())),
+        Term::symbol("a")
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Sum[i, {i, 1, 10}]").unwrap())),
+        Term::int(55)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Product[i, {i, 1, 5}]").unwrap())),
+        Term::int(120)
+    );
+}
