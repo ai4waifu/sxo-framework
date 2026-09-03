@@ -128,3 +128,18 @@ fn session_set_persists_across_matlab_evaluates() {
     assert_eq!(session.evaluate_matlab("x = 5").unwrap(), Term::int(5));
     assert_eq!(session.evaluate_matlab("x + 1").unwrap(), Term::int(6));
 }
+
+#[test]
+fn session_setdelayed_evaluates_on_use() {
+    let session = Session::new();
+    assert_eq!(session.evaluate_mathematica("a := 1 + 1").unwrap(), Term::null());
+    assert_eq!(session.evaluate_mathematica("a").unwrap(), Term::int(2));
+}
+
+#[test]
+fn module_does_not_clobber_session_binding() {
+    let session = Session::new();
+    assert_eq!(session.evaluate_mathematica("x = 5").unwrap(), Term::int(5));
+    assert_eq!(session.evaluate_mathematica("Module[{x = 1}, x + 1]").unwrap(), Term::int(2));
+    assert_eq!(session.evaluate_mathematica("x").unwrap(), Term::int(5));
+}

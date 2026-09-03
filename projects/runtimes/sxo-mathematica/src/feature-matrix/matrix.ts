@@ -291,10 +291,25 @@ export const featureMatrix = [
     {
         name: 'SetDelayed',
         category: 'session',
-        status: 'planned',
+        status: 'partial',
         effect: 'stateful',
-        notes: 'must lower to Stmt/Definition',
-        cases: [{ id: 'setdelayed.def', kind: 'gap', input: 'f[x_] := x^2; f[3]', expected: '9' }],
+        notes: 'symbol SetDelayed persists and evaluates on use; patterned f[x_]:= still pending',
+        cases: [
+            {
+                id: 'setdelayed.symbol',
+                kind: 'eval',
+                input: 'a := 1 + 1',
+                expected: 'Null',
+                notes: 'follow-up a → 2 on same Session',
+            },
+            {
+                id: 'setdelayed.def',
+                kind: 'gap',
+                input: 'f[x_] := x^2; f[3]',
+                expected: '9',
+                notes: 'needs Blank/pattern (stage 3)',
+            },
+        ],
     },
     {
         name: 'Function',
@@ -801,7 +816,7 @@ export const featureMatrix = [
         category: 'session',
         status: 'partial',
         effect: 'stateful',
-        notes: 'local Set bind works; unique Module renaming still pending',
+        notes: 'local Set bind + `$n` unique rename; patterned Module locals pending',
         cases: [
             {
                 id: 'module.bind',
