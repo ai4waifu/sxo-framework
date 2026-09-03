@@ -421,6 +421,11 @@ fn map_matlab_head(name: &str) -> String {
         "sqrt" => "Sqrt".to_string(),
         "abs" => "Abs".to_string(),
         "factorial" => "Factorial".to_string(),
+        "zeros" => "Zeros".to_string(),
+        "ones" => "Ones".to_string(),
+        "eye" => "Eye".to_string(),
+        "size" => "Size".to_string(),
+        "length" => "Length".to_string(),
         other => other.to_string(),
     }
 }

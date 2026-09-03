@@ -60,6 +60,11 @@ fn head_matlab_name(head: &Term) -> Option<String> {
             "Sqrt" => "sqrt",
             "Abs" => "abs",
             "Factorial" => "factorial",
+            "Zeros" => "zeros",
+            "Ones" => "ones",
+            "Eye" | "IdentityMatrix" => "eye",
+            "Size" | "Dimensions" => "size",
+            "Length" => "length",
             other => other,
         }
         .to_string(),
