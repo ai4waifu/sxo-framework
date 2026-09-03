@@ -101,6 +101,8 @@ fn lower_node(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) ->
         WolframElementType::PostfixExpr => lower_postfix(node, src, start),
         WolframElementType::Call => lower_call(node, src, start),
         WolframElementType::Part => lower_part(node, src, start),
+        WolframElementType::Blank => lower_blank(node, src, start),
+        WolframElementType::Pattern => lower_pattern(node, src, start),
         WolframElementType::Arguments => Err(SxoError::new("mathematica(oak): unexpected Arguments")),
         WolframElementType::Error => Err(SxoError::new("mathematica(oak): error node")),
     }
@@ -226,7 +228,16 @@ fn lower_postfix(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize)
     for child in node.children {
         match child {
             GreenTree::Leaf(leaf) => {
-                if !is_trivia(leaf.kind) && matches!(leaf.kind, WolframTokenType::Ampersand | WolframTokenType::Factorial) {
+                if !is_trivia(leaf.kind)
+                    && matches!(
+                        leaf.kind,
+                        WolframTokenType::Ampersand
+                            | WolframTokenType::Factorial
+                            | WolframTokenType::Underscore
+                            | WolframTokenType::DoubleUnderscore
+                            | WolframTokenType::TripleUnderscore
+                    )
+                {
                     op = Some(leaf.kind);
                 }
                 offset += leaf.length as usize;
@@ -241,9 +252,61 @@ fn lower_postfix(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize)
     match op {
         Some(WolframTokenType::Ampersand) => Ok(WExpr::call("Function", vec![expr])),
         Some(WolframTokenType::Factorial) => Ok(WExpr::call("Factorial", vec![expr])),
+        Some(WolframTokenType::Underscore) => Ok(WExpr::call("Pattern", vec![expr, WExpr::call("Blank", vec![])])),
+        Some(WolframTokenType::DoubleUnderscore) => {
+            Ok(WExpr::call("Pattern", vec![expr, WExpr::call("BlankSequence", vec![])]))
+        }
+        Some(WolframTokenType::TripleUnderscore) => {
+            Ok(WExpr::call("Pattern", vec![expr, WExpr::call("BlankNullSequence", vec![])]))
+        }
         Some(other) => Err(SxoError::new(format!("mathematica(oak): unsupported postfix {other:?}"))),
         None => Ok(expr),
     }
+}
+
+fn lower_blank(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) -> Result<WExpr, SxoError> {
+    let mut offset = start;
+    let mut blank_head = "Blank";
+    let mut typed: Option<WExpr> = None;
+    for child in node.children {
+        match child {
+            GreenTree::Leaf(leaf) => {
+                if !is_trivia(leaf.kind) {
+                    match leaf.kind {
+                        WolframTokenType::DoubleUnderscore => blank_head = "BlankSequence",
+                        WolframTokenType::TripleUnderscore => blank_head = "BlankNullSequence",
+                        WolframTokenType::Underscore => blank_head = "Blank",
+                        WolframTokenType::Identifier
+                        | WolframTokenType::Integer
+                        | WolframTokenType::Module
+                        | WolframTokenType::Block
+                        | WolframTokenType::With
+                        | WolframTokenType::True
+                        | WolframTokenType::False
+                        | WolframTokenType::Null => {
+                            let name = slice(src, offset, leaf.length)?.trim().to_string();
+                            typed = Some(WExpr::symbol(name));
+                        }
+                        _ => {}
+                    }
+                }
+                offset += leaf.length as usize;
+            }
+            GreenTree::Node(n) => {
+                typed = Some(lower_node(n, src, offset)?);
+                offset += n.byte_length as usize;
+            }
+        }
+    }
+    Ok(match typed {
+        Some(h) => WExpr::call(blank_head, vec![h]),
+        None => WExpr::call(blank_head, vec![]),
+    })
+}
+
+fn lower_pattern(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) -> Result<WExpr, SxoError> {
+    // Same shape as PostfixExpr: symbol + underscore leaf.
+    lower_postfix(node, src, start)
 }
 
 fn lower_part(node: &GreenNode<'_, WolframLanguage>, src: &str, start: usize) -> Result<WExpr, SxoError> {
