@@ -1,6 +1,6 @@
 //! `Plot[f,{x,a,b}]` lowering → Athena sampling → Apollo SVG.
 
-use athena::{Atom, SampleDomain, SamplingPolicy, Term, clone_term, number_from_term, numeric::to_f64_lossy};
+use athena::{Atom, SampleDomain, SamplingPolicy, Term, clone_term, evaluate, number_from_term, numeric::to_f64_lossy};
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 
@@ -64,7 +64,16 @@ fn list_iterator(expr: &Term, parts: &[Term]) -> Option<Plot1dSpec> {
         Term::Atom(Atom::Symbol(s)) => s.clone(),
         _ => return None,
     };
-    let start = to_f64_lossy(number_from_term(&parts[1])?)?;
-    let end = to_f64_lossy(number_from_term(&parts[2])?)?;
+    let start = term_as_f64(&parts[1])?;
+    let end = term_as_f64(&parts[2])?;
     Some(Plot1dSpec { expr: clone_term(expr), var, start, end })
+}
+
+/// Literal numbers and unary-minus forms (`Times[-1, n]`) after light eval.
+fn term_as_f64(term: &Term) -> Option<f64> {
+    if let Some(n) = number_from_term(term) {
+        return to_f64_lossy(n);
+    }
+    let folded = evaluate(term);
+    to_f64_lossy(number_from_term(&folded)?)
 }

@@ -996,7 +996,7 @@ export const featureMatrix = [
         category: 'plot',
         status: 'partial',
         effect: 'effectful',
-        notes: 'SVG→PNG visual: curve+L-axes readable; missing tick labels, no Frame, not commercial MMA axes-at-origin. Negative domain {x,-1,1} extract fails',
+        notes: 'SVG→PNG visual: curve+L-axes readable; missing tick labels, no Frame, not commercial MMA axes-at-origin. Negative domain {x,-1,1} via unary-minus fold',
         cases: [
             {
                 id: 'plot.square',
@@ -1012,10 +1012,9 @@ export const featureMatrix = [
             },
             {
                 id: 'plot.neg_domain',
-                kind: 'gap',
+                kind: 'plot',
                 input: 'Plot[x^2, {x, -1, 1}]',
                 expected: '<svg',
-                notes: 'unary minus in iterator breaks plot extract',
             },
         ],
     },
