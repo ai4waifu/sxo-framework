@@ -84,6 +84,23 @@ fn parse_if_call_shape() {
             ]
         )
     );
+    let e = evaluate(&wexpr_to_term(&w));
+    assert_eq!(e, Term::int(7));
+}
+
+#[test]
+fn parse_hold_keeps_args() {
+    let w = parse_mathematica("Hold[1+1]").unwrap();
+    assert_eq!(w, WExpr::call("Hold", vec![WExpr::call("Plus", vec![WExpr::int(1), WExpr::int(1)])]));
+    let e = evaluate(&wexpr_to_term(&w));
+    assert_eq!(e, Term::apply("Hold", vec![Term::apply("Plus", vec![Term::int(1), Term::int(1)])]));
+}
+
+#[test]
+fn parse_hold_form_keeps_args() {
+    let w = parse_mathematica("HoldForm[1+1]").unwrap();
+    let e = evaluate(&wexpr_to_term(&w));
+    assert_eq!(e, Term::apply("HoldForm", vec![Term::apply("Plus", vec![Term::int(1), Term::int(1)])]));
 }
 
 #[test]
