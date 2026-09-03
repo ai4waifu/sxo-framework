@@ -624,13 +624,13 @@ export const featureMatrix = [
     {
         name: 'Solve',
         category: 'solve',
-        status: 'planned',
+        status: 'partial',
         effect: 'pure',
-        notes: 'must lower to Athena SolveGoal; currently unevaluated Application',
+        notes: 'univariate rational-root Term bridge for Feature Gap; typed SolutionSet / Reduce still pending',
         cases: [
             {
                 id: 'solve.quad',
-                kind: 'gap',
+                kind: 'eval',
                 input: 'Solve[x^2 == 1, x]',
                 expected: '{{x -> -1}, {x -> 1}}',
             },
