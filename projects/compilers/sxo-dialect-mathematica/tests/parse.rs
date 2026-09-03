@@ -256,3 +256,36 @@ fn parse_table_range_apply_list_primitives() {
         Term::int(120)
     );
 }
+
+#[test]
+fn parse_limit_sinc_and_definite_integrate_sin() {
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Limit[Sin[x]/x, x -> 0]").unwrap())),
+        Term::int(1)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Integrate[Sin[x], {x, 0, Pi}]").unwrap())),
+        Term::int(2)
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Cos[Pi]").unwrap())),
+        Term::int(-1)
+    );
+}
+
+#[test]
+fn parse_linear_solve_nested_lists() {
+    assert_eq!(
+        evaluate(&wexpr_to_term(
+            &parse_mathematica("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]").unwrap()
+        )),
+        Term::List(vec![
+            Term::List(vec![Term::int(-4)]),
+            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
+        ])
+    );
+    assert_eq!(
+        evaluate(&wexpr_to_term(&parse_mathematica("Det[{{1, 2}, {3, 4}}]").unwrap())),
+        Term::int(-2)
+    );
+}
