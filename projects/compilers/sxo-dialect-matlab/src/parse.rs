@@ -426,6 +426,9 @@ fn map_matlab_head(name: &str) -> String {
         "eye" => "Eye".to_string(),
         "size" => "Size".to_string(),
         "length" => "Length".to_string(),
+        "det" => "Det".to_string(),
+        "sum" => "Sum".to_string(),
+        "linsolve" => "LinearSolve".to_string(),
         other => other.to_string(),
     }
 }

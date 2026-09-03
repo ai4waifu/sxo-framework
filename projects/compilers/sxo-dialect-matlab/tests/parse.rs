@@ -157,10 +157,32 @@ fn parse_elementwise_ops_evaluate() {
             Term::List(vec![Term::int(21), Term::int(32)]),
         ])
     );
-    // Matrix * stays Times (not silent elementwise)
-    let t = parse_matlab("[1, 2; 3, 4]*[5, 6; 7, 8]").unwrap();
-    assert_eq!(t.head_name(), Some("Times"));
-    assert_eq!(evaluate(&t).head_name(), Some("Times"));
+    // Matrix * is matmul (distinct from DotTimes)
+    assert_eq!(
+        evaluate(&parse_matlab("[1, 2; 3, 4]*[5, 6; 7, 8]").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(19), Term::int(22)]),
+            Term::List(vec![Term::int(43), Term::int(50)]),
+        ])
+    );
+}
+
+#[test]
+fn parse_matrix_linear_algebra() {
+    assert_eq!(evaluate(&parse_matlab("det([1, 2; 3, 4])").unwrap()), Term::int(-2));
+    assert_eq!(evaluate(&parse_matlab("sum([1, 2, 3])").unwrap()), Term::int(6));
+    assert_eq!(
+        evaluate(&parse_matlab("sum([1, 2; 3, 4])").unwrap()),
+        Term::List(vec![Term::int(4), Term::int(6)])
+    );
+    assert_eq!(
+        evaluate(&parse_matlab("linsolve([1, 2; 3, 4], [5; 6])").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(-4)]),
+            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
+        ])
+    );
+    assert_eq!(render_matlab(&evaluate(&parse_matlab("det([1, 2; 3, 4])").unwrap())), "-2");
 }
 
 #[test]
