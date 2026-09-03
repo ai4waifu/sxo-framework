@@ -111,13 +111,12 @@ fn parse_colon_step_flattens() {
 #[test]
 fn parse_mldivide_keeps_head() {
     use athena::{EvalKind, evaluate_outcome};
-    use athena_types::DiagnosticCode;
 
     let t = parse_matlab("A\\b").unwrap();
     assert_eq!(t.head_name(), Some("Mldivide"));
     let o = evaluate_outcome(&t);
     assert_eq!(o.kind, EvalKind::Unevaluated);
-    assert_eq!(o.diagnostics[0].code, DiagnosticCode::UnsupportedOperation);
+    assert!(o.diagnostics.is_empty(), "symbolic mldivide stays quiet unevaluated");
     assert!(render_matlab(&t).contains('\\'));
 }
 
@@ -126,6 +125,42 @@ fn parse_dot_times_distinct_head() {
     let t = parse_matlab("x .* y").unwrap();
     assert_eq!(t, Term::apply("DotTimes", vec![Term::symbol("x"), Term::symbol("y")]));
     assert!(render_matlab(&t).contains(".*"));
+}
+
+#[test]
+fn parse_elementwise_ops_evaluate() {
+    assert_eq!(
+        evaluate(&parse_matlab("[1, 2].*[3, 4]").unwrap()),
+        Term::List(vec![Term::int(3), Term::int(8)])
+    );
+    // Space before `.*` avoids `2.` float lexing.
+    assert_eq!(
+        evaluate(&parse_matlab("2 .* [1, 2]").unwrap()),
+        Term::List(vec![Term::int(2), Term::int(4)])
+    );
+    assert_eq!(
+        evaluate(&parse_matlab("[1, 2].^[2, 3]").unwrap()),
+        Term::List(vec![Term::int(1), Term::int(8)])
+    );
+    assert_eq!(
+        evaluate(&parse_matlab("[1, 2, 3].^0").unwrap()),
+        Term::List(vec![Term::int(1), Term::int(1), Term::int(1)])
+    );
+    assert_eq!(
+        evaluate(&parse_matlab("[6, 8]./[2, 4]").unwrap()),
+        Term::List(vec![Term::int(3), Term::int(2)])
+    );
+    assert_eq!(
+        evaluate(&parse_matlab("[1, 2; 3, 4].*[5, 6; 7, 8]").unwrap()),
+        Term::List(vec![
+            Term::List(vec![Term::int(5), Term::int(12)]),
+            Term::List(vec![Term::int(21), Term::int(32)]),
+        ])
+    );
+    // Matrix * stays Times (not silent elementwise)
+    let t = parse_matlab("[1, 2; 3, 4]*[5, 6; 7, 8]").unwrap();
+    assert_eq!(t.head_name(), Some("Times"));
+    assert_eq!(evaluate(&t).head_name(), Some("Times"));
 }
 
 #[test]
