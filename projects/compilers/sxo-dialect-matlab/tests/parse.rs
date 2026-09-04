@@ -1,281 +1,330 @@
-//! Integration tests for MATLAB parse.
+//! Integration tests for MATLAB parse (session arena `TermId`).
 
-use athena::{Term, evaluate};
-use sxo_dialect_mathematica::{render, term_to_wexpr};
+use std::cell::RefCell;
+
+use athena::{
+    AtomKind, EvalKind, Session, TermId, TermKind, app_head_name, number_from_wire, push_app_named, push_bool, push_int,
+    push_list, push_null, push_symbol_name,
+};
+use athena_types::WireNumber;
+use sxo_dialect_mathematica::{render, wexpr_from_session};
 use sxo_dialect_matlab::{parse_matlab, render_matlab, try_plot_svg};
+
+type Tid = TermId;
+
+struct H {
+    s: RefCell<Session>,
+}
+
+impl H {
+    fn new() -> Self {
+        Self { s: RefCell::new(Session::new()) }
+    }
+
+    fn parse(&self, input: &str) -> Tid {
+        parse_matlab(&mut self.s.borrow_mut(), input).unwrap()
+    }
+
+    fn eval(&self, input: &str) -> Tid {
+        let id = self.parse(input);
+        self.s.borrow_mut().evaluate(id).term
+    }
+
+    fn eval_id(&self, id: Tid) -> Tid {
+        self.s.borrow_mut().evaluate(id).term
+    }
+
+    fn outcome_kind(&self, id: Tid) -> EvalKind {
+        self.s.borrow_mut().evaluate(id).kind
+    }
+
+    fn i(&self, n: i64) -> Tid {
+        push_int(&mut self.s.borrow_mut(), n)
+    }
+
+    fn sym(&self, name: &str) -> Tid {
+        push_symbol_name(&mut self.s.borrow_mut(), name)
+    }
+
+    fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
+        push_app_named(&mut self.s.borrow_mut(), head, args)
+    }
+
+    fn lst(&self, items: Vec<Tid>) -> Tid {
+        push_list(&mut self.s.borrow_mut(), items)
+    }
+
+    fn boolean(&self, b: bool) -> Tid {
+        push_bool(&mut self.s.borrow_mut(), b)
+    }
+
+    fn null(&self) -> Tid {
+        push_null(&mut self.s.borrow_mut())
+    }
+
+    fn rational(&self, n: i64, d: i64) -> Tid {
+        let wire = WireNumber::rational_i64(n, d).unwrap();
+        let num = number_from_wire(&wire).unwrap();
+        let span = athena::SourceSpan::default();
+        self.s.borrow_mut().arena.push(TermKind::Atom(AtomKind::Number(num)), span)
+    }
+
+    fn eq(&self, a: Tid, b: Tid) -> bool {
+        self.s.borrow().arena.structural_eq(a, b)
+    }
+
+    fn render(&self, id: Tid) -> String {
+        render_matlab(&self.s.borrow(), id)
+    }
+
+    fn with_mut<R>(&self, f: impl FnOnce(&mut Session) -> R) -> R {
+        f(&mut self.s.borrow_mut())
+    }
+}
 
 #[test]
 fn parse_plus_times() {
-    let t = parse_matlab("1 + 2 * 3").unwrap();
-    assert_eq!(evaluate(&t), Term::int(7));
+    let h = H::new();
+    assert!(h.eq(h.eval("1 + 2 * 3"), h.i(7)));
 }
 
 #[test]
 fn parse_array() {
-    let t = parse_matlab("[1, 2 + 2]").unwrap();
-    assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(4)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2 + 2]"), h.lst(vec![h.i(1), h.i(4)])));
 }
 
 #[test]
 fn parse_call_sin() {
-    let t = parse_matlab("sin(x)").unwrap();
-    assert_eq!(t, Term::apply("Sin", vec![Term::symbol("x")]));
+    let h = H::new();
+    let t = h.parse("sin(x)");
+    assert!(h.eq(t, h.ap("Sin", vec![h.sym("x")])));
 }
 
 #[test]
 fn parse_power() {
-    let t = parse_matlab("x^3").unwrap();
-    assert_eq!(t, Term::apply("Power", vec![Term::symbol("x"), Term::int(3)]));
+    let h = H::new();
+    let t = h.parse("x^3");
+    assert!(h.eq(t, h.ap("Power", vec![h.sym("x"), h.i(3)])));
 }
 
 #[test]
 fn parse_root_semicolon_returns_last() {
-    let t = parse_matlab("1; 2 + 2").unwrap();
-    assert_eq!(evaluate(&t), Term::int(4));
+    let h = H::new();
+    assert!(h.eq(h.eval("1; 2 + 2"), h.i(4)));
 }
 
 #[test]
 fn parse_pythagorean() {
-    let t = parse_matlab("sin(x)^2 + cos(x)^2").unwrap();
-    assert_eq!(evaluate(&Term::apply("Simplify", vec![t])), Term::int(1));
+    let h = H::new();
+    let t = h.parse("sin(x)^2 + cos(x)^2");
+    let wrapped = h.ap("Simplify", vec![t]);
+    assert!(h.eq(h.eval_id(wrapped), h.i(1)));
 }
 
 #[test]
 fn parse_diff() {
-    let t = parse_matlab("diff(x^3, x)").unwrap();
-    let e = evaluate(&t);
-    let s = render(&term_to_wexpr(&e));
+    let h = H::new();
+    let e = h.eval("diff(x^3, x)");
+    let s = h.with_mut(|s| {
+        let w = wexpr_from_session(s, e);
+        render(&w)
+    });
     assert!(s.contains('x'), "got {s}");
 }
 
 #[test]
 fn parse_matrix_array() {
-    let t = parse_matlab("[1, 2; 3, 4]").unwrap();
-    assert_eq!(
+    let h = H::new();
+    let t = h.parse("[1, 2; 3, 4]");
+    assert!(h.eq(
         t,
-        Term::List(vec![Term::List(vec![Term::int(1), Term::int(2)]), Term::List(vec![Term::int(3), Term::int(4)]),])
-    );
-    assert_eq!(render_matlab(&t), "[1, 2; 3, 4]");
+        h.lst(vec![h.lst(vec![h.i(1), h.i(2)]), h.lst(vec![h.i(3), h.i(4)])])
+    ));
+    assert_eq!(h.render(t), "[1, 2; 3, 4]");
 }
 
 #[test]
 fn parse_integrate_and_sqrt() {
-    let t = parse_matlab("int(x^2, x)").unwrap();
-    let e = evaluate(&t);
-    let s = render_matlab(&e);
+    let h = H::new();
+    let e = h.eval("int(x^2, x)");
+    let s = h.render(e);
     assert!(s.contains('x'), "got {s}");
-
-    let t = parse_matlab("sqrt(9)").unwrap();
-    assert_eq!(evaluate(&t), Term::int(3));
+    assert!(h.eq(h.eval("sqrt(9)"), h.i(3)));
 }
 
 #[test]
 fn parse_comparison() {
-    let t = parse_matlab("3 > 2").unwrap();
-    assert_eq!(evaluate(&t), Term::boolean(true));
+    let h = H::new();
+    assert!(h.eq(h.eval("3 > 2"), h.boolean(true)));
 }
 
 #[test]
 fn parse_if_else_end() {
-    let t = parse_matlab("if 1, 2, else, 3, end").unwrap();
-    assert_eq!(evaluate(&t), Term::int(2));
+    let h = H::new();
+    assert!(h.eq(h.eval("if 1, 2, else, 3, end"), h.i(2)));
 }
 
 #[test]
 fn parse_while_false_skips_body() {
-    let t = parse_matlab("while 0, 1, end").unwrap();
-    assert_eq!(evaluate(&t), Term::null());
+    let h = H::new();
+    assert!(h.eq(h.eval("while 0, 1, end"), h.null()));
 }
 
 #[test]
 fn parse_for_span_last() {
-    let t = parse_matlab("for i=1:3, i, end").unwrap();
-    assert_eq!(evaluate(&t), Term::int(3));
+    let h = H::new();
+    assert!(h.eq(h.eval("for i=1:3, i, end"), h.i(3)));
 }
 
 #[test]
 fn parse_array_slice() {
-    let t = parse_matlab("[1, 2, 3](1:2)").unwrap();
-    assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(2)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2, 3](1:2)"), h.lst(vec![h.i(1), h.i(2)])));
 }
 
 #[test]
 fn parse_colon_step_flattens() {
-    let t = parse_matlab("1:2:10").unwrap();
-    assert_eq!(
-        evaluate(&t),
-        Term::List(vec![Term::int(1), Term::int(3), Term::int(5), Term::int(7), Term::int(9)])
-    );
+    let h = H::new();
+    assert!(h.eq(
+        h.eval("1:2:10"),
+        h.lst(vec![h.i(1), h.i(3), h.i(5), h.i(7), h.i(9)])
+    ));
 }
 
 #[test]
 fn parse_mldivide_keeps_head() {
-    use athena::{EvalKind, evaluate_outcome};
-
-    let t = parse_matlab("A\\b").unwrap();
-    assert_eq!(t.head_name(), Some("Mldivide"));
-    let o = evaluate_outcome(&t);
-    assert_eq!(o.kind, EvalKind::Unevaluated);
-    assert!(o.diagnostics.is_empty(), "symbolic mldivide stays quiet unevaluated");
-    assert!(render_matlab(&t).contains('\\'));
+    let h = H::new();
+    let t = h.parse("A\\b");
+    assert_eq!(app_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
+    let kind = h.outcome_kind(t);
+    assert_eq!(kind, EvalKind::Unevaluated);
+    assert!(h.render(t).contains('\\'));
 }
 
 #[test]
 fn parse_dot_times_distinct_head() {
-    let t = parse_matlab("x .* y").unwrap();
-    assert_eq!(t, Term::apply("DotTimes", vec![Term::symbol("x"), Term::symbol("y")]));
-    assert!(render_matlab(&t).contains(".*"));
+    let h = H::new();
+    let t = h.parse("x .* y");
+    assert!(h.eq(t, h.ap("DotTimes", vec![h.sym("x"), h.sym("y")])));
+    assert!(h.render(t).contains(".*"));
 }
 
 #[test]
 fn parse_elementwise_ops_evaluate() {
-    assert_eq!(
-        evaluate(&parse_matlab("[1, 2].*[3, 4]").unwrap()),
-        Term::List(vec![Term::int(3), Term::int(8)])
-    );
-    // Space before `.*` avoids `2.` float lexing.
-    assert_eq!(
-        evaluate(&parse_matlab("2 .* [1, 2]").unwrap()),
-        Term::List(vec![Term::int(2), Term::int(4)])
-    );
-    assert_eq!(
-        evaluate(&parse_matlab("[1, 2].^[2, 3]").unwrap()),
-        Term::List(vec![Term::int(1), Term::int(8)])
-    );
-    assert_eq!(
-        evaluate(&parse_matlab("[1, 2, 3].^0").unwrap()),
-        Term::List(vec![Term::int(1), Term::int(1), Term::int(1)])
-    );
-    assert_eq!(
-        evaluate(&parse_matlab("[6, 8]./[2, 4]").unwrap()),
-        Term::List(vec![Term::int(3), Term::int(2)])
-    );
-    assert_eq!(
-        evaluate(&parse_matlab("[1, 2; 3, 4].*[5, 6; 7, 8]").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(5), Term::int(12)]),
-            Term::List(vec![Term::int(21), Term::int(32)]),
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2].*[3, 4]"), h.lst(vec![h.i(3), h.i(8)])));
+    assert!(h.eq(h.eval("2 .* [1, 2]"), h.lst(vec![h.i(2), h.i(4)])));
+    assert!(h.eq(h.eval("[1, 2].^[2, 3]"), h.lst(vec![h.i(1), h.i(8)])));
+    assert!(h.eq(h.eval("[1, 2, 3].^0"), h.lst(vec![h.i(1), h.i(1), h.i(1)])));
+    assert!(h.eq(h.eval("[6, 8]./[2, 4]"), h.lst(vec![h.i(3), h.i(2)])));
+    assert!(h.eq(
+        h.eval("[1, 2; 3, 4].*[5, 6; 7, 8]"),
+        h.lst(vec![
+            h.lst(vec![h.i(5), h.i(12)]),
+            h.lst(vec![h.i(21), h.i(32)]),
         ])
-    );
-    // Matrix * is matmul (distinct from DotTimes)
-    assert_eq!(
-        evaluate(&parse_matlab("[1, 2; 3, 4]*[5, 6; 7, 8]").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(19), Term::int(22)]),
-            Term::List(vec![Term::int(43), Term::int(50)]),
+    ));
+    assert!(h.eq(
+        h.eval("[1, 2; 3, 4]*[5, 6; 7, 8]"),
+        h.lst(vec![
+            h.lst(vec![h.i(19), h.i(22)]),
+            h.lst(vec![h.i(43), h.i(50)]),
         ])
-    );
+    ));
 }
 
 #[test]
 fn parse_matrix_linear_algebra() {
-    assert_eq!(evaluate(&parse_matlab("det([1, 2; 3, 4])").unwrap()), Term::int(-2));
-    assert_eq!(evaluate(&parse_matlab("sum([1, 2, 3])").unwrap()), Term::int(6));
-    assert_eq!(
-        evaluate(&parse_matlab("sum([1, 2; 3, 4])").unwrap()),
-        Term::List(vec![Term::int(4), Term::int(6)])
-    );
-    assert_eq!(
-        evaluate(&parse_matlab("linsolve([1, 2; 3, 4], [5; 6])").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(-4)]),
-            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
-        ])
-    );
-    assert_eq!(render_matlab(&evaluate(&parse_matlab("det([1, 2; 3, 4])").unwrap())), "-2");
+    let h = H::new();
+    assert!(h.eq(h.eval("det([1, 2; 3, 4])"), h.i(-2)));
+    assert!(h.eq(h.eval("sum([1, 2, 3])"), h.i(6)));
+    assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
+    assert!(h.eq(
+        h.eval("linsolve([1, 2; 3, 4], [5; 6])"),
+        h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])
+    ));
+    assert_eq!(h.render(h.eval("det([1, 2; 3, 4])")), "-2");
 }
 
 #[test]
 fn parse_end_index() {
-    let t = parse_matlab("[1, 2, 3](end)").unwrap();
-    assert_eq!(evaluate(&t), Term::int(3));
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2, 3](end)"), h.i(3)));
 }
 
 #[test]
 fn parse_assign_persists_in_sequence() {
-    let t = parse_matlab("x = 5; x + 1").unwrap();
-    assert_eq!(evaluate(&t), Term::int(6));
+    let h = H::new();
+    assert!(h.eq(h.eval("x = 5; x + 1"), h.i(6)));
 }
 
 #[test]
 fn parse_row_all_colon() {
-    // `A(1,:)` on a matrix → first row
-    let t = parse_matlab("[1, 2; 3, 4](1,:)").unwrap();
-    assert_eq!(evaluate(&t), Term::List(vec![Term::int(1), Term::int(2)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2; 3, 4](1,:)"), h.lst(vec![h.i(1), h.i(2)])));
 }
 
 #[test]
 fn parse_col_all_colon() {
-    // `A(:,2)` → second column as a list of row picks
-    let t = parse_matlab("[1, 2; 3, 4](:,2)").unwrap();
-    assert_eq!(evaluate(&t), Term::List(vec![Term::int(2), Term::int(4)]));
+    let h = H::new();
+    assert!(h.eq(h.eval("[1, 2; 3, 4](:,2)"), h.lst(vec![h.i(2), h.i(4)])));
 }
 
 #[test]
 fn parse_column_vector_and_mldivide_shape() {
-    let col = parse_matlab("[5; 6]").unwrap();
-    assert_eq!(
-        col,
-        Term::List(vec![Term::List(vec![Term::int(5)]), Term::List(vec![Term::int(6)])])
-    );
-    let t = parse_matlab("[1, 2; 3, 4] \\ [5; 6]").unwrap();
-    assert_eq!(t.head_name(), Some("Mldivide"));
+    let h = H::new();
+    let col = h.parse("[5; 6]");
+    assert!(h.eq(col, h.lst(vec![h.lst(vec![h.i(5)]), h.lst(vec![h.i(6)])])));
+    let t = h.parse("[1, 2; 3, 4] \\ [5; 6]");
+    assert_eq!(app_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
 }
 
 #[test]
 fn parse_mldivide_2x2_evaluates() {
-    let t = parse_matlab("[1, 2; 3, 4] \\ [5; 6]").unwrap();
-    let e = evaluate(&t);
-    assert_eq!(
-        e,
-        Term::List(vec![
-            Term::List(vec![Term::int(-4)]),
-            Term::List(vec![Term::rational_i64(9, 2).unwrap()]),
-        ])
-    );
+    let h = H::new();
+    let e = h.eval("[1, 2; 3, 4] \\ [5; 6]");
+    assert!(h.eq(e, h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])));
 }
 
 #[test]
 fn parse_matrix_constructors_and_size() {
-    assert_eq!(
-        evaluate(&parse_matlab("eye(2)").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(1), Term::int(0)]),
-            Term::List(vec![Term::int(0), Term::int(1)]),
+    let h = H::new();
+    let got = h.eval("eye(2)");
+    let want = h.lst(vec![
+            h.lst(vec![h.i(1), h.i(0)]),
+            h.lst(vec![h.i(0), h.i(1)]),
+        ]);
+    assert!(h.eq(got, want), "got={} want={} render={}", athena::term_debug(&h.s.borrow(), got), athena::term_debug(&h.s.borrow(), want), h.render(got));
+    assert_eq!(h.render(h.eval("eye(2)")), "[1, 0; 0, 1]");
+
+    assert!(h.eq(
+        h.eval("zeros(2, 3)"),
+        h.lst(vec![
+            h.lst(vec![h.i(0), h.i(0), h.i(0)]),
+            h.lst(vec![h.i(0), h.i(0), h.i(0)]),
         ])
-    );
-    assert_eq!(render_matlab(&evaluate(&parse_matlab("eye(2)").unwrap())), "[1, 0; 0, 1]");
+    ));
+    assert_eq!(h.render(h.eval("zeros(2, 3)")), "[0, 0, 0; 0, 0, 0]");
 
-    assert_eq!(
-        evaluate(&parse_matlab("zeros(2, 3)").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(0), Term::int(0), Term::int(0)]),
-            Term::List(vec![Term::int(0), Term::int(0), Term::int(0)]),
+    assert!(h.eq(
+        h.eval("ones(2)"),
+        h.lst(vec![
+            h.lst(vec![h.i(1), h.i(1)]),
+            h.lst(vec![h.i(1), h.i(1)]),
         ])
-    );
-    assert_eq!(render_matlab(&evaluate(&parse_matlab("zeros(2, 3)").unwrap())), "[0, 0, 0; 0, 0, 0]");
+    ));
+    assert_eq!(h.render(h.eval("ones(2)")), "[1, 1; 1, 1]");
 
-    assert_eq!(
-        evaluate(&parse_matlab("ones(2)").unwrap()),
-        Term::List(vec![
-            Term::List(vec![Term::int(1), Term::int(1)]),
-            Term::List(vec![Term::int(1), Term::int(1)]),
-        ])
-    );
-    assert_eq!(render_matlab(&evaluate(&parse_matlab("ones(2)").unwrap())), "[1, 1; 1, 1]");
-
-    assert_eq!(
-        evaluate(&parse_matlab("size([1, 2; 3, 4])").unwrap()),
-        Term::List(vec![Term::int(2), Term::int(2)])
-    );
-    assert_eq!(render_matlab(&evaluate(&parse_matlab("size([1, 2; 3, 4])").unwrap())), "[2, 2]");
-
-    assert_eq!(evaluate(&parse_matlab("length([1, 2, 3])").unwrap()), Term::int(3));
+    assert!(h.eq(h.eval("size([1, 2; 3, 4])"), h.lst(vec![h.i(2), h.i(2)])));
+    assert_eq!(h.render(h.eval("size([1, 2; 3, 4])")), "[2, 2]");
+    assert!(h.eq(h.eval("length([1, 2, 3])"), h.i(3)));
 }
 
 #[test]
 fn parse_plot_negative_domain_renders_svg() {
-    let t = parse_matlab("plot(x^2, x, -1, 1)").unwrap();
-    let svg = try_plot_svg(&t).expect("extract").expect("render");
+    let h = H::new();
+    let t = h.parse("plot(x^2, x, -1, 1)");
+    let svg = h.with_mut(|s| try_plot_svg(s, t)).expect("extract").expect("render");
     assert!(svg.contains("<svg"), "got {svg}");
 }

@@ -1,26 +1,36 @@
 //! `Plot[f,{x,a,b}]` lowering → Athena sampling → Apollo SVG.
 
-use athena::{Atom, SampleDomain, SamplingPolicy, Term, clone_term, evaluate, number_from_term, numeric::to_f64_lossy};
+use athena::{
+    SampleDomain, SamplingPolicy, Session, TermId, TermKind, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
+    symbol_name,
+};
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 
 const DEFAULT_SAMPLES: u32 = 128;
 
 /// Try to render Mathematica `Plot[f,{x,a,b}]` as SVG.
-pub fn try_plot_svg(term: &Term) -> Option<Result<String, SxoError>> {
-    extract_plot_1d(term).map(render_plot_1d)
+pub fn try_plot_svg(session: &mut Session, id: TermId) -> Option<Result<String, SxoError>> {
+    let spec = extract_plot_1d(session, id)?;
+    Some(render_plot_1d(session, spec))
 }
 
 struct Plot1dSpec {
-    expr: Term,
+    expr: TermId,
     var: String,
     start: f64,
     end: f64,
 }
 
-fn render_plot_1d(spec: Plot1dSpec) -> Result<String, SxoError> {
-    plot_1d_svg(&spec.expr, &spec.var, SampleDomain::new(spec.start, spec.end), SamplingPolicy::samples(DEFAULT_SAMPLES))
-        .map_err(adapter_to_sxo)
+fn render_plot_1d(session: &mut Session, spec: Plot1dSpec) -> Result<String, SxoError> {
+    plot_1d_svg(
+        session,
+        spec.expr,
+        &spec.var,
+        SampleDomain::new(spec.start, spec.end),
+        SamplingPolicy::samples(DEFAULT_SAMPLES),
+    )
+    .map_err(adapter_to_sxo)
 }
 
 fn adapter_to_sxo(err: AdapterError) -> SxoError {
@@ -30,50 +40,45 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
     }
 }
 
-fn extract_plot_1d(term: &Term) -> Option<Plot1dSpec> {
-    let Term::Application { head, arguments: args } = term
-    else {
-        return None;
-    };
-    let name = match head.as_ref() {
-        Term::Atom(Atom::Symbol(s)) => s.as_str(),
-        _ => return None,
-    };
-    if name != "Plot" || args.len() != 2 {
+fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
+    if app_head_name(session, id).as_deref() != Some("Plot") {
         return None;
     }
-    extract_mma_plot(&args[0], &args[1])
+    let args = app_args(session, id)?;
+    if args.len() != 2 {
+        return None;
+    }
+    extract_mma_plot(session, args[0], args[1])
 }
 
-fn extract_mma_plot(expr: &Term, iterator: &Term) -> Option<Plot1dSpec> {
-    let Term::Application { head, arguments: parts } = iterator
-    else {
-        if let Term::List(parts) = iterator {
-            return list_iterator(expr, parts);
+fn extract_mma_plot(session: &mut Session, expr: TermId, iterator: TermId) -> Option<Plot1dSpec> {
+    if let Some(TermKind::List(parts)) = session.arena.get(iterator) {
+        if parts.len() == 3 {
+            let parts = parts.clone();
+            return list_iterator(session, expr, &parts);
         }
-        return None;
-    };
-    if head.is_symbol("List") && parts.len() == 3 {
-        return list_iterator(expr, parts);
+    }
+    if app_head_name(session, iterator).as_deref() == Some("List") {
+        let parts = app_args(session, iterator)?;
+        if parts.len() == 3 {
+            return list_iterator(session, expr, &parts);
+        }
     }
     None
 }
 
-fn list_iterator(expr: &Term, parts: &[Term]) -> Option<Plot1dSpec> {
-    let var = match &parts[0] {
-        Term::Atom(Atom::Symbol(s)) => s.clone(),
-        _ => return None,
-    };
-    let start = term_as_f64(&parts[1])?;
-    let end = term_as_f64(&parts[2])?;
-    Some(Plot1dSpec { expr: clone_term(expr), var, start, end })
+fn list_iterator(session: &mut Session, expr: TermId, parts: &[TermId]) -> Option<Plot1dSpec> {
+    let var = symbol_name(session, parts[0])?;
+    let start = term_as_f64(session, parts[1])?;
+    let end = term_as_f64(session, parts[2])?;
+    Some(Plot1dSpec { expr, var, start, end })
 }
 
-/// Literal numbers and unary-minus forms (`Times[-1, n]`) after light eval.
-fn term_as_f64(term: &Term) -> Option<f64> {
-    if let Some(n) = number_from_term(term) {
+/// Literal numbers and unary-minus forms after light eval.
+fn term_as_f64(session: &mut Session, id: TermId) -> Option<f64> {
+    if let Some(n) = number_from_id(session, id) {
         return to_f64_lossy(n);
     }
-    let folded = evaluate(term);
-    to_f64_lossy(number_from_term(&folded)?)
+    let folded = session.evaluate(id).term;
+    to_f64_lossy(number_from_id(session, folded)?)
 }

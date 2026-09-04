@@ -5,7 +5,7 @@
 #![deny(missing_docs)]
 
 use apollo::{ColumnTable, CompileOptions, LayerSpec, Mapping, PlotSpec, compile_plot, render_svg};
-use athena::{Diagnostic as AthenaDiagnostic, SampleDomain, SampledCurve, SamplingPolicy, Term, sample_1d};
+use athena::{Diagnostic as AthenaDiagnostic, SampleDomain, SampledCurve, SamplingPolicy, Session, TermId, sample_1d};
 
 /// 适配层错误（结构化 code 优先，文案仅调试）。
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,7 +59,13 @@ pub fn render_line_svg(curve: &SampledCurve) -> Result<String, AdapterError> {
 }
 
 /// 对一元表达式采样并渲染 SVG（1D plot 垂直切片）。
-pub fn plot_1d_svg(expr: &Term, var: &str, domain: SampleDomain, policy: SamplingPolicy) -> Result<String, AdapterError> {
-    let curve = sample_1d(expr, var, domain, policy).map_err(AdapterError::Athena)?;
+pub fn plot_1d_svg(
+    session: &mut Session,
+    expr: TermId,
+    var: &str,
+    domain: SampleDomain,
+    policy: SamplingPolicy,
+) -> Result<String, AdapterError> {
+    let curve = sample_1d(session, expr, var, domain, policy).map_err(AdapterError::Athena)?;
     render_line_svg(&curve)
 }

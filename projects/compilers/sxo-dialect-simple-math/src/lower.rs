@@ -1,76 +1,127 @@
-//! Bridge flat [`Expr`] ↔ engine terms (Simple Math off-route helpers).
+//! Bridge flat [`Expr`] ↔ session arena (`TermId`).
 //!
 //! [`Expr::Num`] is a **legacy frontend** form; lowering to kernel uses explicit machine-real
 //! conversion only — not exact semantics.
 
 #![allow(dead_code)]
 
-use athena::{Atom, Number, Term, numeric::to_f64_lossy};
+use athena::{
+    AtomKind, Number, Session, SourceSpan, TermId, TermKind, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
+    push_app_named, push_int, push_symbol_name, symbol_name,
+};
 use sxo_types::SxoError;
 
 use crate::form::Expr;
 
-/// Lower a shared-subset [`Term`] into flat [`Expr`] (lossy for exact numbers).
-pub fn term_to_expr(t: &Term) -> Result<Expr, SxoError> {
-    match t {
-        Term::Atom(Atom::Number(n)) => {
+/// Lower a shared-subset arena node into flat [`Expr`] (lossy for exact numbers).
+pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError> {
+    match session.arena.get(id) {
+        Some(TermKind::Atom(AtomKind::Number(n))) => {
             Ok(Expr::num(to_f64_lossy(n).ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?))
         }
-        Term::Atom(Atom::Symbol(s)) => Ok(Expr::var(s.clone())),
-        Term::Atom(Atom::Boolean(true)) => Ok(Expr::var("True")),
-        Term::Atom(Atom::Boolean(false)) => Ok(Expr::var("False")),
-        Term::Atom(Atom::Null) => Ok(Expr::var("Null")),
-        Term::Atom(Atom::String(_)) => Err(SxoError::new("bridge: strings not in Expr")),
-        Term::List(_) => Err(SxoError::new("bridge: List not in Expr")),
-        Term::Application { head, arguments: args } => {
-            let h = head.head_name().ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
-            match h {
-                "Plus" if args.len() == 2 => Ok(Expr::add(term_to_expr(&args[0])?, term_to_expr(&args[1])?)),
+        Some(TermKind::Atom(AtomKind::Symbol(_))) => {
+            Ok(Expr::var(symbol_name(session, id).unwrap_or_default()))
+        }
+        Some(TermKind::Atom(AtomKind::Boolean(true))) => Ok(Expr::var("True")),
+        Some(TermKind::Atom(AtomKind::Boolean(false))) => Ok(Expr::var("False")),
+        Some(TermKind::Atom(AtomKind::Null)) => Ok(Expr::var("Null")),
+        Some(TermKind::Atom(AtomKind::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
+        Some(TermKind::List(_)) => Err(SxoError::new("bridge: List not in Expr")),
+        Some(TermKind::App { .. }) => {
+            let h = app_head_name(session, id).ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
+            let args = app_args(session, id).unwrap_or_default();
+            match h.as_str() {
+                "Plus" if args.len() == 2 => Ok(Expr::add(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?)),
                 "Plus" if args.len() > 2 => {
-                    let mut acc = term_to_expr(&args[0])?;
+                    let mut acc = expr_from_session(session, args[0])?;
                     for a in &args[1..] {
-                        acc = Expr::add(acc, term_to_expr(a)?);
+                        acc = Expr::add(acc, expr_from_session(session, *a)?);
                     }
                     Ok(acc)
                 }
                 "Times" if args.len() == 2 => {
-                    if args[0].is_neg_one() {
-                        Ok(Expr::neg(term_to_expr(&args[1])?))
+                    if is_neg_one(session, args[0]) {
+                        Ok(Expr::neg(expr_from_session(session, args[1])?))
                     }
                     else {
-                        Ok(Expr::mul(term_to_expr(&args[0])?, term_to_expr(&args[1])?))
+                        Ok(Expr::mul(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
                     }
                 }
                 "Times" if args.len() > 2 => {
-                    let mut acc = term_to_expr(&args[0])?;
+                    let mut acc = expr_from_session(session, args[0])?;
                     for a in &args[1..] {
-                        acc = Expr::mul(acc, term_to_expr(a)?);
+                        acc = Expr::mul(acc, expr_from_session(session, *a)?);
                     }
                     Ok(acc)
                 }
-                "Subtract" if args.len() == 2 => Ok(Expr::sub(term_to_expr(&args[0])?, term_to_expr(&args[1])?)),
-                "Divide" if args.len() == 2 => Ok(Expr::div(term_to_expr(&args[0])?, term_to_expr(&args[1])?)),
-                "Power" if args.len() == 2 => Ok(Expr::pow(term_to_expr(&args[0])?, term_to_expr(&args[1])?)),
-                "Sin" if args.len() == 1 => Ok(Expr::sin(term_to_expr(&args[0])?)),
-                "Cos" if args.len() == 1 => Ok(Expr::cos(term_to_expr(&args[0])?)),
+                "Subtract" if args.len() == 2 => {
+                    Ok(Expr::sub(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
+                }
+                "Divide" if args.len() == 2 => {
+                    Ok(Expr::div(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
+                }
+                "Power" if args.len() == 2 => {
+                    Ok(Expr::pow(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?))
+                }
+                "Sin" if args.len() == 1 => Ok(Expr::sin(expr_from_session(session, args[0])?)),
+                "Cos" if args.len() == 1 => Ok(Expr::cos(expr_from_session(session, args[0])?)),
                 other => Err(SxoError::new(format!("bridge: unsupported head `{other}`"))),
             }
+        }
+        None => Err(SxoError::new(format!("bridge: missing TermId({})", id.0))),
+    }
+}
+
+/// Lift flat [`Expr`] into a session arena [`TermId`] (numbers become machine reals).
+pub fn lower_expr(session: &mut Session, e: &Expr) -> TermId {
+    match e {
+        Expr::Num(n) => {
+            session
+                .arena
+                .push(TermKind::Atom(AtomKind::Number(Number::machine(*n))), SourceSpan::default())
+        }
+        Expr::Var(v) => push_symbol_name(session, v),
+        Expr::Neg(a) => {
+            let neg1 = push_int(session, -1);
+            let inner = lower_expr(session, a);
+            push_app_named(session, "Times", vec![neg1, inner])
+        }
+        Expr::Add(a, b) => {
+            let left = lower_expr(session, a);
+            let right = lower_expr(session, b);
+            push_app_named(session, "Plus", vec![left, right])
+        }
+        Expr::Sub(a, b) => {
+            let left = lower_expr(session, a);
+            let right = lower_expr(session, b);
+            push_app_named(session, "Subtract", vec![left, right])
+        }
+        Expr::Mul(a, b) => {
+            let left = lower_expr(session, a);
+            let right = lower_expr(session, b);
+            push_app_named(session, "Times", vec![left, right])
+        }
+        Expr::Div(a, b) => {
+            let left = lower_expr(session, a);
+            let right = lower_expr(session, b);
+            push_app_named(session, "Divide", vec![left, right])
+        }
+        Expr::Pow(a, b) => {
+            let left = lower_expr(session, a);
+            let right = lower_expr(session, b);
+            push_app_named(session, "Power", vec![left, right])
+        }
+        Expr::Sin(a) => {
+            let inner = lower_expr(session, a);
+            push_app_named(session, "Sin", vec![inner])
+        }
+        Expr::Cos(a) => {
+            let inner = lower_expr(session, a);
+            push_app_named(session, "Cos", vec![inner])
         }
     }
 }
 
-/// Lift flat [`Expr`] into Athena [`Term`] (numbers become machine reals).
-pub fn expr_to_term(e: &Expr) -> Term {
-    match e {
-        Expr::Num(n) => Term::number(Number::machine(*n)),
-        Expr::Var(v) => Term::symbol(v.clone()),
-        Expr::Neg(a) => Term::apply("Times", vec![Term::int(-1), expr_to_term(a)]),
-        Expr::Add(a, b) => Term::apply("Plus", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Sub(a, b) => Term::apply("Subtract", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Mul(a, b) => Term::apply("Times", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Div(a, b) => Term::apply("Divide", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Pow(a, b) => Term::apply("Power", vec![expr_to_term(a), expr_to_term(b)]),
-        Expr::Sin(a) => Term::apply("Sin", vec![expr_to_term(a)]),
-        Expr::Cos(a) => Term::apply("Cos", vec![expr_to_term(a)]),
-    }
+fn is_neg_one(session: &Session, id: TermId) -> bool {
+    matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
 }

@@ -1,26 +1,36 @@
 //! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
 
-use athena::{Atom, SampleDomain, SamplingPolicy, Term, clone_term, evaluate, number_from_term, numeric::to_f64_lossy};
+use athena::{
+    SampleDomain, SamplingPolicy, Session, TermId, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
+    symbol_name,
+};
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 
 const DEFAULT_SAMPLES: u32 = 128;
 
 /// Try to render MATLAB-style `plot(f,x,a,b)` as SVG.
-pub fn try_plot_svg(term: &Term) -> Option<Result<String, SxoError>> {
-    extract_plot_1d(term).map(render_plot_1d)
+pub fn try_plot_svg(session: &mut Session, id: TermId) -> Option<Result<String, SxoError>> {
+    let spec = extract_plot_1d(session, id)?;
+    Some(render_plot_1d(session, spec))
 }
 
 struct Plot1dSpec {
-    expr: Term,
+    expr: TermId,
     var: String,
     start: f64,
     end: f64,
 }
 
-fn render_plot_1d(spec: Plot1dSpec) -> Result<String, SxoError> {
-    plot_1d_svg(&spec.expr, &spec.var, SampleDomain::new(spec.start, spec.end), SamplingPolicy::samples(DEFAULT_SAMPLES))
-        .map_err(adapter_to_sxo)
+fn render_plot_1d(session: &mut Session, spec: Plot1dSpec) -> Result<String, SxoError> {
+    plot_1d_svg(
+        session,
+        spec.expr,
+        &spec.var,
+        SampleDomain::new(spec.start, spec.end),
+        SamplingPolicy::samples(DEFAULT_SAMPLES),
+    )
+    .map_err(adapter_to_sxo)
 }
 
 fn adapter_to_sxo(err: AdapterError) -> SxoError {
@@ -30,32 +40,24 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
     }
 }
 
-fn extract_plot_1d(term: &Term) -> Option<Plot1dSpec> {
-    let Term::Application { head, arguments: args } = term
-    else {
-        return None;
-    };
-    let name = match head.as_ref() {
-        Term::Atom(Atom::Symbol(s)) => s.as_str(),
-        _ => return None,
-    };
-    if name != "plot" || args.len() != 4 {
+fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
+    if app_head_name(session, id).as_deref() != Some("plot") {
         return None;
     }
-    let var = match &args[1] {
-        Term::Atom(Atom::Symbol(s)) => s.clone(),
-        _ => return None,
-    };
-    let start = term_as_f64(&args[2])?;
-    let end = term_as_f64(&args[3])?;
-    Some(Plot1dSpec { expr: clone_term(&args[0]), var, start, end })
+    let args = app_args(session, id)?;
+    if args.len() != 4 {
+        return None;
+    }
+    let var = symbol_name(session, args[1])?;
+    let start = term_as_f64(session, args[2])?;
+    let end = term_as_f64(session, args[3])?;
+    Some(Plot1dSpec { expr: args[0], var, start, end })
 }
 
-/// Literal numbers and unary-minus forms (`Times[-1, n]`) after light eval.
-fn term_as_f64(term: &Term) -> Option<f64> {
-    if let Some(n) = number_from_term(term) {
+fn term_as_f64(session: &mut Session, id: TermId) -> Option<f64> {
+    if let Some(n) = number_from_id(session, id) {
         return to_f64_lossy(n);
     }
-    let folded = evaluate(term);
-    to_f64_lossy(number_from_term(&folded)?)
+    let folded = session.evaluate(id).term;
+    to_f64_lossy(number_from_id(session, folded)?)
 }
