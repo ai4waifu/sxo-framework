@@ -1,6 +1,14 @@
 //! Host integration tests across dialect crates and Athena.
 
-use athena::{AtomKind, CalculusCtx, DomainRequest, TermKind, push_int, term_debug, try_calculus_request};
+use athena::{
+    ir::Atom,
+    domains::calculus::CalculusCtx,
+    domains::DomainRequest,
+    ir::ExprNode,
+    runtime::values::arena::push_int,
+    diagnostics::expression_summary::expression_debug,
+    domains::calculus::try_calculus_request,
+};
 use sxo_dialect_mathematica::{WExpr, parse_number_literal};
 use sxo_napi::session::Session;
 use sxo_types::Dialect;
@@ -28,7 +36,7 @@ fn big_integer_arithmetic() {
     let expected_n = parse_number_literal("100000000000000000000").unwrap();
     let expected = session.with_math_mut(|s| {
         s.arena
-            .push(TermKind::Atom(AtomKind::Number(athena::clone_number(&expected_n))), athena::SourceSpan::default())
+            .push(ExprNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))), athena::types::SourceSpan::default())
     });
     assert!(session.structural_eq(e, expected));
 }
@@ -39,7 +47,7 @@ fn bridge_lowers_to_kernel_app() {
     let w = session.parse_mathematica("1 + 2").unwrap();
     let t = session.lower_mathematica(&w);
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(t), Some(TermKind::App { .. })));
+        assert!(matches!(s.arena.get(t), Some(ExprNode::App { .. })));
     });
 }
 
@@ -51,7 +59,7 @@ fn dialect_d_limit_series_lower_to_domain() {
         let mut cc = CalculusCtx::new(s);
         try_calculus_request(&mut cc, d_term).map(DomainRequest::Calculus)
     });
-    assert!(matches!(lowered, Some(DomainRequest::Calculus(athena::CalculusRequest::Derivative { .. }))));
+    assert!(matches!(lowered, Some(DomainRequest::Calculus(athena::domains::calculus::CalculusRequest::Derivative { .. }))));
     let d_out = session.evaluate(d_term);
     let d_s = session.render_as_wolfram(d_out);
     assert!(d_s.contains('x'), "got {d_s}");
@@ -66,7 +74,7 @@ fn session_set_persists_across_mathematica_evaluates() {
     assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap(), six));
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
-    let text = session.with_math(|s| term_debug(s, cleared));
+    let text = session.with_math(|s| expression_debug(s, cleared));
     assert!(text.contains("Plus") || text.contains('+'), "expected free Plus after clear, got {text}");
 }
 
@@ -84,7 +92,7 @@ fn session_setdelayed_evaluates_on_use() {
     let session = Session::new();
     let null = session.evaluate_mathematica("a := 1 + 1").unwrap();
     session.with_math(|s| {
-        assert!(matches!(s.arena.get(null), Some(TermKind::Atom(AtomKind::Null))));
+        assert!(matches!(s.arena.get(null), Some(ExprNode::Atom(Atom::Null))));
     });
     let two = session.with_math_mut(|s| push_int(s, 2));
     assert!(session.structural_eq(session.evaluate_mathematica("a").unwrap(), two));

@@ -1,23 +1,31 @@
-//! Lower Mathematica Form ([`WExpr`]) into a session arena (`TermId`).
+//! Lower Mathematica Form ([`WExpr`]) into a session arena (`ExprId`).
 
 use athena::{
-    AtomKind, Session, TermId, TermKind, clone_number, push_app_named, push_bool, push_list,
-    push_null, push_symbol_name,
+    ir::Atom,
+    Session,
+    types::ExprId,
+    ir::ExprNode,
+    runtime::values::numeric_clone::clone_number,
+    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_bool,
+    runtime::values::arena::push_list,
+    runtime::values::arena::push_null,
+    runtime::values::arena::push_symbol_name,
 };
 
 use crate::form::{WAtom, WExpr};
 
-/// Structural `WExpr` → session arena `TermId`.
-pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
+/// Structural `WExpr` → session arena `ExprId`.
+pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> ExprId {
     match w {
         WExpr::Atom(a) => match a {
             WAtom::Number(n) => {
-                let span = athena::SourceSpan::default();
-                session.arena.push(TermKind::Atom(AtomKind::Number(clone_number(n))), span)
+                let span = athena::types::SourceSpan::default();
+                session.arena.push(ExprNode::Atom(Atom::Number(clone_number(n))), span)
             }
             WAtom::String(s) => {
-                let span = athena::SourceSpan::default();
-                session.arena.push(TermKind::Atom(AtomKind::String(s.clone())), span)
+                let span = athena::types::SourceSpan::default();
+                session.arena.push(ExprNode::Atom(Atom::String(s.clone())), span)
             }
             WAtom::Symbol(s) if s == "True" => push_bool(session, true),
             WAtom::Symbol(s) if s == "False" => push_bool(session, false),
@@ -25,12 +33,12 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
             WAtom::Symbol(s) => push_symbol_name(session, s),
         },
         WExpr::List(items) => {
-            let ids: Vec<TermId> = items.iter().map(|i| lower_wexpr(session, i)).collect();
+            let ids: Vec<ExprId> = items.iter().map(|i| lower_wexpr(session, i)).collect();
             push_list(session, ids)
         }
         WExpr::Call { head, args } => match head.as_ref() {
             WExpr::Atom(WAtom::Symbol(name)) => {
-                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                let arg_ids: Vec<ExprId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_app_named(session, name, arg_ids)
             }
             other => {
@@ -44,22 +52,22 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
     }
 }
 
-/// Session arena `TermId` → structural `WExpr`.
-pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
+/// Session arena `ExprId` → structural `WExpr`.
+pub fn wexpr_from_session(session: &Session, id: ExprId) -> WExpr {
     match session.arena.get(id) {
-        Some(TermKind::Atom(AtomKind::Number(n))) => WExpr::Atom(WAtom::Number(clone_number(n))),
-        Some(TermKind::Atom(AtomKind::String(s))) => WExpr::Atom(WAtom::String(s.clone())),
-        Some(TermKind::Atom(AtomKind::Boolean(true))) => WExpr::Atom(WAtom::Symbol("True".into())),
-        Some(TermKind::Atom(AtomKind::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
-        Some(TermKind::Atom(AtomKind::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
-        Some(TermKind::Atom(AtomKind::Symbol(sym))) => {
+        Some(ExprNode::Atom(Atom::Number(n))) => WExpr::Atom(WAtom::Number(clone_number(n))),
+        Some(ExprNode::Atom(Atom::String(s))) => WExpr::Atom(WAtom::String(s.clone())),
+        Some(ExprNode::Atom(Atom::Boolean(true))) => WExpr::Atom(WAtom::Symbol("True".into())),
+        Some(ExprNode::Atom(Atom::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
+        Some(ExprNode::Atom(Atom::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
+        Some(ExprNode::Atom(Atom::Symbol(sym))) => {
             let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
             WExpr::Atom(WAtom::Symbol(name))
         }
-        Some(TermKind::List(items)) => {
+        Some(ExprNode::List(items)) => {
             WExpr::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
-        Some(TermKind::App { op, args }) => {
+        Some(ExprNode::App { op, args }) => {
             let head_name = session.operators.name(*op).unwrap_or("?").to_string();
             if head_name == "Application" && !args.is_empty() {
                 let head = wexpr_from_session(session, args[0]);
@@ -71,6 +79,6 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
                 args: args.iter().map(|a| wexpr_from_session(session, *a)).collect(),
             }
         }
-        None => WExpr::Atom(WAtom::Symbol(format!("TermId({})", id.0))),
+        None => WExpr::Atom(WAtom::Symbol(format!("ExprId({})", id.0))),
     }
 }

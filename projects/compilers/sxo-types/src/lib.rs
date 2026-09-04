@@ -7,7 +7,7 @@
 mod dialect;
 mod error;
 
-pub use athena_types::{Diagnostic, DiagnosticCode, Severity, SourceSpan, TermId};
+pub use athena_types::{Diagnostic, DiagnosticCode, Severity, SourceSpan, ExprId};
 pub use dialect::{Dialect, detect_dialect};
 pub use error::SxoError;
 

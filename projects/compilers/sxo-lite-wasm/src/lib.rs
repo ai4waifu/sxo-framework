@@ -1,10 +1,10 @@
-//! WASM bindings for SXO (`Session` + arena [`TermId`]).
+//! WASM bindings for SXO (`Session` + arena [`ExprId`]).
 
 #![deny(missing_docs)]
 
 mod session;
 
-use athena::TermId;
+use athena::types::ExprId;
 use session::Session;
 use sxo_types::{Dialect, SxoError, VERSION as CORE_VERSION};
 use wasm_bindgen::prelude::*;
@@ -23,7 +23,7 @@ fn map_err(err: SxoError) -> JsValue {
     JsValue::from_str(&err.message)
 }
 
-fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect), JsValue> {
+fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(ExprId, Dialect), JsValue> {
     let resolved = match session.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
@@ -41,7 +41,7 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Te
     Ok((term, resolved))
 }
 
-fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Expression {
+fn fork_expression(session: &Session, root: ExprId, dialect: Dialect) -> Expression {
     let w = session.to_mathematica(root);
     let fresh = Session::new();
     let root = fresh.lower_mathematica(&w);
@@ -54,12 +54,12 @@ pub fn version() -> String {
     CORE_VERSION.to_string()
 }
 
-/// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
+/// Opaque expression handle backed by a host [`Session`] arena [`ExprId`].
 #[derive(Debug)]
 #[wasm_bindgen]
 pub struct Expression {
     session: Session,
-    root: TermId,
+    root: ExprId,
     dialect: Dialect,
 }
 

@@ -1,8 +1,16 @@
 //! `Plot[f,{x,a,b}]` lowering → Athena sampling → Apollo SVG.
 
 use athena::{
-    SampleDomain, SamplingPolicy, Session, TermId, TermKind, app_args, app_head_name, number_from_id, numeric::to_f64_lossy,
-    symbol_name,
+    plot::SampleDomain,
+    plot::SamplingPolicy,
+    Session,
+    types::ExprId,
+    ir::ExprNode,
+    runtime::values::arena::app_args,
+    runtime::values::arena::app_head_name,
+    runtime::values::arena::number_from_id,
+    numeric::to_f64_lossy,
+    runtime::values::arena::symbol_name,
 };
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
@@ -10,13 +18,13 @@ use sxo_types::SxoError;
 const DEFAULT_SAMPLES: u32 = 128;
 
 /// Try to render Mathematica `Plot[f,{x,a,b}]` as SVG.
-pub fn try_plot_svg(session: &mut Session, id: TermId) -> Option<Result<String, SxoError>> {
+pub fn try_plot_svg(session: &mut Session, id: ExprId) -> Option<Result<String, SxoError>> {
     let spec = extract_plot_1d(session, id)?;
     Some(render_plot_1d(session, spec))
 }
 
 struct Plot1dSpec {
-    expr: TermId,
+    expr: ExprId,
     var: String,
     start: f64,
     end: f64,
@@ -40,7 +48,7 @@ fn adapter_to_sxo(err: AdapterError) -> SxoError {
     }
 }
 
-fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
+fn extract_plot_1d(session: &mut Session, id: ExprId) -> Option<Plot1dSpec> {
     if app_head_name(session, id).as_deref() != Some("Plot") {
         return None;
     }
@@ -51,8 +59,8 @@ fn extract_plot_1d(session: &mut Session, id: TermId) -> Option<Plot1dSpec> {
     extract_mma_plot(session, args[0], args[1])
 }
 
-fn extract_mma_plot(session: &mut Session, expr: TermId, iterator: TermId) -> Option<Plot1dSpec> {
-    if let Some(TermKind::List(parts)) = session.arena.get(iterator) {
+fn extract_mma_plot(session: &mut Session, expr: ExprId, iterator: ExprId) -> Option<Plot1dSpec> {
+    if let Some(ExprNode::List(parts)) = session.arena.get(iterator) {
         if parts.len() == 3 {
             let parts = parts.clone();
             return list_iterator(session, expr, &parts);
@@ -67,7 +75,7 @@ fn extract_mma_plot(session: &mut Session, expr: TermId, iterator: TermId) -> Op
     None
 }
 
-fn list_iterator(session: &mut Session, expr: TermId, parts: &[TermId]) -> Option<Plot1dSpec> {
+fn list_iterator(session: &mut Session, expr: ExprId, parts: &[ExprId]) -> Option<Plot1dSpec> {
     let var = symbol_name(session, parts[0])?;
     let start = term_as_f64(session, parts[1])?;
     let end = term_as_f64(session, parts[2])?;
@@ -75,7 +83,7 @@ fn list_iterator(session: &mut Session, expr: TermId, parts: &[TermId]) -> Optio
 }
 
 /// Literal numbers and unary-minus forms after light eval.
-fn term_as_f64(session: &mut Session, id: TermId) -> Option<f64> {
+fn term_as_f64(session: &mut Session, id: ExprId) -> Option<f64> {
     if let Some(n) = number_from_id(session, id) {
         return to_f64_lossy(n);
     }
