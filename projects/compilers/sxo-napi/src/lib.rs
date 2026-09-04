@@ -1,4 +1,4 @@
-//! Node N-API bindings for SXO (`Session` + engine [`Term`]).
+//! Node N-API bindings for SXO (`Session` + arena [`TermId`]).
 
 #![deny(missing_docs)]
 
@@ -10,7 +10,7 @@ use napi_derive::napi;
 use session::Session;
 use sxo_types::{Dialect, SxoError, VERSION as CORE_VERSION};
 
-pub use athena::Term;
+use athena::TermId;
 
 fn map_err(err: SxoError) -> Error {
     Error::from_reason(err.message)
@@ -35,7 +35,7 @@ fn dialect_to_str(d: Dialect) -> &'static str {
     }
 }
 
-fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Term, Dialect)> {
+fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect)> {
     let resolved = match session.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
@@ -43,7 +43,7 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Te
     let term = match resolved {
         Dialect::Mathematica => {
             let w = session.parse_mathematica(input).map_err(map_err)?;
-            session.from_mathematica(&w)
+            session.lower_mathematica(&w)
         }
         Dialect::Matlab => session.parse_matlab(input).map_err(map_err)?,
         Dialect::SimpleMath | Dialect::Auto => {
@@ -53,17 +53,26 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Te
     Ok((term, resolved))
 }
 
+/// Fork `root` into a fresh host [`Session`] via Mathematica Form round-trip.
+fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Expression {
+    let w = session.to_mathematica(root);
+    let fresh = Session::new();
+    let root = fresh.lower_mathematica(&w);
+    Expression { session: fresh, root, dialect }
+}
+
 /// Return the SXO engine version string.
 #[napi]
 pub fn version() -> String {
     CORE_VERSION.to_string()
 }
 
-/// Opaque expression handle backed by engine [`Term`].
+/// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
-    inner: Term,
+    session: Session,
+    root: TermId,
     dialect: Dialect,
 }
 
@@ -74,67 +83,65 @@ impl Expression {
     pub fn parse(input: String, dialect: Option<String>) -> Result<Self> {
         let d = dialect_from_str(dialect)?;
         let session = Session::new();
-        let (term, resolved) = parse_to_term(&session, &input, d)?;
-        Ok(Self { inner: term, dialect: resolved })
+        let (root, resolved) = parse_to_term(&session, &input, d)?;
+        Ok(Self { session, root, dialect: resolved })
     }
 
     /// Differentiate with respect to `var`.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
-        let session = Session::new();
-        let out = session.differentiate_term(&self.inner, &var);
-        Ok(Self { inner: out, dialect: self.dialect })
+        let mut out = fork_expression(&self.session, self.root, self.dialect);
+        out.root = out.session.differentiate_term(out.root, &var);
+        Ok(out)
     }
 
     /// Simplify via the engine (`Simplify` head).
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
-        let session = Session::new();
-        Ok(Self { inner: session.simplify_term(&self.inner), dialect: self.dialect })
+        let mut out = fork_expression(&self.session, self.root, self.dialect);
+        out.root = out.session.simplify_term(out.root);
+        Ok(out)
     }
 
     /// Evaluate (canonical rewrite) this expression.
     #[napi]
     pub fn evaluate(&self) -> Result<Expression> {
-        let session = Session::new();
-        Ok(Self { inner: session.evaluate(&self.inner), dialect: self.dialect })
+        let mut out = fork_expression(&self.session, self.root, self.dialect);
+        out.root = out.session.evaluate(out.root);
+        Ok(out)
     }
 
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
-        let session = Session::new();
         Ok(match self.dialect {
-            Dialect::Matlab => session.render_as_matlab(&self.inner),
-            _ => session.render_as_wolfram(&self.inner),
+            Dialect::Matlab => self.session.render_as_matlab(self.root),
+            _ => self.session.render_as_wolfram(self.root),
         })
     }
 
     /// Render as Mathematica / Wolfram text.
     #[napi(js_name = "toWolfram")]
     pub fn to_wolfram(&self) -> Result<String> {
-        let session = Session::new();
-        Ok(session.render_as_wolfram(&self.inner))
+        Ok(self.session.render_as_wolfram(self.root))
     }
 
     /// Render as MATLAB text.
     #[napi(js_name = "toMatlab")]
     pub fn to_matlab(&self) -> Result<String> {
-        let session = Session::new();
-        Ok(session.render_as_matlab(&self.inner))
+        Ok(self.session.render_as_matlab(self.root))
     }
 
-    /// Structural equality.
+    /// Structural equality (Form round-trip compare).
     #[napi(js_name = "isEqual")]
     pub fn is_equal(&self, other: &Expression) -> Result<bool> {
-        Ok(self.inner == other.inner)
+        Ok(self.session.to_mathematica(self.root) == other.session.to_mathematica(other.root))
     }
 
     /// Render 1-D `Plot` / `plot` as SVG when the term matches a known form.
     #[napi(js_name = "plotSvg")]
     pub fn plot_svg(&self) -> Result<String> {
-        let session = Session::new();
-        match session.try_plot_svg(&self.inner, self.dialect) {
+        match self.session.try_plot_svg(self.root, self.dialect) {
             Some(Ok(svg)) => Ok(svg),
             Some(Err(e)) => Err(map_err(e)),
             None => Err(Error::from_reason("not a supported 1-D plot form")),
@@ -154,7 +161,8 @@ pub fn d(input: String, var: String, dialect: Option<String>) -> Result<Expressi
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, &input, d)?;
-    Ok(Expression { inner: session.differentiate_term(&term, &var), dialect: resolved })
+    let root = session.differentiate_term(term, &var);
+    Ok(Expression { session, root, dialect: resolved })
 }
 
 /// Top-level `simplify(expr, dialect?)`.
@@ -163,7 +171,9 @@ pub fn simplify(input: String, dialect: Option<String>) -> Result<Expression> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, &input, d)?;
-    Ok(Expression { inner: session.simplify_term(&session.evaluate(&term)), dialect: resolved })
+    let evaluated = session.evaluate(term);
+    let root = session.simplify_term(evaluated);
+    Ok(Expression { session, root, dialect: resolved })
 }
 
 /// Top-level `expression(input, dialect?)` — parse only (no evaluate).
@@ -178,7 +188,7 @@ pub fn plot_svg(input: String, dialect: Option<String>) -> Result<String> {
     let d = dialect_from_str(dialect)?;
     let session = Session::new();
     let (term, resolved) = parse_to_term(&session, &input, d)?;
-    match session.try_plot_svg(&term, resolved) {
+    match session.try_plot_svg(term, resolved) {
         Some(Ok(svg)) => Ok(svg),
         Some(Err(e)) => Err(map_err(e)),
         None => Err(Error::from_reason("not a supported 1-D plot form")),
