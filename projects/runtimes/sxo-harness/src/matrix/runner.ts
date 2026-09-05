@@ -25,7 +25,7 @@ function fail(message: string): FeatureCaseRunFail {
     return { status: 'fail', message };
 }
 
-function assertExpected(kind: CaseKind, expected: string | undefined): expected is string {
+function assertExpected(_kind: CaseKind, expected: string | undefined): expected is string {
     return expected !== undefined;
 }
 
