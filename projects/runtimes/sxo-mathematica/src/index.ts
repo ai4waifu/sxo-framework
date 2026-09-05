@@ -167,15 +167,6 @@ export class Mathematica {
     }
 }
 
-export { featureMatrix } from './feature-matrix/index.js';
-export type {
-    CaseKind,
-    FeatureCase,
-    FeatureEffect,
-    FeatureEntry,
-    FeatureStatus,
-} from './feature-matrix/index.js';
-
 /** Shared default Mathematica frontend (stateless S0). */
 export const mathematica = Mathematica.create();
 

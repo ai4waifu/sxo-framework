@@ -181,13 +181,13 @@ and ensure the runtime path is available to the service account, not only to the
 
 ## 📊 Feature discovery
 
-The package provides a feature-matrix export and a reporting script. Use the report to understand which frontend
-constructs are supported for the installed release. Treat `supported`, `partial`, `unsupported`, and `unavailable` as
-different states. A feature marked unavailable because a native host is missing is not the same as a feature that the
-dialect parser intentionally rejects.
+Capability status lives under `tests/feature-matrix/` (R&D / acceptance only — not a product export). Use the report
+script to print which frontend constructs are supported for the installed release. Treat `supported`, `partial`,
+`unsupported`, and `unavailable` as different states. A feature marked unavailable because a native host is missing is
+not the same as a feature that the dialect parser intentionally rejects.
 
 ```bash
-node ./dist/feature-matrix/cli.js
+pnpm --filter @sxo/mathematica report:features
 ```
 
 Use feature reports in migration planning and CI, but do not turn a local comparison against proprietary software into a

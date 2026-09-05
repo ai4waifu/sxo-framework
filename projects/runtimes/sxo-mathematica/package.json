@@ -19,10 +19,6 @@
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
         },
-        "./feature-matrix": {
-            "types": "./dist/feature-matrix/index.d.ts",
-            "default": "./dist/feature-matrix/index.js"
-        },
         "./cli": {
             "types": "./dist/cli.d.ts",
             "default": "./dist/cli.js"
@@ -44,10 +40,9 @@
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
         "test": "vitest run",
-        "report:features": "node ../sxo-harness/dist/report-features.js mathematica"
+        "report:features": "pnpm exec vite-node ./tests/feature-matrix/report.ts"
     },
     "dependencies": {
-        "@sxo/harness": "workspace:*",
         "@vmz/commander": "0.1.26",
         "@vmz/diagnostic": "0.1.26"
     },
@@ -58,8 +53,10 @@
         "@sxo/sxo-darwin-x64": "workspace:*"
     },
     "devDependencies": {
+        "@sxo/harness": "workspace:*",
         "@types/node": "^22.15.0",
         "typescript": "^5.8.3",
+        "vite-node": "^3.2.4",
         "vitest": "^3.2.4"
     }
 }
