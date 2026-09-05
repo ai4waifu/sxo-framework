@@ -188,7 +188,8 @@ fn parse_hold_keeps_args() {
 fn parse_hold_form_keeps_args() {
     let h = H::new();
     let e = h.eval("HoldForm[1+1]");
-    assert!(h.eq(e, h.ap("HoldForm", vec![h.ap("Plus", vec![h.i(1), h.i(1)])])));
+    // Dialect maps `HoldForm` → neutral `Hold`.
+    assert!(h.eq(e, h.ap("Hold", vec![h.ap("Plus", vec![h.i(1), h.i(1)])])));
 }
 
 #[test]

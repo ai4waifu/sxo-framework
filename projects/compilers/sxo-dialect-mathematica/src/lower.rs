@@ -40,6 +40,18 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
         }
         WExpr::Call { head, args } => match head.as_ref() {
             WExpr::Atom(WAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
+            WExpr::Atom(WAtom::Symbol(name)) if name == "HoldForm" => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                push_application_named(session, "Hold", arg_ids)
+            }
+            WExpr::Atom(WAtom::Symbol(name)) if name == "MatchQ" => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                push_application_named(session, "Matches", arg_ids)
+            }
+            WExpr::Atom(WAtom::Symbol(name)) if name == "Cases" => {
+                let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
+                push_application_named(session, "CollectMatches", arg_ids)
+            }
             WExpr::Atom(WAtom::Symbol(name)) => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
                 push_application_named(session, name, arg_ids)
