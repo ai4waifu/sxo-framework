@@ -30,6 +30,9 @@
         "test": "vitest run",
         "report:features": "node ../sxo-harness/dist/report-features.js matlab"
     },
+    "dependencies": {
+        "@sxo/harness": "workspace:*"
+    },
     "optionalDependencies": {
         "@sxo/sxo-win32-x64": "workspace:*",
         "@sxo/sxo-linux-x64": "workspace:*",
