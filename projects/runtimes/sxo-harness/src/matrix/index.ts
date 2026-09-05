@@ -8,6 +8,24 @@ export type {
     FeatureMatrix,
     FeatureStatus,
 } from './types.js';
+export type {
+    FeatureCaseOptions,
+    GapCaseOptions,
+    NegativeCaseOptions,
+    PlotCaseOptions,
+} from './builders.js';
+export {
+    FeatureEntryBuilder,
+    entry,
+    evalCase,
+    feature,
+    gapCase,
+    matrix,
+    negativeCase,
+    parseCase,
+    plotCase,
+    roundtripCase,
+} from './builders.js';
 export type { MatrixValidationIssue, MatrixValidationResult } from './validate.js';
 export { assertValidFeatureMatrix, listRunnableCases, validateFeatureMatrix } from './validate.js';
 export type {
