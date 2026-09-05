@@ -135,7 +135,7 @@ fn lower_expr(session: &mut Session, expr: &Expression) -> Result<TermId, SxoErr
     match expr {
         Expression::Symbol(id) => {
             if id.name == "end" {
-                Ok(push_symbol_name(session, "End"))
+                Ok(push_symbol_name(session, "end"))
             }
             else if id.name == "true" {
                 Ok(push_bool(session, true))
