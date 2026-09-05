@@ -1,13 +1,13 @@
 //! Host integration tests across dialect crates and Athena.
 
 use athena::{
-    ir::Atom,
-    domains::calculus::CalculusCtx,
+    api::{AthenaRequest, DomainGoal},
+    diagnostics::term_summary::term_debug,
     domains::DomainRequest,
+    domains::calculus::CalculusRequest,
+    ir::Atom,
     ir::TermNode,
     runtime::values::arena::push_int,
-    diagnostics::expression_summary::expression_debug,
-    domains::calculus::try_calculus_request,
 };
 use sxo_dialect_mathematica::{WExpr, parse_number_literal};
 use sxo_napi::session::Session;
@@ -54,13 +54,13 @@ fn bridge_lowers_to_kernel_app() {
 #[test]
 fn dialect_d_limit_series_lower_to_domain() {
     let session = Session::new();
-    let d_term = session.lower_mathematica(&session.parse_mathematica("D[x^3, x]").unwrap());
-    let lowered = session.with_math_mut(|s| {
-        let mut cc = CalculusCtx::new(s);
-        try_calculus_request(&mut cc, d_term).map(DomainRequest::Calculus)
-    });
-    assert!(matches!(lowered, Some(DomainRequest::Calculus(athena::domains::calculus::CalculusRequest::Derivative { .. }))));
-    let d_out = session.evaluate(d_term);
+    let w = session.parse_mathematica("D[x^3, x]").unwrap();
+    let request = session.with_math_mut(|s| sxo_dialect_mathematica::lower_request(s, &w));
+    assert!(matches!(
+        request,
+        AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative { .. })))
+    ));
+    let d_out = session.evaluate_mathematica("D[x^3, x]").unwrap();
     let d_s = session.render_as_wolfram(d_out);
     assert!(d_s.contains('x'), "got {d_s}");
 }
@@ -74,8 +74,8 @@ fn session_set_persists_across_mathematica_evaluates() {
     assert!(session.structural_eq(session.evaluate_mathematica("x + 1").unwrap(), six));
     session.clear_definitions();
     let cleared = session.evaluate_mathematica("x + 1").unwrap();
-    let text = session.with_math(|s| expression_debug(s, cleared));
-    assert!(text.contains("Plus") || text.contains('+'), "expected free Plus after clear, got {text}");
+    let text = session.with_math(|s| term_debug(s, cleared));
+    assert!(text.contains("Plus") || text.contains("Add") || text.contains('+'), "expected free Plus after clear, got {text}");
 }
 
 #[test]
