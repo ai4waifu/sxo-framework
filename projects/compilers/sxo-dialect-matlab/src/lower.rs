@@ -4,11 +4,16 @@
 //! applications into Session / Control contracts without inventing a second Form type.
 
 use athena::{
-    api::{AthenaRequest, ControlPlan, SessionCommand},
+    api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
+    domains::{
+        calculus::{CalculusRequest, DerivativeOrder},
+        DomainRequest,
+    },
     ir::{Atom, SemanticOperator, TermNode},
     runtime::values::arena::{application_arguments, number_from_id, push_semantic, symbol_name},
     types::{
-        BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
+        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId,
+        TermId,
     },
     Session,
 };
@@ -98,9 +103,62 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 return AthenaRequest::Term(rewritten);
             }
         }
+        Some("diff") | Some("Diff") => {
+            if let Some(args) = application_arguments(session, term) {
+                match args.as_slice() {
+                    [expr, var] => {
+                        if let Some(variable) = symbol_atom(session, *var) {
+                            return calculus_goal(CalculusRequest::Derivative {
+                                expression: *expr,
+                                variable,
+                                order: DerivativeOrder::First,
+                                assumptions: AssumptionSet::empty(),
+                            });
+                        }
+                    }
+                    [expr, var, order] => {
+                        if let Some(variable) = symbol_atom(session, *var) {
+                            if let Some(n) = number_from_id(session, *order).and_then(|n| n.as_exact_integer()) {
+                                if n > 0 {
+                                    let order = if n == 1 {
+                                        DerivativeOrder::First
+                                    } else {
+                                        DerivativeOrder::Repeated(n as u32)
+                                    };
+                                    return calculus_goal(CalculusRequest::Derivative {
+                                        expression: *expr,
+                                        variable,
+                                        order,
+                                        assumptions: AssumptionSet::empty(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Some("int") | Some("Int") | Some("integral") => {
+            if let Some(args) = application_arguments(session, term) {
+                if let [expr, var] = args.as_slice() {
+                    if let Some(variable) = symbol_atom(session, *var) {
+                        return calculus_goal(CalculusRequest::Integral {
+                            expression: *expr,
+                            variable,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+            }
+        }
         _ => {}
     }
     AthenaRequest::Term(term)
+}
+
+fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
+    AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
 }
 
 fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {

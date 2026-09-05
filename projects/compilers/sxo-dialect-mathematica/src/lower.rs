@@ -1,7 +1,11 @@
 //! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `27`).
 
 use athena::{
-    api::{AthenaRequest, ControlPlan, SessionCommand},
+    api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
+    domains::{
+        calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
+        DomainRequest,
+    },
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode, UnaryFunction},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::arena::{
@@ -9,8 +13,8 @@ use athena::{
     },
     runtime::values::numeric_clone::clone_number,
     types::{
-        BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
-        ValueTypeId,
+        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId,
+        TermId, ValueTypeId,
     },
     Session,
 };
@@ -167,12 +171,65 @@ fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
 
 /// Dialect Form → neutral [`AthenaRequest`].
 ///
-/// Maps Mathematica surface assignment / iteration into Session / Control contracts.
+/// Maps Mathematica surface assignment / iteration into Session / Control contracts,
+/// and calculus surface (`D` / `Integrate` / `Limit`) into [`AthenaRequest::Goal`].
 /// Other forms lower to [`AthenaRequest::Term`].
 pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
     match w {
         WExpr::Call { head, args } => match head.as_ref() {
             WExpr::Atom(WAtom::Symbol(name)) => match (name.as_str(), args.as_slice()) {
+                ("D", [expr, spec]) => {
+                    if let Some(variable) = symbol_of(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Derivative {
+                            expression,
+                            variable,
+                            order: DerivativeOrder::First,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                    if let Some((variable, order)) = derivative_spec(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Derivative {
+                            expression,
+                            variable,
+                            order,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("Integrate", [expr, spec]) => {
+                    if let Some(variable) = symbol_of(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Integral {
+                            expression,
+                            variable,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                    if let Some((variable, lower, upper)) = definite_integral_spec(session, spec) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::DefiniteIntegral {
+                            expression,
+                            variable,
+                            lower,
+                            upper,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
+                ("Limit", [expr, rule]) => {
+                    if let Some((variable, approach, direction)) = limit_rule(session, rule) {
+                        let expression = lower_wexpr(session, expr);
+                        return calculus_goal(CalculusRequest::Limit {
+                            expression,
+                            variable,
+                            approach,
+                            direction,
+                            assumptions: AssumptionSet::empty(),
+                        });
+                    }
+                }
                 ("Set", [lhs, rhs]) => {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         let value = lower_wexpr(session, rhs);
@@ -321,6 +378,95 @@ fn symbol_of(session: &mut Session, w: &WExpr) -> Option<SymbolId> {
         WExpr::Atom(WAtom::Symbol(name)) => Some(session.arena.symbols_mut().intern(name)),
         _ => None,
     }
+}
+
+fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
+    AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
+}
+
+fn list_items(w: &WExpr) -> Option<&[WExpr]> {
+    match w {
+        WExpr::List(items) => Some(items.as_slice()),
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
+            Some(args.as_slice())
+        }
+        _ => None,
+    }
+}
+
+fn derivative_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, DerivativeOrder)> {
+    let items = list_items(spec)?;
+    match items {
+        [var, order] => {
+            let variable = symbol_of(session, var)?;
+            let n = match order {
+                WExpr::Atom(WAtom::Number(n)) => n.as_exact_integer()?,
+                _ => return None,
+            };
+            if n <= 0 {
+                return None;
+            }
+            let order = if n == 1 {
+                DerivativeOrder::First
+            } else {
+                DerivativeOrder::Repeated(n as u32)
+            };
+            Some((variable, order))
+        }
+        _ => None,
+    }
+}
+
+fn definite_integral_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, TermId, TermId)> {
+    let items = list_items(spec)?;
+    match items {
+        [var, lower, upper] => {
+            let variable = symbol_of(session, var)?;
+            let lower = lower_wexpr(session, lower);
+            let upper = lower_wexpr(session, upper);
+            Some((variable, lower, upper))
+        }
+        _ => None,
+    }
+}
+
+fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApproach, LimitDirection)> {
+    let WExpr::Call { head, args } = rule else {
+        return None;
+    };
+    if !matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Rule" || s == "RuleDelayed") {
+        return None;
+    }
+    let [var, point] = args.as_slice() else {
+        return None;
+    };
+    let variable = symbol_of(session, var)?;
+    let approach = match point {
+        WExpr::Atom(WAtom::Symbol(s)) if s == "Infinity" => LimitApproach::PositiveInfinity,
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "DirectedInfinity")
+                && args.len() == 1
+                && matches!(&args[0], WExpr::Atom(WAtom::Number(n)) if n.as_exact_integer() == Some(1)) =>
+        {
+            LimitApproach::PositiveInfinity
+        }
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "DirectedInfinity")
+                && args.len() == 1
+                && matches!(&args[0], WExpr::Atom(WAtom::Number(n)) if n.as_exact_integer() == Some(-1)) =>
+        {
+            LimitApproach::NegativeInfinity
+        }
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Minus" || s == "Negate")
+                && args.len() == 1
+                && matches!(&args[0], WExpr::Atom(WAtom::Symbol(s)) if s == "Infinity") =>
+        {
+            LimitApproach::NegativeInfinity
+        }
+        other => LimitApproach::Finite(lower_wexpr(session, other)),
+    };
+    Some((variable, approach, LimitDirection::TwoSided))
 }
 
 fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {

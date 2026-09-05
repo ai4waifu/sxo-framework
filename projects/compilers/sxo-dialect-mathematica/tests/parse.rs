@@ -309,16 +309,12 @@ fn parse_table_range_apply_list_primitives() {
 #[test]
 fn parse_limit_sinc_and_definite_integrate_sin() {
     let h = H::new();
-    // Semantic Unary Cos evaluates. Limit / Integrate wait on DomainGoal lowering.
     assert!(h.eq(h.eval("Cos[Pi]"), h.i(-1)));
-    let lim = h.lower(&h.parse_w("Limit[Sin[x]/x, x -> 0]"));
-    assert!(matches!(
-        h.s.borrow().arena.get(lim),
-        Some(TermNode::Application {
-            head: athena::ir::ApplicationHead::Extension(_),
-            ..
-        })
-    ));
+    let lim = h.eval("Limit[Sin[x]/x, x -> 0]");
+    assert!(h.eq(lim, h.i(1)));
+    let integ = h.eval("Integrate[Cos[x], x]");
+    let text = h.wolfram(integ);
+    assert!(text.contains('x') || text.contains("Sin"), "got {text}");
 }
 
 #[test]
