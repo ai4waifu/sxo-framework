@@ -39,6 +39,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
             push_list(session, ids)
         }
         WExpr::Call { head, args } => match head.as_ref() {
+            WExpr::Atom(WAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WExpr::Atom(WAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WExpr::Atom(WAtom::Symbol(name)) if name == "HoldForm" => {
                 let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
@@ -273,6 +274,81 @@ fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
 fn lower_span_as_range(session: &mut Session, args: &[WExpr]) -> TermId {
     let arg_ids: Vec<TermId> = args.iter().map(|a| lower_wexpr(session, a)).collect();
     push_application_named(session, "Range", arg_ids)
+}
+
+/// Rewrite pure `Function[body]` with `Slot` into `Function[var, body]` (Living `27`).
+fn lower_function(session: &mut Session, args: &[WExpr]) -> TermId {
+    match args {
+        [body] => {
+            let max_slot = max_slot_index(body).unwrap_or(0);
+            if max_slot == 1 {
+                let binder_name = "$slot1";
+                let rewritten = replace_slots(body, binder_name);
+                let binder = push_symbol_name(session, binder_name);
+                let body_id = lower_wexpr(session, &rewritten);
+                return push_application_named(session, "Function", vec![binder, body_id]);
+            }
+            // No slots or multi-slot: keep structural Function[body] (multi-slot later).
+            let body_id = lower_wexpr(session, body);
+            push_application_named(session, "Function", vec![body_id])
+        }
+        [var, body] => {
+            let var_id = lower_wexpr(session, var);
+            let body_id = lower_wexpr(session, body);
+            push_application_named(session, "Function", vec![var_id, body_id])
+        }
+        other => {
+            let arg_ids: Vec<TermId> = other.iter().map(|a| lower_wexpr(session, a)).collect();
+            push_application_named(session, "Function", arg_ids)
+        }
+    }
+}
+
+fn max_slot_index(w: &WExpr) -> Option<i64> {
+    match w {
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Slot") => {
+            exact_i64(args.first()?)
+        }
+        WExpr::Call { head, args } => {
+            let mut max: Option<i64> = max_slot_index(head);
+            for a in args {
+                max = match (max, max_slot_index(a)) {
+                    (Some(a), Some(b)) => Some(a.max(b)),
+                    (Some(a), None) => Some(a),
+                    (None, Some(b)) => Some(b),
+                    (None, None) => None,
+                };
+            }
+            max
+        }
+        WExpr::List(items) => {
+            let mut max: Option<i64> = None;
+            for a in items {
+                max = match (max, max_slot_index(a)) {
+                    (Some(a), Some(b)) => Some(a.max(b)),
+                    (Some(a), None) => Some(a),
+                    (None, Some(b)) => Some(b),
+                    (None, None) => None,
+                };
+            }
+            max
+        }
+        _ => None,
+    }
+}
+
+fn replace_slots(w: &WExpr, binder: &str) -> WExpr {
+    match w {
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Slot") => {
+            WExpr::Atom(WAtom::Symbol(binder.to_string()))
+        }
+        WExpr::Call { head, args } => WExpr::Call {
+            head: Box::new(replace_slots(head, binder)),
+            args: args.iter().map(|a| replace_slots(a, binder)).collect(),
+        },
+        WExpr::List(items) => WExpr::List(items.iter().map(|a| replace_slots(a, binder)).collect()),
+        other => other.clone(),
+    }
 }
 
 fn exact_i64(w: &WExpr) -> Option<i64> {
