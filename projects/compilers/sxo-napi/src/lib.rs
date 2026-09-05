@@ -1,4 +1,4 @@
-//! Node N-API bindings for SXO (`Session` + arena [`ExprId`]).
+//! Node N-API bindings for SXO (`Session` + arena [`TermId`]).
 
 #![deny(missing_docs)]
 
@@ -10,7 +10,7 @@ use napi_derive::napi;
 use session::Session;
 use sxo_types::{Dialect, SxoError, VERSION as CORE_VERSION};
 
-use athena::types::ExprId;
+use athena::types::TermId;
 
 fn map_err(err: SxoError) -> Error {
     Error::from_reason(err.message)
@@ -35,7 +35,7 @@ fn dialect_to_str(d: Dialect) -> &'static str {
     }
 }
 
-fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(ExprId, Dialect)> {
+fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(TermId, Dialect)> {
     let resolved = match session.resolve_dialect(input, dialect) {
         Dialect::Auto => Dialect::Mathematica,
         other => other,
@@ -54,7 +54,7 @@ fn parse_to_term(session: &Session, input: &str, dialect: Dialect) -> Result<(Ex
 }
 
 /// Fork `root` into a fresh host [`Session`] via Mathematica Form round-trip.
-fn fork_expression(session: &Session, root: ExprId, dialect: Dialect) -> Expression {
+fn fork_expression(session: &Session, root: TermId, dialect: Dialect) -> Expression {
     let w = session.to_mathematica(root);
     let fresh = Session::new();
     let root = fresh.lower_mathematica(&w);
@@ -67,12 +67,12 @@ pub fn version() -> String {
     CORE_VERSION.to_string()
 }
 
-/// Opaque expression handle backed by a host [`Session`] arena [`ExprId`].
+/// Opaque expression handle backed by a host [`Session`] arena [`TermId`].
 #[derive(Debug)]
 #[napi]
 pub struct Expression {
     session: Session,
-    root: ExprId,
+    root: TermId,
     dialect: Dialect,
 }
 
