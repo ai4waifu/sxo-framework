@@ -145,10 +145,15 @@ impl Session {
         mathematica::wexpr_from_session(&self.math_session.borrow(), id)
     }
 
-    /// Parse Wolfram, lower, evaluate.
+    /// Parse Wolfram, lower via [`mathematica::lower_request`], execute.
     pub fn evaluate_mathematica(&self, input: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        Ok(self.evaluate(self.lower_mathematica(&w)))
+        let mut ms = self.math_session.borrow_mut();
+        let request = mathematica::lower_request(&mut ms, &w);
+        match self.math_engine().execute_request(&mut ms, request) {
+            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
     }
 
     /// Differentiate Wolfram input.
@@ -167,9 +172,15 @@ impl Session {
         matlab::parse_matlab(&mut self.math_session.borrow_mut(), input)
     }
 
-    /// Parse MATLAB and evaluate.
+    /// Parse MATLAB, lift via [`matlab::lower_request`], execute.
     pub fn evaluate_matlab(&self, input: &str) -> Result<TermId, SxoError> {
-        Ok(self.evaluate(self.parse_matlab(input)?))
+        let term = self.parse_matlab(input)?;
+        let mut ms = self.math_session.borrow_mut();
+        let request = matlab::lower_request(&mut ms, term);
+        match self.math_engine().execute_request(&mut ms, request) {
+            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(term)),
+            Err(d) => Err(SxoError::from_diagnostic(d)),
+        }
     }
 
     /// Differentiate MATLAB input.
