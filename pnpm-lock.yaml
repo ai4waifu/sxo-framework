@@ -83,13 +83,6 @@ importers:
   projects/runtimes/sxo-darwin-x64: {}
 
   projects/runtimes/sxo-harness:
-    dependencies:
-      '@sxo/mathematica':
-        specifier: workspace:*
-        version: link:../sxo-mathematica
-      '@sxo/matlab':
-        specifier: workspace:*
-        version: link:../sxo-matlab
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
@@ -141,9 +134,6 @@ importers:
         specifier: workspace:*
         version: link:../sxo-win32-x64
     devDependencies:
-      '@sxo/harness':
-        specifier: workspace:*
-        version: link:../sxo-harness
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1
@@ -169,9 +159,6 @@ importers:
         specifier: workspace:*
         version: link:../sxo-win32-x64
     devDependencies:
-      '@sxo/harness':
-        specifier: workspace:*
-        version: link:../sxo-harness
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1

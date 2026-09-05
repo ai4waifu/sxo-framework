@@ -57,7 +57,6 @@
         "@sxo/sxo-darwin-x64": "workspace:*"
     },
     "devDependencies": {
-        "@sxo/harness": "workspace:*",
         "@types/node": "^22.15.0",
         "typescript": "^5.8.3",
         "vitest": "^3.2.4"
