@@ -1,4 +1,4 @@
-//! Bridge flat [`Expr`] ↔ session arena (`ExprId`).
+//! Bridge flat [`Expr`] ↔ session arena (`TermId`).
 //!
 //! [`Expr::Num`] is a **legacy frontend** form; lowering to kernel uses explicit machine-real
 //! conversion only — not exact semantics.
@@ -10,13 +10,13 @@ use athena::{
     numeric::Number,
     Session,
     types::SourceSpan,
-    types::ExprId,
-    ir::ExprNode,
-    runtime::values::arena::app_args,
-    runtime::values::arena::app_head_name,
+    types::TermId,
+    ir::TermNode,
+    runtime::values::arena::application_arguments,
+    runtime::values::arena::application_head_name,
     runtime::values::arena::number_from_id,
     numeric::to_f64_lossy,
-    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_application_named,
     runtime::values::arena::push_int,
     runtime::values::arena::push_symbol_name,
     runtime::values::arena::symbol_name,
@@ -26,22 +26,22 @@ use sxo_types::SxoError;
 use crate::form::Expr;
 
 /// Lower a shared-subset arena node into flat [`Expr`] (lossy for exact numbers).
-pub fn expr_from_session(session: &Session, id: ExprId) -> Result<Expr, SxoError> {
+pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError> {
     match session.arena.get(id) {
-        Some(ExprNode::Atom(Atom::Number(n))) => {
+        Some(TermNode::Atom(Atom::Number(n))) => {
             Ok(Expr::num(to_f64_lossy(n).ok_or_else(|| SxoError::new("bridge: number out of f64 range"))?))
         }
-        Some(ExprNode::Atom(Atom::Symbol(_))) => {
+        Some(TermNode::Atom(Atom::Symbol(_))) => {
             Ok(Expr::var(symbol_name(session, id).unwrap_or_default()))
         }
-        Some(ExprNode::Atom(Atom::Boolean(true))) => Ok(Expr::var("True")),
-        Some(ExprNode::Atom(Atom::Boolean(false))) => Ok(Expr::var("False")),
-        Some(ExprNode::Atom(Atom::Null)) => Ok(Expr::var("Null")),
-        Some(ExprNode::Atom(Atom::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
-        Some(ExprNode::List(_)) => Err(SxoError::new("bridge: List not in Expr")),
-        Some(ExprNode::App { .. }) => {
-            let h = app_head_name(session, id).ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
-            let args = app_args(session, id).unwrap_or_default();
+        Some(TermNode::Atom(Atom::Boolean(true))) => Ok(Expr::var("True")),
+        Some(TermNode::Atom(Atom::Boolean(false))) => Ok(Expr::var("False")),
+        Some(TermNode::Atom(Atom::Null)) => Ok(Expr::var("Null")),
+        Some(TermNode::Atom(Atom::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
+        Some(TermNode::Collection { .. }) => Err(SxoError::new("bridge: List not in Expr")),
+        Some(TermNode::Application { .. }) => {
+            let h = application_head_name(session, id).ok_or_else(|| SxoError::new("bridge: non-symbol head"))?;
+            let args = application_arguments(session, id).unwrap_or_default();
             match h.as_str() {
                 "Plus" if args.len() == 2 => Ok(Expr::add(expr_from_session(session, args[0])?, expr_from_session(session, args[1])?)),
                 "Plus" if args.len() > 2 => {
@@ -80,60 +80,60 @@ pub fn expr_from_session(session: &Session, id: ExprId) -> Result<Expr, SxoError
                 other => Err(SxoError::new(format!("bridge: unsupported head `{other}`"))),
             }
         }
-        None => Err(SxoError::new(format!("bridge: missing ExprId({})", id.0))),
+        None => Err(SxoError::new(format!("bridge: missing TermId({})", id.0))),
     }
 }
 
-/// Lift flat [`Expr`] into a session arena [`ExprId`] (numbers become machine reals).
-pub fn lower_expr(session: &mut Session, e: &Expr) -> ExprId {
+/// Lift flat [`Expr`] into a session arena [`TermId`] (numbers become machine reals).
+pub fn lower_expr(session: &mut Session, e: &Expr) -> TermId {
     match e {
         Expr::Num(n) => {
             session
                 .arena
-                .push(ExprNode::Atom(Atom::Number(Number::machine(*n))), SourceSpan::default())
+                .push(TermNode::Atom(Atom::Number(Number::machine(*n))), SourceSpan::default())
         }
         Expr::Var(v) => push_symbol_name(session, v),
         Expr::Neg(a) => {
             let neg1 = push_int(session, -1);
             let inner = lower_expr(session, a);
-            push_app_named(session, "Times", vec![neg1, inner])
+            push_application_named(session, "Times", vec![neg1, inner])
         }
         Expr::Add(a, b) => {
             let left = lower_expr(session, a);
             let right = lower_expr(session, b);
-            push_app_named(session, "Plus", vec![left, right])
+            push_application_named(session, "Plus", vec![left, right])
         }
         Expr::Sub(a, b) => {
             let left = lower_expr(session, a);
             let right = lower_expr(session, b);
-            push_app_named(session, "Subtract", vec![left, right])
+            push_application_named(session, "Subtract", vec![left, right])
         }
         Expr::Mul(a, b) => {
             let left = lower_expr(session, a);
             let right = lower_expr(session, b);
-            push_app_named(session, "Times", vec![left, right])
+            push_application_named(session, "Times", vec![left, right])
         }
         Expr::Div(a, b) => {
             let left = lower_expr(session, a);
             let right = lower_expr(session, b);
-            push_app_named(session, "Divide", vec![left, right])
+            push_application_named(session, "Divide", vec![left, right])
         }
         Expr::Pow(a, b) => {
             let left = lower_expr(session, a);
             let right = lower_expr(session, b);
-            push_app_named(session, "Power", vec![left, right])
+            push_application_named(session, "Power", vec![left, right])
         }
         Expr::Sin(a) => {
             let inner = lower_expr(session, a);
-            push_app_named(session, "Sin", vec![inner])
+            push_application_named(session, "Sin", vec![inner])
         }
         Expr::Cos(a) => {
             let inner = lower_expr(session, a);
-            push_app_named(session, "Cos", vec![inner])
+            push_application_named(session, "Cos", vec![inner])
         }
     }
 }
 
-fn is_neg_one(session: &Session, id: ExprId) -> bool {
+fn is_neg_one(session: &Session, id: TermId) -> bool {
     matches!(number_from_id(session, id), Some(n) if *n == Number::small_int(-1))
 }

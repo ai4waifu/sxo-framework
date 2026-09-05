@@ -11,7 +11,7 @@ use athena::{
     plot::SampledCurve,
     plot::SamplingPolicy,
     Session,
-    types::ExprId,
+    types::TermId,
     plot::sample_1d,
 };
 
@@ -69,7 +69,7 @@ pub fn render_line_svg(curve: &SampledCurve) -> Result<String, AdapterError> {
 /// 对一元表达式采样并渲染 SVG（1D plot 垂直切片）。
 pub fn plot_1d_svg(
     session: &mut Session,
-    expr: ExprId,
+    expr: TermId,
     var: &str,
     domain: SampleDomain,
     policy: SamplingPolicy,

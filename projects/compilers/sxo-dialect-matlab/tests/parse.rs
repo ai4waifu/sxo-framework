@@ -1,4 +1,4 @@
-//! Integration tests for MATLAB parse (session arena `ExprId`).
+//! Integration tests for MATLAB parse (session arena `TermId`).
 
 use std::cell::RefCell;
 
@@ -6,11 +6,11 @@ use athena::{
     ir::Atom,
     execution::EvalKind,
     Session,
-    types::ExprId,
-    ir::ExprNode,
-    runtime::values::arena::app_head_name,
+    types::TermId,
+    ir::TermNode,
+    runtime::values::arena::application_head_name,
     numeric::number_from_wire,
-    runtime::values::arena::push_app_named,
+    runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
     runtime::values::arena::push_int,
     runtime::values::arena::push_list,
@@ -21,7 +21,7 @@ use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
 use sxo_dialect_matlab::{parse_matlab, render_matlab, try_plot_svg};
 
-type Tid = ExprId;
+type Tid = TermId;
 
 struct H {
     s: RefCell<Session>,
@@ -38,11 +38,11 @@ impl H {
 
     fn eval(&self, input: &str) -> Tid {
         let id = self.parse(input);
-        self.s.borrow_mut().evaluate(id).term
+        self.s.borrow_mut().evaluate(id)
     }
 
     fn eval_id(&self, id: Tid) -> Tid {
-        self.s.borrow_mut().evaluate(id).term
+        self.s.borrow_mut().evaluate(id)
     }
 
     fn outcome_kind(&self, id: Tid) -> EvalKind {
@@ -58,7 +58,7 @@ impl H {
     }
 
     fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
-        push_app_named(&mut self.s.borrow_mut(), head, args)
+        push_application_named(&mut self.s.borrow_mut(), head, args)
     }
 
     fn lst(&self, items: Vec<Tid>) -> Tid {
@@ -77,7 +77,7 @@ impl H {
         let wire = WireNumber::rational_i64(n, d).unwrap();
         let num = number_from_wire(&wire).unwrap();
         let span = athena::types::SourceSpan::default();
-        self.s.borrow_mut().arena.push(ExprNode::Atom(Atom::Number(num)), span)
+        self.s.borrow_mut().arena.push(TermNode::Atom(Atom::Number(num)), span)
     }
 
     fn eq(&self, a: Tid, b: Tid) -> bool {
@@ -207,7 +207,7 @@ fn parse_colon_step_flattens() {
 fn parse_mldivide_keeps_head() {
     let h = H::new();
     let t = h.parse("A\\b");
-    assert_eq!(app_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
+    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
     let kind = h.outcome_kind(t);
     assert_eq!(kind, EvalKind::Unevaluated);
     assert!(h.render(t).contains('\\'));
@@ -288,7 +288,7 @@ fn parse_column_vector_and_mldivide_shape() {
     let col = h.parse("[5; 6]");
     assert!(h.eq(col, h.lst(vec![h.lst(vec![h.i(5)]), h.lst(vec![h.i(6)])])));
     let t = h.parse("[1, 2; 3, 4] \\ [5; 6]");
-    assert_eq!(app_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
+    assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("Mldivide"));
 }
 
 #[test]
