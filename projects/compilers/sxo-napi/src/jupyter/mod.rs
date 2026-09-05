@@ -43,14 +43,9 @@ pub async fn run(connection_file: &str) -> Result<(), String> {
 
     // Heartbeat: echo whatever arrives.
     tokio::spawn(async move {
-        loop {
-            match hb.recv().await {
-                Ok(msg) => {
-                    if hb.send(msg).await.is_err() {
-                        break;
-                    }
-                }
-                Err(_) => break,
+        while let Ok(msg) = hb.recv().await {
+            if hb.send(msg).await.is_err() {
+                break;
             }
         }
     });

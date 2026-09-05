@@ -4,12 +4,10 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session,
-    ir::{Atom, TermNode},
-    numeric::number_from_wire,
+    ir::TermNode,
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
-use athena_types::WireNumber;
 use sxo_dialect_mathematica::{
     WAtom, WExpr, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, push_surface_call, render, try_plot_svg,
     wexpr_from_session,
@@ -67,13 +65,6 @@ impl H {
 
     fn null(&self) -> Tid {
         push_null(&mut self.s.borrow_mut())
-    }
-
-    fn rational(&self, n: i64, d: i64) -> Tid {
-        let wire = WireNumber::rational_i64(n, d).unwrap();
-        let num = number_from_wire(&wire).unwrap();
-        let span = athena::types::SourceSpan::default();
-        self.s.borrow_mut().arena.push(TermNode::Atom(Atom::Number(num)), span)
     }
 
     fn eq(&self, a: Tid, b: Tid) -> bool {

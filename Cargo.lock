@@ -127,7 +127,7 @@ dependencies = [
 [[package]]
 name = "athena"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-engine",
  "athena-ir",
@@ -139,7 +139,7 @@ dependencies = [
 [[package]]
 name = "athena-engine"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-gc",
  "athena-graph",
@@ -153,7 +153,7 @@ dependencies = [
 [[package]]
 name = "athena-gc"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-types",
 ]
@@ -161,7 +161,7 @@ dependencies = [
 [[package]]
 name = "athena-graph"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-gc",
  "athena-ndarray",
@@ -170,7 +170,7 @@ dependencies = [
 [[package]]
 name = "athena-ir"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-numeric",
  "athena-types",
@@ -179,7 +179,7 @@ dependencies = [
 [[package]]
 name = "athena-ndarray"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-gc",
 ]
@@ -187,7 +187,7 @@ dependencies = [
 [[package]]
 name = "athena-numeric"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-gc",
  "athena-types",
@@ -196,16 +196,17 @@ dependencies = [
 [[package]]
 name = "athena-rewriter"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 dependencies = [
  "athena-ir",
+ "athena-numeric",
  "athena-types",
 ]
 
 [[package]]
 name = "athena-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#14612c16453925fa978ce9b266ea8e8edc9496ca"
+source = "git+https://github.com/ai4waifu/athena.rs.git?branch=dev#21499eea333087374fc4e76fe9f7f848e51e3927"
 
 [[package]]
 name = "autocfg"
@@ -991,7 +992,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-adapter-apollo"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "apollo",
  "athena",
@@ -999,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-mathematica"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1012,7 +1013,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-matlab"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1026,7 +1027,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-dialect-simple-math"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena",
  "athena-ir",
@@ -1036,7 +1037,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-lite-wasm"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena",
  "console_error_panic_hook",
@@ -1049,7 +1050,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-napi"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena",
  "bytes",
@@ -1073,7 +1074,7 @@ dependencies = [
 
 [[package]]
 name = "sxo-types"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "athena-types",
 ]
