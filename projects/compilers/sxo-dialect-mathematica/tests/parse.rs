@@ -7,7 +7,6 @@ use athena::{
     ir::Atom,
     ir::TermNode,
     numeric::number_from_wire,
-    runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
     runtime::values::arena::push_int,
     runtime::values::arena::push_list,
@@ -18,7 +17,7 @@ use athena::{
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{
-    WAtom, WExpr, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, render, try_plot_svg,
+    WAtom, WExpr, lower_request, lower_wexpr, parse_mathematica, parse_number_literal, push_surface_call, render, try_plot_svg,
     wexpr_from_session,
 };
 
@@ -61,7 +60,7 @@ impl H {
     }
 
     fn ap(&self, head: &str, args: Vec<Tid>) -> Tid {
-        push_application_named(&mut self.s.borrow_mut(), head, args)
+        push_surface_call(&mut self.s.borrow_mut(), head, args)
     }
 
     fn lst(&self, items: Vec<Tid>) -> Tid {
@@ -310,33 +309,46 @@ fn parse_table_range_apply_list_primitives() {
 #[test]
 fn parse_limit_sinc_and_definite_integrate_sin() {
     let h = H::new();
-    assert!(h.eq(h.eval("Limit[Sin[x]/x, x -> 0]"), h.i(1)));
-    assert!(h.eq(h.eval("Integrate[Sin[x], {x, 0, Pi}]"), h.i(2)));
+    // Semantic Unary Cos evaluates. Limit / Integrate wait on DomainGoal lowering.
     assert!(h.eq(h.eval("Cos[Pi]"), h.i(-1)));
+    let lim = h.lower(&h.parse_w("Limit[Sin[x]/x, x -> 0]"));
+    assert!(matches!(
+        h.s.borrow().arena.get(lim),
+        Some(TermNode::Application {
+            head: athena::ir::ApplicationHead::Extension(_),
+            ..
+        })
+    ));
 }
 
 #[test]
 fn parse_linear_solve_nested_lists() {
     let h = H::new();
-    assert!(h.eq(
-        h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]"),
-        h.lst(vec![h.lst(vec![h.i(-4)]), h.lst(vec![h.rational(9, 2)])])
-    ));
+    // Det is Semantic. LinearSolve is Extension until DomainGoal lowering.
     assert!(h.eq(h.eval("Det[{{1, 2}, {3, 4}}]"), h.i(-2)));
+    let ls = h.lower(&h.parse_w("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]"));
+    assert!(matches!(
+        h.s.borrow().arena.get(ls),
+        Some(TermNode::Application {
+            head: athena::ir::ApplicationHead::Extension(_),
+            ..
+        })
+    ));
 }
 
 #[test]
 fn parse_solve_quadratic_x2_eq_1() {
     let h = H::new();
-    let e = h.eval("Solve[x^2 == 1, x]");
-    assert!(h.eq(
-        e,
-        h.lst(vec![
-            h.lst(vec![h.ap("Rule", vec![h.sym("x"), h.i(-1)])]),
-            h.lst(vec![h.ap("Rule", vec![h.sym("x"), h.i(1)])]),
-        ])
+    // Solve stays Extension surface until DomainGoal lowering (Living 27).
+    let e = h.lower(&h.parse_w("Solve[x^2 == 1, x]"));
+    assert!(matches!(
+        h.s.borrow().arena.get(e),
+        Some(TermNode::Application {
+            head: athena::ir::ApplicationHead::Extension(_),
+            ..
+        })
     ));
-    assert_eq!(h.wolfram(e), "{{x -> -1}, {x -> 1}}");
+    assert!(h.wolfram(e).starts_with("Solve["));
 }
 
 #[test]
