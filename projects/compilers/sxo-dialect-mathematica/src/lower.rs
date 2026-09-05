@@ -447,15 +447,30 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
             WExpr::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
-            let head_name = session.operators.name(*op).unwrap_or("?").to_string();
-            if head_name == "Application" && !args.is_empty() {
-                let head = wexpr_from_session(session, args[0]);
-                let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
-                return WExpr::Call {
-                    head: Box::new(head),
-                    args: call_args,
-                };
-            }
+            use athena::ir::{ApplicationHead, SemanticOperator};
+            let head_name = match *op {
+                ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {
+                    let head = wexpr_from_session(session, args[0]);
+                    let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
+                    return WExpr::Call {
+                        head: Box::new(head),
+                        args: call_args,
+                    };
+                }
+                ApplicationHead::Semantic(sem) => sem.debug_label().to_string(),
+                ApplicationHead::Extension(id) => {
+                    let name = session.operators.name(id).unwrap_or("?").to_string();
+                    if name == "Application" && !args.is_empty() {
+                        let head = wexpr_from_session(session, args[0]);
+                        let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
+                        return WExpr::Call {
+                            head: Box::new(head),
+                            args: call_args,
+                        };
+                    }
+                    name
+                }
+            };
             WExpr::Call {
                 head: Box::new(WExpr::Atom(WAtom::Symbol(head_name))),
                 args: args.iter().map(|a| wexpr_from_session(session, *a)).collect(),
