@@ -1,6 +1,6 @@
 {
     "name": "@sxo/matlab",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "private": true,
     "type": "module",
     "description": "MATLAB-oriented SXO frontend for parsing, lowering, and rendering, not a kernel",
