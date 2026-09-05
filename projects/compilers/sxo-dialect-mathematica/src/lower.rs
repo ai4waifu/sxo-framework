@@ -6,10 +6,10 @@ use athena::{
         calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
         DomainRequest,
     },
-    ir::{ApplicationHead, Atom, SemanticOperator, TermNode, UnaryFunction},
+    ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::arena::{
-        push_application_named, push_bool, push_int, push_list, push_null, push_semantic, push_symbol_name,
+        push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name,
     },
     runtime::values::numeric_clone::clone_number,
     types::{
@@ -100,7 +100,8 @@ pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -
     if let Some(op) = surface_to_semantic(name) {
         push_semantic(session, op, args)
     } else {
-        push_application_named(session, name, args)
+        let op = session.operators.intern(name);
+        push_extension(session, op, args)
     }
 }
 
@@ -121,6 +122,8 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
             WAtom::Symbol(s) if s == "True" => push_bool(session, true),
             WAtom::Symbol(s) if s == "False" => push_bool(session, false),
             WAtom::Symbol(s) if s == "Null" => push_null(session),
+            WAtom::Symbol(s) if s == "Pi" => push_constant(session, MathematicalConstant::Pi),
+            WAtom::Symbol(s) if s == "E" => push_constant(session, MathematicalConstant::EulerNumber),
             WAtom::Symbol(s) => push_symbol_name(session, s),
         },
         WExpr::List(items) => {
@@ -689,6 +692,10 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
         Some(TermNode::Atom(Atom::Boolean(true))) => WExpr::Atom(WAtom::Symbol("True".into())),
         Some(TermNode::Atom(Atom::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
         Some(TermNode::Atom(Atom::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Pi))) => WExpr::Atom(WAtom::Symbol("Pi".into())),
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => {
+            WExpr::Atom(WAtom::Symbol("E".into()))
+        }
         Some(TermNode::Atom(Atom::Symbol(sym))) => {
             let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
             WExpr::Atom(WAtom::Symbol(name))

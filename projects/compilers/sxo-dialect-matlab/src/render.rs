@@ -21,6 +21,7 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             Atom::Boolean(true) => "true".into(),
             Atom::Boolean(false) => "false".into(),
             Atom::Null => "[]".into(),
+            Atom::Constant(c) => c.debug_label().into(),
         },
         Some(TermNode::Collection { elements: items, .. }) => {
             let items = items.clone();

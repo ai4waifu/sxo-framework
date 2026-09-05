@@ -28,6 +28,7 @@ pub fn expr_from_session(session: &Session, id: TermId) -> Result<Expr, SxoError
         Some(TermNode::Atom(Atom::Boolean(true))) => Ok(Expr::var("True")),
         Some(TermNode::Atom(Atom::Boolean(false))) => Ok(Expr::var("False")),
         Some(TermNode::Atom(Atom::Null)) => Ok(Expr::var("Null")),
+        Some(TermNode::Atom(Atom::Constant(c))) => Ok(Expr::var(c.debug_label())),
         Some(TermNode::Atom(Atom::String(_))) => Err(SxoError::new("bridge: strings not in Expr")),
         Some(TermNode::Collection { .. }) => Err(SxoError::new("bridge: List not in Expr")),
         Some(TermNode::Application { head, .. }) => {
