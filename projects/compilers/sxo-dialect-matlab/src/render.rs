@@ -1,18 +1,15 @@
 //! Render session arena [`TermId`] as MATLAB text (no `WExpr`).
 
 use athena::{
-    ir::Atom,
+    ir::{Atom, TermNode},
     numeric::Number,
-    Session,
+    runtime::values::arena::{application_arguments, number_from_id, symbol_name},
     types::TermId,
-    ir::TermNode,
-    runtime::values::arena::application_arguments,
-    runtime::values::arena::application_head_name,
-    runtime::values::arena::number_from_id,
-    runtime::values::arena::symbol_name,
+    Session,
 };
 
 use crate::shared::render_number;
+use crate::surface::application_surface_name;
 
 /// Render engine IR as MATLAB-ish source.
 pub fn render_matlab(session: &Session, id: TermId) -> String {
@@ -38,8 +35,7 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                     })
                     .collect();
                 format!("[{}]", rows.join("; "))
-            }
-            else {
+            } else {
                 let inner = items.iter().map(|i| render_matlab(session, *i)).collect::<Vec<_>>().join(", ");
                 format!("[{inner}]")
             }
@@ -49,7 +45,7 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             if let Some(infix) = try_infix(session, id, &args) {
                 return infix;
             }
-            let h = match application_head_name(session, id) {
+            let h = match application_surface_name(session, id) {
                 Some(n) => head_matlab_name(&n),
                 None => "?".into(),
             };
@@ -78,16 +74,17 @@ fn head_matlab_name(name: &str) -> String {
         "Eye" | "IdentityMatrix" => "eye",
         "Size" | "Dimensions" => "size",
         "Length" => "length",
-        "Det" => "det",
+        "Det" | "Determinant" => "det",
         "Sum" => "sum",
         "LinearSolve" => "linsolve",
+        "Minus" => "-",
         other => other,
     }
     .to_string()
 }
 
 fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
-    let name = application_head_name(session, id)?;
+    let name = application_surface_name(session, id)?;
     match name.as_str() {
         "Plus" if args.len() >= 2 => Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(" + ")),
         "Times" if args.len() >= 2 => {
@@ -96,6 +93,7 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             }
             Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("*"))
         }
+        "Minus" if args.len() == 1 => Some(format!("-{}", render_matlab(session, args[0]))),
         "Power" if args.len() == 2 => {
             Some(format!("{}^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }

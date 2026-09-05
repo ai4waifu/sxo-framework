@@ -5,19 +5,19 @@
 
 use athena::{
     api::{AthenaRequest, ControlPlan, SessionCommand},
-    ir::{Atom, TermNode},
-    runtime::values::arena::{
-        application_arguments, application_head_name, number_from_id, push_application_named, symbol_name,
-    },
+    ir::{Atom, SemanticOperator, TermNode},
+    runtime::values::arena::{application_arguments, number_from_id, push_semantic, symbol_name},
     types::{
         BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
     },
     Session,
 };
 
+use crate::surface::application_surface_name;
+
 /// Lift a MATLAB-lowered term into a neutral [`AthenaRequest`].
 pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
-    match application_head_name(session, term).as_deref() {
+    match application_surface_name(session, term).as_deref() {
         Some("Set") => {
             if let Some(args) = application_arguments(session, term) {
                 if let [lhs, rhs] = args.as_slice() {
@@ -92,13 +92,10 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 }
             }
         }
-        Some("Span") | Some("Range") => {
-            // Standalone range terms stay as `Range` applications for iterators.
-            if application_head_name(session, term).as_deref() == Some("Span") {
-                if let Some(args) = application_arguments(session, term) {
-                    let rewritten = push_application_named(session, "Range", args);
-                    return AthenaRequest::Term(rewritten);
-                }
+        Some("Span") => {
+            if let Some(args) = application_arguments(session, term) {
+                let rewritten = push_semantic(session, SemanticOperator::Range, args);
+                return AthenaRequest::Term(rewritten);
             }
         }
         _ => {}
@@ -122,7 +119,7 @@ fn index_spec_of(session: &Session, term: TermId) -> Option<IndexSpec> {
         Some("end") => return Some(IndexSpec::EndRelative(IntegerOffset(0))),
         _ => {}
     }
-    match application_head_name(session, term).as_deref() {
+    match application_surface_name(session, term).as_deref() {
         Some("Range") | Some("Span") => {
             let args = application_arguments(session, term)?;
             match args.as_slice() {
@@ -139,7 +136,8 @@ fn index_spec_of(session: &Session, term: TermId) -> Option<IndexSpec> {
                 _ => None,
             }
         }
-        Some("Plus") => {
+        // `end+k` may lower as Semantic Add or legacy Plus surface.
+        Some("Plus") | Some("Add") => {
             let args = application_arguments(session, term)?;
             if args.len() == 2 && symbol_name(session, args[0]).as_deref() == Some("end") {
                 let off = number_from_id(session, args[1])?.as_exact_integer()?;
