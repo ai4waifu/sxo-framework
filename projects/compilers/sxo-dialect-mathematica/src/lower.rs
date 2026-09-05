@@ -1,22 +1,22 @@
 //! Lower Mathematica Form ([`WExpr`]) into Athena session terms / requests (Living `27`).
 
 use athena::{
+    Session,
     api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
     domains::{
-        calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
         DomainRequest,
+        calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
     reasoning::trs::{PatternConstraint, TermPattern},
-    runtime::values::arena::{
-        push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name,
+    runtime::values::{
+        arena::{push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name},
+        numeric_clone::clone_number,
     },
-    runtime::values::numeric_clone::clone_number,
     types::{
-        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId,
-        TermId, ValueTypeId,
+        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId,
+        ValueTypeId,
     },
-    Session,
 };
 
 use crate::form::{WAtom, WExpr};
@@ -99,7 +99,8 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
 pub fn push_surface_call(session: &mut Session, name: &str, args: Vec<TermId>) -> TermId {
     if let Some(op) = surface_to_semantic(name) {
         push_semantic(session, op, args)
-    } else {
+    }
+    else {
         let op = session.operators.intern(name);
         push_extension(session, op, args)
     }
@@ -138,7 +139,8 @@ pub fn lower_wexpr(session: &mut Session, w: &WExpr) -> TermId {
                 for (i, a) in args.iter().enumerate() {
                     if i == 0 {
                         arg_ids.push(lower_operator_value(session, a));
-                    } else {
+                    }
+                    else {
                         arg_ids.push(lower_wexpr(session, a));
                     }
                 }
@@ -164,7 +166,8 @@ fn lower_operator_value(session: &mut Session, w: &WExpr) -> TermId {
         WExpr::Atom(WAtom::Symbol(name)) => {
             if let Some(op) = surface_to_semantic(name) {
                 push_semantic(session, op, Vec::new())
-            } else {
+            }
+            else {
                 push_symbol_name(session, name)
             }
         }
@@ -270,8 +273,7 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                     });
                 }
                 ("CompoundExpression", args) => {
-                    let steps: Vec<AthenaRequest> =
-                        args.iter().map(|a| lower_request(session, a)).collect();
+                    let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
                     return AthenaRequest::Control(ControlPlan::Sequence { steps });
                 }
                 ("If", [cond, then_branch]) => {
@@ -313,18 +315,12 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                 }
                 ("Part", args) if args.len() >= 2 => {
                     if let Some(axes) = args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
-                        return AthenaRequest::Control(ControlPlan::Index {
-                            target: lower_wexpr(session, &args[0]),
-                            axes,
-                        });
+                        return AthenaRequest::Control(ControlPlan::Index { target: lower_wexpr(session, &args[0]), axes });
                     }
                 }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
-                        return AthenaRequest::Control(ControlPlan::Match {
-                            target: lower_wexpr(session, expr),
-                            pattern,
-                        });
+                        return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
                     }
                 }
                 ("Cases", [source, pat]) => {
@@ -347,14 +343,13 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
 fn push_binding_defines(session: &mut Session, bindings: &WExpr, steps: &mut Vec<AthenaRequest>) {
     let items: Option<Vec<&WExpr>> = match bindings {
         WExpr::List(items) => Some(items.iter().collect()),
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") =>
-        {
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
             Some(args.iter().collect())
         }
         _ => None,
     };
-    let Some(items) = items else {
+    let Some(items) = items
+    else {
         return;
     };
     for item in items {
@@ -409,11 +404,7 @@ fn derivative_spec(session: &mut Session, spec: &WExpr) -> Option<(SymbolId, Der
             if n <= 0 {
                 return None;
             }
-            let order = if n == 1 {
-                DerivativeOrder::First
-            } else {
-                DerivativeOrder::Repeated(n as u32)
-            };
+            let order = if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
             Some((variable, order))
         }
         _ => None,
@@ -434,13 +425,15 @@ fn definite_integral_spec(session: &mut Session, spec: &WExpr) -> Option<(Symbol
 }
 
 fn limit_rule(session: &mut Session, rule: &WExpr) -> Option<(SymbolId, LimitApproach, LimitDirection)> {
-    let WExpr::Call { head, args } = rule else {
+    let WExpr::Call { head, args } = rule
+    else {
         return None;
     };
     if !matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Rule" || s == "RuleDelayed") {
         return None;
     }
-    let [var, point] = args.as_slice() else {
+    let [var, point] = args.as_slice()
+    else {
         return None;
     };
     let variable = symbol_of(session, var)?;
@@ -476,8 +469,7 @@ fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {
     match iter {
         WExpr::List(items) if !items.is_empty() => Some(lower_wexpr(session, &items[0])),
         WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List")
-                && !args.is_empty() =>
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") && !args.is_empty() =>
         {
             Some(lower_wexpr(session, &args[0]))
         }
@@ -489,9 +481,7 @@ fn extract_table_binder(session: &mut Session, iter: &WExpr) -> Option<TermId> {
 fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
     let items: Option<Vec<&WExpr>> = match iter {
         WExpr::List(items) => Some(items.iter().collect()),
-        WExpr::Call { head, args }
-            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") =>
-        {
+        WExpr::Call { head, args } if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") => {
             Some(args.iter().collect())
         }
         _ => None,
@@ -519,7 +509,8 @@ fn normalize_table_range(session: &mut Session, iter: &WExpr) -> TermId {
                             vals.push(push_int(session, cur));
                             cur += s;
                         }
-                    } else {
+                    }
+                    else {
                         while cur >= b {
                             vals.push(push_int(session, cur));
                             cur += s;
@@ -642,10 +633,7 @@ fn wexpr_to_term_pattern(session: &mut Session, w: &WExpr) -> Option<TermPattern
                 _ => return None,
             };
             let inner = wexpr_to_term_pattern(session, &args[1])?;
-            Some(TermPattern::Bind {
-                name,
-                inner: Box::new(inner),
-            })
+            Some(TermPattern::Bind { name, inner: Box::new(inner) })
         }
         other => Some(TermPattern::Exact(lower_wexpr(session, other))),
     }
@@ -693,9 +681,7 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
         Some(TermNode::Atom(Atom::Boolean(false))) => WExpr::Atom(WAtom::Symbol("False".into())),
         Some(TermNode::Atom(Atom::Null)) => WExpr::Atom(WAtom::Symbol("Null".into())),
         Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Pi))) => WExpr::Atom(WAtom::Symbol("Pi".into())),
-        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => {
-            WExpr::Atom(WAtom::Symbol("E".into()))
-        }
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => WExpr::Atom(WAtom::Symbol("E".into())),
         Some(TermNode::Atom(Atom::Symbol(sym))) => {
             let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
             WExpr::Atom(WAtom::Symbol(name))
@@ -708,10 +694,7 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
                 ApplicationHead::Semantic(SemanticOperator::ApplyHead) if !args.is_empty() => {
                     let head = wexpr_from_session(session, args[0]);
                     let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
-                    return WExpr::Call {
-                        head: Box::new(head),
-                        args: call_args,
-                    };
+                    return WExpr::Call { head: Box::new(head), args: call_args };
                 }
                 ApplicationHead::Semantic(sem) => semantic_to_surface(sem).to_string(),
                 ApplicationHead::Extension(id) => {
@@ -719,10 +702,7 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WExpr {
                     if name == "Application" && !args.is_empty() {
                         let head = wexpr_from_session(session, args[0]);
                         let call_args: Vec<WExpr> = args[1..].iter().map(|a| wexpr_from_session(session, *a)).collect();
-                        return WExpr::Call {
-                            head: Box::new(head),
-                            args: call_args,
-                        };
+                        return WExpr::Call { head: Box::new(head), args: call_args };
                     }
                     name
                 }

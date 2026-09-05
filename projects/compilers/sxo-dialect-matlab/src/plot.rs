@@ -1,16 +1,13 @@
 //! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
 
-use athena::{
-    plot::SampleDomain,
-    plot::SamplingPolicy,
-    Session,
-    types::TermId,
-    runtime::values::arena::application_arguments,
-    runtime::values::arena::number_from_id,
-    numeric::to_f64_lossy,
-    runtime::values::arena::symbol_name,
-};
 use crate::surface::application_surface_name;
+use athena::{
+    Session,
+    numeric::to_f64_lossy,
+    plot::{SampleDomain, SamplingPolicy},
+    runtime::values::arena::{application_arguments, number_from_id, symbol_name},
+    types::TermId,
+};
 use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
 use sxo_types::SxoError;
 

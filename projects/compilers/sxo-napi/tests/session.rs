@@ -3,10 +3,8 @@
 use athena::{
     api::{AthenaRequest, DomainGoal},
     diagnostics::term_summary::term_debug,
-    domains::DomainRequest,
-    domains::calculus::CalculusRequest,
-    ir::Atom,
-    ir::TermNode,
+    domains::{DomainRequest, calculus::CalculusRequest},
+    ir::{Atom, TermNode},
     runtime::values::arena::push_int,
 };
 use sxo_dialect_mathematica::{WExpr, parse_number_literal};
@@ -35,8 +33,10 @@ fn big_integer_arithmetic() {
     let e = session.evaluate_mathematica("99999999999999999999 + 1").unwrap();
     let expected_n = parse_number_literal("100000000000000000000").unwrap();
     let expected = session.with_math_mut(|s| {
-        s.arena
-            .push(TermNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))), athena::types::SourceSpan::default())
+        s.arena.push(
+            TermNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))),
+            athena::types::SourceSpan::default(),
+        )
     });
     assert!(session.structural_eq(e, expected));
 }

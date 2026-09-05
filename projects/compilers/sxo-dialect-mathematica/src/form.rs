@@ -3,9 +3,8 @@
 use std::fmt;
 
 use athena::{
-    numeric::Number,
+    numeric::{Number, to_f64_lossy},
     runtime::values::numeric_clone::clone_number,
-    numeric::to_f64_lossy,
 };
 
 /// Atomic Wolfram-facing value.

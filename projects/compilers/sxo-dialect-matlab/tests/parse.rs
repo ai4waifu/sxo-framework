@@ -3,17 +3,18 @@
 use std::cell::RefCell;
 
 use athena::{
-    AthenaEngine,
+    AthenaEngine, Session,
     execution::{EvalKind, evaluate_term},
     ir::{Atom, TermNode},
     numeric::number_from_wire,
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
-    Session,
     types::TermId,
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
-use sxo_dialect_matlab::{application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg};
+use sxo_dialect_matlab::{
+    application_surface_name, lower_request, parse_matlab, push_matlab_call, render_matlab, try_plot_svg,
+};
 
 type Tid = TermId;
 
@@ -154,10 +155,7 @@ fn parse_diff() {
 fn parse_matrix_array() {
     let h = H::new();
     let t = h.parse("[1, 2; 3, 4]");
-    assert!(h.eq(
-        t,
-        h.lst(vec![h.lst(vec![h.i(1), h.i(2)]), h.lst(vec![h.i(3), h.i(4)])])
-    ));
+    assert!(h.eq(t, h.lst(vec![h.lst(vec![h.i(1), h.i(2)]), h.lst(vec![h.i(3), h.i(4)])])));
     assert_eq!(h.render(t), "[1, 2; 3, 4]");
 }
 
@@ -203,10 +201,7 @@ fn parse_array_slice() {
 #[test]
 fn parse_colon_step_flattens() {
     let h = H::new();
-    assert!(h.eq(
-        h.eval("1:2:10"),
-        h.lst(vec![h.i(1), h.i(3), h.i(5), h.i(7), h.i(9)])
-    ));
+    assert!(h.eq(h.eval("1:2:10"), h.lst(vec![h.i(1), h.i(3), h.i(5), h.i(7), h.i(9)])));
 }
 
 #[test]
@@ -236,20 +231,12 @@ fn parse_elementwise_ops_evaluate() {
     assert!(h.eq(h.eval("[1, 2].^[2, 3]"), h.lst(vec![h.i(1), h.i(8)])));
     assert!(h.eq(h.eval("[1, 2, 3].^0"), h.lst(vec![h.i(1), h.i(1), h.i(1)])));
     assert!(h.eq(h.eval("[6, 8]./[2, 4]"), h.lst(vec![h.i(3), h.i(2)])));
-    assert!(h.eq(
-        h.eval("[1, 2; 3, 4].*[5, 6; 7, 8]"),
-        h.lst(vec![
-            h.lst(vec![h.i(5), h.i(12)]),
-            h.lst(vec![h.i(21), h.i(32)]),
-        ])
-    ));
-    assert!(h.eq(
-        h.eval("[1, 2; 3, 4]*[5, 6; 7, 8]"),
-        h.lst(vec![
-            h.lst(vec![h.i(19), h.i(22)]),
-            h.lst(vec![h.i(43), h.i(50)]),
-        ])
-    ));
+    assert!(
+        h.eq(h.eval("[1, 2; 3, 4].*[5, 6; 7, 8]"), h.lst(vec![h.lst(vec![h.i(5), h.i(12)]), h.lst(vec![h.i(21), h.i(32)]),]))
+    );
+    assert!(
+        h.eq(h.eval("[1, 2; 3, 4]*[5, 6; 7, 8]"), h.lst(vec![h.lst(vec![h.i(19), h.i(22)]), h.lst(vec![h.i(43), h.i(50)]),]))
+    );
 }
 
 #[test]
@@ -310,29 +297,16 @@ fn parse_mldivide_2x2_stays_extension_until_goal() {
 fn parse_matrix_constructors_and_size() {
     let h = H::new();
     let got = h.eval("eye(2)");
-    let want = h.lst(vec![
-            h.lst(vec![h.i(1), h.i(0)]),
-            h.lst(vec![h.i(0), h.i(1)]),
-        ]);
+    let want = h.lst(vec![h.lst(vec![h.i(1), h.i(0)]), h.lst(vec![h.i(0), h.i(1)])]);
     assert!(h.eq(got, want), "got={} want={}", h.render(got), h.render(want));
     assert_eq!(h.render(h.eval("eye(2)")), "[1, 0; 0, 1]");
 
-    assert!(h.eq(
-        h.eval("zeros(2, 3)"),
-        h.lst(vec![
-            h.lst(vec![h.i(0), h.i(0), h.i(0)]),
-            h.lst(vec![h.i(0), h.i(0), h.i(0)]),
-        ])
-    ));
+    assert!(
+        h.eq(h.eval("zeros(2, 3)"), h.lst(vec![h.lst(vec![h.i(0), h.i(0), h.i(0)]), h.lst(vec![h.i(0), h.i(0), h.i(0)]),]))
+    );
     assert_eq!(h.render(h.eval("zeros(2, 3)")), "[0, 0, 0; 0, 0, 0]");
 
-    assert!(h.eq(
-        h.eval("ones(2)"),
-        h.lst(vec![
-            h.lst(vec![h.i(1), h.i(1)]),
-            h.lst(vec![h.i(1), h.i(1)]),
-        ])
-    ));
+    assert!(h.eq(h.eval("ones(2)"), h.lst(vec![h.lst(vec![h.i(1), h.i(1)]), h.lst(vec![h.i(1), h.i(1)]),])));
     assert_eq!(h.render(h.eval("ones(2)")), "[1, 1; 1, 1]");
 
     assert!(h.eq(h.eval("size([1, 2; 3, 4])"), h.lst(vec![h.i(2), h.i(2)])));

@@ -3,19 +3,12 @@
 use std::cell::RefCell;
 
 use athena::{
-    AthenaEngine,
-    domains::DomainExecutionContext,
-    domains::DomainRequest,
-    domains::DomainResult,
-    domains::calculus::CalculusRequest,
-    domains::calculus::CalculusResult,
-    domains::calculus::CalculusValue,
-    domains::calculus::DerivativeOrder,
-    domains::calculus::materialize_calculus_result_term,
-    types::AssumptionSet,
-    types::Diagnostic,
-    types::TermId,
-    Session as AthenaSession,
+    AthenaEngine, Session as AthenaSession,
+    domains::{
+        DomainExecutionContext, DomainRequest, DomainResult,
+        calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, materialize_calculus_result_term},
+    },
+    types::{AssumptionSet, Diagnostic, TermId},
 };
 use sxo_dialect_mathematica::{self as mathematica, WExpr};
 use sxo_dialect_matlab as matlab;
@@ -119,7 +112,11 @@ impl Session {
         let mut ms = self.math_session.borrow_mut();
         let request = mathematica::lower_request(&mut ms, &w);
         match self.math_engine().execute_request(&mut ms, request) {
-            Ok(result_id) => Ok(ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
+            Ok(result_id) => Ok(ms
+                .results
+                .get(result_id)
+                .and_then(|r| r.symbolic_term)
+                .unwrap_or_else(|| mathematica::lower_wexpr(&mut ms, &w))),
             Err(d) => Err(SxoError::from_diagnostic(d)),
         }
     }

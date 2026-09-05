@@ -11,23 +11,22 @@ use oak_matlab::{
 };
 
 use athena::{
-    ir::{Atom, SemanticOperator, TermNode},
     Session,
+    ir::{Atom, SemanticOperator, TermNode},
+    runtime::values::{
+        arena::{
+            application_arguments, get_kind, push_bool, push_list, push_null, push_semantic, push_symbol_name, symbol_name,
+        },
+        numeric_clone::clone_number,
+    },
     types::{SourceSpan, TermId},
-    runtime::values::arena::application_arguments,
-    runtime::values::arena::get_kind,
-    runtime::values::arena::push_bool,
-    runtime::values::arena::push_list,
-    runtime::values::arena::push_null,
-    runtime::values::arena::push_semantic,
-    runtime::values::arena::push_symbol_name,
-    runtime::values::arena::symbol_name,
-    runtime::values::numeric_clone::clone_number,
 };
 use sxo_types::SxoError;
 
-use crate::shared::parse_number_literal;
-use crate::surface::{application_surface_name, push_matlab_call};
+use crate::{
+    shared::parse_number_literal,
+    surface::{application_surface_name, push_matlab_call},
+};
 
 /// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
 pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoError> {

@@ -1,15 +1,14 @@
 //! Render session arena [`TermId`] as MATLAB text (no `WExpr`).
 
 use athena::{
+    Session,
     ir::{Atom, TermNode},
     numeric::Number,
     runtime::values::arena::{application_arguments, number_from_id, symbol_name},
     types::TermId,
-    Session,
 };
 
-use crate::shared::render_number;
-use crate::surface::application_surface_name;
+use crate::{shared::render_number, surface::application_surface_name};
 
 /// Render engine IR as MATLAB-ish source.
 pub fn render_matlab(session: &Session, id: TermId) -> String {
@@ -36,7 +35,8 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                     })
                     .collect();
                 format!("[{}]", rows.join("; "))
-            } else {
+            }
+            else {
                 let inner = items.iter().map(|i| render_matlab(session, *i)).collect::<Vec<_>>().join(", ");
                 format!("[{inner}]")
             }
@@ -95,15 +95,11 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("*"))
         }
         "Minus" if args.len() == 1 => Some(format!("-{}", render_matlab(session, args[0]))),
-        "Power" if args.len() == 2 => {
-            Some(format!("{}^{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
-        }
+        "Power" if args.len() == 2 => Some(format!("{}^{}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
         "Subtract" if args.len() == 2 => {
             Some(format!("{} - {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }
-        "Divide" if args.len() == 2 => {
-            Some(format!("{}/{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
-        }
+        "Divide" if args.len() == 2 => Some(format!("{}/{}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
         "LinearSolve" | "Mldivide" if args.len() == 2 => {
             Some(format!("{}\\{}", render_matlab(session, args[0]), render_matlab(session, args[1])))
         }

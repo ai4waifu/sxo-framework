@@ -26,8 +26,7 @@ describe('@sxo/mathematica feature matrix', () => {
                             evaluate: (input) => mma.evaluate(input).toWolfram(),
                             parse: (input) => mathematica.parse(input).toWolfram(),
                             plot: (input) => mma.plot(input),
-                            isNegativeSuccess: (input, out, threw) =>
-                                threw || out.includes(input.split('[')[0] ?? input),
+                            isNegativeSuccess: (input, out, threw) => threw || out.includes(input.split('[')[0] ?? input),
                         },
                         c,
                     );

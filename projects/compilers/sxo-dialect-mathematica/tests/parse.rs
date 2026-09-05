@@ -3,16 +3,10 @@
 use std::cell::RefCell;
 
 use athena::{
-    AthenaEngine,
-    ir::Atom,
-    ir::TermNode,
+    AthenaEngine, Session,
+    ir::{Atom, TermNode},
     numeric::number_from_wire,
-    runtime::values::arena::push_bool,
-    runtime::values::arena::push_int,
-    runtime::values::arena::push_list,
-    runtime::values::arena::push_null,
-    runtime::values::arena::push_symbol_name,
-    Session,
+    runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
 use athena_types::WireNumber;
@@ -161,14 +155,7 @@ fn parse_if_call_shape() {
     let w = parse_mathematica("If[1==1,7,8]").unwrap();
     assert_eq!(
         w,
-        WExpr::call(
-            "If",
-            vec![
-                WExpr::call("Equal", vec![WExpr::int(1), WExpr::int(1)]),
-                WExpr::int(7),
-                WExpr::int(8),
-            ]
-        )
+        WExpr::call("If", vec![WExpr::call("Equal", vec![WExpr::int(1), WExpr::int(1)]), WExpr::int(7), WExpr::int(8),])
     );
     let h = H::new();
     assert!(h.eq(h.eval("If[1==1,7,8]"), h.i(7)));
@@ -200,13 +187,7 @@ fn parse_import_call_shape() {
 #[test]
 fn parse_part_double_bracket() {
     let w = parse_mathematica("{1,2,3}[[0]]").unwrap();
-    assert_eq!(
-        w,
-        WExpr::call(
-            "Part",
-            vec![WExpr::List(vec![WExpr::int(1), WExpr::int(2), WExpr::int(3)]), WExpr::int(0)]
-        )
-    );
+    assert_eq!(w, WExpr::call("Part", vec![WExpr::List(vec![WExpr::int(1), WExpr::int(2), WExpr::int(3)]), WExpr::int(0)]));
     let h = H::new();
     assert!(h.eq(h.eval("{1,2,3}[[0]]"), h.lst(vec![])));
 }
@@ -275,10 +256,7 @@ fn parse_map_pure_function() {
 #[test]
 fn parse_blank_and_typed_blank() {
     assert_eq!(parse_mathematica("_").unwrap(), WExpr::call("Blank", vec![]));
-    assert_eq!(
-        parse_mathematica("_Integer").unwrap(),
-        WExpr::call("Blank", vec![WExpr::symbol("Integer")])
-    );
+    assert_eq!(parse_mathematica("_Integer").unwrap(), WExpr::call("Blank", vec![WExpr::symbol("Integer")]));
     assert_eq!(
         parse_mathematica("x_").unwrap(),
         WExpr::call("Pattern", vec![WExpr::symbol("x"), WExpr::call("Blank", vec![])])
@@ -325,10 +303,7 @@ fn parse_linear_solve_nested_lists() {
     let ls = h.lower(&h.parse_w("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {6}}]"));
     assert!(matches!(
         h.s.borrow().arena.get(ls),
-        Some(TermNode::Application {
-            head: athena::ir::ApplicationHead::Extension(_),
-            ..
-        })
+        Some(TermNode::Application { head: athena::ir::ApplicationHead::Extension(_), .. })
     ));
 }
 
@@ -339,10 +314,7 @@ fn parse_solve_quadratic_x2_eq_1() {
     let e = h.lower(&h.parse_w("Solve[x^2 == 1, x]"));
     assert!(matches!(
         h.s.borrow().arena.get(e),
-        Some(TermNode::Application {
-            head: athena::ir::ApplicationHead::Extension(_),
-            ..
-        })
+        Some(TermNode::Application { head: athena::ir::ApplicationHead::Extension(_), .. })
     ));
     assert!(h.wolfram(e).starts_with("Solve["));
 }

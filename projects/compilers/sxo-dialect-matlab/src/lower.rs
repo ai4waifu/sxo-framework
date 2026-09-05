@@ -4,18 +4,15 @@
 //! applications into Session / Control contracts without inventing a second Form type.
 
 use athena::{
+    Session,
     api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
     domains::{
-        calculus::{CalculusRequest, DerivativeOrder},
         DomainRequest,
+        calculus::{CalculusRequest, DerivativeOrder},
     },
     ir::{Atom, SemanticOperator, TermNode},
     runtime::values::arena::{application_arguments, number_from_id, push_semantic, symbol_name},
-    types::{
-        AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId,
-        TermId,
-    },
-    Session,
+    types::{AssumptionSet, BindingEvaluationPolicy, BindingKind, IndexSpec, IntegerIndex, IntegerOffset, SymbolId, TermId},
 };
 
 use crate::surface::application_surface_name;
@@ -89,10 +86,7 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
             if let Some(args) = application_arguments(session, term) {
                 if args.len() >= 2 {
                     if let Some(axes) = args[1..].iter().map(|a| index_spec_of(session, *a)).collect::<Option<Vec<_>>>() {
-                        return AthenaRequest::Control(ControlPlan::Index {
-                            target: args[0],
-                            axes,
-                        });
+                        return AthenaRequest::Control(ControlPlan::Index { target: args[0], axes });
                     }
                 }
             }
@@ -120,11 +114,8 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                         if let Some(variable) = symbol_atom(session, *var) {
                             if let Some(n) = number_from_id(session, *order).and_then(|n| n.as_exact_integer()) {
                                 if n > 0 {
-                                    let order = if n == 1 {
-                                        DerivativeOrder::First
-                                    } else {
-                                        DerivativeOrder::Repeated(n as u32)
-                                    };
+                                    let order =
+                                        if n == 1 { DerivativeOrder::First } else { DerivativeOrder::Repeated(n as u32) };
                                     return calculus_goal(CalculusRequest::Derivative {
                                         expression: *expr,
                                         variable,
