@@ -69,6 +69,17 @@ pub fn lower_request(session: &mut Session, term: TermId) -> AthenaRequest {
                 }
             }
         }
+        Some("For") | Some("CountedLoop") => {
+            if let Some(args) = application_arguments(session, term) {
+                if let [variable, iterator, body] = args.as_slice() {
+                    return AthenaRequest::Control(ControlPlan::CountedLoop {
+                        variable: *variable,
+                        iterator: *iterator,
+                        body: Box::new(lower_request(session, *body)),
+                    });
+                }
+            }
+        }
         Some("Part") => {
             if let Some(args) = application_arguments(session, term) {
                 if args.len() >= 2 {
