@@ -1,0 +1,28 @@
+import { feature } from '@sxo/harness';
+
+export const linearAlgebraFeatures = [
+    feature('det', 'linear_algebra').supported().pure().eval('det.2x2', 'det([1, 2; 3, 4])', '-2').done(),
+    feature('inv', 'linear_algebra').unsupported().pure().gap('inv.diag', 'inv([1, 0; 0, 2])', { expected: '[1, 0; 0, 0.5]' }).done(),
+    feature('rank', 'linear_algebra').unsupported().pure().gap('rank.def', 'rank([1, 2; 2, 4])', { expected: '1' }).done(),
+    feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
+    feature('diag', 'linear_algebra').unsupported().pure().gap('diag.vec', 'diag([1, 2])', { expected: '[1, 0; 0, 2]' }).done(),
+    feature('trace', 'linear_algebra').unsupported().pure().gap('trace.2x2', 'trace([1, 2; 3, 4])', { expected: '5' }).done(),
+    feature('norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'norm([3, 4])', { expected: '5' }).done(),
+    feature('dot', 'linear_algebra').unsupported().pure().gap('dot.2', 'dot([1, 2], [3, 4])', { expected: '11' }).done(),
+    feature('cross', 'linear_algebra').unsupported().pure().gap('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', { expected: '[0, 0, 1]' }).done(),
+    feature('cond', 'linear_algebra').unsupported().pure().gap('cond.2x2', 'cond([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('null', 'linear_algebra').unsupported().pure().gap('null.rank1', 'null([1, 2; 2, 4])', { expected: '...' }).done(),
+    feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('kron', 'linear_algebra').unsupported().pure().gap('kron.basic', 'kron([1, 2], [3, 4])', { expected: '[3,4,6,8]' }).done(),
+    feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
+    feature('expm', 'linear_algebra').unsupported().pure().gap('expm.rot', 'expm([0, 1; -1, 0])', { expected: '...' }).done(),
+    feature('rref', 'linear_algebra').unsupported().pure().gap('rref.basic', 'rref([1, 2, 3; 4, 5, 6])', { expected: '...' }).done(),
+    feature('pcg', 'linear_algebra').unsupported().pure().gap('pcg.eye', 'pcg(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('minres', 'linear_algebra').unsupported().pure().gap('minres.eye', 'minres(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('cgs', 'linear_algebra').unsupported().pure().gap('cgs.eye', 'cgs(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('lsqr', 'linear_algebra').unsupported().pure().gap('lsqr.eye', 'lsqr(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('svd_econ', 'linear_algebra').unsupported().pure().gap('svd.econ', 'svd(magic(3), "econ")', { expected: '...' }).done(),
+];
