@@ -10,3 +10,11 @@ export type {
 } from './types.js';
 export type { MatrixValidationIssue, MatrixValidationResult } from './validate.js';
 export { assertValidFeatureMatrix, listRunnableCases, validateFeatureMatrix } from './validate.js';
+export type {
+    FeatureCaseRunFail,
+    FeatureCaseRunGap,
+    FeatureCaseRunOk,
+    FeatureCaseRunResult,
+    FeatureFixtureHooks,
+} from './runner.js';
+export { runFeatureCase } from './runner.js';
