@@ -1,3305 +1,798 @@
-import type { FeatureEntry } from './types.js';
+import { feature, matrix } from '@sxo/harness';
 
 /**
  * MATLAB dialect capability matrix.
  *
  * Status is honest against current SXO + Athena behavior.
+ * Authored with `@sxo/harness` builders (not raw object literals).
  */
-export const featureMatrix = [
-    {
-        name: 'plus',
-        category: 'arithmetic',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'plus.basic', kind: 'eval', input: '2 + 3', expected: '5' }],
-    },
-    {
-        name: 'mtimes',
-        category: 'arithmetic',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar * and numeric nested-list matmul work; symbolic matrix * stays Times',
-        cases: [
-            { id: 'mtimes.scalar', kind: 'eval', input: '2 * 3', expected: '6' },
-            {
-                id: 'mtimes.2x2',
-                kind: 'gap',
-                input: '[1, 2; 3, 4]*[5, 6; 7, 8]',
-                expected: '[19, 22; 43, 50]',
-                notes: 'currently [1, 2; 3, 4]*[5, 6; 7, 8]',
-            },
-        ],
-    },
-    {
-        name: 'times',
-        category: 'arithmetic',
-        status: 'supported',
-        effect: 'pure',
-        notes: '.* → DotTimes elementwise',
-        cases: [
-            { id: 'times.scalar', kind: 'eval', input: '2 .* [1, 2]', expected: '[2, 4]' },
-            { id: 'times.vec', kind: 'eval', input: '[1, 2].*[3, 4]', expected: '[3, 8]' },
-        ],
-    },
-    {
-        name: 'power',
-        category: 'arithmetic',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar ^ and .^ OK; (x+1)^2 still expands',
-        cases: [
-            { id: 'power.basic', kind: 'eval', input: '2^3', expected: '8' },
-            { id: 'power.elementwise', kind: 'eval', input: '[1, 2].^[2, 3]', expected: '[1, 8]' },
-            {
-                id: 'power.binomsq',
-                kind: 'gap',
-                input: '(x + 1)^2',
-                expected: '(x + 1)^2',
-                notes: 'currently expands',
-            },
-            { id: 'power.vec_pow0', kind: 'eval', input: '[1, 2, 3].^0', expected: '[1, 1, 1]' },
-        ],
-    },
-    {
-        name: 'mrdivide',
-        category: 'arithmetic',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'mrdivide.basic', kind: 'eval', input: '6 / 2', expected: '3' }],
-    },
-    {
-        name: 'rdivide',
-        category: 'arithmetic',
-        status: 'supported',
-        effect: 'pure',
-        notes: './ → DotDivide',
-        cases: [
-            { id: 'rdivide.scalar', kind: 'eval', input: '1./2', expected: '0.5' },
-            { id: 'rdivide.vec', kind: 'eval', input: '[6, 8]./[2, 4]', expected: '[3, 2]' },
-        ],
-    },
-    {
-        name: 'matrix',
-        category: 'matrix',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'literal nested List + constructors via MatrixValue bridge; MatrixId IR pending',
-        cases: [
-            { id: 'matrix.literal', kind: 'eval', input: '[1, 2; 3, 4]', expected: '[1, 2; 3, 4]' },
-            { id: 'matrix.roundtrip', kind: 'roundtrip', input: '[1 2; 3 4]', expected: '[1, 2; 3, 4]' },
-        ],
-    },
-    {
-        name: 'colon',
-        category: 'indexing',
-        status: 'supported',
-        effect: 'pure',
-        notes: '1:n and a:step:b expand to numeric row vectors',
-        cases: [
-            { id: 'colon.range', kind: 'eval', input: '1:3', expected: '[1, 2, 3]' },
-            { id: 'colon.step', kind: 'eval', input: '1:2:10', expected: '[1, 3, 5, 7, 9]' },
-        ],
-    },
-    {
-        name: 'subsref',
-        category: 'indexing',
-        status: 'supported',
-        effect: 'pure',
-        cases: [
-            { id: 'subsref.vec', kind: 'eval', input: '[1, 2, 3](2)', expected: '2' },
-            { id: 'subsref.matrix', kind: 'eval', input: '[1, 2; 3, 4](1, 2)', expected: '2' },
-            { id: 'subsref.slice', kind: 'eval', input: '[1, 2, 3](1:2)', expected: '[1, 2]' },
-        ],
-    },
-    {
-        name: 'end',
-        category: 'indexing',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'end.index', kind: 'eval', input: '[1, 2, 3](end)', expected: '3' }],
-    },
-    {
-        name: 'transpose',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: "oak rejects ' transpose literal",
-        cases: [{ id: 'transpose.vec', kind: 'gap', input: "[1; 2]'", expected: '[1, 2]' }],
-    },
-    {
-        name: 'ctranspose',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: "depends on complex literal + '",
-        cases: [{ id: 'ctranspose.basic', kind: 'gap', input: "[1+1i]'", expected: '1-1i' }],
-    },
-    {
-        name: 'assignment',
-        category: 'session',
-        status: 'supported',
-        effect: 'stateful',
-        notes: 'compound assignment binds in one evaluate string',
-        cases: [
-            { id: 'assign.compound', kind: 'eval', input: 'x = 5; x + 1', expected: '6' },
-            {
-                id: 'assign.persist',
-                kind: 'eval',
-                input: 'x = 5',
-                expected: '5',
-                notes: 'follow-up x+1 on same Session → 6 (napi session test)',
-            },
-        ],
-    },
-    {
-        name: 'sequence',
-        category: 'session',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'seq.last', kind: 'eval', input: '1; 2 + 2', expected: '4' }],
-    },
-    {
-        name: 'if',
-        category: 'control',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'if.else', kind: 'eval', input: 'if 1, 2, else, 3, end', expected: '2' }],
-    },
-    {
-        name: 'for',
-        category: 'control',
-        status: 'supported',
-        effect: 'stateful',
-        notes: 'for i=1:n last value and compound accumulator via shared Session bindings',
-        cases: [
-            { id: 'for.last', kind: 'eval', input: 'for i=1:3, i, end', expected: '3' },
-            {
-                id: 'for.sum',
-                kind: 'eval',
-                input: 's=0; for i=1:3, s=s+i; end; s',
-                expected: '6',
-            },
-        ],
-    },
-    {
-        name: 'while',
-        category: 'control',
-        status: 'supported',
-        effect: 'stateful',
-        notes: 'while 0 skips body; empty result renders as []',
-        cases: [{ id: 'while.false', kind: 'eval', input: 'while 0, 1, end', expected: '[]' }],
-    },
-    {
-        name: 'function_handle',
-        category: 'function',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'oak error on @(x); feval(@sin,0) strips @',
-        cases: [
-            { id: 'fh.basic', kind: 'gap', input: 'f=@(x)x^2; f(4)', expected: '16' },
-            {
-                id: 'fh.feval',
-                kind: 'gap',
-                input: 'feval(@sin, 0)',
-                expected: '0',
-                notes: 'currently feval(sin, 0)',
-            },
-        ],
-    },
-    {
-        name: 'eq',
-        category: 'comparison',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'eq.true', kind: 'eval', input: '3 == 3', expected: 'true' }],
-    },
-    {
-        name: 'ne',
-        category: 'comparison',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar ~= OK; vector [1,2]~=[1,3] stays Unequal head not elementwise mask',
-        cases: [
-            { id: 'ne.true', kind: 'eval', input: '3 ~= 2', expected: 'true' },
-            { id: 'ne.false', kind: 'eval', input: '1 ~= 1', expected: 'false' },
-            {
-                id: 'ne.vec',
-                kind: 'gap',
-                input: '[1, 2] ~= [1, 3]',
-                expected: '[0, 1]',
-                notes: 'currently Unequal([1, 2], [1, 3])',
-            },
-        ],
-    },
-    {
-        name: 'le',
-        category: 'comparison',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar <= OK; vector / functional le(…) unevaluated',
-        cases: [
-            { id: 'le.true', kind: 'eval', input: '2 <= 3', expected: 'true' },
-            {
-                id: 'le.vec',
-                kind: 'gap',
-                input: '[1, 2] <= [1, 3]',
-                expected: '[1, 1]',
-            },
-            {
-                id: 'le.fn',
-                kind: 'gap',
-                input: 'le(1, 2)',
-                expected: 'true',
-            },
-        ],
-    },
-    {
-        name: 'ge',
-        category: 'comparison',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar >= OK; vector / functional ge(…) unevaluated',
-        cases: [
-            { id: 'ge.true', kind: 'eval', input: '1 >= 1', expected: 'true' },
-            { id: 'ge.false', kind: 'eval', input: '1 >= 2', expected: 'false' },
-            {
-                id: 'ge.vec',
-                kind: 'gap',
-                input: '[1, 2, 3] >= 2',
-                expected: '[0, 1, 1]',
-            },
-            {
-                id: 'ge.fn',
-                kind: 'gap',
-                input: 'ge(2, 2)',
-                expected: 'true',
-            },
-        ],
-    },
-    {
-        name: 'gt',
-        category: 'comparison',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'gt.true', kind: 'eval', input: '3 > 2', expected: 'true' }],
-    },
-    {
-        name: 'sin',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'sin.0', kind: 'eval', input: 'sin(0)', expected: '0' }],
-    },
-    {
-        name: 'cos',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'cos.0', kind: 'eval', input: 'cos(0)', expected: '1' }],
-    },
-    {
-        name: 'sqrt',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'sqrt.4', kind: 'eval', input: 'sqrt(4)', expected: '2' }],
-    },
-    {
-        name: 'abs',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'abs.neg', kind: 'eval', input: 'abs(-3)', expected: '3' }],
-    },
-    {
-        name: 'exp',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'exp.0', kind: 'eval', input: 'exp(0)', expected: '1' }],
-    },
-    {
-        name: 'log',
-        category: 'elementary',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'log.1', kind: 'eval', input: 'log(1)', expected: '0' }],
-    },
-    {
-        name: 'listable_sin',
-        category: 'elementary',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'sin on vector left as sin([...])',
-        cases: [
-            {
-                id: 'sin.listable',
-                kind: 'gap',
-                input: 'sin([0, pi/2])',
-                expected: '[0, 1]',
-            },
-        ],
-    },
-    {
-        name: 'simplify',
-        category: 'simplify',
-        status: 'supported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'simplify.trig',
-                kind: 'eval',
-                input: 'sin(x)^2 + cos(x)^2',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'diff',
-        category: 'calculus',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'first derivative works; higher-order diff(f,x,2) unevaluated',
-        cases: [
-            { id: 'diff.poly', kind: 'eval', input: 'diff(x^3, x)', expected: '3*x^2' },
-            { id: 'diff.sin', kind: 'eval', input: 'diff(sin(x), x)', expected: 'cos(x)' },
-            {
-                id: 'diff.order2',
-                kind: 'gap',
-                input: 'diff(x^2, x, 2)',
-                expected: '2',
-            },
-        ],
-    },
-    {
-        name: 'int',
-        category: 'calculus',
-        status: 'supported',
-        effect: 'pure',
-        cases: [
-            { id: 'int.poly', kind: 'eval', input: 'int(x^2, x)', expected: '1/3*x^3' },
-            { id: 'int.sin', kind: 'eval', input: 'int(sin(x), x)', expected: '-cos(x)' },
-        ],
-    },
-    {
-        name: 'solve',
-        category: 'solve',
-        status: 'planned',
-        effect: 'pure',
-        notes: 'must lower to Athena SolveGoal',
-        cases: [{ id: 'solve.linear', kind: 'gap', input: 'solve(x-1==0, x)', expected: '1' }],
-    },
-    {
-        name: 'mldivide',
-        category: 'solve',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'exact numeric nested-list A\\b; symbolic stays unevaluated',
-        cases: [
-            {
-                id: 'mldivide.2x2',
-                kind: 'eval',
-                input: '[1,2;3,4] \\ [5;6]',
-                expected: '[-4; 9/2]',
-            },
-        ],
-    },
-    {
-        name: 'linsolve',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'linsolve → LinearSolve; same exact bridge as mldivide',
-        cases: [
-            {
-                id: 'linsolve.2x2',
-                kind: 'gap',
-                input: 'linsolve([1, 2; 3, 4], [5; 6])',
-                expected: '[-4; 9/2]',
-                notes: 'currently linsolve([1, 2; 3, 4], [5; 6])',
-            },
-        ],
-    },
-    {
-        name: 'roots',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'roots.quad', kind: 'gap', input: 'roots([1, 0, -1])', expected: '[1; -1]' }],
-    },
-    {
-        name: 'det',
-        category: 'linear_algebra',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'det.2x2', kind: 'eval', input: 'det([1, 2; 3, 4])', expected: '-2' }],
-    },
-    {
-        name: 'inv',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'inv.diag', kind: 'gap', input: 'inv([1, 0; 0, 2])', expected: '[1, 0; 0, 0.5]' }],
-    },
-    {
-        name: 'rank',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'rank.def', kind: 'gap', input: 'rank([1, 2; 2, 4])', expected: '1' }],
-    },
-    {
-        name: 'eig',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'eig.sym', kind: 'gap', input: 'eig([1, 2; 2, 1])', expected: '[3; -1]' }],
-    },
-    {
-        name: 'eye',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'eye.2', kind: 'eval', input: 'eye(2)', expected: '[1, 0; 0, 1]' }],
-    },
-    {
-        name: 'zeros',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'zeros.23', kind: 'eval', input: 'zeros(2, 3)', expected: '[0, 0, 0; 0, 0, 0]' }],
-    },
-    {
-        name: 'ones',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'ones.2', kind: 'eval', input: 'ones(2)', expected: '[1, 1; 1, 1]' }],
-    },
-    {
-        name: 'size',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'size.2x2', kind: 'eval', input: 'size([1, 2; 3, 4])', expected: '[2, 2]' }],
-    },
-    {
-        name: 'length',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'length.vec', kind: 'eval', input: 'length([1, 2, 3])', expected: '3' }],
-    },
-    {
-        name: 'sum',
-        category: 'matrix',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'vector → scalar; matrix → column sums',
-        cases: [
-            { id: 'sum.vec', kind: 'eval', input: 'sum([1, 2, 3])', expected: '6' },
-            { id: 'sum.matrix', kind: 'eval', input: 'sum([1, 2; 3, 4])', expected: '[4, 6]' },
-        ],
-    },
-    {
-        name: 'max',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'max.vec', kind: 'gap', input: 'max([1, 3, 2])', expected: '3' }],
-    },
-    {
-        name: 'plot',
-        category: 'plot',
-        status: 'partial',
-        effect: 'effectful',
-        notes:
+export const featureMatrix = matrix(
+    feature('plus', 'arithmetic').supported().pure().eval('plus.basic', '2 + 3', '5').done(),
+    feature('mtimes', 'arithmetic')
+        .partial('scalar * and numeric nested-list matmul work; symbolic matrix * stays Times')
+        .pure()
+        .eval('mtimes.scalar', '2 * 3', '6')
+        .gap('mtimes.2x2', '[1, 2; 3, 4]*[5, 6; 7, 8]', { expected: '[19, 22; 43, 50]', notes: 'currently [1, 2; 3, 4]*[5, 6; 7, 8]' })
+        .done(),
+    feature('times', 'arithmetic')
+        .supported()
+        .pure()
+        .notes('.* → DotTimes elementwise')
+        .eval('times.scalar', '2 .* [1, 2]', '[2, 4]')
+        .eval('times.vec', '[1, 2].*[3, 4]', '[3, 8]')
+        .done(),
+    feature('power', 'arithmetic')
+        .partial('scalar ^ and .^ OK; (x+1)^2 still expands')
+        .pure()
+        .eval('power.basic', '2^3', '8')
+        .eval('power.elementwise', '[1, 2].^[2, 3]', '[1, 8]')
+        .gap('power.binomsq', '(x + 1)^2', { expected: '(x + 1)^2', notes: 'currently expands' })
+        .eval('power.vec_pow0', '[1, 2, 3].^0', '[1, 1, 1]')
+        .done(),
+    feature('mrdivide', 'arithmetic').supported().pure().eval('mrdivide.basic', '6 / 2', '3').done(),
+    feature('rdivide', 'arithmetic')
+        .supported()
+        .pure()
+        .notes('./ → DotDivide')
+        .eval('rdivide.scalar', '1./2', '0.5')
+        .eval('rdivide.vec', '[6, 8]./[2, 4]', '[3, 2]')
+        .done(),
+    feature('matrix', 'matrix')
+        .partial('literal nested List + constructors via MatrixValue bridge; MatrixId IR pending')
+        .pure()
+        .eval('matrix.literal', '[1, 2; 3, 4]', '[1, 2; 3, 4]')
+        .roundtrip('matrix.roundtrip', '[1 2; 3 4]', '[1, 2; 3, 4]')
+        .done(),
+    feature('colon', 'indexing')
+        .supported()
+        .pure()
+        .notes('1:n and a:step:b expand to numeric row vectors')
+        .eval('colon.range', '1:3', '[1, 2, 3]')
+        .eval('colon.step', '1:2:10', '[1, 3, 5, 7, 9]')
+        .done(),
+    feature('subsref', 'indexing')
+        .supported()
+        .pure()
+        .eval('subsref.vec', '[1, 2, 3](2)', '2')
+        .eval('subsref.matrix', '[1, 2; 3, 4](1, 2)', '2')
+        .eval('subsref.slice', '[1, 2, 3](1:2)', '[1, 2]')
+        .done(),
+    feature('end', 'indexing').supported().pure().eval('end.index', '[1, 2, 3](end)', '3').done(),
+    feature('transpose', 'matrix')
+        .unsupported("oak rejects ' transpose literal")
+        .pure()
+        .gap('transpose.vec', "[1; 2]'", { expected: '[1, 2]' })
+        .done(),
+    feature('ctranspose', 'matrix')
+        .unsupported("depends on complex literal + '")
+        .pure()
+        .gap('ctranspose.basic', "[1+1i]'", { expected: '1-1i' })
+        .done(),
+    feature('assignment', 'session')
+        .supported()
+        .stateful()
+        .notes('compound assignment binds in one evaluate string')
+        .eval('assign.compound', 'x = 5; x + 1', '6')
+        .eval('assign.persist', 'x = 5', '5', { notes: 'follow-up x+1 on same Session → 6 (napi session test)' })
+        .done(),
+    feature('sequence', 'session').supported().pure().eval('seq.last', '1; 2 + 2', '4').done(),
+    feature('if', 'control').supported().pure().eval('if.else', 'if 1, 2, else, 3, end', '2').done(),
+    feature('for', 'control')
+        .supported()
+        .stateful()
+        .notes('for i=1:n last value and compound accumulator via shared Session bindings')
+        .eval('for.last', 'for i=1:3, i, end', '3')
+        .eval('for.sum', 's=0; for i=1:3, s=s+i; end; s', '6')
+        .done(),
+    feature('while', 'control')
+        .supported()
+        .stateful()
+        .notes('while 0 skips body; empty result renders as []')
+        .eval('while.false', 'while 0, 1, end', '[]')
+        .done(),
+    feature('function_handle', 'function')
+        .unsupported('oak error on @(x); feval(@sin,0) strips @')
+        .pure()
+        .gap('fh.basic', 'f=@(x)x^2; f(4)', { expected: '16' })
+        .gap('fh.feval', 'feval(@sin, 0)', { expected: '0', notes: 'currently feval(sin, 0)' })
+        .done(),
+    feature('eq', 'comparison').supported().pure().eval('eq.true', '3 == 3', 'true').done(),
+    feature('ne', 'comparison')
+        .partial('scalar ~= OK; vector [1,2]~=[1,3] stays Unequal head not elementwise mask')
+        .pure()
+        .eval('ne.true', '3 ~= 2', 'true')
+        .eval('ne.false', '1 ~= 1', 'false')
+        .gap('ne.vec', '[1, 2] ~= [1, 3]', { expected: '[0, 1]', notes: 'currently Unequal([1, 2], [1, 3])' })
+        .done(),
+    feature('le', 'comparison')
+        .partial('scalar <= OK; vector / functional le(…) unevaluated')
+        .pure()
+        .eval('le.true', '2 <= 3', 'true')
+        .gap('le.vec', '[1, 2] <= [1, 3]', { expected: '[1, 1]' })
+        .gap('le.fn', 'le(1, 2)', { expected: 'true' })
+        .done(),
+    feature('ge', 'comparison')
+        .partial('scalar >= OK; vector / functional ge(…) unevaluated')
+        .pure()
+        .eval('ge.true', '1 >= 1', 'true')
+        .eval('ge.false', '1 >= 2', 'false')
+        .gap('ge.vec', '[1, 2, 3] >= 2', { expected: '[0, 1, 1]' })
+        .gap('ge.fn', 'ge(2, 2)', { expected: 'true' })
+        .done(),
+    feature('gt', 'comparison').supported().pure().eval('gt.true', '3 > 2', 'true').done(),
+    feature('sin', 'elementary').supported().pure().eval('sin.0', 'sin(0)', '0').done(),
+    feature('cos', 'elementary').supported().pure().eval('cos.0', 'cos(0)', '1').done(),
+    feature('sqrt', 'elementary').supported().pure().eval('sqrt.4', 'sqrt(4)', '2').done(),
+    feature('abs', 'elementary').supported().pure().eval('abs.neg', 'abs(-3)', '3').done(),
+    feature('exp', 'elementary').supported().pure().eval('exp.0', 'exp(0)', '1').done(),
+    feature('log', 'elementary').supported().pure().eval('log.1', 'log(1)', '0').done(),
+    feature('listable_sin', 'elementary')
+        .unsupported('sin on vector left as sin([...])')
+        .pure()
+        .gap('sin.listable', 'sin([0, pi/2])', { expected: '[0, 1]' })
+        .done(),
+    feature('simplify', 'simplify').supported().pure().eval('simplify.trig', 'sin(x)^2 + cos(x)^2', '1').done(),
+    feature('diff', 'calculus')
+        .partial('first derivative works; higher-order diff(f,x,2) unevaluated')
+        .pure()
+        .eval('diff.poly', 'diff(x^3, x)', '3*x^2')
+        .eval('diff.sin', 'diff(sin(x), x)', 'cos(x)')
+        .gap('diff.order2', 'diff(x^2, x, 2)', { expected: '2' })
+        .done(),
+    feature('int', 'calculus')
+        .supported()
+        .pure()
+        .eval('int.poly', 'int(x^2, x)', '1/3*x^3')
+        .eval('int.sin', 'int(sin(x), x)', '-cos(x)')
+        .done(),
+    feature('solve', 'solve')
+        .planned('must lower to Athena SolveGoal')
+        .pure()
+        .gap('solve.linear', 'solve(x-1==0, x)', { expected: '1' })
+        .done(),
+    feature('mldivide', 'solve')
+        .supported()
+        .pure()
+        .notes('exact numeric nested-list A\\b; symbolic stays unevaluated')
+        .eval('mldivide.2x2', '[1,2;3,4] \\ [5;6]', '[-4; 9/2]')
+        .done(),
+    feature('linsolve', 'solve')
+        .unsupported('linsolve → LinearSolve; same exact bridge as mldivide')
+        .pure()
+        .gap('linsolve.2x2', 'linsolve([1, 2; 3, 4], [5; 6])', { expected: '[-4; 9/2]', notes: 'currently linsolve([1, 2; 3, 4], [5; 6])' })
+        .done(),
+    feature('roots', 'solve').unsupported().pure().gap('roots.quad', 'roots([1, 0, -1])', { expected: '[1; -1]' }).done(),
+    feature('det', 'linear_algebra').supported().pure().eval('det.2x2', 'det([1, 2; 3, 4])', '-2').done(),
+    feature('inv', 'linear_algebra').unsupported().pure().gap('inv.diag', 'inv([1, 0; 0, 2])', { expected: '[1, 0; 0, 0.5]' }).done(),
+    feature('rank', 'linear_algebra').unsupported().pure().gap('rank.def', 'rank([1, 2; 2, 4])', { expected: '1' }).done(),
+    feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
+    feature('eye', 'matrix').supported().pure().eval('eye.2', 'eye(2)', '[1, 0; 0, 1]').done(),
+    feature('zeros', 'matrix').supported().pure().eval('zeros.23', 'zeros(2, 3)', '[0, 0, 0; 0, 0, 0]').done(),
+    feature('ones', 'matrix').supported().pure().eval('ones.2', 'ones(2)', '[1, 1; 1, 1]').done(),
+    feature('size', 'matrix').supported().pure().eval('size.2x2', 'size([1, 2; 3, 4])', '[2, 2]').done(),
+    feature('length', 'matrix').supported().pure().eval('length.vec', 'length([1, 2, 3])', '3').done(),
+    feature('sum', 'matrix')
+        .supported()
+        .pure()
+        .notes('vector → scalar; matrix → column sums')
+        .eval('sum.vec', 'sum([1, 2, 3])', '6')
+        .eval('sum.matrix', 'sum([1, 2; 3, 4])', '[4, 6]')
+        .done(),
+    feature('max', 'matrix').unsupported().pure().gap('max.vec', 'max([1, 3, 2])', { expected: '3' }).done(),
+    feature('plot', 'plot')
+        .partial(
             'SVG→PNG visual: curve+L-axes readable; missing tick labels, no boxed frame, not MATLAB default blue. Negative a/b via unary-minus fold; 2-arg plot(f,[a,b]) gap',
-        cases: [
-            {
-                id: 'plot.square',
-                kind: 'plot',
-                input: 'plot(x^2, x, 0, 1)',
-                expected: '<svg',
-            },
-            {
-                id: 'plot.sin',
-                kind: 'plot',
-                input: 'plot(sin(x), x, 0, 6)',
-                expected: '<svg',
-            },
-            {
-                id: 'plot.neg_domain',
-                kind: 'gap',
-                input: 'plot(x^2, x, -1, 1)',
-                expected: '<svg',
-                notes: 'currently not a supported 1-D plot form',
-            },
-            {
-                id: 'plot.range_vec',
-                kind: 'gap',
-                input: 'plot(sin(x), [-pi, pi])',
-                expected: '<svg',
-                notes: 'surface sugar for domain vector',
-            },
-        ],
-    },
-    {
-        name: 'mesh',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'mesh.peaks', kind: 'gap', input: 'mesh(peaks)', expected: '<svg' }],
-    },
-    {
-        name: 'complex',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'oak bad literal on 2i',
-        cases: [
-            { id: 'complex.i', kind: 'gap', input: '1+2i', expected: '1+2i' },
-            { id: 'complex.real', kind: 'gap', input: 'real(1+2i)', expected: '1' },
-        ],
-    },
-    {
-        name: 'pi',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        cases: [{ id: 'pi.symbol', kind: 'eval', input: 'pi', expected: 'pi' }],
-    },
-    {
-        name: 'true',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        cases: [{ id: 'true.atom', kind: 'eval', input: 'true', expected: 'true' }],
-    },
-    {
-        name: 'false',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        cases: [{ id: 'false.atom', kind: 'eval', input: 'false', expected: 'false' }],
-    },
-    {
-        name: 'disp',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'disp.1', kind: 'gap', input: 'disp(1)', expected: '1' }],
-    },
-    {
-        name: 'linspace',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'linspace.3', kind: 'gap', input: 'linspace(0, 1, 3)', expected: '[0, 0.5, 1]' }],
-    },
-    {
-        name: 'diag',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'diag.vec', kind: 'gap', input: 'diag([1, 2])', expected: '[1, 0; 0, 2]' }],
-    },
-    {
-        name: 'trace',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'trace.2x2', kind: 'gap', input: 'trace([1, 2; 3, 4])', expected: '5' }],
-    },
-    {
-        name: 'norm',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'norm.34', kind: 'gap', input: 'norm([3, 4])', expected: '5' }],
-    },
-    {
-        name: 'dot',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'dot.2', kind: 'gap', input: 'dot([1, 2], [3, 4])', expected: '11' }],
-    },
-    {
-        name: 'cross',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'cross.ijk', kind: 'gap', input: 'cross([1, 0, 0], [0, 1, 0])', expected: '[0, 0, 1]' }],
-    },
-    {
-        name: 'reshape',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'reshape.22', kind: 'gap', input: 'reshape([1, 2, 3, 4], 2, 2)', expected: '[1, 3; 2, 4]' }],
-    },
-    {
-        name: 'sort',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'sort.vec', kind: 'gap', input: 'sort([3, 1, 2])', expected: '[1, 2, 3]' }],
-    },
-    {
-        name: 'mean',
-        category: 'stats',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'mean.vec', kind: 'gap', input: 'mean([1, 2, 3])', expected: '2' }],
-    },
-    {
-        name: 'std',
-        category: 'stats',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'std.vec', kind: 'gap', input: 'std([1, 2, 3])', expected: '1' }],
-    },
-    {
-        name: 'fft',
-        category: 'signal',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'fft.4', kind: 'gap', input: 'fft([1, 2, 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'polyval',
-        category: 'polynomial',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'polyval.quad', kind: 'gap', input: 'polyval([1, 0, -1], 2)', expected: '3' }],
-    },
-    {
-        name: 'elementwise_compare',
-        category: 'comparison',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'vectorized > / == become Greater/Equal heads, not logical masks',
-        cases: [
-            {
-                id: 'gt.vec',
-                kind: 'gap',
-                input: '[1, 2, 3] > 2',
-                expected: '[0, 0, 1]',
-                notes: 'currently Greater([1, 2, 3], 2)',
-            },
-        ],
-    },
-    {
-        name: 'cell',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: {1,2} evaluates to 2 (brace not cell)',
-        cases: [
-            {
-                id: 'cell.literal',
-                kind: 'gap',
-                input: '{1, 2}',
-                expected: '{1, 2}',
-                notes: 'currently returns 2',
-            },
-            { id: 'cell.ctor', kind: 'gap', input: 'cell(2, 1)', expected: '{[]; []}' },
-        ],
-    },
-    {
-        name: 'struct',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'struct.basic', kind: 'gap', input: "struct('a', 1)", expected: "struct('a',1)" }],
-    },
-    {
-        name: 'ode45',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: ode45(@(t,y)y,[0,1],1) → 1 (strips to last arg)',
-        cases: [
-            {
-                id: 'ode45.strip',
-                kind: 'gap',
-                input: 'ode45(@(t,y)y, [0, 1], 1)',
-                expected: '...',
-                notes: 'currently returns 1',
-            },
-        ],
-    },
-    {
-        name: 'fzero',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ handle stripped; args mangled to fzero(x, -2+x^2, 1)',
-        cases: [{ id: 'fzero.sqrt2', kind: 'gap', input: 'fzero(@(x)x^2-2, 1)', expected: '1.4142' }],
-    },
-    {
-        name: 'integral',
-        category: 'calculus',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ stripped to integral(x, sin(x), 0, pi)',
-        cases: [{ id: 'integral.sin', kind: 'gap', input: 'integral(@(x)sin(x), 0, pi)', expected: '2' }],
-    },
-    {
-        name: 'switch',
-        category: 'control',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: switch 1, case 1, 2, otherwise, 3, end → 3',
-        cases: [
-            {
-                id: 'switch.case1',
-                kind: 'gap',
-                input: 'switch 1, case 1, 2, otherwise, 3, end',
-                expected: '2',
-                notes: 'currently returns 3',
-            },
-        ],
-    },
-    {
-        name: 'try_catch',
-        category: 'control',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'oak Statement::Try → Athena Try[body, catch]; success and error paths',
-        cases: [
-            {
-                id: 'try.catch',
-                kind: 'eval',
-                input: "try, error('e'), catch, 1, end",
-                expected: '1',
-            },
-            {
-                id: 'try.no_error',
-                kind: 'eval',
-                input: 'try, 2, catch, 3, end',
-                expected: '2',
-            },
-        ],
-    },
-    {
-        name: 'global',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: global x → x',
-        cases: [{ id: 'global.strip', kind: 'gap', input: 'global x', expected: '' }],
-    },
-    {
-        name: 'persistent',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: persistent y → y',
-        cases: [{ id: 'persistent.strip', kind: 'gap', input: 'persistent y', expected: '' }],
-    },
-    {
-        name: 'which',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: which sin → sin',
-        cases: [{ id: 'which.sin', kind: 'gap', input: 'which sin', expected: '...' }],
-    },
-    {
-        name: 'row_colon',
-        category: 'indexing',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'All-colon row/col on literals; column as flat list of picks',
-        cases: [
-            { id: 'row.colon', kind: 'eval', input: '[1, 2; 3, 4](1,:)', expected: '[1, 2]' },
-            { id: 'col.colon', kind: 'eval', input: '[1, 2; 3, 4](:,2)', expected: '[2, 4]' },
-        ],
-    },
-    {
-        name: 'logical_index',
-        category: 'indexing',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'logical.gt',
-                kind: 'gap',
-                input: 'A=[1,2,3]; A(A>1)',
-                expected: '[2, 3]',
-            },
-        ],
-    },
-    {
-        name: 'surf',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'surf.peaks', kind: 'gap', input: 'surf(peaks)', expected: '<svg' }],
-    },
-    {
-        name: 'contour',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'contour.peaks', kind: 'gap', input: 'contour(peaks)', expected: '<svg' }],
-    },
-    {
-        name: 'figure',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'figure.basic', kind: 'gap', input: 'figure', expected: '...' }],
-    },
-    {
-        name: 'sparse',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'sparse.diag', kind: 'gap', input: 'sparse([1, 0; 0, 2])', expected: '...' }],
-    },
-    {
-        name: 'num2str',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'num2str.3', kind: 'gap', input: 'num2str(3)', expected: "'3'" }],
-    },
-    {
-        name: 'str2num',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'str2num.3', kind: 'gap', input: "str2num('3')", expected: '3' }],
-    },
-    // --- wave 4: matrix gallery / ODE / types / IO probes ---
-    {
-        name: 'pascal',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'pascal.3', kind: 'gap', input: 'pascal(3)', expected: '[1,1,1; 1,2,3; 1,3,6]' }],
-    },
-    {
-        name: 'magic',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'magic.3', kind: 'gap', input: 'magic(3)', expected: '...' }],
-    },
-    {
-        name: 'cond',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'cond.2x2', kind: 'gap', input: 'cond([1, 2; 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'null',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'null.rank1', kind: 'gap', input: 'null([1, 2; 2, 4])', expected: '...' }],
-    },
-    {
-        name: 'pinv',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'pinv.2x2', kind: 'gap', input: 'pinv([1, 2; 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'svd',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'svd.2x2', kind: 'gap', input: 'svd([1, 2; 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'kron',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'kron.basic', kind: 'gap', input: 'kron([1, 2], [3, 4])', expected: '[3,4,6,8]' }],
-    },
-    {
-        name: 'polyfit',
-        category: 'fit',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'polyfit.quad',
-                kind: 'gap',
-                input: 'polyfit([1, 2, 3], [1, 4, 9], 2)',
-                expected: '[1, 0, 0]',
-            },
-        ],
-    },
-    {
-        name: 'interp1',
-        category: 'fit',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'interp1.mid',
-                kind: 'gap',
-                input: 'interp1([0, 1], [0, 1], 0.5)',
-                expected: '0.5',
-            },
-        ],
-    },
-    {
-        name: 'ode23',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: ode23(@(t,y)y,[0,1],1) → 1 (same strip pattern as ode45)',
-        cases: [
-            {
-                id: 'ode23.strip',
-                kind: 'gap',
-                input: 'ode23(@(t,y)y, [0, 1], 1)',
-                expected: '...',
-                notes: 'currently returns 1',
-            },
-        ],
-    },
-    {
-        name: 'fsolve',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ handle stripped; args mangled like fzero',
-        cases: [
-            {
-                id: 'fsolve.sqrt2',
-                kind: 'gap',
-                input: 'fsolve(@(x)x^2-2, 1)',
-                expected: '1.4142',
-            },
-        ],
-    },
-    {
-        name: 'class',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'class.double', kind: 'gap', input: 'class(1)', expected: "'double'" }],
-    },
-    {
-        name: 'isa',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isa.double', kind: 'gap', input: "isa(1, 'double')", expected: '1' }],
-    },
-    {
-        name: 'isnumeric',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isnumeric.1', kind: 'gap', input: 'isnumeric(1)', expected: '1' }],
-    },
-    {
-        name: 'assert',
-        category: 'control',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'assert.true', kind: 'gap', input: 'assert(1)', expected: '...' }],
-    },
-    {
-        name: 'imag_unit_literal',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'oak bad literal on bare 1i (also 2i in complex entry)',
-        cases: [{ id: 'imag.1i', kind: 'gap', input: '1i', expected: '1i' }],
-    },
-    {
-        name: 'complex_ctor',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'complex.ctor', kind: 'gap', input: 'complex(1, 2)', expected: '1+2i' }],
-    },
-    {
-        name: 'single',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'single.1', kind: 'gap', input: 'single(1)', expected: '1' }],
-    },
-    {
-        name: 'nan',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'lowercase atom retained; NaN arithmetic / isnan contract incomplete',
-        cases: [{ id: 'nan.lower', kind: 'eval', input: 'nan', expected: 'nan' }],
-    },
-    {
-        name: 'eps',
-        category: 'constant',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'eps.atom', kind: 'gap', input: 'eps', expected: '...' }],
-    },
-    {
-        name: 'diff_vector',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'vector difference op distinct from symbolic diff(f,x)',
-        cases: [{ id: 'diffvec.3', kind: 'gap', input: 'diff([1, 4, 9])', expected: '[3, 5]' }],
-    },
-    {
-        name: 'cumsum',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'cumsum.3', kind: 'gap', input: 'cumsum([1, 2, 3])', expected: '[1, 3, 6]' }],
-    },
-    {
-        name: 'contains',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'contains.b', kind: 'gap', input: "contains('abc', 'b')", expected: '1' }],
-    },
-    {
-        name: 'string',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'string.ctor', kind: 'gap', input: "string('ab')", expected: '"ab"' }],
-    },
-    {
-        name: 'jsonencode',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'jsonencode.struct',
-                kind: 'gap',
-                input: "jsonencode(struct('a', 1))",
-                expected: '{"a":1}',
-            },
-        ],
-    },
-    {
-        name: 'datetime',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'datetime.ymd',
-                kind: 'gap',
-                input: 'datetime(2020, 1, 1)',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'readmatrix',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [
-            {
-                id: 'readmatrix.csv',
-                kind: 'gap',
-                input: "readmatrix('x.csv')",
-                expected: 'UnsupportedOperation',
-            },
-        ],
-    },
-    {
-        name: 'parfor',
-        category: 'control',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: parfor i=1:2, i, end → i (same strip as for)',
-        cases: [
-            {
-                id: 'parfor.strip',
-                kind: 'gap',
-                input: 'parfor i=1:2, i, end',
-                expected: '2',
-                notes: 'currently returns i',
-            },
-        ],
-    },
-    // --- wave 5: @-strip / command keywords / ODE family / array / toolbox ---
-    {
-        name: 'bsxfun',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: @ stripped — bsxfun(@plus,…) → bsxfun(plus,…)',
-        cases: [
-            {
-                id: 'bsxfun.plus',
-                kind: 'gap',
-                input: 'bsxfun(@plus, [1, 2], [3; 4])',
-                expected: '[4, 5; 5, 6]',
-                notes: 'currently bsxfun(plus, …)',
-            },
-        ],
-    },
-    {
-        name: 'arrayfun',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ stripped to bare sin',
-        cases: [
-            {
-                id: 'arrayfun.sin',
-                kind: 'gap',
-                input: 'arrayfun(@sin, [0, pi/2])',
-                expected: '[0, 1]',
-            },
-        ],
-    },
-    {
-        name: 'cellfun',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: @ and cell both strip — cellfun(@numel,{1,2}) → cellfun(numel, 1, 2)',
-        cases: [
-            {
-                id: 'cellfun.numel',
-                kind: 'gap',
-                input: 'cellfun(@numel, {1, 2})',
-                expected: '[1, 1]',
-            },
-        ],
-    },
-    {
-        name: 'hold_on',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: hold on → on (command keyword stripped)',
-        cases: [
-            {
-                id: 'hold.on',
-                kind: 'gap',
-                input: 'hold on',
-                expected: '...',
-                notes: 'currently returns on',
-            },
-        ],
-    },
-    {
-        name: 'grid_on',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: grid on → on',
-        cases: [
-            {
-                id: 'grid.on',
-                kind: 'gap',
-                input: 'grid on',
-                expected: '...',
-                notes: 'currently returns on',
-            },
-        ],
-    },
-    {
-        name: 'axis',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: axis equal → equal',
-        cases: [
-            {
-                id: 'axis.equal',
-                kind: 'gap',
-                input: 'axis equal',
-                expected: '...',
-                notes: 'currently returns equal',
-            },
-        ],
-    },
-    {
-        name: 'profile',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: profile on → on',
-        cases: [
-            {
-                id: 'profile.on',
-                kind: 'gap',
-                input: 'profile on',
-                expected: '...',
-                notes: 'currently returns on',
-            },
-        ],
-    },
-    {
-        name: 'dbstop',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: dbstop if error → error',
-        cases: [
-            {
-                id: 'dbstop.if_error',
-                kind: 'gap',
-                input: 'dbstop if error',
-                expected: '...',
-                notes: 'currently returns error',
-            },
-        ],
-    },
-    {
-        name: 'ode15s',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: ode15s(@(t,y)y,[0,1],1) → 1',
-        cases: [
-            {
-                id: 'ode15s.strip',
-                kind: 'gap',
-                input: 'ode15s(@(t,y)y, [0, 1], 1)',
-                expected: '...',
-                notes: 'currently returns 1',
-            },
-        ],
-    },
-    {
-        name: 'ode113',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: same last-arg strip as ode45',
-        cases: [
-            {
-                id: 'ode113.strip',
-                kind: 'gap',
-                input: 'ode113(@(t,y)y, [0, 1], 1)',
-                expected: '...',
-                notes: 'currently returns 1',
-            },
-        ],
-    },
-    {
-        name: 'dde23',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: dde23(…) → [0, 2] (last arg)',
-        cases: [
-            {
-                id: 'dde23.strip',
-                kind: 'gap',
-                input: 'dde23(@(t,y,z)z, [1], 1, [0, 2])',
-                expected: '...',
-                notes: 'currently returns [0, 2]',
-            },
-        ],
-    },
-    {
-        name: 'fminsearch',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ handle stripped like fzero',
-        cases: [
-            {
-                id: 'fminsearch.x2',
-                kind: 'gap',
-                input: 'fminsearch(@(x)x^2, 1)',
-                expected: '0',
-            },
-        ],
-    },
-    {
-        name: 'quadgk',
-        category: 'calculus',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ stripped to quadgk(x, sin(x), 0, pi)',
-        cases: [
-            {
-                id: 'quadgk.sin',
-                kind: 'gap',
-                input: 'quadgk(@(x)sin(x), 0, pi)',
-                expected: '2',
-            },
-        ],
-    },
-    {
-        name: 'containers_Map',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: containers.Map → Map (package path stripped)',
-        cases: [
-            {
-                id: 'containers.map',
-                kind: 'gap',
-                input: 'containers.Map',
-                expected: 'containers.Map',
-                notes: 'currently returns Map',
-            },
-        ],
-    },
-    {
-        name: 'py_list',
-        category: 'interop',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: py.list([1,2]) → list([1, 2])',
-        cases: [
-            {
-                id: 'py.list',
-                kind: 'gap',
-                input: 'py.list([1, 2])',
-                expected: '...',
-                notes: 'currently list([1, 2])',
-            },
-        ],
-    },
-    {
-        name: 'classdef',
-        category: 'oop',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: classdef Foo, end → Foo',
-        cases: [
-            {
-                id: 'classdef.foo',
-                kind: 'gap',
-                input: 'classdef Foo, end',
-                expected: '...',
-                notes: 'currently returns Foo',
-            },
-        ],
-    },
-    {
-        name: 'spmd',
-        category: 'parallel',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: spmd, 1, end → 1',
-        cases: [
-            {
-                id: 'spmd.strip',
-                kind: 'gap',
-                input: 'spmd, 1, end',
-                expected: '...',
-                notes: 'currently returns 1',
-            },
-        ],
-    },
-    {
-        name: 'iscell',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: iscell({1}) → iscell(1) (brace cell stripped first)',
-        cases: [
-            {
-                id: 'iscell.brace',
-                kind: 'gap',
-                input: 'iscell({1})',
-                expected: '1',
-                notes: 'currently iscell(1)',
-            },
-        ],
-    },
-    {
-        name: 'all',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'all.true', kind: 'gap', input: 'all([1, 1])', expected: '1' }],
-    },
-    {
-        name: 'any',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'any.mixed', kind: 'gap', input: 'any([0, 1])', expected: '1' }],
-    },
-    {
-        name: 'find',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'find.mask', kind: 'gap', input: 'find([0, 1, 0])', expected: '2' }],
-    },
-    {
-        name: 'unique',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'unique.112', kind: 'gap', input: 'unique([1, 1, 2])', expected: '[1, 2]' }],
-    },
-    {
-        name: 'repmat',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'repmat.21',
-                kind: 'gap',
-                input: 'repmat([1, 2], 2, 1)',
-                expected: '[1, 2; 1, 2]',
-            },
-        ],
-    },
-    {
-        name: 'tril',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'tril.2x2',
-                kind: 'gap',
-                input: 'tril([1, 2; 3, 4])',
-                expected: '[1, 0; 3, 4]',
-            },
-        ],
-    },
-    {
-        name: 'qr',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'qr.2x2', kind: 'gap', input: 'qr([1, 2; 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'lu',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'lu.2x2', kind: 'gap', input: 'lu([1, 2; 3, 4])', expected: '...' }],
-    },
-    {
-        name: 'chol',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'chol.spd', kind: 'gap', input: 'chol([2, 1; 1, 2])', expected: '...' }],
-    },
-    {
-        name: 'expm',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'expm.rot', kind: 'gap', input: 'expm([0, 1; -1, 0])', expected: '...' }],
-    },
-    {
-        name: 'floor',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'floor.2_7', kind: 'gap', input: 'floor(2.7)', expected: '2' }],
-    },
-    {
-        name: 'mod',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'mod.10_3', kind: 'gap', input: 'mod(10, 3)', expected: '1' }],
-    },
-    {
-        name: 'hypot',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'hypot.34', kind: 'gap', input: 'hypot(3, 4)', expected: '5' }],
-    },
-    {
-        name: 'inf',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'symbol retained; no Inf arithmetic contract yet',
-        cases: [{ id: 'inf.atom', kind: 'eval', input: 'inf', expected: 'inf' }],
-    },
-    {
-        name: 'NaN',
-        category: 'constant',
-        status: 'partial',
-        effect: 'pure',
-        cases: [{ id: 'NaN.capital', kind: 'eval', input: 'NaN', expected: 'NaN' }],
-    },
-    {
-        name: 'rand',
-        category: 'random',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'rand.2', kind: 'gap', input: 'rand(2)', expected: '...' }],
-    },
-    {
-        name: 'hilb',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'hilb.3', kind: 'gap', input: 'hilb(3)', expected: '...' }],
-    },
-    {
-        name: 'sym',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'sym.x', kind: 'gap', input: "sym('x')", expected: 'x' }],
-    },
-    {
-        name: 'vpa',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'vpa.pi', kind: 'gap', input: 'vpa(pi, 10)', expected: '3.141592654' }],
-    },
-    {
-        name: 'jsondecode',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'jsondecode.obj',
-                kind: 'gap',
-                input: "jsondecode('{\"a\":1}')",
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'sprintf',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'sprintf.d', kind: 'gap', input: "sprintf('%d', 1)", expected: "'1'" }],
-    },
-    {
-        name: 'legend',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'legend.a', kind: 'gap', input: "legend('a')", expected: '...' }],
-    },
-    {
-        name: 'subplot',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'subplot.121', kind: 'gap', input: 'subplot(1, 2, 1)', expected: '...' }],
-    },
-    // --- wave 6: logic ops / assignment / strings / symbolic / interop ---
-    {
-        name: 'and',
-        category: 'logic',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'numeric short-circuit style && on 0/1',
-        cases: [{ id: 'and.10', kind: 'eval', input: '1 && 0', expected: 'false' }],
-    },
-    {
-        name: 'or',
-        category: 'logic',
-        status: 'supported',
-        effect: 'pure',
-        cases: [{ id: 'or.10', kind: 'eval', input: '1 || 0', expected: 'true' }],
-    },
-    {
-        name: 'not',
-        category: 'logic',
-        status: 'supported',
-        effect: 'pure',
-        cases: [
-            { id: 'not.1', kind: 'eval', input: '~1', expected: 'false' },
-            { id: 'not.0', kind: 'eval', input: '~0', expected: 'true' },
-        ],
-    },
-    {
-        name: 'xor',
-        category: 'logic',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'xor.10', kind: 'gap', input: 'xor(1, 0)', expected: '1' }],
-    },
-    {
-        name: 'bitand',
-        category: 'bitwise',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'bitand.63', kind: 'gap', input: 'bitand(6, 3)', expected: '2' }],
-    },
-    {
-        name: 'subsasgn',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: indexed / grow assignment does not persist; A=[]; A(1)=1; A → A; A(3,3)=1 after zeros → A; end+1 / end-1 often oak error',
-        cases: [
-            {
-                id: 'subsasgn.vec',
-                kind: 'gap',
-                input: 'A=[1, 2, 3]; A(2)=9; A',
-                expected: '[1, 9, 3]',
-                notes: 'currently returns A',
-            },
-            {
-                id: 'subsasgn.grow',
-                kind: 'gap',
-                input: 'A=zeros(2); A(3, 3)=1; A',
-                expected: '...',
-                notes: 'currently returns A',
-            },
-            {
-                id: 'subsasgn.end_plus',
-                kind: 'gap',
-                input: 'B=1:4; B(end+1)=5',
-                expected: '[1, 2, 3, 4, 5]',
-                notes: 'oak error node',
-            },
-        ],
-    },
-    {
-        name: 'deal',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'multi-assign [a,b]=deal(1,2) does not bind; [~,b]=max(...) oak error',
-        cases: [
-            {
-                id: 'deal.multi',
-                kind: 'gap',
-                input: '[a, b]=deal(1, 2)',
-                expected: '...',
-                notes: 'currently returns deal(1, 2)',
-            },
-        ],
-    },
-    {
-        name: 'strcat',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'strcat.ab', kind: 'gap', input: "strcat('a', 'b')", expected: "'ab'" }],
-    },
-    {
-        name: 'strcmp',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'strcmp.eq', kind: 'gap', input: "strcmp('a', 'a')", expected: '1' }],
-    },
-    {
-        name: 'strjoin',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: cell brace stripped — strjoin({\'a\',\'b\'},\',\') → strjoin(\'a\', \'b\', \',\')',
-        cases: [
-            {
-                id: 'strjoin.ab',
-                kind: 'gap',
-                input: "strjoin({'a', 'b'}, ',')",
-                expected: "'a,b'",
-            },
-        ],
-    },
-    {
-        name: 'missing',
-        category: 'types',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'atom retained; ismissing/rmmissing unevaluated',
-        cases: [{ id: 'missing.atom', kind: 'eval', input: 'missing', expected: 'missing' }],
-    },
-    {
-        name: 'ismissing',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'ismissing.missing',
-                kind: 'gap',
-                input: 'ismissing(missing)',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'lsqcurvefit',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: @ stripped and result collapses to last arg [1,2]',
-        cases: [
-            {
-                id: 'lsqcurvefit.strip',
-                kind: 'gap',
-                input: 'lsqcurvefit(@(x,xdata)x*xdata, 1, [1, 2], [1, 2])',
-                expected: '1',
-                notes: 'currently returns [1, 2]',
-            },
-        ],
-    },
-    {
-        name: 'fminbnd',
-        category: 'solve',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ handle stripped',
-        cases: [
-            {
-                id: 'fminbnd.x2',
-                kind: 'gap',
-                input: 'fminbnd(@(x)x^2, -1, 1)',
-                expected: '0',
-            },
-        ],
-    },
-    {
-        name: 'syms',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: syms x → x (declaration stripped like global)',
-        cases: [
-            {
-                id: 'syms.strip',
-                kind: 'gap',
-                input: 'syms x',
-                expected: '...',
-                notes: 'currently returns x',
-            },
-        ],
-    },
-    {
-        name: 'expand',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'args already wrongly powered: expand((x+1)^2) sees expand(1+x^2)',
-        cases: [
-            {
-                id: 'expand.binomsq',
-                kind: 'gap',
-                input: 'expand((x + 1)^2)',
-                expected: 'x^2 + 2*x + 1',
-            },
-        ],
-    },
-    {
-        name: 'limit',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'limit.sinc',
-                kind: 'gap',
-                input: 'limit(sin(x)/x, x, 0)',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'dsolve',
-        category: 'symbolic',
-        status: 'planned',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'dsolve.exp',
-                kind: 'gap',
-                input: 'dsolve(diff(y)==y)',
-                expected: 'C1*exp(t)',
-            },
-        ],
-    },
-    {
-        name: 'eval',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'eval.plus', kind: 'gap', input: "eval('1+1')", expected: '2' }],
-    },
-    {
-        name: 'feval',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'feval.sin', kind: 'gap', input: "feval('sin', 0)", expected: '0' }],
-    },
-    {
-        name: 'func2str',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: '@ stripped: func2str(@sin) → func2str(sin)',
-        cases: [{ id: 'func2str.sin', kind: 'gap', input: 'func2str(@sin)', expected: "'sin'" }],
-    },
-    {
-        name: 'pwd',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'pwd.basic', kind: 'gap', input: 'pwd', expected: '...' }],
-    },
-    {
-        name: 'exist',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'exist.sin',
-                kind: 'gap',
-                input: "exist('sin', 'builtin')",
-                expected: '5',
-            },
-        ],
-    },
-    {
-        name: 'fullfile',
-        category: 'io',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'fullfile.ab',
-                kind: 'gap',
-                input: "fullfile('a', 'b')",
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'py_math_sqrt',
-        category: 'interop',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: py.math.sqrt(4) and math.sqrt(4) both collapse to matlab sqrt → 2',
-        cases: [
-            {
-                id: 'py.math.sqrt',
-                kind: 'gap',
-                input: 'py.math.sqrt(4)',
-                expected: '...',
-                notes: 'currently returns 2 via path strip to sqrt',
-            },
-        ],
-    },
-    {
-        name: 'uifigure',
-        category: 'ui',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'uifigure.basic', kind: 'gap', input: 'uifigure', expected: '...' }],
-    },
-    {
-        name: 'msgbox',
-        category: 'ui',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'msgbox.a', kind: 'gap', input: "msgbox('a')", expected: '...' }],
-    },
-    // --- wave 7: IEEE / bitwise | / colon / commands / simplify win ---
-    {
-        name: 'ieee_edge',
-        category: 'numeric',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'SILENT WRONG: 0/0→0 and Inf-Inf→0 (MATLAB expects NaN); 0^0→1 matches MATLAB',
-        cases: [
-            {
-                id: 'ieee.0over0',
-                kind: 'gap',
-                input: '0/0',
-                expected: 'NaN',
-                notes: 'currently 0',
-            },
-            {
-                id: 'ieee.inf_minus_inf',
-                kind: 'gap',
-                input: 'Inf - Inf',
-                expected: 'NaN',
-                notes: 'currently 0',
-            },
-            {
-                id: 'ieee.0pow0',
-                kind: 'eval',
-                input: '0^0',
-                expected: '1',
-                notes: 'MATLAB-compatible',
-            },
-        ],
-    },
-    {
-        name: 'bitor_op',
-        category: 'logic',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: 1|0 → 0 (expect 1); [1,0]|[0,1] → [0,1] (expect [1,1])',
-        cases: [
-            {
-                id: 'bitor.scalar',
-                kind: 'gap',
-                input: '1 | 0',
-                expected: '1',
-                notes: 'currently 0',
-            },
-            {
-                id: 'bitor.vec',
-                kind: 'gap',
-                input: '[1, 0] | [0, 1]',
-                expected: '[1, 1]',
-                notes: 'currently [0, 1]',
-            },
-        ],
-    },
-    {
-        name: 'bitand_op',
-        category: 'logic',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar 1&0 → false OK; vector [1,0]&[1,1] → [1,1] SILENT WRONG (expect [1,0])',
-        cases: [
-            { id: 'bitand.scalar', kind: 'eval', input: '1 & 0', expected: 'false' },
-            {
-                id: 'bitand.vec',
-                kind: 'gap',
-                input: '[1, 0] & [1, 1]',
-                expected: '[1, 0]',
-                notes: 'currently [1, 1]',
-            },
-        ],
-    },
-    {
-        name: 'colon_all',
-        category: 'indexing',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: A(:) → A()',
-        cases: [
-            {
-                id: 'colon.all',
-                kind: 'gap',
-                input: 'A=[1, 2; 3, 4]; A(:)',
-                expected: '[1; 3; 2; 4]',
-                notes: 'currently A()',
-            },
-        ],
-    },
-    {
-        name: 'end_minus',
-        category: 'indexing',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'oak error on A(end-1) and A(1:2:end)',
-        cases: [
-            {
-                id: 'end.minus1',
-                kind: 'gap',
-                input: 'A=[1, 2, 3]; A(end-1)',
-                expected: '2',
-            },
-        ],
-    },
-    {
-        name: 'plus_eq',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'oak error on x+=1 and A(1)+=1',
-        cases: [{ id: 'pluseq.x', kind: 'gap', input: 'x=1; x+=1', expected: '2' }],
-    },
-    {
-        name: 'close_all',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: close all → all',
-        cases: [
-            {
-                id: 'close.all',
-                kind: 'gap',
-                input: 'close all',
-                expected: '...',
-                notes: 'currently returns all',
-            },
-        ],
-    },
-    {
-        name: 'hold_off',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: hold off → off',
-        cases: [
-            {
-                id: 'hold.off',
-                kind: 'gap',
-                input: 'hold off',
-                expected: '...',
-                notes: 'currently returns off',
-            },
-        ],
-    },
-    {
-        name: 'colormap',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: colormap jet → jet',
-        cases: [
-            {
-                id: 'colormap.jet',
-                kind: 'gap',
-                input: 'colormap jet',
-                expected: '...',
-                notes: 'currently returns jet',
-            },
-        ],
-    },
-    {
-        name: 'format',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'effectful',
-        notes: 'SILENT WRONG: format long → long',
-        cases: [
-            {
-                id: 'format.long',
-                kind: 'gap',
-                input: 'format long',
-                expected: '...',
-                notes: 'currently returns long',
-            },
-        ],
-    },
-    {
-        name: 'simplify_trig',
-        category: 'symbolic',
-        status: 'supported',
-        effect: 'pure',
-        notes: 'same identity as simplify entry; explicit symbolic toolbox spelling',
-        cases: [
-            {
-                id: 'simplify_trig.pythag',
-                kind: 'eval',
-                input: 'simplify(sin(x)^2 + cos(x)^2)',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'isequal',
-        category: 'comparison',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'isequal.vec',
-                kind: 'gap',
-                input: 'isequal([1, 2], [1, 2])',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'lt_chain',
-        category: 'comparison',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'scalar 1<2<3 via Athena compare chain; elementwise vector Less still open',
-        cases: [
-            {
-                id: 'ltchain.123',
-                kind: 'eval',
-                input: '1 < 2 < 3',
-                expected: 'true',
-            },
-            {
-                id: 'ltchain.vec',
-                kind: 'gap',
-                input: '[1, 2, 3] < 2',
-                expected: '[1, 0, 0]',
-            },
-        ],
-    },
-    {
-        name: 'odeset',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: ode45(..., odeset(...)) collapses to odeset(...) last arg',
-        cases: [
-            {
-                id: 'odeset.strip',
-                kind: 'gap',
-                input: "ode45(@(t,y)y, [0, 1], 1, odeset('RelTol', 1e-3))",
-                expected: '...',
-                notes: "currently returns odeset('RelTol', 0.001)",
-            },
-        ],
-    },
-    {
-        name: 'rref',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'rref.basic',
-                kind: 'gap',
-                input: 'rref([1, 2, 3; 4, 5, 6])',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'conv',
-        category: 'signal',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'conv.basic',
-                kind: 'gap',
-                input: 'conv([1, 1], [1, -1])',
-                expected: '[1, 0, -1]',
-            },
-        ],
-    },
-    {
-        name: 'polyder',
-        category: 'polynomial',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'polyder.quad',
-                kind: 'gap',
-                input: 'polyder([1, 2, 1])',
-                expected: '[2, 2]',
-            },
-        ],
-    },
-    {
-        name: 'scatter',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [
-            {
-                id: 'scatter.basic',
-                kind: 'gap',
-                input: 'scatter([1, 2], [3, 4])',
-                expected: '<svg',
-            },
-        ],
-    },
-    {
-        name: 'bar',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'bar.3', kind: 'gap', input: 'bar([1, 2, 3])', expected: '<svg' }],
-    },
-    {
-        name: 'fourier_sym',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: fourier(exp(-x^2)) → fourier(exp(x^2)) sign flip',
-        cases: [
-            {
-                id: 'fourier.gauss_sign',
-                kind: 'gap',
-                input: 'fourier(exp(-x^2))',
-                expected: '...',
-                notes: 'currently fourier(exp(x^2))',
-            },
-        ],
-    },
-    {
-        name: 'methods_meta',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: "SILENT WRONG: methods('double') → 'double'",
-        cases: [
-            {
-                id: 'methods.double',
-                kind: 'gap',
-                input: "methods('double')",
-                expected: '...',
-                notes: "currently returns 'double'",
-            },
-        ],
-    },
-    // --- wave 8: bool | / complex literal / set / fft / builtin ---
-    {
-        name: 'true_bitor',
-        category: 'logic',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: true | false → false (same bug as 1|0)',
-        cases: [
-            {
-                id: 'true.bitor',
-                kind: 'gap',
-                input: 'true | false',
-                expected: '1',
-                notes: 'currently false',
-            },
-        ],
-    },
-    {
-        name: 'true_bitand',
-        category: 'logic',
-        status: 'partial',
-        effect: 'pure',
-        notes: 'true & false → false OK; true && false stays And(true,false) unevaluated',
-        cases: [
-            { id: 'true.bitand', kind: 'eval', input: 'true & false', expected: 'false' },
-            {
-                id: 'true.and_sc',
-                kind: 'gap',
-                input: 'true && false',
-                expected: '0',
-                notes: 'currently And(true, false)',
-            },
-        ],
-    },
-    {
-        name: 'i_squared',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'bare i/j symbols retained; 1+2i / 1i still oak bad literal',
-        cases: [
-            { id: 'i.sq', kind: 'gap', input: 'i^2', expected: '-1' },
-            { id: 'j.sq', kind: 'gap', input: 'j^2', expected: '-1' },
-        ],
-    },
-    {
-        name: 'logical',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'logical.vec',
-                kind: 'gap',
-                input: 'logical([1, 0, 2])',
-                expected: '[1, 0, 1]',
-            },
-        ],
-    },
-    {
-        name: 'intersect',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'intersect.basic',
-                kind: 'gap',
-                input: 'intersect([1, 2, 3], [2, 3, 4])',
-                expected: '[2, 3]',
-            },
-        ],
-    },
-    {
-        name: 'union',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'union.basic',
-                kind: 'gap',
-                input: 'union([1, 2], [2, 3])',
-                expected: '[1, 2, 3]',
-            },
-        ],
-    },
-    {
-        name: 'setdiff',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'setdiff.basic',
-                kind: 'gap',
-                input: 'setdiff([1, 2, 3], [2])',
-                expected: '[1, 3]',
-            },
-        ],
-    },
-    {
-        name: 'ismember',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'ismember.2',
-                kind: 'gap',
-                input: 'ismember([1, 2, 3], 2)',
-                expected: '[0, 1, 0]',
-            },
-        ],
-    },
-    {
-        name: 'ifft',
-        category: 'signal',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'ifft.roundtrip',
-                kind: 'gap',
-                input: 'ifft(fft([1, 2, 3, 4]))',
-                expected: '[1, 2, 3, 4]',
-            },
-        ],
-    },
-    {
-        name: 'filter',
-        category: 'signal',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'filter.basic',
-                kind: 'gap',
-                input: 'filter([1], [1, -0.5], ones(1, 5))',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'conv2',
-        category: 'signal',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'conv2.basic',
-                kind: 'gap',
-                input: 'conv2([1, 2; 3, 4], [1, 1; 1, 1])',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'blkdiag',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'blkdiag.eye3',
-                kind: 'gap',
-                input: 'blkdiag(eye(2), 3)',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'randperm',
-        category: 'random',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'randperm.5', kind: 'gap', input: 'randperm(5)', expected: '...' }],
-    },
-    {
-        name: 'builtin',
-        category: 'meta',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'builtin.sin', kind: 'gap', input: "builtin('sin', 0)", expected: '0' }],
-    },
-    {
-        name: 'char',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'char.65', kind: 'gap', input: 'char(65)', expected: "'A'" }],
-    },
-    {
-        name: 'semilogx',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [
-            {
-                id: 'semilogx.basic',
-                kind: 'gap',
-                input: 'semilogx(1:3, 1:3)',
-                expected: '<svg',
-            },
-        ],
-    },
-    {
-        name: 'loglog',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [
-            {
-                id: 'loglog.basic',
-                kind: 'gap',
-                input: 'loglog(1:3, 1:3)',
-                expected: '<svg',
-            },
-        ],
-    },
-    {
-        name: 'pie',
-        category: 'plot',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'pie.3', kind: 'gap', input: 'pie([1, 2, 3])', expected: '<svg' }],
-    },
-    {
-        name: 'warndlg',
-        category: 'ui',
-        status: 'unsupported',
-        effect: 'effectful',
-        cases: [{ id: 'warndlg.w', kind: 'gap', input: "warndlg('w')", expected: '...' }],
-    },
-    {
-        name: 'latex_sym',
-        category: 'symbolic',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'latex.x2',
-                kind: 'gap',
-                input: "latex(sym('x^2'))",
-                expected: '...',
-            },
-        ],
-    },
-    // --- wave 9: colon step / ++ / package strip / predicates / sparse ---
-    {
-        name: 'preincrement',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'SILENT WRONG: ++A → A; A++ oak error',
-        cases: [
-            {
-                id: 'preinc.A',
-                kind: 'gap',
-                input: '++A',
-                expected: '...',
-                notes: 'currently returns A',
-            },
-        ],
-    },
-    {
-        name: 'gpuArray_zeros',
-        category: 'interop',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: gpuArray.zeros(2) → zeros(2) (package path stripped)',
-        cases: [
-            {
-                id: 'gpuarray.zeros',
-                kind: 'gap',
-                input: 'gpuArray.zeros(2)',
-                expected: '...',
-                notes: 'currently zeros(2)',
-            },
-        ],
-    },
-    {
-        name: 'coder_typeof',
-        category: 'interop',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: coder.typeof(1) → typeof(1)',
-        cases: [
-            {
-                id: 'coder.typeof',
-                kind: 'gap',
-                input: 'coder.typeof(1)',
-                expected: '...',
-                notes: 'currently typeof(1)',
-            },
-        ],
-    },
-    {
-        name: 'hex2dec',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'hex2dec.ff', kind: 'gap', input: "hex2dec('FF')", expected: '255' }],
-    },
-    {
-        name: 'dec2hex',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'dec2hex.255', kind: 'gap', input: 'dec2hex(255)', expected: "'FF'" }],
-    },
-    {
-        name: 'isempty',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            { id: 'isempty.empty', kind: 'gap', input: 'isempty([])', expected: '1' },
-            { id: 'isempty.zero', kind: 'gap', input: 'isempty(0)', expected: '0' },
-        ],
-    },
-    {
-        name: 'isscalar',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isscalar.1', kind: 'gap', input: 'isscalar(1)', expected: '1' }],
-    },
-    {
-        name: 'isvector',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isvector.row', kind: 'gap', input: 'isvector([1, 2])', expected: '1' }],
-    },
-    {
-        name: 'isrow',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isrow.12', kind: 'gap', input: 'isrow([1, 2])', expected: '1' }],
-    },
-    {
-        name: 'iscolumn',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'iscolumn.12', kind: 'gap', input: 'iscolumn([1; 2])', expected: '1' }],
-    },
-    {
-        name: 'numel',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'numel.empty', kind: 'gap', input: 'numel([])', expected: '0' }],
-    },
-    {
-        name: 'nan_matrix',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'nan.2', kind: 'gap', input: 'nan(2)', expected: '[NaN, NaN; NaN, NaN]' }],
-    },
-    {
-        name: 'inf_matrix',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'inf.2', kind: 'gap', input: 'inf(2)', expected: '...' }],
-    },
-    {
-        name: 'true_matrix',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'true.23', kind: 'gap', input: 'true(2, 3)', expected: '...' }],
-    },
-    {
-        name: 'speye',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'speye.3', kind: 'gap', input: 'speye(3)', expected: '...' }],
-    },
-    {
-        name: 'nnz',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'nnz.speye2', kind: 'gap', input: 'nnz(speye(2))', expected: '2' }],
-    },
-    {
-        name: 'accumarray',
-        category: 'array',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'accumarray.basic',
-                kind: 'gap',
-                input: 'accumarray([1; 2; 1], [10; 20; 30])',
-                expected: '[40; 20]',
-            },
-        ],
-    },
-    {
-        name: 'logspace',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'logspace.3',
-                kind: 'gap',
-                input: 'logspace(0, 2, 3)',
-                expected: '[1, 10, 100]',
-            },
-        ],
-    },
-    {
-        name: 'normcdf',
-        category: 'stats',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'normcdf.0', kind: 'gap', input: 'normcdf(0)', expected: '0.5' }],
-    },
-    // --- wave 10: package strip / empty shapes / is* matrix / log2 ---
-    {
-        name: 'matlab_lang_on',
-        category: 'interop',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: matlab.lang.OnOffSwitchState.on → on',
-        cases: [
-            {
-                id: 'matlab.lang.on',
-                kind: 'gap',
-                input: 'matlab.lang.OnOffSwitchState.on',
-                expected: '...',
-                notes: 'currently returns on',
-            },
-        ],
-    },
-    {
-        name: 'times_eq',
-        category: 'session',
-        status: 'unsupported',
-        effect: 'stateful',
-        notes: 'oak error on A.*=3 / A./=2 / x^=2',
-        cases: [
-            {
-                id: 'timeseq.elem',
-                kind: 'gap',
-                input: 'A=[1, 2]; A.*=3',
-                expected: '[3, 6]',
-            },
-        ],
-    },
-    {
-        name: 'log2',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'log2.8', kind: 'gap', input: 'log2(8)', expected: '3' }],
-    },
-    {
-        name: 'pow2',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'pow2.3', kind: 'gap', input: 'pow2(3)', expected: '8' }],
-    },
-    {
-        name: 'nextpow2',
-        category: 'numeric',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'nextpow2.5', kind: 'gap', input: 'nextpow2(5)', expected: '3' }],
-    },
-    {
-        name: 'flintmax',
-        category: 'constant',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'flintmax.atom', kind: 'gap', input: 'flintmax', expected: '...' }],
-    },
-    {
-        name: 'zeros_empty',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'zeros.0x5', kind: 'gap', input: 'zeros(0, 5)', expected: 'zeros(0,5)' }],
-    },
-    {
-        name: 'ones_empty',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'ones.5x0', kind: 'gap', input: 'ones(5, 0)', expected: 'ones(5,0)' }],
-    },
-    {
-        name: 'eye_empty',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'eye.0', kind: 'gap', input: 'eye(0)', expected: '[]' }],
-    },
-    {
-        name: 'isdiag',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'isdiag.eye', kind: 'gap', input: 'isdiag(eye(3))', expected: '1' }],
-    },
-    {
-        name: 'issymmetric',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'issymmetric.eye',
-                kind: 'gap',
-                input: 'issymmetric(eye(3))',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'istril',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'istril.tril',
-                kind: 'gap',
-                input: 'istril(tril(ones(3)))',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'bitcmp',
-        category: 'bitwise',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'bitcmp.u8', kind: 'gap', input: "bitcmp(1, 'uint8')", expected: '254' }],
-    },
-    {
-        name: 'fillmissing',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'fillmissing.const',
-                kind: 'gap',
-                input: "fillmissing([1, NaN], 'constant', 0)",
-                expected: '[1, 0]',
-            },
-        ],
-    },
-    {
-        name: 'odeset_opts',
-        category: 'ode',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'odeset itself echoes; scientific 1e-6 becomes decimal',
-        cases: [
-            {
-                id: 'odeset.reltol',
-                kind: 'gap',
-                input: "odeset('RelTol', 1e-6)",
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'pcg',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'pcg.eye',
-                kind: 'gap',
-                input: 'pcg(speye(3), ones(3, 1))',
-                expected: '...',
-            },
-        ],
-    },
-    // --- wave 11: comparisons / sparse / solvers / strings / datetime / UI ---
-    {
-        name: 'eq_fn',
-        category: 'comparison',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'functional eq([1,2],[1,2]) unevaluated; true==1 stays Equal head',
-        cases: [
-            {
-                id: 'eq.fn_vec',
-                kind: 'gap',
-                input: 'eq([1, 2], [1, 2])',
-                expected: '[1, 1]',
-            },
-            {
-                id: 'eq.true_num',
-                kind: 'gap',
-                input: 'true == 1',
-                expected: '1',
-                notes: 'currently Equal(true, 1)',
-            },
-        ],
-    },
-    {
-        name: 'isequaln',
-        category: 'comparison',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'isequaln.nan',
-                kind: 'gap',
-                input: 'isequaln([NaN], [NaN])',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'isnan',
-        category: 'predicates',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            { id: 'isnan.nan', kind: 'gap', input: 'isnan(NaN)', expected: '1' },
-            { id: 'isnan.0', kind: 'gap', input: 'isnan(0)', expected: '0' },
-        ],
-    },
-    {
-        name: 'nan_eq',
-        category: 'comparison',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'NaN==NaN / NaN~=NaN stay Equal/Unequal heads (IEEE unmet)',
-        cases: [
-            {
-                id: 'nan.eq',
-                kind: 'gap',
-                input: 'NaN == NaN',
-                expected: '0',
-                notes: 'currently Equal(NaN, NaN)',
-            },
-            {
-                id: 'nan.ne',
-                kind: 'gap',
-                input: 'NaN ~= NaN',
-                expected: '1',
-                notes: 'currently Unequal(NaN, NaN)',
-            },
-        ],
-    },
-    {
-        name: 'isstring',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'isstring.dq',
-                kind: 'gap',
-                input: 'isstring("a")',
-                expected: '1',
-            },
-            {
-                id: 'isstring.sq',
-                kind: 'gap',
-                input: "isstring('a')",
-                expected: '0',
-            },
-        ],
-    },
-    {
-        name: 'ischar',
-        category: 'types',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'ischar.sq',
-                kind: 'gap',
-                input: "ischar('a')",
-                expected: '1',
-            },
-            {
-                id: 'ischar.dq',
-                kind: 'gap',
-                input: 'ischar("a")',
-                expected: '0',
-            },
-        ],
-    },
-    {
-        name: 'string_plus',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'string.plus',
-                kind: 'gap',
-                input: '"hello" + "world"',
-                expected: '"helloworld"',
-            },
-            {
-                id: 'string.append',
-                kind: 'gap',
-                input: 'append("a", "b")',
-                expected: '"ab"',
-            },
-        ],
-    },
-    {
-        name: 'startsWith',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'startswith.a',
-                kind: 'gap',
-                input: 'startsWith("abc", "a")',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'endsWith',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'endswith.c',
-                kind: 'gap',
-                input: 'endsWith("abc", "c")',
-                expected: '1',
-            },
-        ],
-    },
-    {
-        name: 'erase',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'erase.b', kind: 'gap', input: 'erase("abc", "b")', expected: '"ac"' }],
-    },
-    {
-        name: 'extractAfter',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'extractafter.a',
-                kind: 'gap',
-                input: 'extractAfter("abc", "a")',
-                expected: '"bc"',
-            },
-        ],
-    },
-    {
-        name: 'matches',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'matches.digits',
-                kind: 'gap',
-                input: 'matches("abc", digitsPattern)',
-                expected: '0',
-            },
-        ],
-    },
-    {
-        name: 'wildcardPattern',
-        category: 'string',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'wildcard.m',
-                kind: 'gap',
-                input: 'wildcardPattern("*.m")',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'datetime_arith',
-        category: 'datetime',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'datetime.caldays',
-                kind: 'gap',
-                input: 'datetime(2020, 1, 1) + caldays(1)',
-                expected: 'datetime(2020, 1, 2)',
-            },
-            {
-                id: 'datetime.days',
-                kind: 'gap',
-                input: 'datetime(2020, 1, 1) + days(1)',
-                expected: 'datetime(2020, 1, 2)',
-            },
-        ],
-    },
-    {
-        name: 'caldiff',
-        category: 'datetime',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'caldiff.year',
-                kind: 'gap',
-                input: 'caldiff(datetime(2020, 1, 1), datetime(2021, 1, 1))',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'outerjoin',
-        category: 'table',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: cell {\'k\'} in VariableNames stripped to \'k\'',
-        cases: [
-            {
-                id: 'outerjoin.k',
-                kind: 'gap',
-                input: "outerjoin(table([1; 2], 'VariableNames', {'k'}), table([2; 3], 'VariableNames', {'k'}))",
-                expected: '...',
-                notes: "currently VariableNames 'k' without cell",
-            },
-        ],
-    },
-    {
-        name: 'leftjoin',
-        category: 'table',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'same cell VariableNames strip as outerjoin',
-        cases: [
-            {
-                id: 'leftjoin.k',
-                kind: 'gap',
-                input: "leftjoin(table([1; 2], 'VariableNames', {'k'}), table([2; 3], 'VariableNames', {'k'}))",
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'spalloc',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'spalloc.332', kind: 'gap', input: 'spalloc(3, 3, 2)', expected: '...' }],
-    },
-    {
-        name: 'sparse_ijv',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'sparse.ijv',
-                kind: 'gap',
-                input: 'sparse(1, 2, 3, 4, 4)',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'full_speye',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'full.speye2',
-                kind: 'gap',
-                input: 'full(speye(2))',
-                expected: '[1, 0; 0, 1]',
-            },
-        ],
-    },
-    {
-        name: 'spones',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [{ id: 'spones.eye', kind: 'gap', input: 'spones(speye(2))', expected: '...' }],
-    },
-    {
-        name: 'spfun',
-        category: 'matrix',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'SILENT WRONG: @ stripped — spfun(@sqrt,speye(2)) → spfun(sqrt, speye(2))',
-        cases: [
-            {
-                id: 'spfun.sqrt',
-                kind: 'gap',
-                input: 'spfun(@sqrt, speye(2))',
-                expected: '...',
-                notes: 'currently spfun(sqrt, speye(2))',
-            },
-        ],
-    },
-    {
-        name: 'minres',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'minres.eye',
-                kind: 'gap',
-                input: 'minres(speye(3), ones(3, 1))',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'cgs',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'cgs.eye',
-                kind: 'gap',
-                input: 'cgs(speye(3), ones(3, 1))',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'lsqr',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'lsqr.eye',
-                kind: 'gap',
-                input: 'lsqr(speye(3), ones(3, 1))',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'svd_econ',
-        category: 'linear_algebra',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'svd.econ',
-                kind: 'gap',
-                input: 'svd(magic(3), "econ")',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'end_slice',
-        category: 'indexing',
-        status: 'unsupported',
-        effect: 'pure',
-        notes: 'D(1:end-1) / E(1:end,end) oak error; C(0) stays C(0)',
-        cases: [
-            {
-                id: 'end.slice_minus',
-                kind: 'gap',
-                input: 'D=[1, 2, 3]; D(1:end-1)',
-                expected: '[1, 2]',
-                notes: 'oak error node',
-            },
-            {
-                id: 'end.slice_2d',
-                kind: 'gap',
-                input: 'E=[1, 2; 3, 4]; E(1:end, end)',
-                expected: '[2; 4]',
-                notes: 'oak error node',
-            },
-        ],
-    },
-    {
-        name: 'ginput',
-        category: 'plot',
-        status: 'planned',
-        effect: 'effectful',
-        cases: [{ id: 'ginput.basic', kind: 'gap', input: 'ginput', expected: '...' }],
-    },
-    {
-        name: 'zoom',
-        category: 'plot',
-        status: 'planned',
-        effect: 'effectful',
-        cases: [{ id: 'zoom.basic', kind: 'gap', input: 'zoom', expected: '...' }],
-    },
-    {
-        name: 'uigridlayout',
-        category: 'ui',
-        status: 'planned',
-        effect: 'effectful',
-        cases: [
-            {
-                id: 'uigridlayout.basic',
-                kind: 'gap',
-                input: 'uigridlayout',
-                expected: '...',
-            },
-        ],
-    },
-    {
-        name: 'drawnow',
-        category: 'ui',
-        status: 'planned',
-        effect: 'effectful',
-        cases: [{ id: 'drawnow.basic', kind: 'gap', input: 'drawnow', expected: '...' }],
-    },
-    {
-        name: 'compose',
-        category: 'functional',
-        status: 'unsupported',
-        effect: 'pure',
-        cases: [
-            {
-                id: 'compose.sincos',
-                kind: 'gap',
-                input: 'compose(sin, cos, 0)',
-                expected: '0',
-            },
-        ],
-    },
-] as const satisfies readonly FeatureEntry[];
+        )
+        .effectful()
+        .plot('plot.square', 'plot(x^2, x, 0, 1)', { expected: '<svg' })
+        .plot('plot.sin', 'plot(sin(x), x, 0, 6)', { expected: '<svg' })
+        .gap('plot.neg_domain', 'plot(x^2, x, -1, 1)', { expected: '<svg', notes: 'currently not a supported 1-D plot form' })
+        .gap('plot.range_vec', 'plot(sin(x), [-pi, pi])', { expected: '<svg', notes: 'surface sugar for domain vector' })
+        .done(),
+    feature('mesh', 'plot').unsupported().effectful().gap('mesh.peaks', 'mesh(peaks)', { expected: '<svg' }).done(),
+    feature('complex', 'numeric')
+        .unsupported('oak bad literal on 2i')
+        .pure()
+        .gap('complex.i', '1+2i', { expected: '1+2i' })
+        .gap('complex.real', 'real(1+2i)', { expected: '1' })
+        .done(),
+    feature('pi', 'constant').partial().pure().eval('pi.symbol', 'pi', 'pi').done(),
+    feature('true', 'constant').partial().pure().eval('true.atom', 'true', 'true').done(),
+    feature('false', 'constant').partial().pure().eval('false.atom', 'false', 'false').done(),
+    feature('disp', 'io').unsupported().effectful().gap('disp.1', 'disp(1)', { expected: '1' }).done(),
+    feature('linspace', 'matrix').unsupported().pure().gap('linspace.3', 'linspace(0, 1, 3)', { expected: '[0, 0.5, 1]' }).done(),
+    feature('diag', 'linear_algebra').unsupported().pure().gap('diag.vec', 'diag([1, 2])', { expected: '[1, 0; 0, 2]' }).done(),
+    feature('trace', 'linear_algebra').unsupported().pure().gap('trace.2x2', 'trace([1, 2; 3, 4])', { expected: '5' }).done(),
+    feature('norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'norm([3, 4])', { expected: '5' }).done(),
+    feature('dot', 'linear_algebra').unsupported().pure().gap('dot.2', 'dot([1, 2], [3, 4])', { expected: '11' }).done(),
+    feature('cross', 'linear_algebra').unsupported().pure().gap('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', { expected: '[0, 0, 1]' }).done(),
+    feature('reshape', 'matrix').unsupported().pure().gap('reshape.22', 'reshape([1, 2, 3, 4], 2, 2)', { expected: '[1, 3; 2, 4]' }).done(),
+    feature('sort', 'matrix').unsupported().pure().gap('sort.vec', 'sort([3, 1, 2])', { expected: '[1, 2, 3]' }).done(),
+    feature('mean', 'stats').unsupported().pure().gap('mean.vec', 'mean([1, 2, 3])', { expected: '2' }).done(),
+    feature('std', 'stats').unsupported().pure().gap('std.vec', 'std([1, 2, 3])', { expected: '1' }).done(),
+    feature('fft', 'signal').unsupported().pure().gap('fft.4', 'fft([1, 2, 3, 4])', { expected: '...' }).done(),
+    feature('polyval', 'polynomial').unsupported().pure().gap('polyval.quad', 'polyval([1, 0, -1], 2)', { expected: '3' }).done(),
+    feature('elementwise_compare', 'comparison')
+        .unsupported('vectorized > / == become Greater/Equal heads, not logical masks')
+        .pure()
+        .gap('gt.vec', '[1, 2, 3] > 2', { expected: '[0, 0, 1]', notes: 'currently Greater([1, 2, 3], 2)' })
+        .done(),
+    feature('cell', 'types')
+        .unsupported('SILENT WRONG: {1,2} evaluates to 2 (brace not cell)')
+        .pure()
+        .gap('cell.literal', '{1, 2}', { expected: '{1, 2}', notes: 'currently returns 2' })
+        .gap('cell.ctor', 'cell(2, 1)', { expected: '{[]; []}' })
+        .done(),
+    feature('struct', 'types').unsupported().pure().gap('struct.basic', "struct('a', 1)", { expected: "struct('a',1)" }).done(),
+    feature('ode45', 'ode')
+        .unsupported('SILENT WRONG: ode45(@(t,y)y,[0,1],1) → 1 (strips to last arg)')
+        .pure()
+        .gap('ode45.strip', 'ode45(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .done(),
+    feature('fzero', 'solve')
+        .unsupported('@ handle stripped; args mangled to fzero(x, -2+x^2, 1)')
+        .pure()
+        .gap('fzero.sqrt2', 'fzero(@(x)x^2-2, 1)', { expected: '1.4142' })
+        .done(),
+    feature('integral', 'calculus')
+        .unsupported('@ stripped to integral(x, sin(x), 0, pi)')
+        .pure()
+        .gap('integral.sin', 'integral(@(x)sin(x), 0, pi)', { expected: '2' })
+        .done(),
+    feature('switch', 'control')
+        .unsupported('SILENT WRONG: switch 1, case 1, 2, otherwise, 3, end → 3')
+        .pure()
+        .gap('switch.case1', 'switch 1, case 1, 2, otherwise, 3, end', { expected: '2', notes: 'currently returns 3' })
+        .done(),
+    feature('try_catch', 'control')
+        .supported()
+        .pure()
+        .notes('oak Statement::Try → Athena Try[body, catch]; success and error paths')
+        .eval('try.catch', "try, error('e'), catch, 1, end", '1')
+        .eval('try.no_error', 'try, 2, catch, 3, end', '2')
+        .done(),
+    feature('global', 'session').unsupported('SILENT WRONG: global x → x').stateful().gap('global.strip', 'global x', { expected: '' }).done(),
+    feature('persistent', 'session')
+        .unsupported('SILENT WRONG: persistent y → y')
+        .stateful()
+        .gap('persistent.strip', 'persistent y', { expected: '' })
+        .done(),
+    feature('which', 'meta').unsupported('SILENT WRONG: which sin → sin').pure().gap('which.sin', 'which sin', { expected: '...' }).done(),
+    feature('row_colon', 'indexing')
+        .supported()
+        .pure()
+        .notes('All-colon row/col on literals; column as flat list of picks')
+        .eval('row.colon', '[1, 2; 3, 4](1,:)', '[1, 2]')
+        .eval('col.colon', '[1, 2; 3, 4](:,2)', '[2, 4]')
+        .done(),
+    feature('logical_index', 'indexing').unsupported().pure().gap('logical.gt', 'A=[1,2,3]; A(A>1)', { expected: '[2, 3]' }).done(),
+    feature('surf', 'plot').unsupported().effectful().gap('surf.peaks', 'surf(peaks)', { expected: '<svg' }).done(),
+    feature('contour', 'plot').unsupported().effectful().gap('contour.peaks', 'contour(peaks)', { expected: '<svg' }).done(),
+    feature('figure', 'plot').unsupported().effectful().gap('figure.basic', 'figure', { expected: '...' }).done(),
+    feature('sparse', 'matrix').unsupported().pure().gap('sparse.diag', 'sparse([1, 0; 0, 2])', { expected: '...' }).done(),
+    feature('num2str', 'string').unsupported().pure().gap('num2str.3', 'num2str(3)', { expected: "'3'" }).done(),
+    feature('str2num', 'string').unsupported().pure().gap('str2num.3', "str2num('3')", { expected: '3' }).done(),
+    feature('pascal', 'matrix').unsupported().pure().gap('pascal.3', 'pascal(3)', { expected: '[1,1,1; 1,2,3; 1,3,6]' }).done(),
+    feature('magic', 'matrix').unsupported().pure().gap('magic.3', 'magic(3)', { expected: '...' }).done(),
+    feature('cond', 'linear_algebra').unsupported().pure().gap('cond.2x2', 'cond([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('null', 'linear_algebra').unsupported().pure().gap('null.rank1', 'null([1, 2; 2, 4])', { expected: '...' }).done(),
+    feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('kron', 'linear_algebra').unsupported().pure().gap('kron.basic', 'kron([1, 2], [3, 4])', { expected: '[3,4,6,8]' }).done(),
+    feature('polyfit', 'fit').unsupported().pure().gap('polyfit.quad', 'polyfit([1, 2, 3], [1, 4, 9], 2)', { expected: '[1, 0, 0]' }).done(),
+    feature('interp1', 'fit').unsupported().pure().gap('interp1.mid', 'interp1([0, 1], [0, 1], 0.5)', { expected: '0.5' }).done(),
+    feature('ode23', 'ode')
+        .unsupported('SILENT WRONG: ode23(@(t,y)y,[0,1],1) → 1 (same strip pattern as ode45)')
+        .pure()
+        .gap('ode23.strip', 'ode23(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .done(),
+    feature('fsolve', 'solve')
+        .unsupported('@ handle stripped; args mangled like fzero')
+        .pure()
+        .gap('fsolve.sqrt2', 'fsolve(@(x)x^2-2, 1)', { expected: '1.4142' })
+        .done(),
+    feature('class', 'types').unsupported().pure().gap('class.double', 'class(1)', { expected: "'double'" }).done(),
+    feature('isa', 'types').unsupported().pure().gap('isa.double', "isa(1, 'double')", { expected: '1' }).done(),
+    feature('isnumeric', 'types').unsupported().pure().gap('isnumeric.1', 'isnumeric(1)', { expected: '1' }).done(),
+    feature('assert', 'control').unsupported().pure().gap('assert.true', 'assert(1)', { expected: '...' }).done(),
+    feature('imag_unit_literal', 'numeric')
+        .unsupported('oak bad literal on bare 1i (also 2i in complex entry)')
+        .pure()
+        .gap('imag.1i', '1i', { expected: '1i' })
+        .done(),
+    feature('complex_ctor', 'numeric').unsupported().pure().gap('complex.ctor', 'complex(1, 2)', { expected: '1+2i' }).done(),
+    feature('single', 'numeric').unsupported().pure().gap('single.1', 'single(1)', { expected: '1' }).done(),
+    feature('nan', 'constant')
+        .partial('lowercase atom retained; NaN arithmetic / isnan contract incomplete')
+        .pure()
+        .eval('nan.lower', 'nan', 'nan')
+        .done(),
+    feature('eps', 'constant').unsupported().pure().gap('eps.atom', 'eps', { expected: '...' }).done(),
+    feature('diff_vector', 'array')
+        .unsupported('vector difference op distinct from symbolic diff(f,x)')
+        .pure()
+        .gap('diffvec.3', 'diff([1, 4, 9])', { expected: '[3, 5]' })
+        .done(),
+    feature('cumsum', 'array').unsupported().pure().gap('cumsum.3', 'cumsum([1, 2, 3])', { expected: '[1, 3, 6]' }).done(),
+    feature('contains', 'string').unsupported().pure().gap('contains.b', "contains('abc', 'b')", { expected: '1' }).done(),
+    feature('string', 'string').unsupported().pure().gap('string.ctor', "string('ab')", { expected: '"ab"' }).done(),
+    feature('jsonencode', 'io').unsupported().pure().gap('jsonencode.struct', "jsonencode(struct('a', 1))", { expected: '{"a":1}' }).done(),
+    feature('datetime', 'types').unsupported().pure().gap('datetime.ymd', 'datetime(2020, 1, 1)', { expected: '...' }).done(),
+    feature('readmatrix', 'io')
+        .unsupported()
+        .effectful()
+        .gap('readmatrix.csv', "readmatrix('x.csv')", { expected: 'UnsupportedOperation' })
+        .done(),
+    feature('parfor', 'control')
+        .unsupported('SILENT WRONG: parfor i=1:2, i, end → i (same strip as for)')
+        .stateful()
+        .gap('parfor.strip', 'parfor i=1:2, i, end', { expected: '2', notes: 'currently returns i' })
+        .done(),
+    feature('bsxfun', 'array')
+        .unsupported('SILENT WRONG: @ stripped — bsxfun(@plus,…) → bsxfun(plus,…)')
+        .pure()
+        .gap('bsxfun.plus', 'bsxfun(@plus, [1, 2], [3; 4])', { expected: '[4, 5; 5, 6]', notes: 'currently bsxfun(plus, …)' })
+        .done(),
+    feature('arrayfun', 'array')
+        .unsupported('@ stripped to bare sin')
+        .pure()
+        .gap('arrayfun.sin', 'arrayfun(@sin, [0, pi/2])', { expected: '[0, 1]' })
+        .done(),
+    feature('cellfun', 'array')
+        .unsupported('SILENT WRONG: @ and cell both strip — cellfun(@numel,{1,2}) → cellfun(numel, 1, 2)')
+        .pure()
+        .gap('cellfun.numel', 'cellfun(@numel, {1, 2})', { expected: '[1, 1]' })
+        .done(),
+    feature('hold_on', 'plot')
+        .unsupported('SILENT WRONG: hold on → on (command keyword stripped)')
+        .effectful()
+        .gap('hold.on', 'hold on', { expected: '...', notes: 'currently returns on' })
+        .done(),
+    feature('grid_on', 'plot')
+        .unsupported('SILENT WRONG: grid on → on')
+        .effectful()
+        .gap('grid.on', 'grid on', { expected: '...', notes: 'currently returns on' })
+        .done(),
+    feature('axis', 'plot')
+        .unsupported('SILENT WRONG: axis equal → equal')
+        .effectful()
+        .gap('axis.equal', 'axis equal', { expected: '...', notes: 'currently returns equal' })
+        .done(),
+    feature('profile', 'meta')
+        .unsupported('SILENT WRONG: profile on → on')
+        .effectful()
+        .gap('profile.on', 'profile on', { expected: '...', notes: 'currently returns on' })
+        .done(),
+    feature('dbstop', 'meta')
+        .unsupported('SILENT WRONG: dbstop if error → error')
+        .effectful()
+        .gap('dbstop.if_error', 'dbstop if error', { expected: '...', notes: 'currently returns error' })
+        .done(),
+    feature('ode15s', 'ode')
+        .unsupported('SILENT WRONG: ode15s(@(t,y)y,[0,1],1) → 1')
+        .pure()
+        .gap('ode15s.strip', 'ode15s(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .done(),
+    feature('ode113', 'ode')
+        .unsupported('SILENT WRONG: same last-arg strip as ode45')
+        .pure()
+        .gap('ode113.strip', 'ode113(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .done(),
+    feature('dde23', 'ode')
+        .unsupported('SILENT WRONG: dde23(…) → [0, 2] (last arg)')
+        .pure()
+        .gap('dde23.strip', 'dde23(@(t,y,z)z, [1], 1, [0, 2])', { expected: '...', notes: 'currently returns [0, 2]' })
+        .done(),
+    feature('fminsearch', 'solve')
+        .unsupported('@ handle stripped like fzero')
+        .pure()
+        .gap('fminsearch.x2', 'fminsearch(@(x)x^2, 1)', { expected: '0' })
+        .done(),
+    feature('quadgk', 'calculus')
+        .unsupported('@ stripped to quadgk(x, sin(x), 0, pi)')
+        .pure()
+        .gap('quadgk.sin', 'quadgk(@(x)sin(x), 0, pi)', { expected: '2' })
+        .done(),
+    feature('containers_Map', 'types')
+        .unsupported('SILENT WRONG: containers.Map → Map (package path stripped)')
+        .pure()
+        .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'currently returns Map' })
+        .done(),
+    feature('py_list', 'interop')
+        .unsupported('SILENT WRONG: py.list([1,2]) → list([1, 2])')
+        .pure()
+        .gap('py.list', 'py.list([1, 2])', { expected: '...', notes: 'currently list([1, 2])' })
+        .done(),
+    feature('classdef', 'oop')
+        .unsupported('SILENT WRONG: classdef Foo, end → Foo')
+        .stateful()
+        .gap('classdef.foo', 'classdef Foo, end', { expected: '...', notes: 'currently returns Foo' })
+        .done(),
+    feature('spmd', 'parallel')
+        .unsupported('SILENT WRONG: spmd, 1, end → 1')
+        .stateful()
+        .gap('spmd.strip', 'spmd, 1, end', { expected: '...', notes: 'currently returns 1' })
+        .done(),
+    feature('iscell', 'types')
+        .unsupported('SILENT WRONG: iscell({1}) → iscell(1) (brace cell stripped first)')
+        .pure()
+        .gap('iscell.brace', 'iscell({1})', { expected: '1', notes: 'currently iscell(1)' })
+        .done(),
+    feature('all', 'array').unsupported().pure().gap('all.true', 'all([1, 1])', { expected: '1' }).done(),
+    feature('any', 'array').unsupported().pure().gap('any.mixed', 'any([0, 1])', { expected: '1' }).done(),
+    feature('find', 'array').unsupported().pure().gap('find.mask', 'find([0, 1, 0])', { expected: '2' }).done(),
+    feature('unique', 'array').unsupported().pure().gap('unique.112', 'unique([1, 1, 2])', { expected: '[1, 2]' }).done(),
+    feature('repmat', 'array').unsupported().pure().gap('repmat.21', 'repmat([1, 2], 2, 1)', { expected: '[1, 2; 1, 2]' }).done(),
+    feature('tril', 'matrix').unsupported().pure().gap('tril.2x2', 'tril([1, 2; 3, 4])', { expected: '[1, 0; 3, 4]' }).done(),
+    feature('qr', 'linear_algebra').unsupported().pure().gap('qr.2x2', 'qr([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
+    feature('expm', 'linear_algebra').unsupported().pure().gap('expm.rot', 'expm([0, 1; -1, 0])', { expected: '...' }).done(),
+    feature('floor', 'numeric').unsupported().pure().gap('floor.2_7', 'floor(2.7)', { expected: '2' }).done(),
+    feature('mod', 'numeric').unsupported().pure().gap('mod.10_3', 'mod(10, 3)', { expected: '1' }).done(),
+    feature('hypot', 'numeric').unsupported().pure().gap('hypot.34', 'hypot(3, 4)', { expected: '5' }).done(),
+    feature('inf', 'constant').partial('symbol retained; no Inf arithmetic contract yet').pure().eval('inf.atom', 'inf', 'inf').done(),
+    feature('NaN', 'constant').partial().pure().eval('NaN.capital', 'NaN', 'NaN').done(),
+    feature('rand', 'random').unsupported().effectful().gap('rand.2', 'rand(2)', { expected: '...' }).done(),
+    feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
+    feature('sym', 'symbolic').unsupported().pure().gap('sym.x', "sym('x')", { expected: 'x' }).done(),
+    feature('vpa', 'symbolic').unsupported().pure().gap('vpa.pi', 'vpa(pi, 10)', { expected: '3.141592654' }).done(),
+    feature('jsondecode', 'io').unsupported().pure().gap('jsondecode.obj', 'jsondecode(\'{"a":1}\')', { expected: '...' }).done(),
+    feature('sprintf', 'string').unsupported().pure().gap('sprintf.d', "sprintf('%d', 1)", { expected: "'1'" }).done(),
+    feature('legend', 'plot').unsupported().effectful().gap('legend.a', "legend('a')", { expected: '...' }).done(),
+    feature('subplot', 'plot').unsupported().effectful().gap('subplot.121', 'subplot(1, 2, 1)', { expected: '...' }).done(),
+    feature('and', 'logic').supported().pure().notes('numeric short-circuit style && on 0/1').eval('and.10', '1 && 0', 'false').done(),
+    feature('or', 'logic').supported().pure().eval('or.10', '1 || 0', 'true').done(),
+    feature('not', 'logic').supported().pure().eval('not.1', '~1', 'false').eval('not.0', '~0', 'true').done(),
+    feature('xor', 'logic').unsupported().pure().gap('xor.10', 'xor(1, 0)', { expected: '1' }).done(),
+    feature('bitand', 'bitwise').unsupported().pure().gap('bitand.63', 'bitand(6, 3)', { expected: '2' }).done(),
+    feature('subsasgn', 'session')
+        .unsupported(
+            'SILENT WRONG: indexed / grow assignment does not persist; A=[]; A(1)=1; A → A; A(3,3)=1 after zeros → A; end+1 / end-1 often oak error',
+        )
+        .stateful()
+        .gap('subsasgn.vec', 'A=[1, 2, 3]; A(2)=9; A', { expected: '[1, 9, 3]', notes: 'currently returns A' })
+        .gap('subsasgn.grow', 'A=zeros(2); A(3, 3)=1; A', { expected: '...', notes: 'currently returns A' })
+        .gap('subsasgn.end_plus', 'B=1:4; B(end+1)=5', { expected: '[1, 2, 3, 4, 5]', notes: 'oak error node' })
+        .done(),
+    feature('deal', 'session')
+        .unsupported('multi-assign [a,b]=deal(1,2) does not bind; [~,b]=max(...) oak error')
+        .pure()
+        .gap('deal.multi', '[a, b]=deal(1, 2)', { expected: '...', notes: 'currently returns deal(1, 2)' })
+        .done(),
+    feature('strcat', 'string').unsupported().pure().gap('strcat.ab', "strcat('a', 'b')", { expected: "'ab'" }).done(),
+    feature('strcmp', 'string').unsupported().pure().gap('strcmp.eq', "strcmp('a', 'a')", { expected: '1' }).done(),
+    feature('strjoin', 'string')
+        .unsupported("SILENT WRONG: cell brace stripped — strjoin({'a','b'},',') → strjoin('a', 'b', ',')")
+        .pure()
+        .gap('strjoin.ab', "strjoin({'a', 'b'}, ',')", { expected: "'a,b'" })
+        .done(),
+    feature('missing', 'types')
+        .partial('atom retained; ismissing/rmmissing unevaluated')
+        .pure()
+        .eval('missing.atom', 'missing', 'missing')
+        .done(),
+    feature('ismissing', 'types').unsupported().pure().gap('ismissing.missing', 'ismissing(missing)', { expected: '1' }).done(),
+    feature('lsqcurvefit', 'solve')
+        .unsupported('SILENT WRONG: @ stripped and result collapses to last arg [1,2]')
+        .pure()
+        .gap('lsqcurvefit.strip', 'lsqcurvefit(@(x,xdata)x*xdata, 1, [1, 2], [1, 2])', { expected: '1', notes: 'currently returns [1, 2]' })
+        .done(),
+    feature('fminbnd', 'solve').unsupported('@ handle stripped').pure().gap('fminbnd.x2', 'fminbnd(@(x)x^2, -1, 1)', { expected: '0' }).done(),
+    feature('syms', 'symbolic')
+        .unsupported('SILENT WRONG: syms x → x (declaration stripped like global)')
+        .stateful()
+        .gap('syms.strip', 'syms x', { expected: '...', notes: 'currently returns x' })
+        .done(),
+    feature('expand', 'symbolic')
+        .unsupported('args already wrongly powered: expand((x+1)^2) sees expand(1+x^2)')
+        .pure()
+        .gap('expand.binomsq', 'expand((x + 1)^2)', { expected: 'x^2 + 2*x + 1' })
+        .done(),
+    feature('limit', 'symbolic').unsupported().pure().gap('limit.sinc', 'limit(sin(x)/x, x, 0)', { expected: '1' }).done(),
+    feature('dsolve', 'symbolic').planned().pure().gap('dsolve.exp', 'dsolve(diff(y)==y)', { expected: 'C1*exp(t)' }).done(),
+    feature('eval', 'meta').unsupported().effectful().gap('eval.plus', "eval('1+1')", { expected: '2' }).done(),
+    feature('feval', 'meta').unsupported().pure().gap('feval.sin', "feval('sin', 0)", { expected: '0' }).done(),
+    feature('func2str', 'meta')
+        .unsupported('@ stripped: func2str(@sin) → func2str(sin)')
+        .pure()
+        .gap('func2str.sin', 'func2str(@sin)', { expected: "'sin'" })
+        .done(),
+    feature('pwd', 'io').unsupported().effectful().gap('pwd.basic', 'pwd', { expected: '...' }).done(),
+    feature('exist', 'meta').unsupported().pure().gap('exist.sin', "exist('sin', 'builtin')", { expected: '5' }).done(),
+    feature('fullfile', 'io').unsupported().pure().gap('fullfile.ab', "fullfile('a', 'b')", { expected: '...' }).done(),
+    feature('py_math_sqrt', 'interop')
+        .unsupported('SILENT WRONG: py.math.sqrt(4) and math.sqrt(4) both collapse to matlab sqrt → 2')
+        .pure()
+        .gap('py.math.sqrt', 'py.math.sqrt(4)', { expected: '...', notes: 'currently returns 2 via path strip to sqrt' })
+        .done(),
+    feature('uifigure', 'ui').unsupported().effectful().gap('uifigure.basic', 'uifigure', { expected: '...' }).done(),
+    feature('msgbox', 'ui').unsupported().effectful().gap('msgbox.a', "msgbox('a')", { expected: '...' }).done(),
+    feature('ieee_edge', 'numeric')
+        .partial('SILENT WRONG: 0/0→0 and Inf-Inf→0 (MATLAB expects NaN); 0^0→1 matches MATLAB')
+        .pure()
+        .gap('ieee.0over0', '0/0', { expected: 'NaN', notes: 'currently 0' })
+        .gap('ieee.inf_minus_inf', 'Inf - Inf', { expected: 'NaN', notes: 'currently 0' })
+        .eval('ieee.0pow0', '0^0', '1', { notes: 'MATLAB-compatible' })
+        .done(),
+    feature('bitor_op', 'logic')
+        .unsupported('SILENT WRONG: 1|0 → 0 (expect 1); [1,0]|[0,1] → [0,1] (expect [1,1])')
+        .pure()
+        .gap('bitor.scalar', '1 | 0', { expected: '1', notes: 'currently 0' })
+        .gap('bitor.vec', '[1, 0] | [0, 1]', { expected: '[1, 1]', notes: 'currently [0, 1]' })
+        .done(),
+    feature('bitand_op', 'logic')
+        .partial('scalar 1&0 → false OK; vector [1,0]&[1,1] → [1,1] SILENT WRONG (expect [1,0])')
+        .pure()
+        .eval('bitand.scalar', '1 & 0', 'false')
+        .gap('bitand.vec', '[1, 0] & [1, 1]', { expected: '[1, 0]', notes: 'currently [1, 1]' })
+        .done(),
+    feature('colon_all', 'indexing')
+        .unsupported('SILENT WRONG: A(:) → A()')
+        .pure()
+        .gap('colon.all', 'A=[1, 2; 3, 4]; A(:)', { expected: '[1; 3; 2; 4]', notes: 'currently A()' })
+        .done(),
+    feature('end_minus', 'indexing')
+        .unsupported('oak error on A(end-1) and A(1:2:end)')
+        .pure()
+        .gap('end.minus1', 'A=[1, 2, 3]; A(end-1)', { expected: '2' })
+        .done(),
+    feature('plus_eq', 'session')
+        .unsupported('oak error on x+=1 and A(1)+=1')
+        .stateful()
+        .gap('pluseq.x', 'x=1; x+=1', { expected: '2' })
+        .done(),
+    feature('close_all', 'plot')
+        .unsupported('SILENT WRONG: close all → all')
+        .effectful()
+        .gap('close.all', 'close all', { expected: '...', notes: 'currently returns all' })
+        .done(),
+    feature('hold_off', 'plot')
+        .unsupported('SILENT WRONG: hold off → off')
+        .effectful()
+        .gap('hold.off', 'hold off', { expected: '...', notes: 'currently returns off' })
+        .done(),
+    feature('colormap', 'plot')
+        .unsupported('SILENT WRONG: colormap jet → jet')
+        .effectful()
+        .gap('colormap.jet', 'colormap jet', { expected: '...', notes: 'currently returns jet' })
+        .done(),
+    feature('format', 'meta')
+        .unsupported('SILENT WRONG: format long → long')
+        .effectful()
+        .gap('format.long', 'format long', { expected: '...', notes: 'currently returns long' })
+        .done(),
+    feature('simplify_trig', 'symbolic')
+        .supported()
+        .pure()
+        .notes('same identity as simplify entry; explicit symbolic toolbox spelling')
+        .eval('simplify_trig.pythag', 'simplify(sin(x)^2 + cos(x)^2)', '1')
+        .done(),
+    feature('isequal', 'comparison').unsupported().pure().gap('isequal.vec', 'isequal([1, 2], [1, 2])', { expected: '1' }).done(),
+    feature('lt_chain', 'comparison')
+        .partial('scalar 1<2<3 via Athena compare chain; elementwise vector Less still open')
+        .pure()
+        .eval('ltchain.123', '1 < 2 < 3', 'true')
+        .gap('ltchain.vec', '[1, 2, 3] < 2', { expected: '[1, 0, 0]' })
+        .done(),
+    feature('odeset', 'ode')
+        .unsupported('SILENT WRONG: ode45(..., odeset(...)) collapses to odeset(...) last arg')
+        .pure()
+        .gap('odeset.strip', "ode45(@(t,y)y, [0, 1], 1, odeset('RelTol', 1e-3))", {
+            expected: '...',
+            notes: "currently returns odeset('RelTol', 0.001)",
+        })
+        .done(),
+    feature('rref', 'linear_algebra').unsupported().pure().gap('rref.basic', 'rref([1, 2, 3; 4, 5, 6])', { expected: '...' }).done(),
+    feature('conv', 'signal').unsupported().pure().gap('conv.basic', 'conv([1, 1], [1, -1])', { expected: '[1, 0, -1]' }).done(),
+    feature('polyder', 'polynomial').unsupported().pure().gap('polyder.quad', 'polyder([1, 2, 1])', { expected: '[2, 2]' }).done(),
+    feature('scatter', 'plot').unsupported().effectful().gap('scatter.basic', 'scatter([1, 2], [3, 4])', { expected: '<svg' }).done(),
+    feature('bar', 'plot').unsupported().effectful().gap('bar.3', 'bar([1, 2, 3])', { expected: '<svg' }).done(),
+    feature('fourier_sym', 'symbolic')
+        .unsupported('SILENT WRONG: fourier(exp(-x^2)) → fourier(exp(x^2)) sign flip')
+        .pure()
+        .gap('fourier.gauss_sign', 'fourier(exp(-x^2))', { expected: '...', notes: 'currently fourier(exp(x^2))' })
+        .done(),
+    feature('methods_meta', 'meta')
+        .unsupported("SILENT WRONG: methods('double') → 'double'")
+        .pure()
+        .gap('methods.double', "methods('double')", { expected: '...', notes: "currently returns 'double'" })
+        .done(),
+    feature('true_bitor', 'logic')
+        .unsupported('SILENT WRONG: true | false → false (same bug as 1|0)')
+        .pure()
+        .gap('true.bitor', 'true | false', { expected: '1', notes: 'currently false' })
+        .done(),
+    feature('true_bitand', 'logic')
+        .partial('true & false → false OK; true && false stays And(true,false) unevaluated')
+        .pure()
+        .eval('true.bitand', 'true & false', 'false')
+        .gap('true.and_sc', 'true && false', { expected: '0', notes: 'currently And(true, false)' })
+        .done(),
+    feature('i_squared', 'numeric')
+        .unsupported('bare i/j symbols retained; 1+2i / 1i still oak bad literal')
+        .pure()
+        .gap('i.sq', 'i^2', { expected: '-1' })
+        .gap('j.sq', 'j^2', { expected: '-1' })
+        .done(),
+    feature('logical', 'types').unsupported().pure().gap('logical.vec', 'logical([1, 0, 2])', { expected: '[1, 0, 1]' }).done(),
+    feature('intersect', 'array').unsupported().pure().gap('intersect.basic', 'intersect([1, 2, 3], [2, 3, 4])', { expected: '[2, 3]' }).done(),
+    feature('union', 'array').unsupported().pure().gap('union.basic', 'union([1, 2], [2, 3])', { expected: '[1, 2, 3]' }).done(),
+    feature('setdiff', 'array').unsupported().pure().gap('setdiff.basic', 'setdiff([1, 2, 3], [2])', { expected: '[1, 3]' }).done(),
+    feature('ismember', 'array').unsupported().pure().gap('ismember.2', 'ismember([1, 2, 3], 2)', { expected: '[0, 1, 0]' }).done(),
+    feature('ifft', 'signal').unsupported().pure().gap('ifft.roundtrip', 'ifft(fft([1, 2, 3, 4]))', { expected: '[1, 2, 3, 4]' }).done(),
+    feature('filter', 'signal').unsupported().pure().gap('filter.basic', 'filter([1], [1, -0.5], ones(1, 5))', { expected: '...' }).done(),
+    feature('conv2', 'signal').unsupported().pure().gap('conv2.basic', 'conv2([1, 2; 3, 4], [1, 1; 1, 1])', { expected: '...' }).done(),
+    feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
+    feature('randperm', 'random').unsupported().effectful().gap('randperm.5', 'randperm(5)', { expected: '...' }).done(),
+    feature('builtin', 'meta').unsupported().pure().gap('builtin.sin', "builtin('sin', 0)", { expected: '0' }).done(),
+    feature('char', 'string').unsupported().pure().gap('char.65', 'char(65)', { expected: "'A'" }).done(),
+    feature('semilogx', 'plot').unsupported().effectful().gap('semilogx.basic', 'semilogx(1:3, 1:3)', { expected: '<svg' }).done(),
+    feature('loglog', 'plot').unsupported().effectful().gap('loglog.basic', 'loglog(1:3, 1:3)', { expected: '<svg' }).done(),
+    feature('pie', 'plot').unsupported().effectful().gap('pie.3', 'pie([1, 2, 3])', { expected: '<svg' }).done(),
+    feature('warndlg', 'ui').unsupported().effectful().gap('warndlg.w', "warndlg('w')", { expected: '...' }).done(),
+    feature('latex_sym', 'symbolic').unsupported().pure().gap('latex.x2', "latex(sym('x^2'))", { expected: '...' }).done(),
+    feature('preincrement', 'session')
+        .unsupported('SILENT WRONG: ++A → A; A++ oak error')
+        .stateful()
+        .gap('preinc.A', '++A', { expected: '...', notes: 'currently returns A' })
+        .done(),
+    feature('gpuArray_zeros', 'interop')
+        .unsupported('SILENT WRONG: gpuArray.zeros(2) → zeros(2) (package path stripped)')
+        .pure()
+        .gap('gpuarray.zeros', 'gpuArray.zeros(2)', { expected: '...', notes: 'currently zeros(2)' })
+        .done(),
+    feature('coder_typeof', 'interop')
+        .unsupported('SILENT WRONG: coder.typeof(1) → typeof(1)')
+        .pure()
+        .gap('coder.typeof', 'coder.typeof(1)', { expected: '...', notes: 'currently typeof(1)' })
+        .done(),
+    feature('hex2dec', 'numeric').unsupported().pure().gap('hex2dec.ff', "hex2dec('FF')", { expected: '255' }).done(),
+    feature('dec2hex', 'numeric').unsupported().pure().gap('dec2hex.255', 'dec2hex(255)', { expected: "'FF'" }).done(),
+    feature('isempty', 'types')
+        .unsupported()
+        .pure()
+        .gap('isempty.empty', 'isempty([])', { expected: '1' })
+        .gap('isempty.zero', 'isempty(0)', { expected: '0' })
+        .done(),
+    feature('isscalar', 'types').unsupported().pure().gap('isscalar.1', 'isscalar(1)', { expected: '1' }).done(),
+    feature('isvector', 'types').unsupported().pure().gap('isvector.row', 'isvector([1, 2])', { expected: '1' }).done(),
+    feature('isrow', 'types').unsupported().pure().gap('isrow.12', 'isrow([1, 2])', { expected: '1' }).done(),
+    feature('iscolumn', 'types').unsupported().pure().gap('iscolumn.12', 'iscolumn([1; 2])', { expected: '1' }).done(),
+    feature('numel', 'matrix').unsupported().pure().gap('numel.empty', 'numel([])', { expected: '0' }).done(),
+    feature('nan_matrix', 'matrix').unsupported().pure().gap('nan.2', 'nan(2)', { expected: '[NaN, NaN; NaN, NaN]' }).done(),
+    feature('inf_matrix', 'matrix').unsupported().pure().gap('inf.2', 'inf(2)', { expected: '...' }).done(),
+    feature('true_matrix', 'matrix').unsupported().pure().gap('true.23', 'true(2, 3)', { expected: '...' }).done(),
+    feature('speye', 'matrix').unsupported().pure().gap('speye.3', 'speye(3)', { expected: '...' }).done(),
+    feature('nnz', 'matrix').unsupported().pure().gap('nnz.speye2', 'nnz(speye(2))', { expected: '2' }).done(),
+    feature('accumarray', 'array')
+        .unsupported()
+        .pure()
+        .gap('accumarray.basic', 'accumarray([1; 2; 1], [10; 20; 30])', { expected: '[40; 20]' })
+        .done(),
+    feature('logspace', 'matrix').unsupported().pure().gap('logspace.3', 'logspace(0, 2, 3)', { expected: '[1, 10, 100]' }).done(),
+    feature('normcdf', 'stats').unsupported().pure().gap('normcdf.0', 'normcdf(0)', { expected: '0.5' }).done(),
+    feature('matlab_lang_on', 'interop')
+        .unsupported('SILENT WRONG: matlab.lang.OnOffSwitchState.on → on')
+        .pure()
+        .gap('matlab.lang.on', 'matlab.lang.OnOffSwitchState.on', { expected: '...', notes: 'currently returns on' })
+        .done(),
+    feature('times_eq', 'session')
+        .unsupported('oak error on A.*=3 / A./=2 / x^=2')
+        .stateful()
+        .gap('timeseq.elem', 'A=[1, 2]; A.*=3', { expected: '[3, 6]' })
+        .done(),
+    feature('log2', 'numeric').unsupported().pure().gap('log2.8', 'log2(8)', { expected: '3' }).done(),
+    feature('pow2', 'numeric').unsupported().pure().gap('pow2.3', 'pow2(3)', { expected: '8' }).done(),
+    feature('nextpow2', 'numeric').unsupported().pure().gap('nextpow2.5', 'nextpow2(5)', { expected: '3' }).done(),
+    feature('flintmax', 'constant').unsupported().pure().gap('flintmax.atom', 'flintmax', { expected: '...' }).done(),
+    feature('zeros_empty', 'matrix').unsupported().pure().gap('zeros.0x5', 'zeros(0, 5)', { expected: 'zeros(0,5)' }).done(),
+    feature('ones_empty', 'matrix').unsupported().pure().gap('ones.5x0', 'ones(5, 0)', { expected: 'ones(5,0)' }).done(),
+    feature('eye_empty', 'matrix').unsupported().pure().gap('eye.0', 'eye(0)', { expected: '[]' }).done(),
+    feature('isdiag', 'matrix').unsupported().pure().gap('isdiag.eye', 'isdiag(eye(3))', { expected: '1' }).done(),
+    feature('issymmetric', 'matrix').unsupported().pure().gap('issymmetric.eye', 'issymmetric(eye(3))', { expected: '1' }).done(),
+    feature('istril', 'matrix').unsupported().pure().gap('istril.tril', 'istril(tril(ones(3)))', { expected: '1' }).done(),
+    feature('bitcmp', 'bitwise').unsupported().pure().gap('bitcmp.u8', "bitcmp(1, 'uint8')", { expected: '254' }).done(),
+    feature('fillmissing', 'types')
+        .unsupported()
+        .pure()
+        .gap('fillmissing.const', "fillmissing([1, NaN], 'constant', 0)", { expected: '[1, 0]' })
+        .done(),
+    feature('odeset_opts', 'ode')
+        .unsupported('odeset itself echoes; scientific 1e-6 becomes decimal')
+        .pure()
+        .gap('odeset.reltol', "odeset('RelTol', 1e-6)", { expected: '...' })
+        .done(),
+    feature('pcg', 'linear_algebra').unsupported().pure().gap('pcg.eye', 'pcg(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('eq_fn', 'comparison')
+        .unsupported('functional eq([1,2],[1,2]) unevaluated; true==1 stays Equal head')
+        .pure()
+        .gap('eq.fn_vec', 'eq([1, 2], [1, 2])', { expected: '[1, 1]' })
+        .gap('eq.true_num', 'true == 1', { expected: '1', notes: 'currently Equal(true, 1)' })
+        .done(),
+    feature('isequaln', 'comparison').unsupported().pure().gap('isequaln.nan', 'isequaln([NaN], [NaN])', { expected: '1' }).done(),
+    feature('isnan', 'predicates')
+        .unsupported()
+        .pure()
+        .gap('isnan.nan', 'isnan(NaN)', { expected: '1' })
+        .gap('isnan.0', 'isnan(0)', { expected: '0' })
+        .done(),
+    feature('nan_eq', 'comparison')
+        .unsupported('NaN==NaN / NaN~=NaN stay Equal/Unequal heads (IEEE unmet)')
+        .pure()
+        .gap('nan.eq', 'NaN == NaN', { expected: '0', notes: 'currently Equal(NaN, NaN)' })
+        .gap('nan.ne', 'NaN ~= NaN', { expected: '1', notes: 'currently Unequal(NaN, NaN)' })
+        .done(),
+    feature('isstring', 'types')
+        .unsupported()
+        .pure()
+        .gap('isstring.dq', 'isstring("a")', { expected: '1' })
+        .gap('isstring.sq', "isstring('a')", { expected: '0' })
+        .done(),
+    feature('ischar', 'types')
+        .unsupported()
+        .pure()
+        .gap('ischar.sq', "ischar('a')", { expected: '1' })
+        .gap('ischar.dq', 'ischar("a")', { expected: '0' })
+        .done(),
+    feature('string_plus', 'string')
+        .unsupported()
+        .pure()
+        .gap('string.plus', '"hello" + "world"', { expected: '"helloworld"' })
+        .gap('string.append', 'append("a", "b")', { expected: '"ab"' })
+        .done(),
+    feature('startsWith', 'string').unsupported().pure().gap('startswith.a', 'startsWith("abc", "a")', { expected: '1' }).done(),
+    feature('endsWith', 'string').unsupported().pure().gap('endswith.c', 'endsWith("abc", "c")', { expected: '1' }).done(),
+    feature('erase', 'string').unsupported().pure().gap('erase.b', 'erase("abc", "b")', { expected: '"ac"' }).done(),
+    feature('extractAfter', 'string').unsupported().pure().gap('extractafter.a', 'extractAfter("abc", "a")', { expected: '"bc"' }).done(),
+    feature('matches', 'string').unsupported().pure().gap('matches.digits', 'matches("abc", digitsPattern)', { expected: '0' }).done(),
+    feature('wildcardPattern', 'string').unsupported().pure().gap('wildcard.m', 'wildcardPattern("*.m")', { expected: '...' }).done(),
+    feature('datetime_arith', 'datetime')
+        .unsupported()
+        .pure()
+        .gap('datetime.caldays', 'datetime(2020, 1, 1) + caldays(1)', { expected: 'datetime(2020, 1, 2)' })
+        .gap('datetime.days', 'datetime(2020, 1, 1) + days(1)', { expected: 'datetime(2020, 1, 2)' })
+        .done(),
+    feature('caldiff', 'datetime')
+        .unsupported()
+        .pure()
+        .gap('caldiff.year', 'caldiff(datetime(2020, 1, 1), datetime(2021, 1, 1))', { expected: '...' })
+        .done(),
+    feature('outerjoin', 'table')
+        .unsupported("SILENT WRONG: cell {'k'} in VariableNames stripped to 'k'")
+        .pure()
+        .gap('outerjoin.k', "outerjoin(table([1; 2], 'VariableNames', {'k'}), table([2; 3], 'VariableNames', {'k'}))", {
+            expected: '...',
+            notes: "currently VariableNames 'k' without cell",
+        })
+        .done(),
+    feature('leftjoin', 'table')
+        .unsupported('same cell VariableNames strip as outerjoin')
+        .pure()
+        .gap('leftjoin.k', "leftjoin(table([1; 2], 'VariableNames', {'k'}), table([2; 3], 'VariableNames', {'k'}))", { expected: '...' })
+        .done(),
+    feature('spalloc', 'matrix').unsupported().pure().gap('spalloc.332', 'spalloc(3, 3, 2)', { expected: '...' }).done(),
+    feature('sparse_ijv', 'matrix').unsupported().pure().gap('sparse.ijv', 'sparse(1, 2, 3, 4, 4)', { expected: '...' }).done(),
+    feature('full_speye', 'matrix').unsupported().pure().gap('full.speye2', 'full(speye(2))', { expected: '[1, 0; 0, 1]' }).done(),
+    feature('spones', 'matrix').unsupported().pure().gap('spones.eye', 'spones(speye(2))', { expected: '...' }).done(),
+    feature('spfun', 'matrix')
+        .unsupported('SILENT WRONG: @ stripped — spfun(@sqrt,speye(2)) → spfun(sqrt, speye(2))')
+        .pure()
+        .gap('spfun.sqrt', 'spfun(@sqrt, speye(2))', { expected: '...', notes: 'currently spfun(sqrt, speye(2))' })
+        .done(),
+    feature('minres', 'linear_algebra').unsupported().pure().gap('minres.eye', 'minres(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('cgs', 'linear_algebra').unsupported().pure().gap('cgs.eye', 'cgs(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('lsqr', 'linear_algebra').unsupported().pure().gap('lsqr.eye', 'lsqr(speye(3), ones(3, 1))', { expected: '...' }).done(),
+    feature('svd_econ', 'linear_algebra').unsupported().pure().gap('svd.econ', 'svd(magic(3), "econ")', { expected: '...' }).done(),
+    feature('end_slice', 'indexing')
+        .unsupported('D(1:end-1) / E(1:end,end) oak error; C(0) stays C(0)')
+        .pure()
+        .gap('end.slice_minus', 'D=[1, 2, 3]; D(1:end-1)', { expected: '[1, 2]', notes: 'oak error node' })
+        .gap('end.slice_2d', 'E=[1, 2; 3, 4]; E(1:end, end)', { expected: '[2; 4]', notes: 'oak error node' })
+        .done(),
+    feature('ginput', 'plot').planned().effectful().gap('ginput.basic', 'ginput', { expected: '...' }).done(),
+    feature('zoom', 'plot').planned().effectful().gap('zoom.basic', 'zoom', { expected: '...' }).done(),
+    feature('uigridlayout', 'ui').planned().effectful().gap('uigridlayout.basic', 'uigridlayout', { expected: '...' }).done(),
+    feature('drawnow', 'ui').planned().effectful().gap('drawnow.basic', 'drawnow', { expected: '...' }).done(),
+    feature('compose', 'functional').unsupported().pure().gap('compose.sincos', 'compose(sin, cos, 0)', { expected: '0' }).done(),
+);
