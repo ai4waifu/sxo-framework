@@ -83,6 +83,13 @@ importers:
   projects/runtimes/sxo-darwin-x64: {}
 
   projects/runtimes/sxo-harness:
+    dependencies:
+      '@sxo/mathematica':
+        specifier: workspace:*
+        version: link:../sxo-mathematica
+      '@sxo/matlab':
+        specifier: workspace:*
+        version: link:../sxo-matlab
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
