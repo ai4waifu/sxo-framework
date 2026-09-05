@@ -96,6 +96,48 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
                         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                     });
                 }
+                ("CompoundExpression", args) => {
+                    let steps: Vec<AthenaRequest> =
+                        args.iter().map(|a| lower_request(session, a)).collect();
+                    return AthenaRequest::Control(ControlPlan::Sequence { steps });
+                }
+                ("If", [cond, then_branch]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(lower_request(session, then_branch)),
+                        else_branch: None,
+                    });
+                }
+                ("If", [cond, then_branch, else_branch]) => {
+                    return AthenaRequest::Control(ControlPlan::Branch {
+                        condition: lower_wexpr(session, cond),
+                        then_branch: Box::new(lower_request(session, then_branch)),
+                        else_branch: Some(Box::new(lower_request(session, else_branch))),
+                    });
+                }
+                ("Which", args) => {
+                    let mut arms = Vec::new();
+                    let mut otherwise = None;
+                    let mut i = 0;
+                    while i + 1 < args.len() {
+                        let cond = lower_wexpr(session, &args[i]);
+                        let branch = Box::new(lower_request(session, &args[i + 1]));
+                        arms.push((cond, branch));
+                        i += 2;
+                    }
+                    if i < args.len() {
+                        otherwise = Some(Box::new(lower_request(session, &args[i])));
+                    }
+                    return AthenaRequest::Control(ControlPlan::Cond { arms, otherwise });
+                }
+                ("With" | "Module" | "Block", [bindings, body]) => {
+                    let mut steps = Vec::new();
+                    push_binding_defines(session, bindings, &mut steps);
+                    steps.push(lower_request(session, body));
+                    return AthenaRequest::Control(ControlPlan::LocalScope {
+                        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
+                    });
+                }
                 _ => {}
             },
             _ => {}
@@ -103,6 +145,38 @@ pub fn lower_request(session: &mut Session, w: &WExpr) -> AthenaRequest {
         _ => {}
     }
     AthenaRequest::Term(lower_wexpr(session, w))
+}
+
+fn push_binding_defines(session: &mut Session, bindings: &WExpr, steps: &mut Vec<AthenaRequest>) {
+    let items: Option<Vec<&WExpr>> = match bindings {
+        WExpr::List(items) => Some(items.iter().collect()),
+        WExpr::Call { head, args }
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "List") =>
+        {
+            Some(args.iter().collect())
+        }
+        _ => None,
+    };
+    let Some(items) = items else {
+        return;
+    };
+    for item in items {
+        if let WExpr::Call { head, args } = item {
+            if matches!(head.as_ref(), WExpr::Atom(WAtom::Symbol(s)) if s == "Set") {
+                if let [lhs, rhs] = args.as_slice() {
+                    if let Some(symbol) = symbol_of(session, lhs) {
+                        let value = lower_wexpr(session, rhs);
+                        steps.push(AthenaRequest::Command(SessionCommand::Define {
+                            symbol,
+                            value,
+                            kind: BindingKind::Session,
+                            evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
+                        }));
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn symbol_of(session: &mut Session, w: &WExpr) -> Option<SymbolId> {
