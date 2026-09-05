@@ -219,10 +219,11 @@ fn parse_colon_step_flattens() {
 #[test]
 fn parse_mldivide_keeps_head() {
     let h = H::new();
-    let t = h.parse("A\\b");
+    let t = h.parse(r"A\b");
     assert_eq!(application_head_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
-    let kind = h.outcome_kind(t);
-    assert_eq!(kind, EvalKind::Unevaluated);
+    // Symbolic operands stay residual under `LinearSolve`.
+    let folded = h.eval_id(t);
+    assert_eq!(application_head_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
     assert!(h.render(t).contains('\\'));
 }
 
