@@ -3,23 +3,24 @@
 use std::cell::RefCell;
 
 use athena::{
+    AthenaEngine,
+    execution::{EvalKind, evaluate_term},
     ir::Atom,
-    execution::EvalKind,
-    Session,
-    types::TermId,
     ir::TermNode,
-    runtime::values::arena::application_head_name,
     numeric::number_from_wire,
+    runtime::values::arena::application_head_name,
     runtime::values::arena::push_application_named,
     runtime::values::arena::push_bool,
     runtime::values::arena::push_int,
     runtime::values::arena::push_list,
     runtime::values::arena::push_null,
     runtime::values::arena::push_symbol_name,
+    Session,
+    types::TermId,
 };
 use athena_types::WireNumber;
 use sxo_dialect_mathematica::{render, wexpr_from_session};
-use sxo_dialect_matlab::{parse_matlab, render_matlab, try_plot_svg};
+use sxo_dialect_matlab::{lower_request, parse_matlab, render_matlab, try_plot_svg};
 
 type Tid = TermId;
 
@@ -38,15 +39,27 @@ impl H {
 
     fn eval(&self, input: &str) -> Tid {
         let id = self.parse(input);
-        self.s.borrow_mut().evaluate(id)
+        let mut s = self.s.borrow_mut();
+        let request = lower_request(&mut s, id);
+        let engine = AthenaEngine::new();
+        match engine.execute_request(&mut s, request) {
+            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(id),
+            Err(_) => id,
+        }
     }
 
     fn eval_id(&self, id: Tid) -> Tid {
-        self.s.borrow_mut().evaluate(id)
+        let mut s = self.s.borrow_mut();
+        let request = lower_request(&mut s, id);
+        let engine = AthenaEngine::new();
+        match engine.execute_request(&mut s, request) {
+            Ok(result_id) => s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or(id),
+            Err(_) => id,
+        }
     }
 
     fn outcome_kind(&self, id: Tid) -> EvalKind {
-        self.s.borrow_mut().evaluate(id).kind
+        evaluate_term(&mut self.s.borrow_mut(), id).kind
     }
 
     fn i(&self, n: i64) -> Tid {
@@ -306,7 +319,7 @@ fn parse_matrix_constructors_and_size() {
             h.lst(vec![h.i(1), h.i(0)]),
             h.lst(vec![h.i(0), h.i(1)]),
         ]);
-    assert!(h.eq(got, want), "got={} want={} render={}", athena::diagnostics::expression_summary::expression_debug(&h.s.borrow(), got), athena::diagnostics::expression_summary::expression_debug(&h.s.borrow(), want), h.render(got));
+    assert!(h.eq(got, want), "got={} want={}", h.render(got), h.render(want));
     assert_eq!(h.render(h.eval("eye(2)")), "[1, 0; 0, 1]");
 
     assert!(h.eq(
