@@ -1,0 +1,41 @@
+{
+    "name": "@sxo/harness",
+    "version": "0.0.2",
+    "private": true,
+    "type": "module",
+    "description": "Private SXO acceptance harness for feature matrix, doctor, and benchmark orchestration",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vm-z/sxo-framework.git",
+        "directory": "projects/runtimes/sxo-harness"
+    },
+    "homepage": "https://github.com/vm-z/sxo-framework#readme",
+    "bugs": {"url": "https://github.com/vm-z/sxo-framework/issues"},
+    "keywords": ["sxo", "harness", "feature-matrix", "acceptance"],
+    "license": "Apache-2.0",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./matrix": {
+            "types": "./dist/matrix/index.d.ts",
+            "default": "./dist/matrix/index.js"
+        }
+    },
+    "files": ["dist", "README.md"],
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "test": "vitest run"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3",
+        "vitest": "^3.2.4"
+    }
+}
