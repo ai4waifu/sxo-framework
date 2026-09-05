@@ -1,4 +1,4 @@
-/** Feature matrix shared types for `@sxo/mathematica`. */
+/** Feature matrix entry types (shape aligned with `@sxo/harness` contracts). */
 
 export type FeatureStatus = 'supported' | 'partial' | 'unsupported' | 'planned';
 
