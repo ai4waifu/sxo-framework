@@ -32,7 +32,8 @@ pub struct Expression {
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
 ///
-/// `simplify` replaces the outcome with the Simplify request's final [`ResultId`].
+/// `simplify` replaces the outcome with the Simplify request's final [`ResultId`],
+/// linked via `derived_from` to the evaluate result.
 pub(crate) fn from_outcome(
     session: Rc<Session>,
     dialect: Dialect,
@@ -42,8 +43,11 @@ pub(crate) fn from_outcome(
     let final_outcome = match strategy {
         EvalStrategy::None => outcome,
         EvalStrategy::Simplify => {
-            let term = session.try_project_symbolic(outcome.result_id).map_err(map_err)?;
-            session.simplify_outcome(term).map_err(map_err)?
+            let parent = outcome.result_id;
+            let term = session.try_project_symbolic(parent).map_err(map_err)?;
+            let simplified = session.simplify_outcome(term).map_err(map_err)?;
+            let _ = session.link_derived_from(simplified.result_id, parent);
+            simplified
         }
     };
     Ok(Expression {
@@ -96,8 +100,12 @@ impl Expression {
 
     /// Simplify via `Session` on the same session.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
+        let parent = self.result_id;
         let term = self.materialize_root()?;
         let outcome = self.session.simplify_outcome(term).map_err(map_err)?;
+        if let Some(parent) = parent {
+            let _ = self.session.link_derived_from(outcome.result_id, parent);
+        }
         Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 

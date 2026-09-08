@@ -209,9 +209,11 @@ fn evaluate_then_simplify_trig_identity_in_one_session() {
     let out = session.evaluate_matlab("sin(x)^2 + cos(x)^2").unwrap();
     let term = session.project_result(out.result_id).unwrap();
     let simplified = session.simplify_outcome(term).unwrap();
+    assert!(session.link_derived_from(simplified.result_id, out.result_id));
     let simplified_term = session.project_result(simplified.result_id).unwrap();
     assert_eq!(session.render_as_matlab(simplified_term), "1");
     assert_ne!(simplified.result_id, out.result_id, "simplify must publish a new ResultId");
+    assert_eq!(session.derived_from(simplified.result_id), Some(out.result_id));
     assert!(!simplified.status.is_empty());
     assert!(!simplified.coverage.is_empty());
 }
