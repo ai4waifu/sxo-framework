@@ -59,6 +59,9 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
                 let names = args.iter().map(render_matlab_form).collect::<Vec<_>>().join(" ");
                 return format!("{kw} {names}");
             }
+            if head == "Member" && args.len() == 2 {
+                return format!("{}.{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]));
+            }
             // `Application[head, args…]` / ApplyHead residual → `head(args…)`.
             if head == "Application" && !args.is_empty() {
                 let callee = render_matlab_form(&args[0]);
@@ -130,6 +133,9 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                     }
                     let names = args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(" ");
                     return format!("{kw} {names}");
+                }
+                Some(n) if n == "Member" && args.len() == 2 => {
+                    return format!("{}.{}", render_matlab(session, args[0]), render_matlab(session, args[1]));
                 }
                 Some(n) if n == "Application" && !args.is_empty() => {
                     let callee = render_matlab(session, args[0]);
