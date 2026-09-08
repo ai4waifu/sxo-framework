@@ -757,3 +757,21 @@ fn indeterminate_forms_fold_to_indeterminate() {
     assert_eq!(h.wolfram(h.eval("0^0")), "Indeterminate");
     assert_eq!(h.wolfram(h.eval("Infinity - Infinity")), "Indeterminate");
 }
+
+#[test]
+fn composition_ops_keep_forms() {
+    let h = H::new();
+    let right = h.parse_w("f/*g");
+    assert_eq!(right.head_name(), Some("RightComposition"));
+    assert_eq!(render(&right), "f/*g");
+    assert_eq!(h.wolfram(h.eval("f/*g")), "f/*g");
+
+    let left = h.parse_w("g@*f");
+    assert_eq!(left.head_name(), Some("Composition"));
+    assert_eq!(render(&left), "g@*f");
+    assert_eq!(h.wolfram(h.eval("g@*f")), "g@*f");
+
+    // Must not silently collapse to the last symbol.
+    assert_ne!(h.wolfram(h.eval("f/*g")), "g");
+    assert_ne!(h.wolfram(h.eval("g@*f")), "f");
+}

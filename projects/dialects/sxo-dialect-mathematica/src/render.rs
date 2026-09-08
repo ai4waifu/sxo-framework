@@ -59,6 +59,18 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
         }
         "Function" if args.len() == 1 => Some(format!("{} &", maybe_paren(&args[0], Prec::Function))),
         "Part" if args.len() == 2 => Some(format!("{}[[{}]]", maybe_paren(&args[0], Prec::Part), render(&args[1]))),
+        "Composition" if args.len() >= 2 => Some(
+            args.iter()
+                .map(|a| maybe_paren(a, Prec::Composition))
+                .collect::<Vec<_>>()
+                .join("@*"),
+        ),
+        "RightComposition" if args.len() >= 2 => Some(
+            args.iter()
+                .map(|a| maybe_paren(a, Prec::Composition))
+                .collect::<Vec<_>>()
+                .join("/*"),
+        ),
         _ => None,
     }
 }
@@ -69,10 +81,11 @@ enum Prec {
     Function = 2,
     Add = 3,
     Mul = 4,
-    Pow = 5,
-    Unary = 6,
-    Part = 7,
-    Atom = 8,
+    Composition = 5,
+    Pow = 6,
+    Unary = 7,
+    Part = 8,
+    Atom = 9,
 }
 
 fn prec(expr: &WolframForm) -> Prec {
@@ -81,6 +94,7 @@ fn prec(expr: &WolframForm) -> Prec {
         Some("Function") => Prec::Function,
         Some("Plus") | Some("Subtract") => Prec::Add,
         Some("Times") | Some("Divide") => Prec::Mul,
+        Some("Composition") | Some("RightComposition") => Prec::Composition,
         Some("Power") => Prec::Pow,
         Some("Part") => Prec::Part,
         _ => Prec::Atom,
