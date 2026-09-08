@@ -827,3 +827,12 @@ fn timing_and_trace_capture_args() {
     assert_eq!(h.wolfram(h.eval("Trace[1 + 1]")), "Trace[1 + 1]");
     assert_ne!(h.wolfram(h.eval("Trace[1 + 1]")), "Trace[2]");
 }
+
+#[test]
+fn parallel_evaluate_and_input_form_capture_args() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("ParallelEvaluate[1 + 1]")), "ParallelEvaluate[1 + 1]");
+    assert_ne!(h.wolfram(h.eval("ParallelEvaluate[1 + 1]")), "ParallelEvaluate[2]");
+    assert_eq!(h.wolfram(h.eval("InputForm[1 + 1]")), "InputForm[1 + 1]");
+    assert_ne!(h.wolfram(h.eval("InputForm[1 + 1]")), "InputForm[2]");
+}
