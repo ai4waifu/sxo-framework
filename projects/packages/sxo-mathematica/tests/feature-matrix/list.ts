@@ -99,12 +99,10 @@ export const listFeatures = [
         })
         .done(),
     feature('MapIndexed', 'list')
-        .unsupported('Slot[2] Form kept in #2&; MapIndexed / multi-slot Function runtime still missing')
+        .supported()
         .pure()
-        .gap('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', {
-            expected: '{{1}, {2}}',
-            notes: '#2 is Slot[2], not Times[Slot[1], 2] / $slot1*2 rewrite',
-        })
+        .notes('Multi-slot `#2&` → `Function[{$slot1,$slot2},…]`; MapIndexed applies `f[elem,{i}]`')
+        .eval('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', '{{1}, {2}}')
         .done(),
     feature('MapThread', 'list')
         .unsupported()
