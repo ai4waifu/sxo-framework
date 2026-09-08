@@ -78,8 +78,8 @@ export const listFeatures = [
         .eval('cases.integer', 'Cases[{1, 2, 3}, _Integer]', '{1, 2, 3}')
         .eval('cases.mixed', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
-    feature('Count', 'list').unsupported().pure().gap('count.1', 'Count[{1, 1, 2}, 1]', { expected: '2' }).done(),
-    feature('Partition', 'list').unsupported().pure().gap('partition.2', 'Partition[{1, 2, 3, 4}, 2]', { expected: '{{1, 2}, {3, 4}}' }).done(),
+    feature('Count', 'list').supported().pure().eval('count.1', 'Count[{1, 1, 2}, 1]', '2').done(),
+    feature('Partition', 'list').supported().pure().eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}').done(),
     feature('Union', 'list').unsupported().pure().gap('union.basic', 'Union[{1, 2}, {2, 3}]', { expected: '{1, 2, 3}' }).done(),
     feature('Intersection', 'list').unsupported().pure().gap('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', { expected: '{2}' }).done(),
     feature('FreeQ', 'list').unsupported().pure().gap('freeq.3', 'FreeQ[{1, 2}, 3]', { expected: 'True' }).done(),
@@ -94,7 +94,7 @@ export const listFeatures = [
     feature('Prepend', 'list').supported().pure().eval('prepend.1', 'Prepend[{2, 3}, 1]', '{1, 2, 3}').done(),
     feature('DeleteDuplicates', 'list').supported().pure().eval('deletedup.112', 'DeleteDuplicates[{1, 1, 2}]', '{1, 2}').done(),
     feature('Array', 'list').unsupported().pure().gap('array.f3', 'Array[f, 3]', { expected: '{f[1], f[2], f[3]}' }).done(),
-    feature('ConstantArray', 'list').unsupported().pure().gap('constarray.0', 'ConstantArray[0, 3]', { expected: '{0, 0, 0}' }).done(),
+    feature('ConstantArray', 'list').supported().pure().eval('constarray.0', 'ConstantArray[0, 3]', '{0, 0, 0}').done(),
     feature('DeleteCases', 'list')
         .supported()
         .pure()
