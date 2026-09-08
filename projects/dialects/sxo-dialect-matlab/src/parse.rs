@@ -142,6 +142,14 @@ fn lower_stmt(stmt: &Statement, source: &str) -> Result<MatlabForm, SxoError> {
             }
             Ok(MatlabForm::call("Command", forms))
         }
+        Statement::Global { names, .. } => {
+            let forms = names.iter().map(|n| MatlabForm::symbol(&n.name)).collect();
+            Ok(MatlabForm::call("Global", forms))
+        }
+        Statement::Persistent { names, .. } => {
+            let forms = names.iter().map(|n| MatlabForm::symbol(&n.name)).collect();
+            Ok(MatlabForm::call("Persistent", forms))
+        }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
 }
