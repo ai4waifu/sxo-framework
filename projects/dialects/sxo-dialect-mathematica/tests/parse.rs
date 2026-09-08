@@ -847,3 +847,30 @@ fn cancel_keeps_input_rational_form() {
     assert!(!got.contains("^(-1)"), "got {got}");
     assert_ne!(got, "1 + x");
 }
+
+#[test]
+fn derivative_prime_sugar_forms() {
+    let y_prime = parse_mathematica("y'").unwrap();
+    assert_eq!(render(&y_prime), "y'");
+    match &y_prime {
+        WolframForm::Call { head, args } => {
+            assert_eq!(args.len(), 1);
+            assert!(args[0].is_symbol("y"));
+            assert_eq!(head.head_name(), Some("Derivative"));
+        }
+        other => panic!("expected Derivative[1][y], got {other:?}"),
+    }
+
+    let applied = parse_mathematica("y'[x]").unwrap();
+    assert_eq!(render(&applied), "y'[x]");
+    assert_ne!(render(&applied), "x");
+
+    let h = H::new();
+    let dsv = h.wolfram(h.eval("DSolveValue[y'[x] == y[x], y[x], x]"));
+    // Must not silently collapse to bare `x` (old SILENT WRONG).
+    assert_ne!(dsv, "x");
+    assert!(
+        dsv.contains("DSolveValue") || dsv.contains("Derivative") || dsv.contains("y'"),
+        "got {dsv}"
+    );
+}

@@ -18,6 +18,9 @@ pub fn render(expr: &WolframForm) -> String {
             format!("{{{inner}}}")
         }
         WolframForm::Call { head, args } => {
+            if let Some(prime) = try_derivative_prime(head, args) {
+                return prime;
+            }
             if let Some(infix) = try_infix(head, args) {
                 return infix;
             }
@@ -26,6 +29,23 @@ pub fn render(expr: &WolframForm) -> String {
             format!("{h}[{inner}]")
         }
     }
+}
+
+/// `Derivative[1][f]` → `f'`.
+fn try_derivative_prime(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
+    let WolframForm::Call { head: dhead, args: dargs } = head else {
+        return None;
+    };
+    let WolframForm::Atom(WolframAtom::Symbol(name)) = dhead.as_ref() else {
+        return None;
+    };
+    if name != "Derivative" || dargs.len() != 1 || args.len() != 1 {
+        return None;
+    }
+    if exact_slot_index(&dargs[0]) != Some(1) {
+        return None;
+    }
+    Some(format!("{}'", maybe_paren(&args[0], Prec::Part)))
 }
 
 fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
