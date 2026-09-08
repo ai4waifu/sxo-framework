@@ -99,9 +99,12 @@ export const listFeatures = [
         })
         .done(),
     feature('MapIndexed', 'list')
-        .unsupported('SILENT WRONG parse of #2& → MapIndexed[#, 2 &, …]')
+        .unsupported('Slot[2] Form kept in #2&; MapIndexed / multi-slot Function runtime still missing')
         .pure()
-        .gap('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', { expected: '{{1}, {2}}' })
+        .gap('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', {
+            expected: '{{1}, {2}}',
+            notes: '#2 is Slot[2], not Times[Slot[1], 2] / $slot1*2 rewrite',
+        })
         .done(),
     feature('MapThread', 'list')
         .unsupported()
