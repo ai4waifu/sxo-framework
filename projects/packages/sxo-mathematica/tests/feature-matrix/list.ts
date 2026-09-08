@@ -105,9 +105,10 @@ export const listFeatures = [
         .eval('mapindexed.slot2', 'MapIndexed[#2 &, {a, b}]', '{{1}, {2}}')
         .done(),
     feature('MapThread', 'list')
-        .unsupported()
+        .supported()
         .pure()
-        .gap('mapthread.f', 'MapThread[f, {{1, 2}, {3, 4}}]', { expected: '{f[1, 3], f[2, 4]}' })
+        .notes('Zip columns of `{list1, list2, …}` then apply head / Function')
+        .eval('mapthread.f', 'MapThread[f, {{1, 2}, {3, 4}}]', '{f[1, 3], f[2, 4]}')
         .done(),
     feature('Nearest', 'list').unsupported().pure().gap('nearest.3', 'Nearest[{1, 2, 4}, 3]', { expected: '{2, 4}' }).done(),
     feature('Counts', 'list').unsupported().pure().gap('counts.aab', 'Counts[{a, a, b}]', { expected: '<|a -> 2, b -> 1|>' }).done(),
