@@ -4,9 +4,9 @@ export const symbolicFeatures = [
     feature('sym', 'symbolic').unsupported().pure().gap('sym.x', "sym('x')", { expected: 'x' }).done(),
     feature('vpa', 'symbolic').unsupported().pure().gap('vpa.pi', 'vpa(pi, 10)', { expected: '3.141592654' }).done(),
     feature('syms', 'symbolic')
-        .unsupported('command syntax refused (was silent: syms x → x)')
+        .unsupported('parse keeps Command Form via oak Statement::Command; syms binding runtime still open')
         .stateful()
-        .gap('syms.strip', 'syms x', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('syms.strip', 'syms x', { expected: '...', notes: 'Form Command[syms, x]; no symbolic declare yet' })
         .done(),
     feature('expand', 'symbolic')
         .unsupported('expand not implemented; input now keeps Power form after parse/eval')

@@ -20,36 +20,36 @@ export const plotFeatures = [
     feature('contour', 'plot').unsupported().effectful().gap('contour.peaks', 'contour(peaks)', { expected: '<svg' }).done(),
     feature('figure', 'plot').unsupported().effectful().gap('figure.basic', 'figure', { expected: '...' }).done(),
     feature('hold_on', 'plot')
-        .unsupported('command syntax refused until oak has command nodes (was silent: hold on → on)')
+        .unsupported('parse keeps Command Form via oak Statement::Command; hold/plot state runtime still open')
         .effectful()
-        .gap('hold.on', 'hold on', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('hold.on', 'hold on', { expected: '...', notes: 'Form Command[hold, on]; no figure state yet' })
         .done(),
     feature('grid_on', 'plot')
-        .unsupported('command syntax refused (was silent: grid on → on)')
+        .unsupported('parse keeps Command Form; grid runtime still open')
         .effectful()
-        .gap('grid.on', 'grid on', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('grid.on', 'grid on', { expected: '...', notes: 'Form Command[grid, on]' })
         .done(),
     feature('axis', 'plot')
-        .unsupported('command syntax refused (was silent: axis equal → equal)')
+        .unsupported('parse keeps Command Form; axis runtime still open')
         .effectful()
-        .gap('axis.equal', 'axis equal', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('axis.equal', 'axis equal', { expected: '...', notes: 'Form Command[axis, equal]' })
         .done(),
     feature('legend', 'plot').unsupported().effectful().gap('legend.a', "legend('a')", { expected: '...' }).done(),
     feature('subplot', 'plot').unsupported().effectful().gap('subplot.121', 'subplot(1, 2, 1)', { expected: '...' }).done(),
     feature('close_all', 'plot')
-        .unsupported('command syntax refused (was silent: close all → all)')
+        .unsupported('parse keeps Command Form; close runtime still open')
         .effectful()
-        .gap('close.all', 'close all', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('close.all', 'close all', { expected: '...', notes: 'Form Command[close, all]' })
         .done(),
     feature('hold_off', 'plot')
-        .unsupported('command syntax refused (was silent: hold off → off)')
+        .unsupported('parse keeps Command Form; hold runtime still open')
         .effectful()
-        .gap('hold.off', 'hold off', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('hold.off', 'hold off', { expected: '...', notes: 'Form Command[hold, off]' })
         .done(),
     feature('colormap', 'plot')
-        .unsupported('command syntax refused (was silent: colormap jet → jet)')
+        .unsupported('parse keeps Command Form; colormap runtime still open')
         .effectful()
-        .gap('colormap.jet', 'colormap jet', { expected: '...', notes: 'parse error: juxtaposed statements' })
+        .gap('colormap.jet', 'colormap jet', { expected: '...', notes: 'Form Command[colormap, jet]' })
         .done(),
     feature('scatter', 'plot').unsupported().effectful().gap('scatter.basic', 'scatter([1, 2], [3, 4])', { expected: '<svg' }).done(),
     feature('bar', 'plot').unsupported().effectful().gap('bar.3', 'bar([1, 2, 3])', { expected: '<svg' }).done(),
