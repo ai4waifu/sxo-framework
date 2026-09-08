@@ -4,9 +4,9 @@ export const symbolicFeatures = [
     feature('sym', 'symbolic').unsupported().pure().gap('sym.x', "sym('x')", { expected: 'x' }).done(),
     feature('vpa', 'symbolic').unsupported().pure().gap('vpa.pi', 'vpa(pi, 10)', { expected: '3.141592654' }).done(),
     feature('syms', 'symbolic')
-        .unsupported('SILENT WRONG: syms x → x (declaration stripped like global)')
+        .unsupported('command syntax refused (was silent: syms x → x)')
         .stateful()
-        .gap('syms.strip', 'syms x', { expected: '...', notes: 'currently returns x' })
+        .gap('syms.strip', 'syms x', { expected: '...', notes: 'parse error: juxtaposed statements' })
         .done(),
     feature('expand', 'symbolic')
         .unsupported('expand not implemented; input now keeps Power form after parse/eval')

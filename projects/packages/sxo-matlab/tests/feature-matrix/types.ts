@@ -2,9 +2,9 @@ import { feature } from '@sxo/harness';
 
 export const typesFeatures = [
     feature('cell', 'types')
-        .unsupported('SILENT WRONG: {1,2} evaluates to 2 (brace not cell)')
+        .unsupported('brace cell needs oak CellArray node; `{1,2}` is oak error (no longer silent last element)')
         .pure()
-        .gap('cell.literal', '{1, 2}', { expected: '{1, 2}', notes: 'currently returns 2' })
+        .gap('cell.literal', '{1, 2}', { expected: '{1, 2}', notes: 'matlab(oak): error node' })
         .gap('cell.ctor', 'cell(2, 1)', { expected: '{[]; []}' })
         .done(),
     feature('struct', 'types').unsupported().pure().gap('struct.basic', "struct('a', 1)", { expected: "struct('a',1)" }).done(),
@@ -13,12 +13,12 @@ export const typesFeatures = [
     feature('isnumeric', 'types').unsupported().pure().gap('isnumeric.1', 'isnumeric(1)', { expected: '1' }).done(),
     feature('datetime', 'types').unsupported().pure().gap('datetime.ymd', 'datetime(2020, 1, 1)', { expected: '...' }).done(),
     feature('containers_Map', 'types')
-        .unsupported('SILENT WRONG: containers.Map → Map (package path stripped)')
+        .unsupported('package member access needs oak nodes; `containers.Map` is oak error (no longer silent Map)')
         .pure()
-        .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'currently returns Map' })
+        .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'matlab(oak): error node' })
         .done(),
     feature('iscell', 'types')
-        .unsupported('SILENT WRONG: iscell({1}) → iscell(1) (brace cell stripped first)')
+        .unsupported('iscell({1}) still strips brace in call args; need CellArray + cellfun/call arity fidelity')
         .pure()
         .gap('iscell.brace', 'iscell({1})', { expected: '1', notes: 'currently iscell(1)' })
         .done(),
