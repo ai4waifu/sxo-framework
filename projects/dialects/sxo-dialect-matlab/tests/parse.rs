@@ -309,6 +309,12 @@ fn indexed_assignment_updates_own_binding() {
 }
 
 #[test]
+fn indexed_assignment_updates_matrix_cell() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("M = [1, 2; 3, 4]; M(1, 2) = 9; M")), "[1, 9; 3, 4]");
+}
+
+#[test]
 fn parse_call_vs_part_disambiguation() {
     // Known math heads stay calls even with index-shaped args.
     assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));
