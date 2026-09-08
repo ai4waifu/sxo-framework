@@ -34,9 +34,12 @@ export const solveFeatures = [
         .gap('fminsearch.x2', 'fminsearch(@(x)x^2, 1)', { expected: '0' })
         .done(),
     feature('lsqcurvefit', 'solve')
-        .unsupported('SILENT WRONG: @ stripped and result collapses to last arg [1,2]')
+        .unsupported('Call Form kept (FunctionHandle + args); no lsqcurvefit solver runtime')
         .pure()
-        .gap('lsqcurvefit.strip', 'lsqcurvefit(@(x,xdata)x*xdata, 1, [1, 2], [1, 2])', { expected: '1', notes: 'currently returns [1, 2]' })
+        .gap('lsqcurvefit.strip', 'lsqcurvefit(@(x,xdata)x*xdata, 1, [1, 2], [1, 2])', {
+            expected: '1',
+            notes: 'must keep full call with @ handle; not silent last-arg strip to [1, 2]',
+        })
         .done(),
     feature('fminbnd', 'solve').unsupported('@ handle stripped').pure().gap('fminbnd.x2', 'fminbnd(@(x)x^2, -1, 1)', { expected: '0' }).done(),
 ];
