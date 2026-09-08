@@ -240,6 +240,31 @@ fn parse_transpose_evaluates_nested_lists() {
 }
 
 #[test]
+fn set_2d_matrix_binds_domain_object() {
+    let h = H::new();
+    let form = parse_matlab_form("A = [1, 2; 3, 4]").unwrap();
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &form);
+    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
+    AthenaEngine::new().execute_request(&mut s, request).expect("define matrix");
+    let symbol = s.arena.symbols_mut().intern("A");
+    assert!(s.matrix_binding(symbol).is_some());
+    assert!(s.defs.binding(symbol).is_none());
+}
+
+#[test]
+fn transpose_symbol_after_2d_set_uses_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; A.'")), "[1, 3; 2, 4]");
+}
+
+#[test]
+fn set_row_vector_keeps_term_binding_for_part() {
+    let h = H::new();
+    assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));
+}
+
+#[test]
 fn parse_elementwise_ops_evaluate() {
     let h = H::new();
     assert!(h.eq(h.eval("[1, 2].*[3, 4]"), h.lst(vec![h.i(3), h.i(8)])));
