@@ -1451,10 +1451,16 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
             WolframForm::List(items.iter().map(|i| wexpr_from_session(session, *i)).collect())
         }
         Some(TermNode::Application { head: op, arguments: args }) => {
-            // 0-ary semantic heads (operator values / `Head` results) print as bare symbols.
+            // 0-ary heads (operator values / `Head` results) print as bare symbols.
             if args.is_empty() {
-                if let ApplicationHead::Semantic(sem) = *op {
-                    return WolframForm::Atom(WolframAtom::Symbol(semantic_to_surface(sem).into()));
+                match *op {
+                    ApplicationHead::Semantic(sem) => {
+                        return WolframForm::Atom(WolframAtom::Symbol(semantic_to_surface(sem).into()));
+                    }
+                    ApplicationHead::Extension(id) => {
+                        let name = session.extensions.display_name(id).unwrap_or("?").to_string();
+                        return WolframForm::Atom(WolframAtom::Symbol(name));
+                    }
                 }
             }
             let head_name = match *op {

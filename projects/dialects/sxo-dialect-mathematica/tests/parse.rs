@@ -780,6 +780,8 @@ fn head_evaluates_args_then_extracts() {
     assert_eq!(h.wolfram(h.eval("Head[a + b]")), "Plus");
     // Mathematica evaluates args: Head[1+2] → Head[3] → Integer (not HoldFirst → Plus).
     assert_eq!(h.wolfram(h.eval("Head[1 + 2]")), "Integer");
+    // Extension head stays Extension identity; dialect render prints the surface name.
+    assert_eq!(h.wolfram(h.eval("Head[f[x]]")), "f");
 }
 
 #[test]
