@@ -315,6 +315,17 @@ fn indexed_assignment_updates_matrix_cell() {
 }
 
 #[test]
+fn indexed_assignment_grows_with_end_plus_and_pad() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("B = 1:4; B(end+1) = 5; B")), "[1, 2, 3, 4, 5]");
+    assert_eq!(h.render(h.eval("A = [1, 2, 3]; A(5) = 9; A")), "[1, 2, 3, 0, 9]");
+    assert_eq!(
+        h.render(h.eval("M = zeros(2); M(3, 3) = 1; M")),
+        "[0, 0, 0; 0, 0, 0; 0, 0, 1]"
+    );
+}
+
+#[test]
 fn parse_call_vs_part_disambiguation() {
     // Known math heads stay calls even with index-shaped args.
     assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));
