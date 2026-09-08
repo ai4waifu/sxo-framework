@@ -30,11 +30,12 @@ export const arithmeticFeatures = [
     feature('Round', 'arithmetic').unsupported().pure().gap('round.2_5', 'Round[2.5]', { expected: '2' }).done(),
     feature('Ceiling', 'arithmetic').unsupported().pure().gap('ceiling.2_1', 'Ceiling[2.1]', { expected: '3' }).done(),
     feature('IndeterminateForms', 'arithmetic')
-        .unsupported('SILENT WRONG: 0/0→0; Infinity-Infinity→0; 0^0→1 (MMA expects Indeterminate)')
+        .supported()
         .pure()
-        .gap('indet.0over0', '0/0', { expected: 'Indeterminate', notes: 'currently 0' })
-        .gap('indet.inf_minus_inf', 'Infinity - Infinity', { expected: 'Indeterminate', notes: 'currently 0' })
-        .gap('indet.0pow0', '0^0', { expected: 'Indeterminate', notes: 'currently 1' })
+        .notes('exact singular forms fold to Indeterminate via Athena domain rules')
+        .eval('indet.0over0', '0/0', 'Indeterminate')
+        .eval('indet.inf_minus_inf', 'Infinity - Infinity', 'Indeterminate')
+        .eval('indet.0pow0', '0^0', 'Indeterminate')
         .done(),
     feature('CubeRootPow', 'arithmetic')
         .supported()
