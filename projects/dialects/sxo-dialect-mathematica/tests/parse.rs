@@ -679,6 +679,13 @@ fn most_and_reverse_list_structure() {
 }
 
 #[test]
+fn take_and_drop_prefix_slices() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Take[{1, 2, 3, 4}, 2]")), "{1, 2}");
+    assert_eq!(h.wolfram(h.eval("Drop[{1, 2, 3, 4}, 2]")), "{3, 4}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
