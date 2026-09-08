@@ -432,6 +432,12 @@ fn set_nested_list_binds_matrix_domain_object() {
 }
 
 #[test]
+fn transpose_symbol_after_set_uses_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Transpose[A]")), "{{1, 3}, {2, 4}}");
+}
+
+#[test]
 fn matrix_rank_rank1() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatrixRank[{{1, 2}, {2, 4}}]")), "1");

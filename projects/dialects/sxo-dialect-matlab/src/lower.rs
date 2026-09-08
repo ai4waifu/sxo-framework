@@ -267,7 +267,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     if shape.rows > 1 && shape.cols > 1 {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix },
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
                         )));
                     }
                 }

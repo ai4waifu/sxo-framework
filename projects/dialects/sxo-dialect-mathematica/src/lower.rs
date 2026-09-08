@@ -6,7 +6,7 @@ use athena::{
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection, TransformKind},
-        linear_algebra::MatrixValue,
+        linear_algebra::{MatrixOperand, MatrixValue},
     },
     ir::{ApplicationHead, Atom, MathematicalConstant, SemanticOperator, TermNode, UnaryFunction},
     numeric::{Integer, Rational},
@@ -628,14 +628,22 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("Transpose" | "ConjugateTranspose", [arg]) => {
                     // Real matrices: ConjugateTranspose equals Transpose. Complex path later.
                     // Literal matrices come from Form lists, not Term Collection reverse recognition.
+                    // Symbols resolve via `MatrixOperand::Binding` at execute time (`DefineMatrix`).
                     if let Some(mat) = matrix_from_form(arg) {
                         let shape = mat.shape();
                         if shape.rows >= 1 && shape.cols >= 1 {
                             let matrix = session.matrix_objects.intern(mat);
                             return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                                athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix },
+                                athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
                             )));
                         }
+                    }
+                    if let Some(symbol) = symbol_of(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose {
+                                matrix: MatrixOperand::binding(symbol),
+                            },
+                        )));
                     }
                 }
                 ("LinearSolve", [a_form, b_form]) => {
