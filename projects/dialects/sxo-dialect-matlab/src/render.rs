@@ -51,6 +51,12 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
             if head == "Command" {
                 return render_command_form(args);
             }
+            // `Application[head, args…]` / ApplyHead residual → `head(args…)`.
+            if head == "Application" && !args.is_empty() {
+                let callee = render_matlab_form(&args[0]);
+                let inner = args[1..].iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
+                return format!("{callee}({inner})");
+            }
             let h = head_matlab_name(head);
             let inner = args.iter().map(render_matlab_form).collect::<Vec<_>>().join(", ");
             format!("{h}({inner})")
@@ -108,6 +114,11 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                 }
                 Some(n) if n == "Command" => {
                     return render_command_term(session, &args);
+                }
+                Some(n) if n == "Application" && !args.is_empty() => {
+                    let callee = render_matlab(session, args[0]);
+                    let inner = args[1..].iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(", ");
+                    return format!("{callee}({inner})");
                 }
                 Some(n) => head_matlab_name(&n),
                 None => "?".into(),
@@ -343,6 +354,19 @@ fn try_infix(session: &Session, id: TermId, args: &[TermId]) -> Option<String> {
             render_matlab(session, args[1]),
             render_matlab(session, args[2])
         )),
+        "Part" if args.len() >= 2 => {
+            let base = render_matlab(session, args[0]);
+            let idxs = args[1..].iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join(", ");
+            Some(format!("{base}({idxs})"))
+        }
+        "FunctionHandle" if args.len() == 1 => Some(format!("@{}", render_matlab(session, args[0]))),
+        "Function" if args.len() == 2 => {
+            Some(format!("@({}) {}", render_matlab(session, args[0]), render_matlab(session, args[1])))
+        }
+        "Set" if args.len() == 2 => Some(format!("{} = {}", render_matlab(session, args[0]), render_matlab(session, args[1]))),
+        "CompoundExpression" if !args.is_empty() => {
+            Some(args.iter().map(|a| render_matlab(session, *a)).collect::<Vec<_>>().join("; "))
+        }
         _ => None,
     }
 }
