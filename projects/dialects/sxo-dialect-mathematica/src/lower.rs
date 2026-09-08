@@ -75,6 +75,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Reverse" => SemanticOperator::Reverse,
         "Take" => SemanticOperator::Take,
         "Drop" => SemanticOperator::Drop,
+        "Flatten" => SemanticOperator::Flatten,
         "Join" => SemanticOperator::Join,
         "Sum" => SemanticOperator::Sum,
         "Total" => SemanticOperator::Sum,
