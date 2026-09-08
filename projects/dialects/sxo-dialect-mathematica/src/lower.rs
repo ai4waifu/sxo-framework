@@ -715,6 +715,14 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         });
                     }
                 }
+                ("DeleteCases", [source, pat]) => {
+                    if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
+                        return AthenaRequest::Control(ControlPlan::CollectRejects {
+                            source: lower_wexpr(session, source),
+                            pattern,
+                        });
+                    }
+                }
                 _ => {}
             }
         }
