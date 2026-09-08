@@ -58,7 +58,11 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
         Some(TermNode::Atom(a)) => match a {
             Atom::Number(n) => render_number(n),
             Atom::String(s) => format!("'{s}'"),
-            Atom::Symbol(_) => symbol_name(session, id).unwrap_or_else(|| "?".into()),
+            Atom::Symbol(_) => match symbol_name(session, id).as_deref() {
+                Some("Infinity") => "Inf".into(),
+                Some(other) => other.into(),
+                None => "?".into(),
+            },
             Atom::Boolean(true) => "true".into(),
             Atom::Boolean(false) => "false".into(),
             Atom::Null => "[]".into(),
@@ -84,6 +88,9 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
             }
         }
         Some(TermNode::Application { .. }) => {
+            if application_surface_name(session, id).as_deref() == Some("Indeterminate") {
+                return "NaN".into();
+            }
             let args = application_arguments(session, id).unwrap_or_default();
             if let Some(infix) = try_infix(session, id, &args) {
                 return infix;
@@ -122,6 +129,8 @@ fn head_matlab_name(name: &str) -> String {
         "LinearSolve" => "linsolve",
         "Minus" => "-",
         "FunctionHandle" => "@",
+        "Indeterminate" => "NaN",
+        "Infinity" => "Inf",
         other => other,
     }
     .to_string()
