@@ -352,8 +352,48 @@ fn spfun_keeps_function_handle_and_speye_args() {
         other => panic!("expected spfun call, got {other:?}"),
     }
     let h = H::new();
-    // Nested Part inside Extension stays residual Part; render must still show `speye(2)` and keep `@`.
     assert_eq!(h.render(h.eval("spfun(@sqrt, speye(2))")), "spfun(@Sqrt, speye(2))");
+}
+
+#[test]
+fn function_handle_args_kept_in_bsxfun_and_arrayfun() {
+    let bsx = parse_matlab_form("bsxfun(@plus, [1, 2], [3; 4])").unwrap();
+    match bsx {
+        MatlabForm::Call { head, args } => {
+            assert_eq!(head, "bsxfun");
+            assert_eq!(args.len(), 3, "got {args:?}");
+            assert_eq!(args[0].head_name(), Some("FunctionHandle"));
+        }
+        other => panic!("expected bsxfun call, got {other:?}"),
+    }
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval("bsxfun(@plus, [1, 2], [3; 4])")),
+        "bsxfun(@plus, [1, 2], [3; 4])"
+    );
+
+    let af = parse_matlab_form("arrayfun(@sin, [0])").unwrap();
+    assert_eq!(af.head_name(), Some("arrayfun"));
+    match af {
+        MatlabForm::Call { args, .. } => {
+            assert_eq!(args[0].head_name(), Some("FunctionHandle"));
+        }
+        other => panic!("expected arrayfun call, got {other:?}"),
+    }
+    assert_eq!(h.render(h.eval("arrayfun(@sin, [0])")), "arrayfun(@Sin, [0])");
+}
+
+#[test]
+fn containers_map_member_access_probe() {
+    let err = parse_matlab_form("containers.Map");
+    // Document current oak behavior until member Dot AST lands.
+    match err {
+        Ok(form) => panic!("unexpected parse ok: {} / {form:?}", render_matlab_form(&form)),
+        Err(e) => assert!(
+            e.to_string().contains("error") || e.to_string().contains("oak"),
+            "got {e}"
+        ),
+    }
 }
 
 #[test]

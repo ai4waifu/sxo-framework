@@ -8,14 +8,20 @@ export const arrayFeatures = [
         .done(),
     feature('cumsum', 'array').unsupported().pure().gap('cumsum.3', 'cumsum([1, 2, 3])', { expected: '[1, 3, 6]' }).done(),
     feature('bsxfun', 'array')
-        .unsupported('SILENT WRONG: @ stripped — bsxfun(@plus,…) → bsxfun(plus,…)')
+        .unsupported('parse/eval keep `@plus` FunctionHandle; bsxfun broadcast runtime still open')
         .pure()
-        .gap('bsxfun.plus', 'bsxfun(@plus, [1, 2], [3; 4])', { expected: '[4, 5; 5, 6]', notes: 'currently bsxfun(plus, …)' })
+        .gap('bsxfun.plus', 'bsxfun(@plus, [1, 2], [3; 4])', {
+            expected: '[4, 5; 5, 6]',
+            notes: 'Form/render: bsxfun(@plus, [1, 2], [3; 4]); was silent strip of @',
+        })
         .done(),
     feature('arrayfun', 'array')
-        .unsupported('@ stripped to bare sin')
+        .unsupported('parse/eval keep `@sin` FunctionHandle; arrayfun map runtime still open')
         .pure()
-        .gap('arrayfun.sin', 'arrayfun(@sin, [0, pi/2])', { expected: '[0, 1]' })
+        .gap('arrayfun.sin', 'arrayfun(@sin, [0, pi/2])', {
+            expected: '[0, 1]',
+            notes: 'Form keeps FunctionHandle; was silent strip to bare sin',
+        })
         .done(),
     feature('cellfun', 'array')
         .unsupported('parse keeps cell arg via oak CellArray; cellfun execution still open')
