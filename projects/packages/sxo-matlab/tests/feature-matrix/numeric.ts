@@ -20,10 +20,11 @@ export const numericFeatures = [
     feature('ieee_edge', 'numeric')
         .supported()
         .pure()
-        .notes('Inf/NaN dialect surface; exact 0^0 stays MATLAB 1; 0/0 and Inf-Inf render NaN from Indeterminate')
+        .notes('Inf/NaN dialect surface; exact 0^0 via session ZeroPowerZeroConvention::One; 0/0 and Inf-Inf render NaN from Indeterminate')
         .eval('ieee.0over0', '0/0', 'NaN')
         .eval('ieee.inf_minus_inf', 'Inf - Inf', 'NaN')
-        .eval('ieee.0pow0', '0^0', '1', { notes: 'MATLAB-compatible dialect lower' })
+        .eval('ieee.0pow0', '0^0', '1', { notes: 'session convention One (not Form literal rewrite)' })
+        .eval('ieee.0pow0.bound', 'x = 0; x^0', '1', { notes: 'same convention after Own binding' })
         .done(),
     feature('i_squared', 'numeric')
         .unsupported('bare i/j symbols retained; 1+2i / 1i still oak bad literal')
