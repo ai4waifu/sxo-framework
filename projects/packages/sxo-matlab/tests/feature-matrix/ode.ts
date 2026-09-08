@@ -2,36 +2,51 @@ import { feature } from '@sxo/harness';
 
 export const odeFeatures = [
     feature('ode45', 'ode')
-        .unsupported('SILENT WRONG: ode45(@(t,y)y,[0,1],1) → 1 (strips to last arg)')
+        .unsupported('Call Form kept (all args); no ode45 solver runtime')
         .pure()
-        .gap('ode45.strip', 'ode45(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .gap('ode45.strip', 'ode45(@(t,y)y, [0, 1], 1)', {
+            expected: '...',
+            notes: 'must keep three-arg call shape; not silent last-arg strip to 1',
+        })
         .done(),
     feature('ode23', 'ode')
-        .unsupported('SILENT WRONG: ode23(@(t,y)y,[0,1],1) → 1 (same strip pattern as ode45)')
+        .unsupported('Call Form kept (all args); no ode23 solver runtime')
         .pure()
-        .gap('ode23.strip', 'ode23(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .gap('ode23.strip', 'ode23(@(t,y)y, [0, 1], 1)', {
+            expected: '...',
+            notes: 'same fidelity as ode45: keep call args, no last-arg strip',
+        })
         .done(),
     feature('ode15s', 'ode')
-        .unsupported('SILENT WRONG: ode15s(@(t,y)y,[0,1],1) → 1')
+        .unsupported('Call Form kept (all args); no ode15s solver runtime')
         .pure()
-        .gap('ode15s.strip', 'ode15s(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .gap('ode15s.strip', 'ode15s(@(t,y)y, [0, 1], 1)', {
+            expected: '...',
+            notes: 'keep call args; not silent last-arg strip',
+        })
         .done(),
     feature('ode113', 'ode')
-        .unsupported('SILENT WRONG: same last-arg strip as ode45')
+        .unsupported('Call Form kept (all args); no ode113 solver runtime')
         .pure()
-        .gap('ode113.strip', 'ode113(@(t,y)y, [0, 1], 1)', { expected: '...', notes: 'currently returns 1' })
+        .gap('ode113.strip', 'ode113(@(t,y)y, [0, 1], 1)', {
+            expected: '...',
+            notes: 'keep call args; not silent last-arg strip',
+        })
         .done(),
     feature('dde23', 'ode')
-        .unsupported('SILENT WRONG: dde23(…) → [0, 2] (last arg)')
+        .unsupported('Call Form kept (all args); no dde23 solver runtime')
         .pure()
-        .gap('dde23.strip', 'dde23(@(t,y,z)z, [1], 1, [0, 2])', { expected: '...', notes: 'currently returns [0, 2]' })
+        .gap('dde23.strip', 'dde23(@(t,y,z)z, [1], 1, [0, 2])', {
+            expected: '...',
+            notes: 'keep full call; not silent last-arg strip to [0, 2]',
+        })
         .done(),
     feature('odeset', 'ode')
-        .unsupported('SILENT WRONG: ode45(..., odeset(...)) collapses to odeset(...) last arg')
+        .unsupported('Nested Call Form kept; no ode45/odeset runtime')
         .pure()
         .gap('odeset.strip', "ode45(@(t,y)y, [0, 1], 1, odeset('RelTol', 1e-3))", {
             expected: '...',
-            notes: "currently returns odeset('RelTol', 0.001)",
+            notes: 'outer ode45 must keep four args including odeset(...) — not collapse',
         })
         .done(),
     feature('odeset_opts', 'ode')

@@ -1,16 +1,29 @@
 import { feature } from '@sxo/harness';
 
 export const metaFeatures = [
-    feature('which', 'meta').unsupported('SILENT WRONG: which sin → sin').pure().gap('which.sin', 'which sin', { expected: '...' }).done(),
+    feature('which', 'meta')
+        .unsupported('Command Form kept; Reject (no which runtime)')
+        .pure()
+        .gap('which.sin', 'which sin', {
+            expected: '...',
+            notes: 'parses as Command(which, sin); evaluate Rejects — not silent last-token',
+        })
+        .done(),
     feature('profile', 'meta')
-        .unsupported('SILENT WRONG: profile on → on')
+        .unsupported('Command Form kept; Reject (no profile runtime)')
         .effectful()
-        .gap('profile.on', 'profile on', { expected: '...', notes: 'currently returns on' })
+        .gap('profile.on', 'profile on', {
+            expected: '...',
+            notes: 'parses as Command(profile, on); evaluate Rejects — not silent last-token',
+        })
         .done(),
     feature('dbstop', 'meta')
-        .unsupported('SILENT WRONG: dbstop if error → error')
+        .unsupported('Command Form kept; Reject (no dbstop runtime)')
         .effectful()
-        .gap('dbstop.if_error', 'dbstop if error', { expected: '...', notes: 'currently returns error' })
+        .gap('dbstop.if_error', 'dbstop if error', {
+            expected: '...',
+            notes: 'keyword bareword if is a Command arg; evaluate Rejects — not juxta/VM leak',
+        })
         .done(),
     feature('eval', 'meta').unsupported().effectful().gap('eval.plus', "eval('1+1')", { expected: '2' }).done(),
     feature('feval', 'meta').unsupported().pure().gap('feval.sin', "feval('sin', 0)", { expected: '0' }).done(),
@@ -21,14 +34,20 @@ export const metaFeatures = [
         .done(),
     feature('exist', 'meta').unsupported().pure().gap('exist.sin', "exist('sin', 'builtin')", { expected: '5' }).done(),
     feature('format', 'meta')
-        .unsupported('SILENT WRONG: format long → long')
+        .unsupported('Command Form kept; Reject (no format runtime)')
         .effectful()
-        .gap('format.long', 'format long', { expected: '...', notes: 'currently returns long' })
+        .gap('format.long', 'format long', {
+            expected: '...',
+            notes: 'parses as Command(format, long); evaluate Rejects — not silent last-token',
+        })
         .done(),
     feature('methods_meta', 'meta')
-        .unsupported("SILENT WRONG: methods('double') → 'double'")
+        .unsupported("Call Form residual / Reject (no methods runtime)")
         .pure()
-        .gap('methods.double', "methods('double')", { expected: '...', notes: "currently returns 'double'" })
+        .gap('methods.double', "methods('double')", {
+            expected: '...',
+            notes: "paren call methods('double'), not command juxta; must not collapse to 'double'",
+        })
         .done(),
     feature('builtin', 'meta').unsupported().pure().gap('builtin.sin', "builtin('sin', 0)", { expected: '0' }).done(),
 ];
