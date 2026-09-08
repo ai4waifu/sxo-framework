@@ -446,6 +446,17 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
 }
 
 #[test]
+fn binary_matrix_goals_resolve_symbol_bindings() {
+    let h = H::new();
+    assert_eq!(
+        h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5}, {6}}; LinearSolve[A, B]")),
+        "{{-4}, {9/2}}"
+    );
+    assert_eq!(h.wolfram(h.eval("M={{1, 2}, {3, 4}}; V={{1}, {1}}; Dot[M, V]")), "{3, 7}");
+    assert_eq!(h.wolfram(h.eval("U={1, 0, 0}; W={0, 1, 0}; Cross[U, W]")), "{0, 0, 1}");
+}
+
+#[test]
 fn matrix_rank_rank1() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("MatrixRank[{{1, 2}, {2, 4}}]")), "1");

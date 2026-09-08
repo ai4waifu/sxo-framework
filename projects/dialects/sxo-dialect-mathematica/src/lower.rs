@@ -647,9 +647,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("LinearSolve", [a_form, b_form]) => {
-                    if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
-                        let a = session.matrix_objects.intern(a_mat);
-                        let b = session.matrix_objects.intern(b_mat);
+                    if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                         )));
@@ -684,18 +682,22 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Dot", [a_form, b_form]) => {
+                    // Literal Form pairs keep dialect vector orientation. Bound symbols keep stored shapes.
                     if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
-                        let lhs = session.matrix_objects.intern(a_mat);
-                        let rhs = session.matrix_objects.intern(b_mat);
+                        let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
+                        let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                        )));
+                    }
+                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                         )));
                     }
                 }
                 ("Cross", [a_form, b_form]) => {
-                    if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
-                        let lhs = session.matrix_objects.intern(a_mat);
-                        let rhs = session.matrix_objects.intern(b_mat);
+                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
                         )));
