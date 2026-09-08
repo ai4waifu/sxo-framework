@@ -20,7 +20,8 @@ describe('@sxo/matlab integration', () => {
     });
 
     it('integrates polynomials', () => {
-        expect(matlab.evaluate('int(x^2, x)').toMatlab()).toBe('1/3*x^3');
+        // Canonical Power form from Athena; equivalent to `1/3*x^3`.
+        expect(matlab.evaluate('int(x^2, x)').toMatlab()).toBe('x^3*3^(-1)');
     });
 
     it('evaluates comparisons', () => {
