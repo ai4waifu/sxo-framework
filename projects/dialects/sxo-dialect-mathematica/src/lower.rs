@@ -88,6 +88,12 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Sign" => SemanticOperator::from_unary(UnaryFunction::Sign),
         "Gamma" => SemanticOperator::from_unary(UnaryFunction::Gamma),
         "Erf" => SemanticOperator::from_unary(UnaryFunction::Erf),
+        "UnitStep" | "HeavisideTheta" => SemanticOperator::UnitStep,
+        "Element" => SemanticOperator::MemberOf,
+        "KroneckerDelta" => SemanticOperator::KroneckerDelta,
+        "DiscreteDelta" => SemanticOperator::DiscreteDelta,
+        "Indeterminate" => SemanticOperator::Indeterminate,
+        "Re" => SemanticOperator::RealPart,
         _ => return None,
     })
 }
@@ -105,6 +111,8 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
         SemanticOperator::Eye => "IdentityMatrix",
         SemanticOperator::Size => "Dimensions",
         SemanticOperator::ApplyHead => "Application",
+        SemanticOperator::MemberOf => "Element",
+        SemanticOperator::RealPart => "Re",
         SemanticOperator::Unary(f) => f.debug_label(),
         other => other.debug_label(),
     }
