@@ -292,6 +292,23 @@ fn parse_assign_then_index_own_binding() {
 }
 
 #[test]
+fn indexed_assignment_updates_own_binding() {
+    let h = H::new();
+    let form = parse_matlab_form("A(2) = 9").unwrap();
+    assert_eq!(
+        form,
+        MatlabForm::call(
+            "Set",
+            vec![
+                MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)]),
+                MatlabForm::int(9),
+            ]
+        )
+    );
+    assert_eq!(h.render(h.eval("A = [1, 2, 3]; A(2) = 9; A")), "[1, 9, 3]");
+}
+
+#[test]
 fn parse_call_vs_part_disambiguation() {
     // Known math heads stay calls even with index-shaped args.
     assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));

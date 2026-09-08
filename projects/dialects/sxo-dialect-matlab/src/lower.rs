@@ -112,6 +112,27 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                     });
                 }
+                // `A(2)=9` → StoreIndex (typed write). Refuse residual Set that silently no-ops Own.
+                if let MatlabForm::Call { head: part_head, args: part_args } = lhs {
+                    if part_head == "Part" && part_args.len() >= 2 {
+                        if let Some(name) = form_symbol_name(&part_args[0]) {
+                            let target = push_symbol_name(session, name);
+                            let axis_terms: Vec<TermId> =
+                                part_args[1..].iter().map(|a| form_to_term(session, a)).collect();
+                            if let Some(axes) = axis_terms
+                                .iter()
+                                .copied()
+                                .enumerate()
+                                .map(|(i, a)| index_spec_of(session, a, axis_terms.len() == 1 && i == 0))
+                                .collect::<Option<Vec<_>>>()
+                            {
+                                let value = form_to_term(session, rhs);
+                                return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                            }
+                        }
+                    }
+                }
+                return AthenaRequest::Control(ControlPlan::Reject);
             }
         }
         MatlabForm::Call { head, args } if head == "CompoundExpression" => {
