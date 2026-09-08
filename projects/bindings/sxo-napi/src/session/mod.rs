@@ -4,11 +4,12 @@ use std::cell::RefCell;
 
 use athena::{
     AthenaEngine, Session as AthenaSession,
-    api::AthenaRequest,
+    api::{AthenaRequest, DomainGoal},
     domains::{
-        DomainExecutionContext, DomainRequest, DomainResult,
-        calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder, materialize_calculus_result_term},
+        DomainRequest, DomainResult,
+        calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder},
     },
+    ir::SemanticOperator,
     runtime::CoverageStatus,
     types::{AssumptionSet, ComputationStatus, Diagnostic, ResultId, TermId},
 };
@@ -91,25 +92,23 @@ impl Session {
         self.math_session.borrow_mut().clear_definitions();
     }
 
-    /// Differentiate via Athena calculus domain dispatch.
-    pub fn differentiate_term(&self, expr: TermId, var: &str) -> TermId {
+    /// Differentiate via [`AthenaRequest::Goal`] and return the full Session result.
+    pub fn differentiate_outcome(&self, expr: TermId, var: &str) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let variable = ms.arena.symbols_mut().intern(var);
-        match self.math_engine().execute_domain(
-            &mut ms,
-            DomainRequest::Calculus(CalculusRequest::Derivative {
-                expression: expr,
-                variable,
-                order: DerivativeOrder::First,
-                assumptions: AssumptionSet::empty(),
-            }),
-        ) {
-            Ok(DomainResult::Calculus(r)) => {
-                let mut dc = DomainExecutionContext::new(&mut ms);
-                materialize_calculus_result_term(&mut dc, &r).unwrap_or(expr)
-            }
-            _ => self.math_engine().differentiate(&mut ms, expr, var).unwrap_or(expr),
-        }
+        let request = AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative {
+            expression: expr,
+            variable,
+            order: DerivativeOrder::First,
+            assumptions: AssumptionSet::empty(),
+        })));
+        self.execute_lowered(&mut ms, request)
+    }
+
+    /// Differentiate and project a symbolic term (errors if the result has no symbolic projection).
+    pub fn differentiate_term(&self, expr: TermId, var: &str) -> Result<TermId, SxoError> {
+        let outcome = self.differentiate_outcome(expr, var)?;
+        self.try_project_symbolic(outcome.result_id)
     }
 
     /// Domain dispatch through Athena.
@@ -117,9 +116,17 @@ impl Session {
         self.math_engine().execute_domain(&mut self.math_session.borrow_mut(), request)
     }
 
-    /// `Simplify` builtin on a term.
-    pub fn simplify_term(&self, expr: TermId) -> TermId {
-        self.math_engine().simplify(&mut self.math_session.borrow_mut(), expr)
+    /// `Simplify` via [`AthenaRequest::Term`] and return the full Session result.
+    pub fn simplify_outcome(&self, expr: TermId) -> Result<EvalOutcome, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        let wrapped = athena::execution::push_semantic(&mut ms, SemanticOperator::Simplify, vec![expr]);
+        self.execute_lowered(&mut ms, AthenaRequest::Term(wrapped))
+    }
+
+    /// `Simplify` and project a symbolic term (errors if the result has no symbolic projection).
+    pub fn simplify_term(&self, expr: TermId) -> Result<TermId, SxoError> {
+        let outcome = self.simplify_outcome(expr)?;
+        self.try_project_symbolic(outcome.result_id)
     }
 
     /// Parse Wolfram text into MMA [`WolframForm`] (no evaluate).
@@ -146,7 +153,7 @@ impl Session {
     /// Differentiate Wolfram input.
     pub fn d_mathematica(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
         let w = self.parse_mathematica(input)?;
-        Ok(self.differentiate_term(self.lower_mathematica(&w), var))
+        self.differentiate_term(self.lower_mathematica(&w), var)
     }
 
     /// Render a term as Wolfram text.
@@ -188,7 +195,7 @@ impl Session {
 
     /// Differentiate MATLAB input.
     pub fn d_matlab(&self, input: &str, var: &str) -> Result<TermId, SxoError> {
-        Ok(self.differentiate_term(self.parse_matlab(input)?, var))
+        self.differentiate_term(self.parse_matlab(input)?, var)
     }
 
     /// Render a term as MATLAB text.
@@ -234,10 +241,30 @@ impl Session {
         self.math_session.borrow().arena.structural_eq(a, b)
     }
 
-    /// Project a Session-local [`ResultId`] to a symbolic [`TermId`] (or `Null`).
-    pub fn project_result(&self, result_id: ResultId) -> TermId {
-        let mut ms = self.math_session.borrow_mut();
-        project_result_term(&mut ms, result_id)
+    /// Project a Session-local [`ResultId`] to a symbolic [`TermId`].
+    ///
+    /// Returns an error when the result is missing or has no symbolic projection
+    /// (for example a typed matrix / solution set). Does not invent `Null`.
+    pub fn try_project_symbolic(&self, result_id: ResultId) -> Result<TermId, SxoError> {
+        let ms = self.math_session.borrow();
+        match ms.results.get(result_id) {
+            None => Err(SxoError::new("unknown ResultId")),
+            Some(result) => match result.symbolic_term {
+                Some(term) => Ok(term),
+                None => Err(SxoError::new(format!(
+                    "result has no symbolic Term projection (status={}, coverage={})",
+                    result.status.name(),
+                    result.coverage.name()
+                ))),
+            },
+        }
+    }
+
+    /// Project a Session-local [`ResultId`] to a symbolic [`TermId`].
+    ///
+    /// Prefer [`Self::try_project_symbolic`]. This alias keeps existing call sites compiling.
+    pub fn project_result(&self, result_id: ResultId) -> Result<TermId, SxoError> {
+        self.try_project_symbolic(result_id)
     }
 
     /// Project diagnostic summaries for a Session-local [`ResultId`] (empty if missing).
@@ -253,10 +280,4 @@ fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {
         return EvalOutcome::new(result_id, ComputationStatus::Unknown.name(), CoverageStatus::Unknown.name());
     };
     EvalOutcome::new(result_id, result.status.name().to_string(), result.coverage.name().to_string())
-}
-
-fn project_result_term(ms: &mut AthenaSession, result_id: ResultId) -> TermId {
-    use athena::runtime::values::arena::push_null;
-
-    ms.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| push_null(ms))
 }

@@ -291,8 +291,10 @@ fn evaluate_mathematica(eng: &Session, code: &str) -> Result<EvalOut, String> {
         return Ok(EvalOut::Svg { svg, plain });
     }
     let evaluated = eng.evaluate_wolfram_form(&w).map_err(|e| e.message.clone())?;
-    let simplified = eng.simplify_term(eng.project_result(evaluated.result_id));
-    Ok(EvalOut::Text(eng.render_as_wolfram(simplified)))
+    let term = eng.try_project_symbolic(evaluated.result_id).map_err(|e| e.message.clone())?;
+    let simplified = eng.simplify_outcome(term).map_err(|e| e.message.clone())?;
+    let simplified_term = eng.try_project_symbolic(simplified.result_id).map_err(|e| e.message.clone())?;
+    Ok(EvalOut::Text(eng.render_as_wolfram(simplified_term)))
 }
 
 fn kernel_info_content() -> Value {
