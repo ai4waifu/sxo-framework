@@ -149,7 +149,6 @@ impl Session {
     }
 
     /// Parent [`ResultId`] recorded on `id`, if any.
-    #[allow(dead_code)]
     pub fn derived_from(&self, id: ResultId) -> Option<ResultId> {
         self.math_session.borrow().results.get(id).and_then(|r| r.derived_from)
     }

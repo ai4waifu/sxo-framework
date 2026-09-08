@@ -137,6 +137,12 @@ impl Expression {
         }
     }
 
+    /// Parent evaluate result id when this handle is a Simplify transform, else `undefined`.
+    #[wasm_bindgen(getter, js_name = derivedFrom)]
+    pub fn derived_from_js(&self) -> Option<u32> {
+        self.result_id.and_then(|id| self.session.derived_from(id).map(|parent| parent.0))
+    }
+
     /// Render as string in the expression's dialect.
     #[wasm_bindgen(js_name = toString)]
     pub fn to_string_js(&self) -> Result<String, JsValue> {
