@@ -38,11 +38,10 @@ export const sessionFeatures = [
     feature('Block', 'session')
         .supported()
         .stateful()
-        .notes('dynamic shadow under DynamicScope; bare clear observed wrong under default autoSimplify')
+        .notes('dynamic shadow under DynamicScope; Simplify result transform must not re-apply ambient Own')
         .eval('block.bind', 'Block[{x = 1}, x + 1]', '2')
-        .wrong('block.clear', 'x = 5; Block[{x}, x]', {
-            expected: 'x',
-            notes: 'autoSimplify re-applies outer Own after Block returns cleared symbol (got 5)',
+        .eval('block.clear', 'x = 5; Block[{x}, x]', 'x', {
+            notes: 'compound + autoSimplify keep free x (result transform CaptureAsTerm on Simplify)',
         })
         .eval('block.restore', 'x = 5; Block[{x = 1}, x]; x', '5')
         .done(),
