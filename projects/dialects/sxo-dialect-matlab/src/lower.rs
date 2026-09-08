@@ -120,8 +120,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             if let [lhs, rhs] = args.as_slice() {
                 if let Some(name) = form_symbol_name(lhs) {
                     let symbol = session.arena.symbols_mut().intern(name);
-                    // List Form → matrix Own（含行/列向量）。`Part`/`StoreIndex` grow 已吃 DomainObject。
-                    if let Some(mat) = matrix_from_form(rhs) {
+                    // List / integer Range Form → matrix Own（含行/列向量与 `1:n`）。
+                    if let Some(mat) = matrix_from_form(rhs).or_else(|| matrix_from_range_form(rhs)) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
@@ -530,6 +530,46 @@ fn matrix_from_form(w: &MatlabForm) -> Option<MatrixValue> {
             data.push(form_scalar_rational(cell)?);
         }
         MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+    }
+}
+
+/// Integer `Range` / `start:end` / `start:step:end` Form → `1×n` matrix Own.
+///
+/// Builds from Form scalars only（禁止 Term Collection 反向识别）。
+fn matrix_from_range_form(w: &MatlabForm) -> Option<MatrixValue> {
+    let MatlabForm::Call { head, args } = w
+    else {
+        return None;
+    };
+    if head != "Range" {
+        return None;
+    }
+    let values = match args.as_slice() {
+        [start, end] => {
+            let a = form_scalar_i64(start)?;
+            let b = form_scalar_i64(end)?;
+            expand_span(a, 1, b)?
+        }
+        [start, end, step] => {
+            // Parse already rewrites MATLAB `start:step:end` → `Range[start, end, step]`.
+            let a = form_scalar_i64(start)?;
+            let b = form_scalar_i64(end)?;
+            let s = form_scalar_i64(step)?;
+            expand_span(a, s, b)?
+        }
+        _ => return None,
+    };
+    if values.is_empty() {
+        return None;
+    }
+    let data: Vec<Rational> = values.into_iter().map(|i| Rational::new(Integer::from_i64(i), Integer::one())).collect();
+    MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+}
+
+fn form_scalar_i64(w: &MatlabForm) -> Option<i64> {
+    match w {
+        MatlabForm::Atom(MatlabAtom::Number(n)) => n.as_exact_integer(),
+        _ => None,
     }
 }
 

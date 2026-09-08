@@ -428,6 +428,20 @@ fn indexed_assignment_grows_with_end_plus_and_pad() {
 }
 
 #[test]
+fn set_integer_range_binds_matrix_own() {
+    let h = H::new();
+    let form = parse_matlab_form("B = 1:4").unwrap();
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &form);
+    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
+    AthenaEngine::new().execute_request(&mut s, request).expect("define range");
+    let symbol = s.arena.symbols_mut().intern("B");
+    assert!(s.matrix_binding(symbol).is_some());
+    drop(s);
+    assert_eq!(h.render(h.eval("B(end+1) = 5; B")), "[1, 2, 3, 4, 5]");
+}
+
+#[test]
 fn parse_call_vs_part_disambiguation() {
     // Known math heads stay calls even with index-shaped args.
     assert_eq!(parse_matlab_form("sin(0)").unwrap().head_name(), Some("Sin"));
