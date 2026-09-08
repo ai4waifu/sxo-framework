@@ -32,7 +32,7 @@ pub fn evaluate(input: &str, dialect: Option<String>, strategy: Option<String>) 
     let strategy = parse_strategy(strategy.as_deref())?;
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(input, d).map_err(map_err)?;
-    Ok(from_outcome(session, d, outcome, strategy))
+    from_outcome(session, d, outcome, strategy)
 }
 
 /// Top-level `d`.
@@ -41,18 +41,20 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
     let d = dialect_from_str(dialect)?;
     let session = Rc::new(Session::new());
     let (term, resolved) = parse_to_term(&session, input, d)?;
-    let root = session.differentiate_term(term, var);
-    Ok(Expression { session, root: Some(root), result_id: None, form: None, dialect: resolved })
+    let outcome = session.differentiate_outcome(term, var).map_err(map_err)?;
+    Ok(Expression {
+        session,
+        root: None,
+        result_id: Some(outcome.result_id),
+        form: None,
+        dialect: resolved,
+    })
 }
 
 /// Top-level `simplify`.
 #[wasm_bindgen]
 pub fn simplify(input: &str, dialect: Option<String>) -> Result<Expression, JsValue> {
-    let d = dialect_from_str(dialect)?;
-    let session = Rc::new(Session::new());
-    let outcome = session.evaluate_input(input, d).map_err(map_err)?;
-    let root = session.simplify_term(session.project_result(outcome.result_id));
-    Ok(Expression { session, root: Some(root), result_id: None, form: None, dialect: d })
+    evaluate(input, dialect, Some("simplify".into()))
 }
 
 /// Top-level `expression` — parse only (no evaluate).

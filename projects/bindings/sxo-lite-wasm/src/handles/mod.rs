@@ -21,9 +21,9 @@ use athena::types::{ResultId, TermId};
 #[wasm_bindgen]
 pub struct Expression {
     pub(crate) session: Rc<Session>,
-    /// Present after `d` / `simplify` (or string-entry helpers that materialize a bare term).
+    /// Present only when a bare term was materialized without a Session result (should be rare).
     pub(crate) root: Option<TermId>,
-    /// Present after evaluate. Prefer over `root` when projecting symbolic results.
+    /// Present after evaluate / `d` / `simplify`.
     pub(crate) result_id: Option<ResultId>,
     /// Present on parse objects. Cleared on evaluate / `d` / `simplify` results.
     pub(crate) form: Option<HeldForm>,
@@ -31,36 +31,42 @@ pub struct Expression {
 }
 
 /// Build an [`Expression`] from an evaluate outcome, optionally applying Simplify in-process.
+///
+/// `simplify` replaces the outcome with the Simplify request's final [`ResultId`].
 pub(crate) fn from_outcome(
     session: Rc<Session>,
     dialect: Dialect,
     outcome: sxo_types::EvalOutcome,
     strategy: EvalStrategy,
-) -> Expression {
-    match strategy {
-        EvalStrategy::None => Expression { session, root: None, result_id: Some(outcome.result_id), form: None, dialect },
+) -> Result<Expression, JsValue> {
+    let final_outcome = match strategy {
+        EvalStrategy::None => outcome,
         EvalStrategy::Simplify => {
-            let root = session.simplify_term(session.project_result(outcome.result_id));
-            Expression {
-                session,
-                root: Some(root),
-                // Keep ResultId so diagnostics can stay lazy after in-process simplify.
-                result_id: Some(outcome.result_id),
-                form: None,
-                dialect,
-            }
+            let term = session.try_project_symbolic(outcome.result_id).map_err(map_err)?;
+            session.simplify_outcome(term).map_err(map_err)?
         }
-    }
+    };
+    Ok(Expression {
+        session,
+        root: None,
+        result_id: Some(final_outcome.result_id),
+        form: None,
+        dialect,
+    })
+}
+
+fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
+    Expression { session, root: None, result_id: Some(outcome.result_id), form: None, dialect }
 }
 
 impl Expression {
-    /// Prefer an explicit `root` (e.g. post-simplify) over projecting `result_id`.
+    /// Prefer projecting `result_id` when present.
     fn materialize_root(&self) -> Result<TermId, JsValue> {
+        if let Some(result_id) = self.result_id {
+            return self.session.try_project_symbolic(result_id).map_err(map_err);
+        }
         if let Some(root) = self.root {
             return Ok(root);
-        }
-        if let Some(result_id) = self.result_id {
-            return Ok(self.session.project_result(result_id));
         }
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
@@ -84,27 +90,15 @@ impl Expression {
     /// Differentiate with respect to `var` on the same session.
     pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
         let term = self.materialize_root()?;
-        let root = self.session.differentiate_term(term, var);
-        Ok(Expression {
-            session: Rc::clone(&self.session),
-            root: Some(root),
-            result_id: None,
-            form: None,
-            dialect: self.dialect,
-        })
+        let outcome = self.session.differentiate_outcome(term, var).map_err(map_err)?;
+        Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
     /// Simplify via `Session` on the same session.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
         let term = self.materialize_root()?;
-        let root = self.session.simplify_term(term);
-        Ok(Expression {
-            session: Rc::clone(&self.session),
-            root: Some(root),
-            result_id: None,
-            form: None,
-            dialect: self.dialect,
-        })
+        let outcome = self.session.simplify_outcome(term).map_err(map_err)?;
+        Ok(from_eval_outcome(Rc::clone(&self.session), self.dialect, outcome))
     }
 
     /// Evaluate from retained Form (parse objects) or arena term (result objects).
@@ -121,7 +115,7 @@ impl Expression {
             }
         }
         .map_err(map_err)?;
-        Ok(from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy))
+        from_outcome(Rc::clone(&self.session), self.dialect, outcome, strategy)
     }
 
     /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
