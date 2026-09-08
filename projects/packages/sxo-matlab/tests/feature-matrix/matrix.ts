@@ -61,8 +61,11 @@ export const matrixFeatures = [
     feature('full_speye', 'matrix').unsupported().pure().gap('full.speye2', 'full(speye(2))', { expected: '[1, 0; 0, 1]' }).done(),
     feature('spones', 'matrix').unsupported().pure().gap('spones.eye', 'spones(speye(2))', { expected: '...' }).done(),
     feature('spfun', 'matrix')
-        .unsupported('SILENT WRONG: @ stripped — spfun(@sqrt,speye(2)) → spfun(sqrt, speye(2))')
+        .unsupported('parse/eval keep `@sqrt` and `speye(2)` args; spfun sparse map runtime still open')
         .pure()
-        .gap('spfun.sqrt', 'spfun(@sqrt, speye(2))', { expected: '...', notes: 'currently spfun(sqrt, speye(2))' })
+        .gap('spfun.sqrt', 'spfun(@sqrt, speye(2))', {
+            expected: '...',
+            notes: 'Form/render: spfun(@Sqrt, speye(2)); was silent strip of @ and/or speye(2)→speye',
+        })
         .done(),
 ];
