@@ -656,8 +656,8 @@ fn global_persistent_declaration_forms() {
 
 #[test]
 fn whitespace_juxtaposed_non_command_still_rejected() {
-    // `parfor` is not yet a keyword; `parfor i=…` is Symbol + assignment juxta.
-    let err = parse_matlab_form("parfor i=1:2").expect_err("parfor juxta");
+    // Adjacent assignments with only spaces (not command syntax) still error.
+    let err = parse_matlab_form("x=1 y=2").expect_err("juxta");
     assert!(
         err.to_string().contains("juxtaposed"),
         "got {err}"
@@ -667,6 +667,21 @@ fn whitespace_juxtaposed_non_command_still_rejected() {
     assert_eq!(form.head_name(), Some("CompoundExpression"));
     let form = parse_matlab_form("a, b").unwrap();
     assert_eq!(form.head_name(), Some("CompoundExpression"));
+}
+
+#[test]
+fn parfor_and_spmd_keep_typed_forms_and_reject() {
+    let parfor = parse_matlab_form("parfor i=1:2, i, end").unwrap();
+    assert_eq!(parfor.head_name(), Some("Parfor"));
+    assert_eq!(render_matlab_form(&parfor), "parfor i=1:2, i, end");
+
+    let spmd = parse_matlab_form("spmd, 1, end").unwrap();
+    assert_eq!(spmd.head_name(), Some("Spmd"));
+    assert_eq!(render_matlab_form(&spmd), "spmd, 1, end");
+
+    let mut s = Session::new();
+    assert_eq!(lower_request(&mut s, &parfor).kind_name(), "Control");
+    assert_eq!(lower_request(&mut s, &spmd).kind_name(), "Control");
 }
 
 #[test]

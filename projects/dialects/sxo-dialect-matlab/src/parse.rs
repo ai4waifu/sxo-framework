@@ -60,8 +60,8 @@ fn lower_root(root: &MatlabRoot, source: &str) -> Result<MatlabForm, SxoError> {
 }
 
 /// Adjacent top-level statements separated only by spaces/tabs (no `;`, `,`, or newline)
-/// are invalid juxta that oak has not typed (e.g. `parfor i=…` before a `parfor` keyword).
-/// Typed command syntax (`hold on`) is a single `Statement::Command` and does not hit this gate.
+/// are invalid juxta that oak has not typed as a single statement.
+/// Typed command syntax (`hold on`) and keywords like `parfor` / `spmd` do not hit this gate.
 fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::ast::Span]) -> Result<(), SxoError> {
     for pair in spans.windows(2) {
         let left_end = pair[0].end;
@@ -115,6 +115,22 @@ fn lower_stmt(stmt: &Statement, source: &str) -> Result<MatlabForm, SxoError> {
                 }
             }
             Ok(MatlabForm::call("For", vec![MatlabForm::symbol("_"), header_f, body_f]))
+        }
+        Statement::Parfor { header, body, .. } => {
+            let header_f = lower_expr(header, source)?;
+            let body_f = compound_stmts(body, source)?;
+            if header_f.head_name() == Some("Set") {
+                if let MatlabForm::Call { args, .. } = &header_f {
+                    if args.len() == 2 {
+                        return Ok(MatlabForm::call("Parfor", vec![args[0].clone(), args[1].clone(), body_f]));
+                    }
+                }
+            }
+            Ok(MatlabForm::call("Parfor", vec![MatlabForm::symbol("_"), header_f, body_f]))
+        }
+        Statement::Spmd { body, .. } => {
+            let body_f = compound_stmts(body, source)?;
+            Ok(MatlabForm::call("Spmd", vec![body_f]))
         }
         Statement::Switch { discriminant, cases, otherwise, .. } => {
             // Lower to nested `If[Equal[disc, case], …]` (MATLAB has no fall-through).
@@ -400,6 +416,8 @@ fn is_known_call_head(name: &str) -> bool {
             | "Branch"
             | "While"
             | "For"
+            | "Parfor"
+            | "Spmd"
             | "Try"
             | "Recover"
             | "Span"

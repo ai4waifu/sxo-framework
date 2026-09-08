@@ -62,6 +62,17 @@ pub fn render_matlab_form(form: &MatlabForm) -> String {
             if head == "Member" && args.len() == 2 {
                 return format!("{}.{}", render_matlab_form(&args[0]), render_matlab_form(&args[1]));
             }
+            if head == "Parfor" && args.len() == 3 {
+                return format!(
+                    "parfor {}={}, {}, end",
+                    render_matlab_form(&args[0]),
+                    render_matlab_form(&args[1]),
+                    render_matlab_form(&args[2])
+                );
+            }
+            if head == "Spmd" && args.len() == 1 {
+                return format!("spmd, {}, end", render_matlab_form(&args[0]));
+            }
             // `Application[head, args…]` / ApplyHead residual → `head(args…)`.
             if head == "Application" && !args.is_empty() {
                 let callee = render_matlab_form(&args[0]);
@@ -136,6 +147,17 @@ pub fn render_matlab(session: &Session, id: TermId) -> String {
                 }
                 Some(n) if n == "Member" && args.len() == 2 => {
                     return format!("{}.{}", render_matlab(session, args[0]), render_matlab(session, args[1]));
+                }
+                Some(n) if n == "Parfor" && args.len() == 3 => {
+                    return format!(
+                        "parfor {}={}, {}, end",
+                        render_matlab(session, args[0]),
+                        render_matlab(session, args[1]),
+                        render_matlab(session, args[2])
+                    );
+                }
+                Some(n) if n == "Spmd" && args.len() == 1 => {
+                    return format!("spmd, {}, end", render_matlab(session, args[0]));
                 }
                 Some(n) if n == "Application" && !args.is_empty() => {
                     let callee = render_matlab(session, args[0]);
