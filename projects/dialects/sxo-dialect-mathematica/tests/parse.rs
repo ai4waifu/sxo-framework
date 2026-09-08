@@ -447,6 +447,27 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
 }
 
 #[test]
+fn det_goal_uses_matrix_operand_binding() {
+    let h = H::new();
+    let w = h.parse_w("A={{1, 2}, {3, 4}}; Det[A]");
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &w);
+    // CompoundExpression: last step must be LinearAlgebra Det goal (not Semantic Determinant Term).
+    match &request {
+        athena::api::AthenaRequest::Control(athena::api::ControlPlan::Sequence { steps }) => {
+            let last = steps.last().expect("steps");
+            assert!(matches!(
+                last,
+                athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
+                    athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Det { .. })
+                ))
+            ));
+        }
+        other => panic!("expected Sequence, got {other:?}"),
+    }
+}
+
+#[test]
 fn matrix_times_resolves_symbol_bindings() {
     let h = H::new();
     assert_eq!(
