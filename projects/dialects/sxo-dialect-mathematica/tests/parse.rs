@@ -647,6 +647,16 @@ fn hold_preserves_plus() {
 }
 
 #[test]
+fn hold_complete_and_unevaluated_preserve_plus() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("HoldComplete[1 + 1]")), "HoldComplete[1 + 1]");
+    assert_eq!(h.wolfram(h.eval("Unevaluated[1 + 1]")), "Unevaluated[1 + 1]");
+    assert_eq!(h.wolfram(h.eval("Evaluate[HoldComplete[1 + 1]]")), "2");
+    assert_eq!(h.wolfram(h.eval("Evaluate[Unevaluated[1 + 1]]")), "2");
+    assert_eq!(h.wolfram(h.eval("ReleaseHold[HoldComplete[1 + 1]]")), "2");
+}
+
+#[test]
 fn unary_minus_binds_looser_than_power() {
     let h = H::new();
     let w = h.parse_w("-x^2");
