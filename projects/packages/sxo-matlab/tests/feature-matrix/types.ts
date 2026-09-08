@@ -13,9 +13,12 @@ export const typesFeatures = [
     feature('isnumeric', 'types').unsupported().pure().gap('isnumeric.1', 'isnumeric(1)', { expected: '1' }).done(),
     feature('datetime', 'types').unsupported().pure().gap('datetime.ymd', 'datetime(2020, 1, 1)', { expected: '...' }).done(),
     feature('containers_Map', 'types')
-        .unsupported('package member access needs oak nodes; `containers.Map` is oak error (no longer silent Map)')
+        .unsupported('parse keeps Member Form via oak Expression::Member; containers.Map runtime still open')
         .pure()
-        .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'matlab(oak): error node' })
+        .gap('containers.map', 'containers.Map', {
+            expected: 'containers.Map',
+            notes: 'Form Member[containers, Map]; eval Reject (was oak error / silent Map)',
+        })
         .done(),
     feature('iscell', 'types')
         .partial('parse keeps `iscell({1})` cell arg; iscell predicate not implemented')
