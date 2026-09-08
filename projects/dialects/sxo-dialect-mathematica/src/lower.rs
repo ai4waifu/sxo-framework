@@ -13,7 +13,7 @@ use athena::{
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::{
         arena::{
-            number_from_id, push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic,
+            push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic,
             push_symbol_name,
         },
         numeric_clone::{clone_integer, clone_number, clone_rational},
@@ -623,8 +623,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Transpose" | "ConjugateTranspose", [arg]) => {
                     // Real matrices: ConjugateTranspose equals Transpose. Complex path later.
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    // Literal matrices come from Form lists, not Term Collection reverse recognition.
+                    if let Some(mat) = matrix_from_form(arg) {
                         let shape = mat.shape();
                         if shape.rows >= 1 && shape.cols >= 1 {
                             let matrix = session.matrix_objects.intern(mat);
@@ -635,11 +635,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("LinearSolve", [a_form, b_form]) => {
-                    let a_term = lower_wexpr(session, a_form);
-                    let b_term = lower_wexpr(session, b_form);
-                    if let (Some(a_mat), Some(b_mat)) =
-                        (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
-                    {
+                    if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
                         let a = session.matrix_objects.intern(a_mat);
                         let b = session.matrix_objects.intern(b_mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -648,8 +644,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("MatrixRank", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
@@ -657,8 +652,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("RowReduce", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
@@ -666,8 +660,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Inverse", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
@@ -675,8 +668,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Tr", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
@@ -684,9 +676,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Dot", [a_form, b_form]) => {
-                    let a_term = lower_wexpr(session, a_form);
-                    let b_term = lower_wexpr(session, b_form);
-                    if let Some((a_mat, b_mat)) = dot_matrices_from_nested_lists(session, a_term, b_term) {
+                    if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
                         let lhs = session.matrix_objects.intern(a_mat);
                         let rhs = session.matrix_objects.intern(b_mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -695,11 +685,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Cross", [a_form, b_form]) => {
-                    let a_term = lower_wexpr(session, a_form);
-                    let b_term = lower_wexpr(session, b_form);
-                    if let (Some(a_mat), Some(b_mat)) =
-                        (matrix_from_nested_list(session, a_term), matrix_from_nested_list(session, b_term))
-                    {
+                    if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
                         let lhs = session.matrix_objects.intern(a_mat);
                         let rhs = session.matrix_objects.intern(b_mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
@@ -708,8 +694,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("NullSpace", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix },
@@ -717,8 +702,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Norm", [arg]) => {
-                    let term = lower_wexpr(session, arg);
-                    if let Some(mat) = matrix_from_nested_list(session, term) {
+                    if let Some(mat) = matrix_from_form(arg) {
                         let matrix = session.matrix_objects.intern(mat);
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
@@ -955,75 +939,73 @@ fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
     AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
 }
 
-fn term_scalar_rational(session: &Session, term: TermId) -> Option<Rational> {
-    let n = number_from_id(session, term)?;
-    if let Some(i) = n.as_exact_integer() {
-        return Some(Rational::new(Integer::from_i64(i), Integer::one()));
-    }
-    if let Some(i) = n.as_integer() {
-        return Some(Rational::from_integer(clone_integer(i)));
-    }
-    n.as_rational().map(clone_rational)
-}
-
-fn matrix_from_nested_list(session: &Session, term: TermId) -> Option<MatrixValue> {
-    match session.arena.get(term) {
-        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
-            if matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. })) {
-                let mut data = Vec::new();
-                let mut cols: Option<u64> = None;
-                for row in rows {
-                    let cells = match session.arena.get(*row) {
-                        Some(TermNode::Collection { elements: cells, .. }) => cells.clone(),
-                        _ => return None,
-                    };
-                    let c = cells.len() as u64;
-                    match cols {
-                        Some(prev) if prev != c => return None,
-                        None => cols = Some(c),
-                        _ => {}
-                    }
-                    for cell in cells {
-                        data.push(term_scalar_rational(session, cell)?);
-                    }
-                }
-                MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
+    match w {
+        WolframForm::Atom(WolframAtom::Number(n)) => {
+            if let Some(i) = n.as_exact_integer() {
+                return Some(Rational::new(Integer::from_i64(i), Integer::one()));
             }
-            else {
-                let mut data = Vec::with_capacity(rows.len());
-                for cell in rows {
-                    data.push(term_scalar_rational(session, *cell)?);
-                }
-                MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+            if let Some(i) = n.as_integer() {
+                return Some(Rational::from_integer(clone_integer(i)));
             }
+            n.as_rational().map(clone_rational)
         }
-        _ => {
-            let r = term_scalar_rational(session, term)?;
-            MatrixValue::from_rationals_row_major(1, 1, vec![r]).ok()
-        }
+        _ => None,
     }
 }
 
-/// True when `term` is a flat `List` of scalars (Mathematica vector syntax), not nested rows.
-fn is_flat_list_vector(session: &Session, term: TermId) -> bool {
-    match session.arena.get(term) {
-        Some(TermNode::Collection { elements: rows, .. }) if !rows.is_empty() => {
-            !matches!(session.arena.get(rows[0]), Some(TermNode::Collection { .. }))
+/// Build a dense rational `MatrixValue` from Mathematica list Form literals.
+///
+/// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Variables and computed
+/// terms are not reverse-recognized from arena Collections.
+fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
+    let rows = list_items(w)?;
+    if rows.is_empty() {
+        return None;
+    }
+    if list_items(&rows[0]).is_some() {
+        let mut data = Vec::new();
+        let mut cols: Option<u64> = None;
+        for row in rows {
+            let cells = list_items(row)?;
+            let c = cells.len() as u64;
+            match cols {
+                Some(prev) if prev != c => return None,
+                None => cols = Some(c),
+                _ => {}
+            }
+            for cell in cells {
+                data.push(form_scalar_rational(cell)?);
+            }
         }
+        MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
+    } else {
+        let mut data = Vec::with_capacity(rows.len());
+        for cell in rows {
+            data.push(form_scalar_rational(cell)?);
+        }
+        MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
+    }
+}
+
+/// True when Form is a flat list of scalars (Mathematica vector syntax), not nested rows.
+fn is_flat_list_vector_form(w: &WolframForm) -> bool {
+    match list_items(w) {
+        Some(rows) if !rows.is_empty() => list_items(&rows[0]).is_none(),
         _ => false,
     }
 }
 
-/// Orient Mathematica flat-list vectors for `Dot` at the dialect layer.
+/// Orient Mathematica flat-list vectors for `Dot` at the dialect Form layer.
 ///
 /// Kernel `Dot` is plain matrix multiplication and must not guess `1×n` vs `n×1`.
-fn dot_matrices_from_nested_lists(session: &Session, a_term: TermId, b_term: TermId) -> Option<(MatrixValue, MatrixValue)> {
+fn dot_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option<(MatrixValue, MatrixValue)> {
     use athena::domains::linear_algebra::transpose;
 
-    let a_flat = is_flat_list_vector(session, a_term);
-    let b_flat = is_flat_list_vector(session, b_term);
-    let a = matrix_from_nested_list(session, a_term)?;
-    let mut b = matrix_from_nested_list(session, b_term)?;
+    let a_flat = is_flat_list_vector_form(a_form);
+    let b_flat = is_flat_list_vector_form(b_form);
+    let a = matrix_from_form(a_form)?;
+    let mut b = matrix_from_form(b_form)?;
 
     match (a_flat, b_flat) {
         // `Dot[m, {v…}]` → column vector on the right when lengths match `m` columns.
