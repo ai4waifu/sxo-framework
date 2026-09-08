@@ -59,10 +59,15 @@ export const listFeatures = [
     feature('Sort', 'list')
         .supported()
         .pure()
-        .notes('Exact-integer ascending Sort; mixed/non-integer stays residual')
+        .notes('Contract: exact-integer ascending only; mixed/non-integer → residual (not full MMA Sort)')
         .eval('sort.3', 'Sort[{3, 1, 2}]', '{1, 2, 3}')
         .done(),
-    feature('MemberQ', 'list').supported().pure().eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True').done(),
+    feature('MemberQ', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: structural equality membership only (not pattern `MemberQ`)')
+        .eval('memberq.2', 'MemberQ[{1, 2, 3}, 2]', 'True')
+        .done(),
     feature('Select', 'list')
         .unsupported('unevaluated Select[list, EvenQ] (no predicate fold yet)')
         .pure()
@@ -78,11 +83,31 @@ export const listFeatures = [
         .eval('cases.integer', 'Cases[{1, 2, 3}, _Integer]', '{1, 2, 3}')
         .eval('cases.mixed', 'Cases[{1, a, 2}, _Integer]', '{1, 2}')
         .done(),
-    feature('Count', 'list').supported().pure().eval('count.1', 'Count[{1, 1, 2}, 1]', '2').done(),
+    feature('Count', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: structural equality occurrence count (not pattern `Count`)')
+        .eval('count.1', 'Count[{1, 1, 2}, 1]', '2')
+        .done(),
     feature('Partition', 'list').supported().pure().eval('partition.2', 'Partition[{1, 2, 3, 4}, 2]', '{{1, 2}, {3, 4}}').done(),
-    feature('Union', 'list').supported().pure().eval('union.basic', 'Union[{1, 2}, {2, 3}]', '{1, 2, 3}').done(),
-    feature('Intersection', 'list').supported().pure().eval('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', '{2}').done(),
-    feature('FreeQ', 'list').supported().pure().eval('freeq.3', 'FreeQ[{1, 2}, 3]', 'True').done(),
+    feature('Union', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: structural dedupe of list args; exact integers sorted ascending')
+        .eval('union.basic', 'Union[{1, 2}, {2, 3}]', '{1, 2, 3}')
+        .done(),
+    feature('Intersection', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: structural intersection; exact integers sorted ascending')
+        .eval('intersection.basic', 'Intersection[{1, 2}, {2, 3}]', '{2}')
+        .done(),
+    feature('FreeQ', 'list')
+        .supported()
+        .pure()
+        .notes('Contract: top-level structural non-membership only (not deep/pattern `FreeQ`)')
+        .eval('freeq.3', 'FreeQ[{1, 2}, 3]', 'True')
+        .done(),
     feature('Position', 'list').unsupported().pure().gap('position.1', 'Position[{1, 2, 1}, 1]', { expected: '{{1}, {3}}' }).done(),
     feature('Extract', 'list').supported().pure().eval('extract.2', 'Extract[{1, 2, 3}, 2]', '2').done(),
     feature('PadLeft', 'list').unsupported().pure().gap('padleft.4', 'PadLeft[{1, 2}, 4]', { expected: '{0, 0, 1, 2}' }).done(),

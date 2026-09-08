@@ -765,12 +765,12 @@ fn hold_preserves_plus() {
 }
 
 #[test]
-fn head_hold_first_extracts_plus_and_list() {
+fn head_evaluates_args_then_extracts() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Head[{1, 2}]")), "List");
     assert_eq!(h.wolfram(h.eval("Head[a + b]")), "Plus");
-    assert_eq!(h.wolfram(h.eval("Head[1 + 2]")), "Plus");
-    assert_ne!(h.wolfram(h.eval("Head[1 + 2]")), "Head[3]");
+    // Mathematica evaluates args: Head[1+2] → Head[3] → Integer (not HoldFirst → Plus).
+    assert_eq!(h.wolfram(h.eval("Head[1 + 2]")), "Integer");
 }
 
 #[test]
