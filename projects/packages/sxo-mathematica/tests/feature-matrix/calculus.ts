@@ -57,7 +57,7 @@ export const calculusFeatures = [
         .gap('inversefourier.impulse', 'InverseFourier[{1, 0, 0, 0}]', { expected: '...' })
         .done(),
     feature('Residue', 'calculus')
-        .partial('simple poles via `f(a)/g''(a)` including `Exp[z]/z`; Laurent fallback still limited')
+        .partial("simple poles via f(a)/g''(a) including Exp[z]/z; Laurent fallback still limited")
         .pure()
         .eval('residue.1_z', 'Residue[1/z, {z, 0}]', '1')
         .eval('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', '1')
