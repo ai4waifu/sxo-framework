@@ -8,8 +8,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_matlab::{
-    MatlabAtom, MatlabForm, application_surface_name, form_to_term, lower_request, parse_matlab, parse_matlab_form,
-    push_matlab_call, render_matlab, render_matlab_form, try_plot_svg,
+    MatlabAtom, MatlabForm, application_surface_name, form_to_term, install_session_conventions, lower_request,
+    parse_matlab, parse_matlab_form, push_matlab_call, render_matlab, render_matlab_form, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -20,7 +20,9 @@ struct H {
 
 impl H {
     fn new() -> Self {
-        Self { s: RefCell::new(Session::new()) }
+        let mut s = Session::new();
+        install_session_conventions(&mut s);
+        Self { s: RefCell::new(s) }
     }
 
     fn parse(&self, input: &str) -> Tid {
@@ -804,6 +806,9 @@ fn ieee_edge_forms_use_nan_and_matlab_zero_pow_zero() {
     assert_eq!(h.render(h.eval("0/0")), "NaN");
     assert_eq!(h.render(h.eval("Inf - Inf")), "NaN");
     assert_eq!(h.render(h.eval("0^0")), "1");
+    // Convention applies after binding, not only to literal Form zeros.
+    assert_eq!(h.render(h.eval("x = 0; x^0")), "1");
+    assert_eq!(h.render(h.eval("0.^0")), "1");
 }
 
 #[test]
