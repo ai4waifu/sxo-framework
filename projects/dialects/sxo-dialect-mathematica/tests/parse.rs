@@ -659,6 +659,13 @@ fn map_indexed_second_slot_returns_indices() {
 }
 
 #[test]
+fn map_thread_applies_head_to_columns() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("MapThread[f, {{1, 2}, {3, 4}}]")), "{f[1, 3], f[2, 4]}");
+    assert_eq!(h.wolfram(h.eval("MapThread[Plus, {{1, 2}, {3, 4}}]")), "{4, 6}");
+}
+
+#[test]
 fn rest_drops_first_element() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Rest[{1, 2, 3}]")), "{2, 3}");
