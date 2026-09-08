@@ -293,6 +293,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "Det" || head == "Determinant" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Det { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Span" => {
             let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
             return AthenaRequest::Term(rewritten);
@@ -344,9 +353,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "LinearSolve" || head == "Mldivide" => {
             if let [a_form, b_form] = args.as_slice() {
-                if let (Some(a_mat), Some(b_mat)) = (matrix_from_form(a_form), matrix_from_form(b_form)) {
-                    let a = MatrixOperand::object(session.matrix_objects.intern(a_mat));
-                    let b = MatrixOperand::object(session.matrix_objects.intern(b_mat));
+                if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
                     return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                         athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                     )));
@@ -479,6 +486,19 @@ fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
     match w {
         MatlabForm::List(items) => Some(items.as_slice()),
         _ => None,
+    }
+}
+
+/// Literal Form matrix or symbol Own binding for linear-algebra goals.
+fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<MatrixOperand> {
+    if let Some(mat) = matrix_from_form(w) {
+        Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
+    }
+    else if let Some(name) = form_symbol_name(w) {
+        Some(MatrixOperand::binding(session.arena.symbols_mut().intern(name)))
+    }
+    else {
+        None
     }
 }
 

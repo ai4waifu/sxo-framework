@@ -259,6 +259,25 @@ fn transpose_symbol_after_2d_set_uses_matrix_binding() {
 }
 
 #[test]
+fn read_matrix_binding_renders_nested_list() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; A")), "[1, 2; 3, 4]");
+}
+
+#[test]
+fn det_symbol_after_2d_set() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; det(A)")), "-2");
+}
+
+#[test]
+fn linsolve_symbol_after_2d_set() {
+    let h = H::new();
+    // Column `b` stays term Own (`Part` grow path). Pass Form literal RHS with matrix Own `A`.
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; A\\[5; 6]")), "[-4; 9/2]");
+}
+
+#[test]
 fn set_row_vector_keeps_term_binding_for_part() {
     let h = H::new();
     assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));
