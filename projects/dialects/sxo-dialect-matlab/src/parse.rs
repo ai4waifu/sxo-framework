@@ -33,7 +33,7 @@ pub fn parse_matlab_form(input: &str) -> Result<MatlabForm, SxoError> {
     let mut oak_session = oak_core::ParseSession::<MatlabLanguage>::default();
     let output = builder.build(&source, &[], &mut oak_session);
     let root = output.result.map_err(|e| SxoError::new(format!("matlab(oak): {e:?}")))?;
-    lower_root(&root)
+    lower_root(&root, trimmed)
 }
 
 /// Parse MATLAB text into a session arena [`TermId`] (no evaluate).
@@ -44,16 +44,39 @@ pub fn parse_matlab(session: &mut Session, input: &str) -> Result<TermId, SxoErr
     Ok(form_to_term(session, &form))
 }
 
-fn lower_root(root: &MatlabRoot) -> Result<MatlabForm, SxoError> {
+fn lower_root(root: &MatlabRoot, source: &str) -> Result<MatlabForm, SxoError> {
     let mut items = Vec::with_capacity(root.items.len());
+    let mut spans = Vec::with_capacity(root.items.len());
     for stmt in &root.items {
+        spans.push(stmt.span());
         items.push(lower_stmt(stmt)?);
     }
+    reject_whitespace_juxtaposed_statements(source, &spans)?;
     match items.len() {
         0 => Err(SxoError::new("matlab(oak): empty root")),
         1 => Ok(items.remove(0)),
         _ => Ok(MatlabForm::call("CompoundExpression", items)),
     }
+}
+
+/// Adjacent top-level statements separated only by spaces/tabs (no `;`, `,`, or newline)
+/// are MATLAB command syntax / invalid juxta that oak has not typed. Refuse rather than
+/// evaluate as `CompoundExpression` and silently return the last word (`hold on` → `on`).
+fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::ast::Span]) -> Result<(), SxoError> {
+    for pair in spans.windows(2) {
+        let left_end = pair[0].end;
+        let right_start = pair[1].start;
+        if left_end > right_start || right_start > source.len() {
+            continue;
+        }
+        let between = &source[left_end..right_start];
+        if between.chars().all(|c| c == ' ' || c == '\t') {
+            return Err(SxoError::new(
+                "matlab: unsupported command syntax or juxtaposed statements (need oak command/statement nodes)",
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
