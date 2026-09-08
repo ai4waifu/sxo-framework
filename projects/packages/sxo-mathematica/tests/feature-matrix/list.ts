@@ -49,7 +49,7 @@ export const listFeatures = [
         .eval('first.ab', 'First[{a, b}]', 'a')
         .done(),
     feature('Join', 'list').supported().pure().eval('join.basic', 'Join[{1}, {2}]', '{1, 2}').done(),
-    feature('Flatten', 'list').unsupported().pure().gap('flatten.basic', 'Flatten[{{1, 2}, {3}}]', { expected: '{1, 2, 3}' }).done(),
+    feature('Flatten', 'list').supported().pure().eval('flatten.basic', 'Flatten[{{1, 2}, {3}}]', '{1, 2, 3}').done(),
     feature('Apply', 'list').supported().pure().eval('apply.plus', 'Apply[Plus, {1, 2, 3}]', '6').done(),
     feature('Rest', 'list').supported().pure().eval('rest.basic', 'Rest[{1, 2, 3}]', '{2, 3}').done(),
     feature('Most', 'list').supported().pure().eval('most.basic', 'Most[{1, 2, 3}]', '{1, 2}').done(),
