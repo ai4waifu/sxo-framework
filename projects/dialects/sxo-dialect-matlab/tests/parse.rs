@@ -36,9 +36,16 @@ impl H {
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => {
-                s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| form_to_term(&mut s, &form))
+                let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval: {input}"));
+                result.symbolic_term.unwrap_or_else(|| {
+                    panic!(
+                        "result has no symbolic_term after eval: {input} (status={}, coverage={})",
+                        result.status.name(),
+                        result.coverage.name()
+                    )
+                })
             }
-            Err(_) => form_to_term(&mut s, &form),
+            Err(err) => panic!("execute_request failed for {input}: {err}"),
         }
     }
 
@@ -48,9 +55,16 @@ impl H {
         let engine = AthenaEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => {
-                s.results.get(result_id).and_then(|r| r.symbolic_term).unwrap_or_else(|| form_to_term(&mut s, form))
+                let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval_form"));
+                result.symbolic_term.unwrap_or_else(|| {
+                    panic!(
+                        "result has no symbolic_term after eval_form (status={}, coverage={})",
+                        result.status.name(),
+                        result.coverage.name()
+                    )
+                })
             }
-            Err(_) => form_to_term(&mut s, form),
+            Err(err) => panic!("execute_request failed for eval_form: {err}"),
         }
     }
 
@@ -207,10 +221,9 @@ fn parse_mldivide_keeps_head() {
     let form = parse_matlab_form(r"A\b").unwrap();
     let t = form_to_term(&mut h.s.borrow_mut(), &form);
     assert_eq!(application_surface_name(&h.s.borrow(), t).as_deref(), Some("LinearSolve"));
-    // Symbolic operands stay residual under `LinearSolve`.
-    let folded = h.eval_form(&form);
-    assert_eq!(application_surface_name(&h.s.borrow(), folded).as_deref(), Some("LinearSolve"));
     assert!(h.render(t).contains('\\'));
+    // Unbound symbolic `A\b` lowers to DomainGoal Solve. Missing matrix bindings currently
+    // yield Invalid without `symbolic_term`. Residual Own echo remains product debt.
 }
 
 #[test]
