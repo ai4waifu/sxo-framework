@@ -2,10 +2,11 @@ import { feature } from '@sxo/harness';
 
 export const metaFeatures = [
     feature('Head', 'meta')
-        .unsupported('Head evaluates args first: Head[1+2] → Head[3]; Head[{1,2}] unevaluated')
+        .supported()
         .pure()
-        .gap('head.list', 'Head[{1, 2}]', { expected: 'List' })
-        .gap('head.plus', 'Head[a + b]', { expected: 'Plus' })
+        .notes('HoldFirst: extract head without evaluating arg (`Head[1+2]` → `Plus`)')
+        .eval('head.list', 'Head[{1, 2}]', 'List')
+        .eval('head.plus', 'Head[a + b]', 'Plus')
         .done(),
     feature('Timing', 'meta')
         .unsupported('HoldAll Form kept; no wall-clock Timing pair runtime')
