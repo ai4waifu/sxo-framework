@@ -148,6 +148,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframAtom::Symbol(s) if s == "Null" => push_null(session),
             WolframAtom::Symbol(s) if s == "Pi" => push_constant(session, MathematicalConstant::Pi),
             WolframAtom::Symbol(s) if s == "E" => push_constant(session, MathematicalConstant::EulerNumber),
+            WolframAtom::Symbol(s) if s == "Infinity" => push_constant(session, MathematicalConstant::Infinity),
             WolframAtom::Symbol(s) => push_symbol_name(session, s),
         },
         WolframForm::List(items) => {
@@ -1361,6 +1362,9 @@ pub fn wexpr_from_session(session: &Session, id: TermId) -> WolframForm {
         Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Pi))) => WolframForm::Atom(WolframAtom::Symbol("Pi".into())),
         Some(TermNode::Atom(Atom::Constant(MathematicalConstant::EulerNumber))) => {
             WolframForm::Atom(WolframAtom::Symbol("E".into()))
+        }
+        Some(TermNode::Atom(Atom::Constant(MathematicalConstant::Infinity))) => {
+            WolframForm::Atom(WolframAtom::Symbol("Infinity".into()))
         }
         Some(TermNode::Atom(Atom::Symbol(sym))) => {
             let name = session.arena.symbols().resolve(*sym).unwrap_or("").to_string();
