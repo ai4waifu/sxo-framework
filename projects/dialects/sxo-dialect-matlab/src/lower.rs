@@ -11,12 +11,12 @@ use athena::{
         calculus::{CalculusRequest, DerivativeOrder},
         linear_algebra::MatrixValue,
     },
-    ir::{Atom, SemanticOperator, TermNode},
+    ir::{Atom, MathematicalConstant, SemanticOperator, TermNode},
     numeric::{Integer, Rational},
     runtime::values::{
         arena::{
-            application_arguments, number_from_id, push_bool, push_list, push_null, push_semantic, push_symbol_name,
-            symbol_name,
+            application_arguments, number_from_id, push_bool, push_constant, push_list, push_null, push_semantic,
+            push_symbol_name, symbol_name,
         },
         numeric_clone::{clone_integer, clone_number, clone_rational},
     },
@@ -41,8 +41,8 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
             session.arena.push(TermNode::Atom(Atom::String(s.clone())), SourceSpan::default())
         }
         MatlabForm::Atom(MatlabAtom::Symbol(name)) => match name.as_str() {
-            // Dialect surface `Inf` → shared `Infinity` symbol identity (Athena fold / limit).
-            "Inf" | "inf" => push_symbol_name(session, "Infinity"),
+            // Dialect surface `Inf` → typed positive infinity constant.
+            "Inf" | "inf" => push_constant(session, MathematicalConstant::Infinity),
             // Dialect surface `NaN` → neutral `Indeterminate`.
             "NaN" | "nan" => push_semantic(session, SemanticOperator::Indeterminate, Vec::new()),
             _ => push_symbol_name(session, name),
