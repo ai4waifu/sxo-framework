@@ -141,6 +141,15 @@ impl Expression {
         }
     }
 
+    /// Condition summaries from the last evaluate (empty if none / not evaluated).
+    #[wasm_bindgen(getter)]
+    pub fn conditions(&self) -> Vec<String> {
+        match self.result_id {
+            Some(id) => self.session.project_conditions(id),
+            None => Vec::new(),
+        }
+    }
+
     /// Parent evaluate result id when this handle is a Simplify transform, else `undefined`.
     #[wasm_bindgen(getter, js_name = derivedFrom)]
     pub fn derived_from_js(&self) -> Option<u32> {

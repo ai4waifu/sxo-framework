@@ -105,6 +105,15 @@ impl Session {
         ms.results.get(result_id).map(|r| r.diagnostics.iter().map(|d| d.to_string()).collect()).unwrap_or_default()
     }
 
+    /// Project condition summaries for a Session-local [`ResultId`] (empty if missing).
+    pub fn project_conditions(&self, result_id: ResultId) -> Vec<String> {
+        let ms = self.math_session.borrow();
+        ms.results
+            .get(result_id)
+            .map(|r| r.conditions.iter().map(sxo_types::condition_summary).collect())
+            .unwrap_or_default()
+    }
+
     /// Clear Athena Own symbol definitions for this host session.
     #[allow(dead_code)]
     pub fn clear_definitions(&self) {

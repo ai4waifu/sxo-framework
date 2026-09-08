@@ -284,6 +284,15 @@ impl Session {
         let ms = self.math_session.borrow();
         ms.results.get(result_id).map(|r| r.diagnostics.iter().map(|d| d.to_string()).collect()).unwrap_or_default()
     }
+
+    /// Project condition summaries for a Session-local [`ResultId`] (empty if missing).
+    pub fn project_conditions(&self, result_id: ResultId) -> Vec<String> {
+        let ms = self.math_session.borrow();
+        ms.results
+            .get(result_id)
+            .map(|r| r.conditions.iter().map(sxo_types::condition_summary).collect())
+            .unwrap_or_default()
+    }
 }
 
 fn outcome_from_result(ms: &AthenaSession, result_id: ResultId) -> EvalOutcome {

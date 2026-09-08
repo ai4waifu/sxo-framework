@@ -82,6 +82,28 @@ fn differentiate_can_link_derived_from_evaluate_parent() {
 }
 
 #[test]
+fn project_conditions_exposes_result_predicates() {
+    use athena::runtime::results::{ComputationResult, CoverageStatus};
+    use athena::types::{ComputationStatus, Condition, Predicate};
+
+    let session = Session::new();
+    let result_id = session.with_math_mut(|s| {
+        let term = push_int(s, 1);
+        let symbol = s.arena.symbols_mut().intern("x");
+        let result = ComputationResult::with_status(ComputationStatus::Conditional, CoverageStatus::Partial)
+            .with_symbolic_term(term)
+            .with_condition(Condition {
+                predicate: Predicate::SymbolReal(symbol),
+                resolved: false,
+            });
+        s.insert_result(result)
+    });
+    let conditions = session.project_conditions(result_id);
+    assert_eq!(conditions, vec!["SymbolReal resolved=false".to_string()]);
+    assert!(session.project_diagnostics(result_id).is_empty());
+}
+
+#[test]
 fn residual_unevaluated_is_not_exact_full() {
     let session = Session::new();
     let out = session.evaluate_mathematica("Cos[x]").unwrap();

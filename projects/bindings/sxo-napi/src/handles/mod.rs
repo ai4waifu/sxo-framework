@@ -191,6 +191,17 @@ impl Expression {
         }
     }
 
+    /// Condition summaries from the last evaluate (empty if none / not evaluated).
+    ///
+    /// Machine-oriented predicate kind + resolved flag. Projected on demand from [`ResultId`].
+    #[napi(getter)]
+    pub fn conditions(&self) -> Vec<String> {
+        match self.result_id {
+            Some(id) => self.session.project_conditions(id),
+            None => Vec::new(),
+        }
+    }
+
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
