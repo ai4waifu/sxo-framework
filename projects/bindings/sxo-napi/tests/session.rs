@@ -217,6 +217,17 @@ fn evaluate_then_simplify_trig_identity_in_one_session() {
 }
 
 #[test]
+fn simplify_strategy_does_not_rebind_block_free_symbol() {
+    let session = Session::new();
+    session.evaluate_mathematica("x = 5").unwrap();
+    let blocked = session.evaluate_mathematica("Block[{x}, x]").unwrap();
+    let term = session.project_result(blocked.result_id).unwrap();
+    let simplified = session.simplify_outcome(term).unwrap();
+    let text = session.render_as_wolfram(session.project_result(simplified.result_id).unwrap());
+    assert_eq!(text, "x", "autoSimplify must not turn Block free x into ambient Own 5, got {text}");
+}
+
+#[test]
 fn matlab_form_display_without_arena_materialize() {
     use sxo_dialect_matlab::render_matlab_form;
 
