@@ -18,9 +18,12 @@ export const typesFeatures = [
         .gap('containers.map', 'containers.Map', { expected: 'containers.Map', notes: 'matlab(oak): error node' })
         .done(),
     feature('iscell', 'types')
-        .unsupported('iscell({1}) still strips brace in call args; need CellArray + cellfun/call arity fidelity')
+        .unsupported('iscell({1}) refused until oak CellArray (was silent iscell(1))')
         .pure()
-        .gap('iscell.brace', 'iscell({1})', { expected: '1', notes: 'currently iscell(1)' })
+        .gap('iscell.brace', 'iscell({1})', {
+            expected: '1',
+            notes: 'parse error: unsupported cell brace in call/index',
+        })
         .done(),
     feature('missing', 'types')
         .partial('atom retained; ismissing/rmmissing unevaluated')
