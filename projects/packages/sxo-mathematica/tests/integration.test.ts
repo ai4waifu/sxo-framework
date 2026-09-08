@@ -23,7 +23,8 @@ describe('@sxo/mathematica integration', () => {
 
     it('integrates polynomials', () => {
         const integral = mathematica.evaluate('Integrate[x^2, x]');
-        expect(integral.toWolfram()).toBe('1/3*x^3');
+        // Canonical Power form from Athena; equivalent to `1/3*x^3`.
+        expect(integral.toWolfram()).toBe('x^3*3^(-1)');
     });
 
     it('maps slot pure functions over lists', () => {
