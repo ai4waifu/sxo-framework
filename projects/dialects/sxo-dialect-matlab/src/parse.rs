@@ -49,7 +49,7 @@ fn lower_root(root: &MatlabRoot, source: &str) -> Result<MatlabForm, SxoError> {
     let mut spans = Vec::with_capacity(root.items.len());
     for stmt in &root.items {
         spans.push(stmt.span());
-        items.push(lower_stmt(stmt)?);
+        items.push(lower_stmt(stmt, source)?);
     }
     reject_whitespace_juxtaposed_statements(source, &spans)?;
     match items.len() {
@@ -79,18 +79,18 @@ fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::as
     Ok(())
 }
 
-fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
+fn lower_stmt(stmt: &Statement, source: &str) -> Result<MatlabForm, SxoError> {
     match stmt {
-        Statement::Expr(expr) => lower_expr(expr),
+        Statement::Expr(expr) => lower_expr(expr, source),
         Statement::If { condition, then_body, elseifs, else_body, .. } => {
-            let mut else_form = compound_stmts(else_body)?;
+            let mut else_form = compound_stmts(else_body, source)?;
             for (cond, body) in elseifs.iter().rev() {
-                let then_f = compound_stmts(body)?;
-                let cond_f = lower_expr(cond)?;
+                let then_f = compound_stmts(body, source)?;
+                let cond_f = lower_expr(cond, source)?;
                 else_form = MatlabForm::call("If", vec![cond_f, then_f, else_form]);
             }
-            let then_f = compound_stmts(then_body)?;
-            let cond_f = lower_expr(condition)?;
+            let then_f = compound_stmts(then_body, source)?;
+            let cond_f = lower_expr(condition, source)?;
             let else_is_null = matches!(else_form, MatlabForm::Atom(MatlabAtom::Null));
             if else_is_null && elseifs.is_empty() {
                 Ok(MatlabForm::call("If", vec![cond_f, then_f]))
@@ -100,13 +100,13 @@ fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
             }
         }
         Statement::While { condition, body, .. } => {
-            let cond_f = lower_expr(condition)?;
-            let body_f = compound_stmts(body)?;
+            let cond_f = lower_expr(condition, source)?;
+            let body_f = compound_stmts(body, source)?;
             Ok(MatlabForm::call("While", vec![cond_f, body_f]))
         }
         Statement::For { header, body, .. } => {
-            let header_f = lower_expr(header)?;
-            let body_f = compound_stmts(body)?;
+            let header_f = lower_expr(header, source)?;
+            let body_f = compound_stmts(body, source)?;
             if header_f.head_name() == Some("Set") {
                 if let MatlabForm::Call { args, .. } = &header_f {
                     if args.len() == 2 {
@@ -119,29 +119,29 @@ fn lower_stmt(stmt: &Statement) -> Result<MatlabForm, SxoError> {
         Statement::Switch { discriminant, cases, otherwise, .. } => {
             // Lower to nested `If[Equal[disc, case], …]` (MATLAB has no fall-through).
             // Literal discriminants are duplicated per arm. Side-effecting discs need a later bind-once rewrite.
-            let disc = lower_expr(discriminant)?;
-            let mut else_form = compound_stmts(otherwise)?;
+            let disc = lower_expr(discriminant, source)?;
+            let mut else_form = compound_stmts(otherwise, source)?;
             for (value, body) in cases.iter().rev() {
-                let then_f = compound_stmts(body)?;
-                let val_f = lower_expr(value)?;
+                let then_f = compound_stmts(body, source)?;
+                let val_f = lower_expr(value, source)?;
                 let cond = MatlabForm::call("Equal", vec![disc.clone(), val_f]);
                 else_form = MatlabForm::call("If", vec![cond, then_f, else_form]);
             }
             Ok(else_form)
         }
         Statement::Try { body, catch_body, .. } => {
-            let body_f = compound_stmts(body)?;
-            let catch_f = compound_stmts(catch_body)?;
+            let body_f = compound_stmts(body, source)?;
+            let catch_f = compound_stmts(catch_body, source)?;
             Ok(MatlabForm::call("Try", vec![body_f, catch_f]))
         }
         Statement::Error { .. } => Err(SxoError::new("matlab(oak): error node")),
     }
 }
 
-fn compound_stmts(stmts: &[Statement]) -> Result<MatlabForm, SxoError> {
+fn compound_stmts(stmts: &[Statement], source: &str) -> Result<MatlabForm, SxoError> {
     let mut items = Vec::with_capacity(stmts.len());
     for s in stmts {
-        items.push(lower_stmt(s)?);
+        items.push(lower_stmt(s, source)?);
     }
     Ok(compound_or_single(items))
 }
@@ -154,7 +154,7 @@ fn compound_or_single(mut items: Vec<MatlabForm>) -> MatlabForm {
     }
 }
 
-fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
+fn lower_expr(expr: &Expression, source: &str) -> Result<MatlabForm, SxoError> {
     match expr {
         Expression::Symbol(id) => {
             if id.name == "end" {
@@ -188,7 +188,7 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
             if rows.len() == 1 {
                 let mut items = Vec::with_capacity(rows[0].len());
                 for cell in &rows[0] {
-                    items.push(lower_expr(cell)?);
+                    items.push(lower_expr(cell, source)?);
                 }
                 Ok(MatlabForm::list(items))
             }
@@ -197,21 +197,24 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
                 for row in rows {
                     let mut cols = Vec::with_capacity(row.len());
                     for cell in row {
-                        cols.push(lower_expr(cell)?);
+                        cols.push(lower_expr(cell, source)?);
                     }
                     out.push(MatlabForm::list(cols));
                 }
                 Ok(MatlabForm::list(out))
             }
         }
-        Expression::Call { head, arguments, .. } => {
-            let mut head_f = lower_expr(head)?;
+        Expression::Call { head, arguments, span, .. } => {
+            // oak has no CellArray node yet. Brace cells inside calls are flattened
+            // (`cellfun(@numel,{1,2})` → three args). Refuse while `{`/`}` remain in the call span.
+            reject_untyped_brace_cell_in_span(source, span)?;
+            let mut head_f = lower_expr(head, source)?;
             if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &head_f {
                 head_f = MatlabForm::symbol(map_matlab_head(name));
             }
             let mut args = Vec::with_capacity(arguments.len());
             for a in arguments {
-                args.push(lower_expr(a)?);
+                args.push(lower_expr(a, source)?);
             }
             let is_part_base = matches!(head_f, MatlabForm::List(_)) || head_f.head_name() == Some("Part");
             if is_part_base {
@@ -238,18 +241,18 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
                 Ok(MatlabForm::call("Application", wrapped))
             }
         }
-        Expression::Binary(bin) => lower_binary(bin),
-        Expression::Prefix(u) => lower_prefix(u),
-        Expression::Postfix(u) => lower_postfix(u),
-        Expression::Grouped { expression, .. } => lower_expr(expression),
+        Expression::Binary(bin) => lower_binary(bin, source),
+        Expression::Prefix(u) => lower_prefix(u, source),
+        Expression::Postfix(u) => lower_postfix(u, source),
+        Expression::Grouped { expression, .. } => lower_expr(expression, source),
         Expression::AnonymousFunction { parameters, body, .. } => {
-            let body_f = lower_expr(body)?;
+            let body_f = lower_expr(body, source)?;
             match parameters.as_slice() {
-                [p] => Ok(MatlabForm::call("Function", vec![lower_expr(p)?, body_f])),
+                [p] => Ok(MatlabForm::call("Function", vec![lower_expr(p, source)?, body_f])),
                 _ => {
                     let mut args = Vec::with_capacity(parameters.len() + 1);
                     for p in parameters {
-                        args.push(lower_expr(p)?);
+                        args.push(lower_expr(p, source)?);
                     }
                     args.push(body_f);
                     Ok(MatlabForm::call("Function", args))
@@ -257,7 +260,7 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
             }
         }
         Expression::FunctionHandle { target, .. } => {
-            let mut t = lower_expr(target)?;
+            let mut t = lower_expr(target, source)?;
             if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &t {
                 t = MatlabForm::symbol(map_matlab_head(name));
             }
@@ -266,9 +269,22 @@ fn lower_expr(expr: &Expression) -> Result<MatlabForm, SxoError> {
     }
 }
 
-fn lower_binary(bin: &BinaryExpr) -> Result<MatlabForm, SxoError> {
-    let l = lower_expr(&bin.lhs)?;
-    let r = lower_expr(&bin.rhs)?;
+fn reject_untyped_brace_cell_in_span(source: &str, span: &oak_matlab::ast::Span) -> Result<(), SxoError> {
+    if span.end > source.len() || span.start > span.end {
+        return Ok(());
+    }
+    let text = &source[span.start..span.end];
+    if text.contains('{') || text.contains('}') {
+        return Err(SxoError::new(
+            "matlab: unsupported cell brace in call/index (need oak CellArray node)",
+        ));
+    }
+    Ok(())
+}
+
+fn lower_binary(bin: &BinaryExpr, source: &str) -> Result<MatlabForm, SxoError> {
+    let l = lower_expr(&bin.lhs, source)?;
+    let r = lower_expr(&bin.rhs, source)?;
     Ok(match bin.operator {
         MatlabTokenType::Plus => MatlabForm::call("Plus", vec![l, r]),
         MatlabTokenType::Minus => MatlabForm::call("Subtract", vec![l, r]),
@@ -310,8 +326,8 @@ fn flatten_range(left: MatlabForm, right: MatlabForm) -> MatlabForm {
     MatlabForm::call("Range", vec![left, right])
 }
 
-fn lower_prefix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
-    let e = lower_expr(&u.operand)?;
+fn lower_prefix(u: &UnaryExpr, source: &str) -> Result<MatlabForm, SxoError> {
+    let e = lower_expr(&u.operand, source)?;
     Ok(match u.operator {
         MatlabTokenType::Minus => MatlabForm::call("Minus", vec![e]),
         MatlabTokenType::Plus => e,
@@ -320,8 +336,8 @@ fn lower_prefix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
     })
 }
 
-fn lower_postfix(u: &UnaryExpr) -> Result<MatlabForm, SxoError> {
-    let e = lower_expr(&u.operand)?;
+fn lower_postfix(u: &UnaryExpr, source: &str) -> Result<MatlabForm, SxoError> {
+    let e = lower_expr(&u.operand, source)?;
     Ok(match u.operator {
         MatlabTokenType::DotTranspose => MatlabForm::call("Transpose", vec![e]),
         MatlabTokenType::Transpose => MatlabForm::call("ConjugateTranspose", vec![e]),

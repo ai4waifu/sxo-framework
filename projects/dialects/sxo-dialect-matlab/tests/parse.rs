@@ -520,6 +520,21 @@ fn cell_brace_literal_is_oak_error_not_silent_last_element() {
 }
 
 #[test]
+fn cell_brace_in_call_args_is_rejected() {
+    for input in [
+        "cellfun(@numel, {1, 2})",
+        "iscell({1})",
+        "strjoin({'a', 'b'}, ',')",
+    ] {
+        let err = parse_matlab_form(input).expect_err(input);
+        assert!(
+            err.to_string().contains("cell brace") || err.to_string().contains("CellArray"),
+            "{input:?} => {err}"
+        );
+    }
+}
+
+#[test]
 fn ieee_edge_forms_use_nan_and_matlab_zero_pow_zero() {
     let h = H::new();
     assert_eq!(h.render(h.eval("0/0")), "NaN");
