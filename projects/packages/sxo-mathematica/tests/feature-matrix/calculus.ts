@@ -57,13 +57,10 @@ export const calculusFeatures = [
         .gap('inversefourier.impulse', 'InverseFourier[{1, 0, 0, 0}]', { expected: '...' })
         .done(),
     feature('Residue', 'calculus')
-        .partial('simple reciprocal poles OK; Exp[z]/z Laurent residue still wrong (`0` vs `1`)')
+        .partial('simple poles via `f(a)/g''(a)` including `Exp[z]/z`; Laurent fallback still limited')
         .pure()
         .eval('residue.1_z', 'Residue[1/z, {z, 0}]', '1')
-        .gap('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', {
-            expected: '1',
-            notes: 'dynamic wrong: currently returns `0` — keep gap until series residue contract lands',
-        })
+        .eval('residue.exp_z', 'Residue[Exp[z]/z, {z, 0}]', '1')
         .eval('residue.shift', 'Residue[1/(z - 1), {z, 1}]', '1')
         .done(),
     feature('InverseLaplaceTransform', 'calculus')
