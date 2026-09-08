@@ -707,6 +707,14 @@ fn member_q_sort_and_delete_duplicates() {
 }
 
 #[test]
+fn count_partition_and_constant_array() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("Count[{1, 1, 2}, 1]")), "2");
+    assert_eq!(h.wolfram(h.eval("Partition[{1, 2, 3, 4}, 2]")), "{{1, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("ConstantArray[0, 3]")), "{0, 0, 0}");
+}
+
+#[test]
 fn total_sums_list_elements() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Total[{1, 2, 3}]")), "6");
