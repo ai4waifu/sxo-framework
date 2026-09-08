@@ -184,30 +184,9 @@ fn lower_expr(expr: &Expression, source: &str) -> Result<MatlabForm, SxoError> {
                 Ok(MatlabForm::symbol(text))
             }
         }
-        Expression::Array { rows, .. } => {
-            if rows.len() == 1 {
-                let mut items = Vec::with_capacity(rows[0].len());
-                for cell in &rows[0] {
-                    items.push(lower_expr(cell, source)?);
-                }
-                Ok(MatlabForm::list(items))
-            }
-            else {
-                let mut out = Vec::with_capacity(rows.len());
-                for row in rows {
-                    let mut cols = Vec::with_capacity(row.len());
-                    for cell in row {
-                        cols.push(lower_expr(cell, source)?);
-                    }
-                    out.push(MatlabForm::list(cols));
-                }
-                Ok(MatlabForm::list(out))
-            }
-        }
-        Expression::Call { head, arguments, span, .. } => {
-            // oak has no CellArray node yet. Brace cells inside calls are flattened
-            // (`cellfun(@numel,{1,2})` → three args). Refuse while `{`/`}` remain in the call span.
-            reject_untyped_brace_cell_in_span(source, span)?;
+        Expression::Array { rows, .. } => lower_array_rows(rows, source, false),
+        Expression::CellArray { rows, .. } => lower_array_rows(rows, source, true),
+        Expression::Call { head, arguments, .. } => {
             let mut head_f = lower_expr(head, source)?;
             if let MatlabForm::Atom(MatlabAtom::Symbol(name)) = &head_f {
                 head_f = MatlabForm::symbol(map_matlab_head(name));
@@ -269,17 +248,31 @@ fn lower_expr(expr: &Expression, source: &str) -> Result<MatlabForm, SxoError> {
     }
 }
 
-fn reject_untyped_brace_cell_in_span(source: &str, span: &oak_matlab::ast::Span) -> Result<(), SxoError> {
-    if span.end > source.len() || span.start > span.end {
-        return Ok(());
+fn lower_array_rows(rows: &[Vec<Expression>], source: &str, cell: bool) -> Result<MatlabForm, SxoError> {
+    let form = if rows.len() == 1 {
+        let mut items = Vec::with_capacity(rows[0].len());
+        for cell_expr in &rows[0] {
+            items.push(lower_expr(cell_expr, source)?);
+        }
+        MatlabForm::list(items)
     }
-    let text = &source[span.start..span.end];
-    if text.contains('{') || text.contains('}') {
-        return Err(SxoError::new(
-            "matlab: unsupported cell brace in call/index (need oak CellArray node)",
-        ));
+    else {
+        let mut out = Vec::with_capacity(rows.len());
+        for row in rows {
+            let mut cols = Vec::with_capacity(row.len());
+            for cell_expr in row {
+                cols.push(lower_expr(cell_expr, source)?);
+            }
+            out.push(MatlabForm::list(cols));
+        }
+        MatlabForm::list(out)
+    };
+    if cell {
+        Ok(MatlabForm::call("Cell", vec![form]))
     }
-    Ok(())
+    else {
+        Ok(form)
+    }
 }
 
 fn lower_binary(bin: &BinaryExpr, source: &str) -> Result<MatlabForm, SxoError> {
