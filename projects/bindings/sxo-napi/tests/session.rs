@@ -228,6 +228,23 @@ fn simplify_strategy_does_not_rebind_block_free_symbol() {
 }
 
 #[test]
+fn compound_block_clear_with_simplify_strategy_stays_free() {
+    // Mirrors Mathematica.create({ autoSimplify: true }).evaluate("x = 5; Block[{x}, x]").
+    let session = Session::new();
+    let blocked = session.evaluate_mathematica("x = 5; Block[{x}, x]").unwrap();
+    let term = session.project_result(blocked.result_id).unwrap();
+    assert_eq!(
+        session.render_as_wolfram(term),
+        "x",
+        "compound Block clear must yield free x before simplify, got {}",
+        session.render_as_wolfram(term)
+    );
+    let simplified = session.simplify_outcome(term).unwrap();
+    let text = session.render_as_wolfram(session.project_result(simplified.result_id).unwrap());
+    assert_eq!(text, "x", "simplify strategy must keep free x, got {text}");
+}
+
+#[test]
 fn matlab_form_display_without_arena_materialize() {
     use sxo_dialect_matlab::render_matlab_form;
 
