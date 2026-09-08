@@ -25,14 +25,20 @@ export const functionFeatures = [
         .gap('composition.sincos', 'Composition[Sin, Cos][0]', { expected: 'Sin[1]' })
         .done(),
     feature('RightComposition', 'function')
-        .unsupported('SILENT WRONG: f/*g → g (operator stripped to last symbol)')
+        .unsupported('Form kept via /*; no Composition applicator runtime')
         .pure()
-        .gap('rightcomp.fg', 'f/*g', { expected: 'f/*g', notes: 'currently returns g' })
+        .gap('rightcomp.fg', 'f/*g', {
+            expected: 'f/*g',
+            notes: 'parses as RightComposition[f, g]; not stripped to g / error node',
+        })
         .done(),
     feature('CompositionOp', 'function')
-        .unsupported('SILENT WRONG: g@*f → f')
+        .unsupported('Form kept via @*; no Composition applicator runtime')
         .pure()
-        .gap('compop.gf', 'g@*f', { expected: 'g@*f', notes: 'currently returns f' })
+        .gap('compop.gf', 'g@*f', {
+            expected: 'g@*f',
+            notes: 'parses as Composition[g, f]; not stripped to f / error node',
+        })
         .done(),
     feature('Construct', 'function').unsupported().pure().gap('construct.f12', 'Construct[f, 1, 2]', { expected: 'f[1, 2]' }).done(),
     feature('ApplySequence', 'function')
