@@ -272,6 +272,23 @@ fn parse_end_index() {
 }
 
 #[test]
+fn unary_minus_binds_looser_than_power() {
+    // MATLAB: `-x^2` → `-(x^2)`, not `(-x)^2` (which would simplify to `x^2`).
+    let form = parse_matlab_form("-x^2").unwrap();
+    assert_eq!(
+        form,
+        MatlabForm::call(
+            "Minus",
+            vec![MatlabForm::call("Power", vec![MatlabForm::symbol("x"), MatlabForm::int(2)])]
+        )
+    );
+    assert_eq!(render_matlab_form(&form), "-x^2");
+    let h = H::new();
+    assert_eq!(h.render(h.eval("exp(-x^2)")), "exp(-x^2)");
+    assert_eq!(h.render(h.eval("fourier(exp(-x^2))")), "fourier(exp(-x^2))");
+}
+
+#[test]
 fn parse_matrix_linear_index_column_major() {
     let h = H::new();
     // [1,2; 3,4] column-major linear: 1,3,2,4
