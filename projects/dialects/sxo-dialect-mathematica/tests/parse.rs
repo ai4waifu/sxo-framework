@@ -817,3 +817,13 @@ fn composition_ops_keep_forms() {
     assert_ne!(h.wolfram(h.eval("f/*g")), "g");
     assert_ne!(h.wolfram(h.eval("g@*f")), "f");
 }
+
+#[test]
+fn timing_and_trace_capture_args() {
+    let h = H::new();
+    // HoldAll-like: must not evaluate the body before wrapping.
+    assert_eq!(h.wolfram(h.eval("Timing[1 + 1]")), "Timing[1 + 1]");
+    assert_ne!(h.wolfram(h.eval("Timing[1 + 1]")), "Timing[2]");
+    assert_eq!(h.wolfram(h.eval("Trace[1 + 1]")), "Trace[1 + 1]");
+    assert_ne!(h.wolfram(h.eval("Trace[1 + 1]")), "Trace[2]");
+}
