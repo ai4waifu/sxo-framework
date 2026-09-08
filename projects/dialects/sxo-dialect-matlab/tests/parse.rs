@@ -287,8 +287,8 @@ fn det_symbol_after_2d_set() {
 #[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
-    // Column `b` stays term Own (`Part` grow path). Pass Form literal RHS with matrix Own `A`.
-    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; A\\[5; 6]")), "[-4; 9/2]");
+    // Column `b` is matrix Own; Solve resolves both bindings.
+    assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; b = [5; 6]; A\\b")), "[-4; 9/2]");
 }
 
 #[test]
@@ -299,9 +299,17 @@ fn times_symbols_after_2d_set() {
 }
 
 #[test]
-fn set_row_vector_keeps_term_binding_for_part() {
+fn set_row_vector_binds_matrix_own() {
     let h = H::new();
-    assert!(h.eq(h.eval("A = [10, 20]; A(2)"), h.i(20)));
+    let form = parse_matlab_form("A = [10, 20]").unwrap();
+    let mut s = h.s.borrow_mut();
+    let request = lower_request(&mut s, &form);
+    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
+    AthenaEngine::new().execute_request(&mut s, request).expect("define row");
+    let symbol = s.arena.symbols_mut().intern("A");
+    assert!(s.matrix_binding(symbol).is_some());
+    drop(s);
+    assert!(h.eq(h.eval("A(2)"), h.i(20)));
 }
 
 #[test]
