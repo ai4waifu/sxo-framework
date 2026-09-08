@@ -18,13 +18,11 @@ export const sessionFeatures = [
         .gap('persistent.strip', 'persistent y', { expected: '' })
         .done(),
     feature('subsasgn', 'session')
-        .unsupported(
-            'SILENT WRONG: indexed / grow assignment does not persist; A=[]; A(1)=1; A → A; A(3,3)=1 after zeros → A; end+1 / end-1 often oak error',
-        )
+        .partial('1-D scalar `A(2)=9` via Athena StoreIndex; grow / end+1 / 2-D still open')
         .stateful()
-        .gap('subsasgn.vec', 'A=[1, 2, 3]; A(2)=9; A', { expected: '[1, 9, 3]', notes: 'currently returns A' })
-        .gap('subsasgn.grow', 'A=zeros(2); A(3, 3)=1; A', { expected: '...', notes: 'currently returns A' })
-        .gap('subsasgn.end_plus', 'B=1:4; B(end+1)=5', { expected: '[1, 2, 3, 4, 5]', notes: 'oak error node' })
+        .eval('subsasgn.vec', 'A=[1, 2, 3]; A(2)=9; A', '[1, 9, 3]')
+        .gap('subsasgn.grow', 'A=zeros(2); A(3, 3)=1; A', { expected: '...', notes: 'out-of-range / grow not in StoreIndex slice' })
+        .gap('subsasgn.end_plus', 'B=1:4; B(end+1)=5', { expected: '[1, 2, 3, 4, 5]', notes: 'oak error or unsupported store axes' })
         .done(),
     feature('deal', 'session')
         .unsupported('multi-assign [a,b]=deal(1,2) does not bind; [~,b]=max(...) oak error')
