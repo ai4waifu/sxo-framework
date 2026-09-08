@@ -302,6 +302,48 @@ fn parse_slot_lowers_to_slot_head() {
 }
 
 #[test]
+fn parse_slot_n_keeps_index() {
+    let w = parse_mathematica("#2").unwrap();
+    assert_eq!(w, WolframForm::call("Slot", vec![WolframForm::int(2)]));
+    assert_eq!(render(&w), "#2");
+
+    let pure = parse_mathematica("#2 &").unwrap();
+    // Must not become Times[Slot[1], 2] / Function[$slot1, $slot1*2].
+    let text = format!("{pure:?}");
+    assert!(text.contains("Slot"), "got {pure:?}");
+    assert!(!matches!(pure.head_name(), Some("Times")));
+
+    let mapped = parse_mathematica("MapIndexed[#2 &, {a, b}]").unwrap();
+    assert_eq!(mapped.head_name(), Some("MapIndexed"));
+    let rendered = render(&mapped);
+    assert!(rendered.contains("#2") || rendered.contains("Slot[2]"), "got {rendered}");
+    assert!(!rendered.contains("$slot1*2"));
+    assert!(!rendered.contains("$slot1"));
+}
+
+#[test]
+fn parse_message_name_and_information_prefix() {
+    let msg = parse_mathematica("f::x").unwrap();
+    assert_eq!(msg, WolframForm::call("MessageName", vec![WolframForm::symbol("f"), WolframForm::symbol("x")]));
+    assert_eq!(render(&msg), "f::x");
+
+    let wrapped = parse_mathematica("Message[f::x]").unwrap();
+    assert_eq!(wrapped.head_name(), Some("Message"));
+    assert_eq!(render(&wrapped), "Message[f::x]");
+
+    let info = parse_mathematica("??Plus").unwrap();
+    assert_eq!(info.head_name(), Some("Information"));
+    assert_eq!(render(&info), "Information[Plus]");
+
+    let h = H::new();
+    // Must not silently collapse MessageName / Information to bare symbols.
+    assert_ne!(h.wolfram(h.eval("Message[f::x]")), "Message[f, x]");
+    let got_info = h.wolfram(h.eval("??Plus"));
+    assert!(got_info.contains("Information") || got_info.contains("Plus"), "got {got_info}");
+    assert_ne!(got_info, "Plus");
+}
+
+#[test]
 fn parse_pure_function_slot_application() {
     let h = H::new();
     assert!(h.eq(h.eval("(#^2)&[4]"), h.i(16)));
