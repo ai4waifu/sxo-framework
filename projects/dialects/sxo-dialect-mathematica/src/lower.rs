@@ -56,6 +56,8 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "ReplaceAll" => SemanticOperator::ReplaceAll,
         "Simplify" => SemanticOperator::Simplify,
         "Hold" | "HoldForm" => SemanticOperator::Hold,
+        "HoldComplete" => SemanticOperator::HoldComplete,
+        "Unevaluated" => SemanticOperator::Unevaluated,
         "Function" => SemanticOperator::Function,
         "Factorial" => SemanticOperator::Factorial,
         "Length" => SemanticOperator::Length,
@@ -111,6 +113,9 @@ pub fn semantic_to_surface(op: SemanticOperator) -> &'static str {
         SemanticOperator::Eye => "IdentityMatrix",
         SemanticOperator::Size => "Dimensions",
         SemanticOperator::ApplyHead => "Application",
+        SemanticOperator::Hold => "Hold",
+        SemanticOperator::HoldComplete => "HoldComplete",
+        SemanticOperator::Unevaluated => "Unevaluated",
         SemanticOperator::MemberOf => "Element",
         SemanticOperator::RealPart => "Re",
         SemanticOperator::Unary(f) => f.debug_label(),
@@ -482,8 +487,13 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         body: Box::new(lower_request(session, body)),
                     });
                 }
-                ("ReleaseHold" | "Evaluate", [inner]) => {
+                ("ReleaseHold", [inner]) => {
                     if let Some(held) = unwrap_hold_form(inner) {
+                        return lower_request(session, held);
+                    }
+                }
+                ("Evaluate", [inner]) => {
+                    if let Some(held) = unwrap_hold_form(inner).or_else(|| unwrap_unevaluated_form(inner)) {
                         return lower_request(session, held);
                     }
                 }
