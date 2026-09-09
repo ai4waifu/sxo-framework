@@ -890,6 +890,21 @@ fn total_sums_list_elements() {
 }
 
 #[test]
+fn total_and_product_on_matrix_binding() {
+    let h = H::new();
+    // Living 16: Total/Product on bound MatrixRef (column reduce) without nested-list reverse recognition.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Total[A]")), "{4, 6}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Product[A]")), "{3, 8}");
+}
+
+#[test]
+fn matrix_rank_and_tr_on_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {2, 4}}; MatrixRank[A]")), "1");
+    assert_eq!(h.wolfram(h.eval("B={{1, 2}, {3, 4}}; Tr[B]")), "5");
+}
+
+#[test]
 fn cases_filters_integer_blank() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("Cases[{1, 2, 3}, _Integer]")), "{1, 2, 3}");
