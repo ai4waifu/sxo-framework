@@ -486,6 +486,7 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("V=Range[3]; DiagonalMatrix[V]")), "{{1, 0, 0}, {0, 2, 0}, {0, 0, 3}}");
     assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; Det[A]")), "1");
     assert_eq!(h.wolfram(h.eval("Det[ConstantArray[1, {2, 2}]]")), "0");
+    assert_eq!(h.wolfram(h.eval("Total[ConstantArray[1, {2, 2}]]")), "{2, 2}");
 }
 
 #[test]
