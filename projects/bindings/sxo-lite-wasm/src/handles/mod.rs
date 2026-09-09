@@ -177,6 +177,15 @@ impl Expression {
         self.result_id.and_then(|id| self.session.project_provider(id))
     }
 
+    /// Evidence summaries from the last evaluate (empty if none / not evaluated).
+    #[wasm_bindgen(getter)]
+    pub fn evidence(&self) -> Vec<String> {
+        match self.result_id {
+            Some(id) => self.session.project_evidence(id),
+            None => Vec::new(),
+        }
+    }
+
     /// Parent evaluate result id when this handle is a Simplify transform, else `undefined`.
     #[wasm_bindgen(getter, js_name = derivedFrom)]
     pub fn derived_from_js(&self) -> Option<u32> {

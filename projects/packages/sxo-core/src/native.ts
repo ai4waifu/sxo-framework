@@ -42,6 +42,8 @@ export type NativeExpression = {
     conditions: string[];
     /** Result-layer provider stamp (`Name@vN`), or `null`/`undefined` if none. */
     provider: string | null | undefined;
+    /** Evidence summaries from the last evaluate. */
+    evidence: string[];
     /** Parent evaluate result id when this handle is a Simplify transform. */
     derivedFrom: number | null | undefined;
 };

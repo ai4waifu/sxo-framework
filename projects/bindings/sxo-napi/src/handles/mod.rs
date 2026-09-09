@@ -231,6 +231,17 @@ impl Expression {
         self.result_id.and_then(|id| self.session.project_provider(id))
     }
 
+    /// Evidence summaries from the last evaluate (empty if none / not evaluated).
+    ///
+    /// Machine-oriented trusted-kernel rows. Projected on demand from [`ResultId`].
+    #[napi(getter)]
+    pub fn evidence(&self) -> Vec<String> {
+        match self.result_id {
+            Some(id) => self.session.project_evidence(id),
+            None => Vec::new(),
+        }
+    }
+
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {
