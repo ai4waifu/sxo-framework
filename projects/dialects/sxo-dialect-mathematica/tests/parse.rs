@@ -489,6 +489,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("Total[ConstantArray[1, {2, 2}]]")), "{2, 2}");
     assert_eq!(h.wolfram(h.eval("Accumulate[Range[3]]")), "{1, 3, 6}");
     assert_eq!(h.wolfram(h.eval("Differences[Range[4]]")), "{1, 1, 1}");
+    assert_eq!(h.wolfram(h.eval("Sort[{3, 1, 2}]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("PadLeft[{1, 2}, 4]")), "{0, 0, 1, 2}");
 }
 
 #[test]
