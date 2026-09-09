@@ -444,13 +444,11 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Times", [a_form, b_form]) => {
-                    // Living 16: Form matrix literals → typed MatMul. Bare symbols stay
-                    // Semantic Times (Athena routes bound Matrix Values via MatMul slots).
-                    if let (Some(a_mat), Some(b_mat)) = (matrix_value_from_form_tree(a_form), matrix_value_from_form_tree(b_form)) {
-                        let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
-                        let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
+                    // Living 16: Mathematica `Times` on matrices is Hadamard, never MatMul.
+                    // Matrix product is `Dot` only.
+                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
                         )));
                     }
                 }
