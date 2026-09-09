@@ -477,6 +477,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("A={3, 1, 2}; B={2, 4, 1}; Intersection[A, B]")), "{1, 2}");
     assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; Extract[V, 2]")), "20");
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Extract[A, 2]")), "{3, 4}");
+    assert_eq!(h.wolfram(h.eval("V=ConstantArray[7, 3]; Length[V]")), "3");
+    assert_eq!(h.wolfram(h.eval("V=ConstantArray[7, 3]; MemberQ[V, 7]")), "True");
 }
 
 #[test]
