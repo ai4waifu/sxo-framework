@@ -467,6 +467,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("V={3, 1, 2}; Sort[V]")), "{1, 2, 3}");
     assert_eq!(h.wolfram(h.eval("V={1, 2, 3, 4}; Partition[V, 2]")), "{{1, 2}, {3, 4}}");
     assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3, 2}; DeleteDuplicates[V]")), "{1, 2, 3}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3}; MemberQ[V, 2]")), "True");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3}; Count[V, 1]")), "2");
 }
 
 #[test]
