@@ -458,6 +458,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Flatten[A]")), "{1, 2, 3, 4}");
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; Most[A]")), "{1, 2}");
     assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; Reverse[V]")), "{3, 2, 1}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}, {5, 6}}; Take[A, 2]")), "{{1, 2}, {3, 4}}");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}, {5, 6}}; Drop[A, 1]")), "{{3, 4}, {5, 6}}");
 }
 
 #[test]
