@@ -467,6 +467,14 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
 }
 
 #[test]
+fn part_on_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 2]]")), "2");
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[2]]")), "{3, 4}");
+    assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; V[[2]]")), "20");
+}
+
+#[test]
 fn nested_form_transpose_feeds_inverse_matrix_operand() {
     let h = H::new();
     // Living 16: Form wrappers unwrap at lowering — no Term Collection reverse recognition.
