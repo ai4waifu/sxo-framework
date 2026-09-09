@@ -12,17 +12,19 @@ export const arithmeticFeatures = [
         .eval('parens.dottimes', '[1,2].*(3+4)', '[7, 14]')
         .done(),
     feature('mtimes', 'arithmetic')
-        .partial('scalar * and numeric nested-list matmul work; symbolic matrix * stays Times')
+        .supported()
         .pure()
+        .notes('scalar * and typed matrix MatMul via Living 16 MatrixOperand')
         .eval('mtimes.scalar', '2 * 3', '6')
-        .gap('mtimes.2x2', '[1, 2; 3, 4]*[5, 6; 7, 8]', { expected: '[19, 22; 43, 50]', notes: 'currently [1, 2; 3, 4]*[5, 6; 7, 8]' })
+        .eval('mtimes.2x2', '[1, 2; 3, 4]*[5, 6; 7, 8]', '[19, 22; 43, 50]')
         .done(),
     feature('times', 'arithmetic')
         .supported()
         .pure()
-        .notes('.* → DotTimes elementwise')
+        .notes('.* → Hadamard / DotTimes elementwise')
         .eval('times.scalar', '2 .* [1, 2]', '[2, 4]')
         .eval('times.vec', '[1, 2].*[3, 4]', '[3, 8]')
+        .eval('times.mat', '[1, 2; 3, 4].*[5, 6; 7, 8]', '[5, 12; 21, 32]')
         .done(),
     feature('power', 'arithmetic')
         .supported()
