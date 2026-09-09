@@ -610,6 +610,13 @@ fn size_of_matrix_binding() {
 }
 
 #[test]
+fn length_of_row_vector_binding() {
+    let h = H::new();
+    // 1×n Own projects as flat list; Length follows columns.
+    assert_eq!(h.render(h.eval("A = [10, 20, 30]; length(A)")), "3");
+}
+
+#[test]
 fn parse_plot_negative_domain_renders_svg() {
     let h = H::new();
     let t = h.parse("plot(x^2, x, -1, 1)");
