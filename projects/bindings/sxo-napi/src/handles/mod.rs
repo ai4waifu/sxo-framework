@@ -202,6 +202,14 @@ impl Expression {
         }
     }
 
+    /// Provider stamp from the last evaluate (`Name@vN`, or `null` if none / not evaluated).
+    ///
+    /// Machine-oriented result-layer identity + contract version. Projected on demand from [`ResultId`].
+    #[napi(getter)]
+    pub fn provider(&self) -> Option<String> {
+        self.result_id.and_then(|id| self.session.project_provider(id))
+    }
+
     /// Render as string in the expression's dialect.
     #[napi(js_name = "toString")]
     pub fn to_string_js(&self) -> Result<String> {

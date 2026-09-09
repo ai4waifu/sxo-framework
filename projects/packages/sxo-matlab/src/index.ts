@@ -67,6 +67,21 @@ export class Expression {
         return this.#inner.diagnostics;
     }
 
+    /** Condition summaries from the last evaluate. */
+    get conditions(): string[] {
+        return this.#inner.conditions;
+    }
+
+    /** Result-layer provider stamp (`Name@vN`), or `null`/`undefined` if none. */
+    get provider(): string | null | undefined {
+        return this.#inner.provider;
+    }
+
+    /** Parent evaluate result id when this handle is a Simplify transform. */
+    get derivedFrom(): number | null | undefined {
+        return this.#inner.derivedFrom;
+    }
+
     /** @internal */
     get native(): NativeExpression {
         return this.#inner;

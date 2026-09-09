@@ -150,6 +150,12 @@ impl Expression {
         }
     }
 
+    /// Provider stamp from the last evaluate (`Name@vN`, or `undefined` if none / not evaluated).
+    #[wasm_bindgen(getter)]
+    pub fn provider(&self) -> Option<String> {
+        self.result_id.and_then(|id| self.session.project_provider(id))
+    }
+
     /// Parent evaluate result id when this handle is a Simplify transform, else `undefined`.
     #[wasm_bindgen(getter, js_name = derivedFrom)]
     pub fn derived_from_js(&self) -> Option<u32> {

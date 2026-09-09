@@ -114,6 +114,15 @@ impl Session {
             .unwrap_or_default()
     }
 
+    /// Project provider stamp summary for a Session-local [`ResultId`] (`None` if missing).
+    pub fn project_provider(&self, result_id: ResultId) -> Option<String> {
+        let ms = self.math_session.borrow();
+        ms.results
+            .get(result_id)
+            .and_then(|r| r.provider.as_ref())
+            .map(|stamp| format!("{}@v{}", stamp.id.name(), stamp.version))
+    }
+
     /// Clear Athena Own symbol definitions for this host session.
     #[allow(dead_code)]
     pub fn clear_definitions(&self) {

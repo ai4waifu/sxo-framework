@@ -101,6 +101,26 @@ fn project_conditions_exposes_result_predicates() {
     let conditions = session.project_conditions(result_id);
     assert_eq!(conditions, vec!["SymbolReal resolved=false".to_string()]);
     assert!(session.project_diagnostics(result_id).is_empty());
+    assert!(session.project_provider(result_id).is_none());
+}
+
+#[test]
+fn project_provider_exposes_result_stamp() {
+    use athena::runtime::results::{ComputationResult, CoverageStatus, ResultProviderId};
+    use athena::types::ComputationStatus;
+
+    let session = Session::new();
+    let result_id = session.with_math_mut(|s| {
+        let term = push_int(s, 1);
+        let result = ComputationResult::with_status(ComputationStatus::Exact, CoverageStatus::Full)
+            .with_symbolic_term(term)
+            .with_provider(ResultProviderId::LINEAR_ALGEBRA);
+        s.insert_result(result)
+    });
+    assert_eq!(
+        session.project_provider(result_id),
+        Some(format!("LinearAlgebra@v{}", ResultProviderId::CONTRACT_VERSION))
+    );
 }
 
 #[test]
