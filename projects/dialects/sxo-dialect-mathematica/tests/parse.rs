@@ -867,6 +867,14 @@ fn union_accumulate_free_q_and_extract() {
 }
 
 #[test]
+fn accumulate_differences_on_matrix_binding() {
+    let h = H::new();
+    // Living 16: bound 1×n MatrixRef keeps orientation through Accumulate / Differences.
+    assert_eq!(h.wolfram(h.eval("A={1, 2, 3}; Accumulate[A]")), "{1, 3, 6}");
+    assert_eq!(h.wolfram(h.eval("B={1, 4, 9}; Differences[B]")), "{3, 5}");
+}
+
+#[test]
 fn pad_left_riffle_position_and_array() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("PadLeft[{1, 2}, 4]")), "{0, 0, 1, 2}");
