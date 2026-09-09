@@ -555,6 +555,13 @@ fn dimensions_of_nested_list() {
 }
 
 #[test]
+fn dimensions_of_matrix_binding() {
+    let h = H::new();
+    // Living 16: bound MatrixRef shape without nested-list reverse recognition.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2, 3}, {4, 5, 6}}; Dimensions[A]")), "{2, 3}");
+}
+
+#[test]
 fn diagonal_matrix_from_vector() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
