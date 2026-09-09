@@ -509,6 +509,9 @@ fn part_store_on_matrix_binding() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 2]] = 9; A[[1, 2]]")), "9");
     assert_eq!(h.wolfram(h.eval("V={10, 20, 30}; V[[2]] = 8; V")), "{10, 8, 30}");
+    // Living 16: in-place StoreIndex keeps Own usable for follow-on matrix ops.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; A[[1, 1]] = 0; Det[A]")), "-6");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; V[[3]] = 9; Length[V]")), "3");
 }
 
 #[test]
