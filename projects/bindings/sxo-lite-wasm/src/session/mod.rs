@@ -169,10 +169,24 @@ impl Session {
     }
 
     /// `Simplify` via [`AthenaRequest::Term`] and return the full Session result.
+    ///
+    /// Prefer Form helpers for parse objects. This path remains for result term projection.
     pub fn simplify_outcome(&self, expr: TermId) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let wrapped = athena::execution::push_semantic(&mut ms, SemanticOperator::Simplify, vec![expr]);
         self.execute_lowered(&mut ms, AthenaRequest::Term(wrapped))
+    }
+
+    /// Simplify a retained Wolfram Form via `Simplify[expr]` → dialect `lower_request`.
+    pub fn simplify_wolfram_form(&self, form: &WolframForm) -> Result<EvalOutcome, SxoError> {
+        let s_form = WolframForm::call("Simplify", vec![form.clone()]);
+        self.evaluate_wolfram_form(&s_form)
+    }
+
+    /// Simplify a retained MATLAB Form via `Simplify(expr)` → dialect `lower_request`.
+    pub fn simplify_matlab_form(&self, form: &matlab::MatlabForm) -> Result<EvalOutcome, SxoError> {
+        let s_form = matlab::MatlabForm::call("Simplify", vec![form.clone()]);
+        self.evaluate_matlab_form(&s_form)
     }
 
     /// Record that `child` was derived from `parent` (both Session-local).
