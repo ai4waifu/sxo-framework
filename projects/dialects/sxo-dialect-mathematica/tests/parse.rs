@@ -471,6 +471,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("V={1, 2, 1, 3}; Count[V, 1]")), "2");
     assert_eq!(h.wolfram(h.eval("V={1, 2, 1}; FreeQ[V, 3]")), "True");
     assert_eq!(h.wolfram(h.eval("V={1, 2, 1}; Position[V, 1]")), "{{1}, {3}}");
+    assert_eq!(h.wolfram(h.eval("V={1, 2}; PadLeft[V, 4]")), "{0, 0, 1, 2}");
+    assert_eq!(h.wolfram(h.eval("A={1, 2}; B={9, 8}; Riffle[A, B]")), "{1, 9, 2, 8}");
 }
 
 #[test]
