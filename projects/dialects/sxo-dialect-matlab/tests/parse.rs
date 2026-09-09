@@ -603,6 +603,13 @@ fn parse_matrix_constructors_and_size() {
 }
 
 #[test]
+fn size_of_matrix_binding() {
+    let h = H::new();
+    // Living 16: bound MatrixRef shape without nested-list reverse recognition.
+    assert_eq!(h.render(h.eval("A = [1, 2, 3; 4, 5, 6]; size(A)")), "[2, 3]");
+}
+
+#[test]
 fn parse_plot_negative_domain_renders_svg() {
     let h = H::new();
     let t = h.parse("plot(x^2, x, -1, 1)");
