@@ -617,6 +617,14 @@ fn length_of_row_vector_binding() {
 }
 
 #[test]
+fn cumsum_on_row_vector() {
+    let h = H::new();
+    // Living 16: cumsum → Accumulate on typed 1×n MatrixRef.
+    assert_eq!(h.render(h.eval("cumsum([1, 2, 3])")), "[1, 3, 6]");
+    assert_eq!(h.render(h.eval("A = [1, 2, 3]; cumsum(A)")), "[1, 3, 6]");
+}
+
+#[test]
 fn parse_plot_negative_domain_renders_svg() {
     let h = H::new();
     let t = h.parse("plot(x^2, x, -1, 1)");

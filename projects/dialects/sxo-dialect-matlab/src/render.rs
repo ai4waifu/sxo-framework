@@ -194,6 +194,8 @@ fn head_matlab_name(name: &str) -> String {
         "Length" => "length",
         "Det" | "Determinant" => "det",
         "Sum" => "sum",
+        "Accumulate" => "cumsum",
+        "Differences" => "diff",
         "LinearSolve" => "linsolve",
         "Minus" => "-",
         "FunctionHandle" => "@",
