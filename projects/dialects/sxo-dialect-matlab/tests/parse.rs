@@ -334,6 +334,8 @@ fn parse_matrix_linear_algebra() {
     assert!(h.eq(h.eval("det([1, 2; 3, 4])"), h.i(-2)));
     assert!(h.eq(h.eval("sum([1, 2, 3])"), h.i(6)));
     assert!(h.eq(h.eval("sum([1, 2; 3, 4])"), h.lst(vec![h.i(4), h.i(6)])));
+    assert!(h.eq(h.eval("prod([2, 3, 4])"), h.i(24)));
+    assert!(h.eq(h.eval("prod([1, 2; 3, 4])"), h.lst(vec![h.i(3), h.i(8)])));
     // linsolve stays Extension until DomainGoal lowering (Living `14`).
     let ls = h.parse("linsolve([1, 2; 3, 4], [5; 6])");
     assert_eq!(application_surface_name(&h.s.borrow(), ls).as_deref(), Some("LinearSolve"));
@@ -622,6 +624,14 @@ fn cumsum_on_row_vector() {
     // Living 16: cumsum → Accumulate on typed 1×n MatrixRef.
     assert_eq!(h.render(h.eval("cumsum([1, 2, 3])")), "[1, 3, 6]");
     assert_eq!(h.render(h.eval("A = [1, 2, 3]; cumsum(A)")), "[1, 3, 6]");
+}
+
+#[test]
+fn prod_on_matrix_binding() {
+    let h = H::new();
+    // Living 16: prod → Product on typed MatrixRef (column products / row scalar).
+    assert_eq!(h.render(h.eval("A = [2, 3, 4]; prod(A)")), "24");
+    assert_eq!(h.render(h.eval("B = [1, 2; 3, 4]; prod(B)")), "[3, 8]");
 }
 
 #[test]
