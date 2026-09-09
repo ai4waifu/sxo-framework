@@ -16,7 +16,8 @@ use athena::types::{ResultId, TermId};
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
 /// Parse objects retain a dialect [`HeldForm`] and do not materialize arena terms until
-/// evaluate / `d` / `simplify` / plot needs them. Display uses Form renderers when present.
+/// evaluate / `simplify` / plot needs them (`d` uses Form → `lower_request` when Form is present).
+/// Display uses Form renderers when present.
 /// Evaluate results retain a Session-local [`ResultId`] and project [`TermId`] / diagnostics on demand.
 #[derive(Debug)]
 #[napi]
@@ -79,7 +80,7 @@ fn unevaluated_form(session: Rc<Session>, form: HeldForm, dialect: Dialect) -> E
     }
 }
 
-fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
+pub(crate) fn from_eval_outcome(session: Rc<Session>, dialect: Dialect, outcome: sxo_types::EvalOutcome) -> Expression {
     Expression {
         session,
         root: None,
@@ -121,11 +122,21 @@ impl Expression {
     }
 
     /// Differentiate with respect to `var` on the same session.
+    ///
+    /// Parse objects wrap retained Form as dialect `D` / `diff` and run `lower_request`.
+    /// Result objects still project a symbolic term then dispatch a calculus Goal.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
         let parent = self.result_id;
-        let term = self.materialize_root()?;
-        let outcome = self.session.differentiate_outcome(term, &var).map_err(map_err)?;
+        let outcome = match &self.form {
+            Some(HeldForm::Wolfram(form)) => self.session.differentiate_wolfram_form(form, &var),
+            Some(HeldForm::Matlab(form)) => self.session.differentiate_matlab_form(form, &var),
+            None => {
+                let term = self.materialize_root()?;
+                self.session.differentiate_outcome(term, &var)
+            }
+        }
+        .map_err(map_err)?;
         if let Some(parent) = parent {
             let _ = self.session.link_derived_from(outcome.result_id, parent);
         }
