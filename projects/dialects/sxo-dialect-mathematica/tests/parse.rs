@@ -562,6 +562,13 @@ fn dimensions_of_matrix_binding() {
 }
 
 #[test]
+fn length_of_matrix_binding() {
+    let h = H::new();
+    assert_eq!(h.wolfram(h.eval("A={{1, 2, 3}, {4, 5, 6}}; Length[A]")), "2");
+    assert_eq!(h.wolfram(h.eval("V={1, 2, 3}; Length[V]")), "3");
+}
+
+#[test]
 fn diagonal_matrix_from_vector() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
