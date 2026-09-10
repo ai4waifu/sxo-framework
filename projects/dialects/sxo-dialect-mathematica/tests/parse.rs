@@ -495,6 +495,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("Union[{3, 1}, {2, 1}]")), "{1, 2, 3}");
     assert_eq!(h.wolfram(h.eval("Riffle[{1, 2}, {9, 8}]")), "{1, 9, 2, 8}");
     assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; Dimensions[A]")), "{2, 2}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[3]; Det[A]")), "1");
 }
 
 #[test]
