@@ -497,6 +497,8 @@ fn unary_matrix_goals_resolve_symbol_bindings() {
     assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{1, 2}]")), "{{1, 0}, {0, 2}}");
     assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; Dimensions[A]")), "{2, 2}");
     assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[3]; Det[A]")), "1");
+    // Living 16: symbolic diagonal stays residual (no nested-list rebuild).
+    assert_eq!(h.wolfram(h.eval("DiagonalMatrix[{x}]")), "DiagonalMatrix[{x}]");
 }
 
 #[test]
