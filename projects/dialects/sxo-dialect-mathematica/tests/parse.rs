@@ -597,6 +597,15 @@ fn binary_matrix_goals_resolve_symbol_bindings() {
         h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5}, {6}}; LinearSolve[A, B]")),
         "{{-4}, {9/2}}"
     );
+    // Living 16: ExactSolve particular publishes MatrixResult via typed MatrixRef operands.
+    assert_eq!(
+        h.wolfram(h.eval("A=IdentityMatrix[2]; B={{3}, {5}}; LinearSolve[A, B]")),
+        "{{3}, {5}}"
+    );
+    assert_eq!(
+        h.wolfram(h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {11}}]")),
+        "{{1}, {2}}"
+    );
     assert_eq!(h.wolfram(h.eval("M={{1, 2}, {3, 4}}; V={{1}, {1}}; Dot[M, V]")), "{3, 7}");
     assert_eq!(h.wolfram(h.eval("U={1, 0, 0}; W={0, 1, 0}; Cross[U, W]")), "{0, 0, 1}");
 }
