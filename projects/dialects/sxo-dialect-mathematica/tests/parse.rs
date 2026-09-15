@@ -673,6 +673,9 @@ fn norm_34() {
 fn row_reduce_to_identity() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("RowReduce[{{1, 2}, {3, 4}}]")), "{{1, 0}, {0, 1}}");
+    // Living 16: bound MatrixRef → Rref publishes MatrixResult envelope.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; RowReduce[A]")), "{{1, 0}, {0, 1}}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; RowReduce[A]")), "{{1, 0}, {0, 1}}");
 }
 
 #[test]
