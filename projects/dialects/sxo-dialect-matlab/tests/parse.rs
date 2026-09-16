@@ -289,6 +289,9 @@ fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.
     assert_eq!(h.render(h.eval("A = [1, 2; 3, 4]; b = [5; 6]; A\\b")), "[-4; 9/2]");
+    // Living 16: inconsistent → empty; Infinite → particular column (free_vars in evidence).
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [1; 0]")), "[]");
+    assert_eq!(h.render(h.eval("[1, 2; 2, 4] \\ [2; 4]")), "[2; 0]");
 }
 
 #[test]
