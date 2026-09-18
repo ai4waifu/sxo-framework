@@ -39,6 +39,7 @@ pub fn surface_to_semantic(name: &str) -> Option<SemanticOperator> {
         "Zeros" => SemanticOperator::Zeros,
         "Ones" => SemanticOperator::Ones,
         "Eye" => SemanticOperator::Eye,
+        "Diag" | "DiagonalMatrix" => SemanticOperator::DiagonalMatrix,
         "Size" => SemanticOperator::Size,
         "Length" => SemanticOperator::Length,
         "Det" | "Determinant" => SemanticOperator::Determinant,

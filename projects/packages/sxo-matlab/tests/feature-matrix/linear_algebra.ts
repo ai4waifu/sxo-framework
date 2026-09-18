@@ -40,12 +40,23 @@ export const linearAlgebraFeatures = [
         .notes('cross → Cross Goal on 1×3 / 3×1 vectors')
         .eval('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', '[0, 0, 1]')
         .done(),
-    feature('cond', 'linear_algebra').unsupported().pure().gap('cond.2x2', 'cond([1, 2; 3, 4])', { expected: '...' }).done(),
+    feature('cond', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('cond → ConditionNumber Goal; LU pivot-ratio estimate (Singular → Inf)')
+        .eval('cond.eye', 'cond([2, 0; 0, 2])', '1')
+        .done(),
     feature('null', 'linear_algebra')
         .supported()
         .pure()
         .notes('null → NullSpace Goal with column_basis (Living 16)')
         .eval('null.rank1', 'null([1, 2; 2, 4])', '[-2; 1]')
+        .done(),
+    feature('diag', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('diag(v) → DiagonalMatrix Semantic / Form constructor')
+        .eval('diag.vec', 'diag([1, 2])', '[1, 0; 0, 2]')
         .done(),
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
