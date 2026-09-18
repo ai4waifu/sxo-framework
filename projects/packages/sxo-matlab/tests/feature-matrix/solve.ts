@@ -12,6 +12,12 @@ export const solveFeatures = [
         .notes('exact numeric nested-list A\\b; symbolic stays unevaluated')
         .eval('mldivide.2x2', '[1,2;3,4] \\ [5;6]', '[-4; 9/2]')
         .done(),
+    feature('mrdivide', 'solve')
+        .supported()
+        .pure()
+        .notes('typed matrix A/B → RightSolve; see also arithmetic.mrdivide')
+        .eval('mrdivide.row', '[1, 2] / [1, 2; 3, 4]', '[[1, 0]]')
+        .done(),
     feature('linsolve', 'solve')
         .unsupported('linsolve → LinearSolve; same exact bridge as mldivide')
         .pure()
