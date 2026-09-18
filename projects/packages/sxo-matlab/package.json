@@ -1,6 +1,6 @@
 {
     "name": "@sxo/matlab",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "private": true,
     "type": "module",
     "description": "MATLAB dialect frontend: parse, evaluate, and render via the SXO native addon. Not a MATLAB runtime or toolbox.",

@@ -1,6 +1,6 @@
 {
     "name": "@sxo/lite-unknown-wasm32",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "private": true,
     "type": "module",
     "description": "wasm-pack artifact consumed by @sxo/lite. Not a standalone product API.",
