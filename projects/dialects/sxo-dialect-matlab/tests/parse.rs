@@ -320,8 +320,8 @@ fn null_literal_column_basis_goals() {
     // Living 16: MATLAB `null` → column basis `[[-2];[1]]`.
     assert_eq!(h.render(h.eval("null([1, 2; 2, 4])")), "[-2; 1]");
     assert_eq!(h.render(h.eval("A = [1, 2; 2, 4]; null(A)")), "[-2; 1]");
-    // Full-rank literal → empty (eye(2) composition still residual until Eye→MatrixOperand).
-    assert_eq!(h.render(h.eval("null([1, 0; 0, 1])")), "[]");
+    // Full-rank via `eye` Form constructor → empty.
+    assert_eq!(h.render(h.eval("null(eye(2))")), "[]");
 }
 
 #[test]

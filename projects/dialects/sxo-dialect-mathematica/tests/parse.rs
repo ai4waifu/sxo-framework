@@ -688,6 +688,8 @@ fn nullspace_rank1() {
     // Living 16: bound MatrixRef / full-rank Identity → typed NullSpace MatrixResult.
     assert_eq!(h.wolfram(h.eval("A={{1, 2}, {2, 4}}; NullSpace[A]")), "{{-2, 1}}");
     assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; NullSpace[A]")), "{}");
+    // Living 16: IdentityMatrix Form constructor lowers to MatrixOperand without Set.
+    assert_eq!(h.wolfram(h.eval("NullSpace[IdentityMatrix[2]]")), "{}");
 }
 
 #[test]

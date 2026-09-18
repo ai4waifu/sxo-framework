@@ -619,9 +619,9 @@ fn form_list_items(w: &MatlabForm) -> Option<&[MatlabForm]> {
     }
 }
 
-/// Literal Form matrix or symbol Own binding for linear-algebra goals.
+/// Literal Form matrix, Eye/Zeros/Ones constructor, or symbol Own binding for goals.
 fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<MatrixOperand> {
-    if let Some(mat) = matrix_from_form(w) {
+    if let Some(mat) = matrix_from_form(w).or_else(|| matrix_from_constructor_form(w)) {
         Some(MatrixOperand::object(session.matrix_objects.intern(mat)))
     }
     else if let Some(name) = form_symbol_name(w) {
@@ -629,6 +629,56 @@ fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<Mat
     }
     else {
         None
+    }
+}
+
+/// `eye(n)` / `zeros(m,n)` / `ones(m,n)` Form → dense exact `MatrixValue` (Living 16).
+fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
+    use athena::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
+
+    let MatlabForm::Call { head, args } = w else {
+        return None;
+    };
+    let dim = |form: &MatlabForm| -> Option<u64> {
+        let n = match form {
+            MatlabForm::Atom(MatlabAtom::Number(num)) => num.as_exact_integer()?,
+            _ => return None,
+        };
+        if n < 0 {
+            return None;
+        }
+        Some(n as u64)
+    };
+    match (head.as_str(), args.as_slice()) {
+        ("Eye" | "IdentityMatrix", [n]) => {
+            let n = dim(n)?;
+            MatrixValue::identity(MatrixParent::integers(), n).ok()
+        }
+        ("Zeros", [n]) => {
+            let n = dim(n)?;
+            MatrixValue::zeros(MatrixParent::integers(), MatrixShape::new(n, n), StorageOrder::RowMajor).ok()
+        }
+        ("Zeros", [m, n]) => {
+            let (m, n) = (dim(m)?, dim(n)?);
+            MatrixValue::zeros(MatrixParent::integers(), MatrixShape::new(m, n), StorageOrder::RowMajor).ok()
+        }
+        ("Ones", [n]) => {
+            let n = dim(n)?;
+            let mut data = Vec::with_capacity((n * n) as usize);
+            for _ in 0..(n * n) {
+                data.push(clone_integer(&Integer::one()));
+            }
+            MatrixValue::from_integers_row_major(n, n, data).ok()
+        }
+        ("Ones", [m, n]) => {
+            let (m, n) = (dim(m)?, dim(n)?);
+            let mut data = Vec::with_capacity((m * n) as usize);
+            for _ in 0..(m * n) {
+                data.push(clone_integer(&Integer::one()));
+            }
+            MatrixValue::from_integers_row_major(m, n, data).ok()
+        }
+        _ => None,
     }
 }
 
