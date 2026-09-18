@@ -673,6 +673,9 @@ fn cross_ijk() {
 fn nullspace_rank1() {
     let h = H::new();
     assert_eq!(h.wolfram(h.eval("NullSpace[{{1, 2}, {2, 4}}]")), "{{-2, 1}}");
+    // Living 16: bound MatrixRef / full-rank Identity → typed NullSpace MatrixResult.
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {2, 4}}; NullSpace[A]")), "{{-2, 1}}");
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; NullSpace[A]")), "{}");
 }
 
 #[test]
