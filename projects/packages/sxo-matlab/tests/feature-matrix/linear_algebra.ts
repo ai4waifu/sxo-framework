@@ -41,7 +41,12 @@ export const linearAlgebraFeatures = [
         .eval('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', '[0, 0, 1]')
         .done(),
     feature('cond', 'linear_algebra').unsupported().pure().gap('cond.2x2', 'cond([1, 2; 3, 4])', { expected: '...' }).done(),
-    feature('null', 'linear_algebra').unsupported().pure().gap('null.rank1', 'null([1, 2; 2, 4])', { expected: '...' }).done(),
+    feature('null', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('null → NullSpace Goal with column_basis (Living 16)')
+        .eval('null.rank1', 'null([1, 2; 2, 4])', '[-2; 1]')
+        .done(),
     feature('pinv', 'linear_algebra').unsupported().pure().gap('pinv.2x2', 'pinv([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('svd', 'linear_algebra').unsupported().pure().gap('svd.2x2', 'svd([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('kron', 'linear_algebra').unsupported().pure().gap('kron.basic', 'kron([1, 2], [3, 4])', { expected: '[3,4,6,8]' }).done(),

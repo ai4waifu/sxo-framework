@@ -401,6 +401,7 @@ fn map_matlab_head(name: &str) -> String {
         "norm" => "Norm".to_string(),
         "dot" => "Dot".to_string(),
         "cross" => "Cross".to_string(),
+        "null" => "NullSpace".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -449,6 +450,8 @@ fn is_known_call_head(name: &str) -> bool {
             | "Trace"
             | "RowReduce"
             | "Rref"
+            | "NullSpace"
+            | "Null"
             | "Norm"
             | "Dot"
             | "Cross"

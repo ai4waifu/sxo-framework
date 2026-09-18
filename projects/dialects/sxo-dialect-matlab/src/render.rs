@@ -197,6 +197,7 @@ fn head_matlab_name(name: &str) -> String {
         "MatrixRank" | "Rank" => "rank",
         "Tr" | "Trace" => "trace",
         "RowReduce" | "Rref" => "rref",
+        "NullSpace" | "Null" => "null",
         "Norm" => "norm",
         "Dot" => "dot",
         "Cross" => "cross",
