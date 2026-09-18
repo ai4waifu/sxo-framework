@@ -30,14 +30,10 @@ sxo-adapter-apollo = { path = "projects/adapters/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
-# CI-facing oak git pins (local oaks path pins are temporary — restore oak git rev after oaks tip is on origin).
-# oak-core = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
-# oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
-# oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", rev = "508d5bae12abe8109c1abfa6b7aa6f4e742a42a0", default-features = false }
-# Temporary sibling pins while oak-matlab `Parfor` / `Spmd` (and prior Cell/Command/Member) are ahead of origin.
-oak-core = { path = "../oaks/projects/oak-core", default-features = false }
-oak-wolfram = { path = "../oaks/examples/oak-wolfram", default-features = false }
-oak-matlab = { path = "../oaks/examples/oak-matlab", default-features = false }
+# CI-facing oak git pins (Parfor/Spmd/Cell tip on origin).
+oak-core = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
+oak-wolfram = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
+oak-matlab = { git = "https://github.com/ygg-lang/oaks.git", rev = "6f09a2bdd4882f6d92d334f1fbabf948e8c8ce8d", default-features = false }
 # Living 16 matrix slice tip (Tril/Triu/Kronecker + structure predicates).
 athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e8ea9359cc45316e2e951f192044e368521c499d", package = "athena" }
 athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "e8ea9359cc45316e2e951f192044e368521c499d", package = "athena-types" }
