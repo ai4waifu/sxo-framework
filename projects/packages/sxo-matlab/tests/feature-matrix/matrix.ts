@@ -46,6 +46,12 @@ export const matrixFeatures = [
         .notes('tril → LowerTriangularize Goal → LinearAlgebraRequest::Tril')
         .eval('tril.2x2', 'tril([1, 2; 3, 4])', '[1, 0; 3, 4]')
         .done(),
+    feature('triu', 'matrix')
+        .supported()
+        .pure()
+        .notes('triu → UpperTriangularize Goal → LinearAlgebraRequest::Triu')
+        .eval('triu.2x2', 'triu([1, 2; 3, 4])', '[1, 2; 0, 4]')
+        .done(),
     feature('hilb', 'matrix').unsupported().pure().gap('hilb.3', 'hilb(3)', { expected: '...' }).done(),
     feature('blkdiag', 'matrix').unsupported().pure().gap('blkdiag.eye3', 'blkdiag(eye(2), 3)', { expected: '...' }).done(),
     feature('numel', 'matrix').unsupported().pure().gap('numel.empty', 'numel([])', { expected: '0' }).done(),
