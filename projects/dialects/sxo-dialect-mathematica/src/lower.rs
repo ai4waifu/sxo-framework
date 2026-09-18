@@ -761,6 +761,27 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         )));
                     }
                 }
+                ("LowerTriangularize", [arg]) => {
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
+                        )));
+                    }
+                }
+                ("UpperTriangularize", [arg]) => {
+                    if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
+                        )));
+                    }
+                }
+                ("KroneckerProduct", [a_form, b_form]) => {
+                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
+                        )));
+                    }
+                }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
                         return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
