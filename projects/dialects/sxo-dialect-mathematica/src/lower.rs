@@ -1051,38 +1051,55 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
     }
 }
 
-/// Build a dense rational `MatrixValue` from Mathematica list Form literals.
+/// Build a dense `MatrixValue` from Mathematica list Form literals.
 ///
-/// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Variables and computed
-/// terms are not reverse-recognized from arena Collections.
+/// Nested `{row…}` → 2-D matrix. Flat `{v…}` → `1×n` row. Exact rationals stay
+/// exact. Any machine float promotes the whole matrix to machine parent (Living 16).
+/// Variables and computed terms are not reverse-recognized from arena Collections.
 fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
     let rows = list_items(w)?;
     if rows.is_empty() {
         return None;
     }
-    if list_items(&rows[0]).is_some() {
-        let mut data = Vec::new();
+    let (nrows, ncols, cells) = if list_items(&rows[0]).is_some() {
+        let mut cells = Vec::new();
         let mut cols: Option<u64> = None;
         for row in rows {
-            let cells = list_items(row)?;
-            let c = cells.len() as u64;
+            let row_cells = list_items(row)?;
+            let c = row_cells.len() as u64;
             match cols {
                 Some(prev) if prev != c => return None,
                 None => cols = Some(c),
                 _ => {}
             }
-            for cell in cells {
-                data.push(form_scalar_rational(cell)?);
+            cells.extend_from_slice(row_cells);
+        }
+        (rows.len() as u64, cols.unwrap_or(0), cells)
+    } else {
+        (1u64, rows.len() as u64, rows.to_vec())
+    };
+    if cells.is_empty() {
+        return None;
+    }
+    let mut rationals = Vec::with_capacity(cells.len());
+    let mut all_rational = true;
+    for cell in &cells {
+        match form_scalar_rational(cell) {
+            Some(q) => rationals.push(q),
+            None => {
+                all_rational = false;
+                break;
             }
         }
-        MatrixValue::from_rationals_row_major(rows.len() as u64, cols.unwrap_or(0), data).ok()
-    } else {
-        let mut data = Vec::with_capacity(rows.len());
-        for cell in rows {
-            data.push(form_scalar_rational(cell)?);
-        }
-        MatrixValue::from_rationals_row_major(1, data.len() as u64, data).ok()
     }
+    if all_rational {
+        return MatrixValue::from_rationals_row_major(nrows, ncols, rationals).ok();
+    }
+    let mut floats = Vec::with_capacity(cells.len());
+    for cell in &cells {
+        floats.push(cell.as_f64_lossy()?);
+    }
+    MatrixValue::from_f64_row_major(nrows, ncols, floats).ok()
 }
 
 /// True when Form is a flat list of scalars (Mathematica vector syntax), not nested rows.

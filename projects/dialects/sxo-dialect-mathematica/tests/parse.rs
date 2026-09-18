@@ -609,6 +609,12 @@ fn binary_matrix_goals_resolve_symbol_bindings() {
     // Living 16: inconsistent ExactSolve projects empty list; Infinite keeps a particular.
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]")), "{}");
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "{{2}, {0}}");
+    // Living 16: machine-float Form → MachineSolve Singular residual (not exact Infinite).
+    let singular = h.wolfram(h.eval("LinearSolve[{{1.0, 2.0}, {2.0, 4.0}}, {{1.0}, {0.0}}]"));
+    assert!(
+        singular.contains("LinearSolve") && singular.contains("Singular"),
+        "expected Singular residual, got {singular}"
+    );
     assert_eq!(h.wolfram(h.eval("M={{1, 2}, {3, 4}}; V={{1}, {1}}; Dot[M, V]")), "{3, 7}");
     assert_eq!(h.wolfram(h.eval("U={1, 0, 0}; W={0, 1, 0}; Cross[U, W]")), "{0, 0, 1}");
 }
