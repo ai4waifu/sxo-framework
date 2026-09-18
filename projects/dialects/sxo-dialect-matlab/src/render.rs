@@ -193,6 +193,7 @@ fn head_matlab_name(name: &str) -> String {
         "Size" | "Dimensions" => "size",
         "Length" => "length",
         "Det" | "Determinant" => "det",
+        "Inverse" => "inv",
         "Sum" => "sum",
         "Product" => "prod",
         "Accumulate" => "cumsum",
