@@ -529,18 +529,15 @@ fn part_store_on_matrix_binding() {
 fn nested_form_transpose_feeds_inverse_matrix_operand() {
     let h = H::new();
     // Living 16: Form wrappers unwrap at lowering — no Term Collection reverse recognition.
-    assert_eq!(
-        h.wolfram(h.eval("Inverse[Transpose[{{1, 2}, {3, 4}}]]")),
-        "{{-2, 3/2}, {1, -1/2}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Inverse[Transpose[{{1, 2}, {3, 4}}]]")), "{{-2, 3/2}, {1, -1/2}}");
     let w = h.parse_w("Inverse[Transpose[{{1, 2}, {3, 4}}]]");
     let mut s = h.s.borrow_mut();
     let request = lower_request(&mut s, &w);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { .. })
-        ))
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
+            athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { .. }
+        )))
     ));
 }
 
@@ -552,9 +549,9 @@ fn times_form_matrices_lower_to_hadamard_goal() {
     let request = lower_request(&mut s, &w);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { .. })
-        ))
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
+            athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { .. }
+        )))
     ));
     drop(s);
     // Living 16: Mathematica `Times` is Hadamard, not MatMul.
@@ -574,7 +571,9 @@ fn det_goal_uses_matrix_operand_binding() {
             assert!(matches!(
                 last,
                 athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-                    athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Det { .. })
+                    athena::domains::DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::Det { .. }
+                    )
                 ))
             ));
         }
@@ -585,42 +584,24 @@ fn det_goal_uses_matrix_operand_binding() {
 #[test]
 fn matrix_times_resolves_symbol_bindings() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5, 6}, {7, 8}}; Dot[A, B]")),
-        "{{19, 22}, {43, 50}}"
-    );
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5, 6}, {7, 8}}; Dot[A, B]")), "{{19, 22}, {43, 50}}");
     // Living 16: Mathematica `Times` on matrices is Hadamard. `Dot` remains MatMul.
-    assert_eq!(
-        h.wolfram(h.eval("P={{1, 2}, {3, 4}}; Q={{5, 6}, {7, 8}}; P*Q")),
-        "{{5, 12}, {21, 32}}"
-    );
+    assert_eq!(h.wolfram(h.eval("P={{1, 2}, {3, 4}}; Q={{5, 6}, {7, 8}}; P*Q")), "{{5, 12}, {21, 32}}");
 }
 
 #[test]
 fn binary_matrix_goals_resolve_symbol_bindings() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5}, {6}}; LinearSolve[A, B]")),
-        "{{-4}, {9/2}}"
-    );
+    assert_eq!(h.wolfram(h.eval("A={{1, 2}, {3, 4}}; B={{5}, {6}}; LinearSolve[A, B]")), "{{-4}, {9/2}}");
     // Living 16: ExactSolve particular publishes MatrixResult via typed MatrixRef operands.
-    assert_eq!(
-        h.wolfram(h.eval("A=IdentityMatrix[2]; B={{3}, {5}}; LinearSolve[A, B]")),
-        "{{3}, {5}}"
-    );
-    assert_eq!(
-        h.wolfram(h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {11}}]")),
-        "{{1}, {2}}"
-    );
+    assert_eq!(h.wolfram(h.eval("A=IdentityMatrix[2]; B={{3}, {5}}; LinearSolve[A, B]")), "{{3}, {5}}");
+    assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {3, 4}}, {{5}, {11}}]")), "{{1}, {2}}");
     // Living 16: inconsistent ExactSolve projects empty list; Infinite keeps a particular.
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{1}, {0}}]")), "{}");
     assert_eq!(h.wolfram(h.eval("LinearSolve[{{1, 2}, {2, 4}}, {{2}, {4}}]")), "{{2}, {0}}");
     // Living 16: machine-float Form → MachineSolve Singular residual (not exact Infinite).
     let singular = h.wolfram(h.eval("LinearSolve[{{1.0, 2.0}, {2.0, 4.0}}, {{1.0}, {0.0}}]"));
-    assert!(
-        singular.contains("LinearSolve") && singular.contains("Singular"),
-        "expected Singular residual, got {singular}"
-    );
+    assert!(singular.contains("LinearSolve") && singular.contains("Singular"), "expected Singular residual, got {singular}");
     assert_eq!(h.wolfram(h.eval("M={{1, 2}, {3, 4}}; V={{1}, {1}}; Dot[M, V]")), "{3, 7}");
     assert_eq!(h.wolfram(h.eval("U={1, 0, 0}; W={0, 1, 0}; Cross[U, W]")), "{0, 0, 1}");
 }
@@ -826,10 +807,7 @@ fn solve_x_squared_eq_one() {
 #[test]
 fn solve_linear_two_by_two_rules() {
     let h = H::new();
-    assert_eq!(
-        h.wolfram(h.eval("Solve[{x + y == 3, x - y == 1}, {x, y}]")),
-        "{{x -> 2, y -> 1}}"
-    );
+    assert_eq!(h.wolfram(h.eval("Solve[{x + y == 3, x - y == 1}, {x, y}]")), "{{x -> 2, y -> 1}}");
 }
 
 #[test]
@@ -1235,8 +1213,5 @@ fn derivative_prime_sugar_forms() {
     let dsv = h.wolfram(h.eval("DSolveValue[y'[x] == y[x], y[x], x]"));
     // Must not silently collapse to bare `x` (old SILENT WRONG).
     assert_ne!(dsv, "x");
-    assert!(
-        dsv.contains("DSolveValue") || dsv.contains("Derivative") || dsv.contains("y'"),
-        "got {dsv}"
-    );
+    assert!(dsv.contains("DSolveValue") || dsv.contains("Derivative") || dsv.contains("y'"), "got {dsv}");
 }

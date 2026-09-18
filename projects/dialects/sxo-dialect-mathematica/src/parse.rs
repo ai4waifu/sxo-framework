@@ -184,10 +184,9 @@ fn lower_postfix(u: &UnaryExpr) -> Result<WolframForm, SxoError> {
     Ok(match u.operator {
         WolframTokenType::Ampersand => WolframForm::call("Function", vec![e]),
         WolframTokenType::Factorial => WolframForm::call("Factorial", vec![e]),
-        WolframTokenType::Prime => WolframForm::Call {
-            head: Box::new(WolframForm::call("Derivative", vec![WolframForm::int(1)])),
-            args: vec![e],
-        },
+        WolframTokenType::Prime => {
+            WolframForm::Call { head: Box::new(WolframForm::call("Derivative", vec![WolframForm::int(1)])), args: vec![e] }
+        }
         WolframTokenType::Underscore => WolframForm::call("Pattern", vec![e, WolframForm::call("Blank", vec![])]),
         WolframTokenType::DoubleUnderscore => WolframForm::call("Pattern", vec![e, WolframForm::call("BlankSequence", vec![])]),
         WolframTokenType::TripleUnderscore => {

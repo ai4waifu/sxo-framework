@@ -71,9 +71,7 @@ fn reject_whitespace_juxtaposed_statements(source: &str, spans: &[oak_matlab::as
         }
         let between = &source[left_end..right_start];
         if between.chars().all(|c| c == ' ' || c == '\t') {
-            return Err(SxoError::new(
-                "matlab: unsupported juxtaposed statements (no separator)",
-            ));
+            return Err(SxoError::new("matlab: unsupported juxtaposed statements (no separator)"));
         }
     }
     Ok(())
@@ -303,12 +301,7 @@ fn lower_array_rows(rows: &[Vec<Expression>], source: &str, cell: bool) -> Resul
         }
         MatlabForm::list(out)
     };
-    if cell {
-        Ok(MatlabForm::call("Cell", vec![form]))
-    }
-    else {
-        Ok(form)
-    }
+    if cell { Ok(MatlabForm::call("Cell", vec![form])) } else { Ok(form) }
 }
 
 fn lower_binary(bin: &BinaryExpr, source: &str) -> Result<MatlabForm, SxoError> {

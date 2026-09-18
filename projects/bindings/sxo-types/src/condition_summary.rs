@@ -34,10 +34,7 @@ mod tests {
 
     #[test]
     fn condition_summary_names_predicate_kind() {
-        let c = Condition {
-            predicate: Predicate::SymbolReal(SymbolId(7)),
-            resolved: false,
-        };
+        let c = Condition { predicate: Predicate::SymbolReal(SymbolId(7)), resolved: false };
         assert_eq!(condition_summary(&c), "SymbolReal resolved=false");
     }
 }

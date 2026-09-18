@@ -8,8 +8,8 @@ use athena::{
     types::TermId,
 };
 use sxo_dialect_matlab::{
-    MatlabAtom, MatlabForm, application_surface_name, form_to_term, install_session_conventions, lower_request,
-    parse_matlab, parse_matlab_form, push_matlab_call, render_matlab, render_matlab_form, try_plot_svg,
+    MatlabAtom, MatlabForm, application_surface_name, form_to_term, install_session_conventions, lower_request, parse_matlab,
+    parse_matlab_form, push_matlab_call, render_matlab, render_matlab_form, try_plot_svg,
 };
 
 type Tid = TermId;
@@ -330,10 +330,7 @@ fn diag_and_cond_literal_goals() {
     assert_eq!(h.render(h.eval("diag([1, 2])")), "[1, 0; 0, 2]");
     // Living 16: `cond` → ConditionNumber Goal (LU pivot-ratio estimate).
     let c = h.render(h.eval("cond([2, 0; 0, 2])"));
-    assert!(
-        c == "1" || c.starts_with("1.") || c == "1.0",
-        "expected ~1 conditioning, got {c}"
-    );
+    assert!(c == "1" || c.starts_with("1.") || c == "1.0", "expected ~1 conditioning, got {c}");
     let singular = h.render(h.eval("cond([1, 2; 2, 4])"));
     assert!(
         singular.contains("Inf") || singular.contains("inf") || singular.contains("Infinity"),
@@ -397,9 +394,9 @@ fn parse_mrdivide_2x2_lowers_to_right_solve_goal() {
     let request = lower_request(&mut session, &form);
     assert!(matches!(
         request,
-        AthenaRequest::Goal(DomainGoal::Dispatch(
-            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { .. })
-        ))
+        AthenaRequest::Goal(DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
+            athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { .. }
+        )))
     ));
 }
 
@@ -464,10 +461,7 @@ fn unary_minus_binds_looser_than_power() {
     let form = parse_matlab_form("-x^2").unwrap();
     assert_eq!(
         form,
-        MatlabForm::call(
-            "Minus",
-            vec![MatlabForm::call("Power", vec![MatlabForm::symbol("x"), MatlabForm::int(2)])]
-        )
+        MatlabForm::call("Minus", vec![MatlabForm::call("Power", vec![MatlabForm::symbol("x"), MatlabForm::int(2)])])
     );
     assert_eq!(render_matlab_form(&form), "-x^2");
     let h = H::new();
@@ -513,10 +507,7 @@ fn indexed_assignment_updates_own_binding() {
         form,
         MatlabForm::call(
             "Set",
-            vec![
-                MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)]),
-                MatlabForm::int(9),
-            ]
+            vec![MatlabForm::call("Part", vec![MatlabForm::symbol("A"), MatlabForm::int(2)]), MatlabForm::int(9),]
         )
     );
     assert_eq!(h.render(h.eval("A = [1, 2, 3]; A(2) = 9; A")), "[1, 9, 3]");
@@ -533,10 +524,7 @@ fn indexed_assignment_grows_with_end_plus_and_pad() {
     let h = H::new();
     assert_eq!(h.render(h.eval("B = 1:4; B(end+1) = 5; B")), "[1, 2, 3, 4, 5]");
     assert_eq!(h.render(h.eval("A = [1, 2, 3]; A(5) = 9; A")), "[1, 2, 3, 0, 9]");
-    assert_eq!(
-        h.render(h.eval("M = zeros(2); M(3, 3) = 1; M")),
-        "[0, 0, 0; 0, 0, 0; 0, 0, 1]"
-    );
+    assert_eq!(h.render(h.eval("M = zeros(2); M(3, 3) = 1; M")), "[0, 0, 0; 0, 0, 0; 0, 0, 1]");
 }
 
 #[test]
@@ -583,10 +571,7 @@ fn spfun_keeps_function_handle_and_speye_args() {
             assert_eq!(head, "spfun");
             assert_eq!(args.len(), 2, "got {args:?}");
             assert_eq!(args[0].head_name(), Some("FunctionHandle"));
-            assert_eq!(
-                args[1],
-                MatlabForm::call("Part", vec![MatlabForm::symbol("speye"), MatlabForm::int(2)])
-            );
+            assert_eq!(args[1], MatlabForm::call("Part", vec![MatlabForm::symbol("speye"), MatlabForm::int(2)]));
         }
         other => panic!("expected spfun call, got {other:?}"),
     }
@@ -606,10 +591,7 @@ fn function_handle_args_kept_in_bsxfun_and_arrayfun() {
         other => panic!("expected bsxfun call, got {other:?}"),
     }
     let h = H::new();
-    assert_eq!(
-        h.render(h.eval("bsxfun(@plus, [1, 2], [3; 4])")),
-        "bsxfun(@plus, [1, 2], [3; 4])"
-    );
+    assert_eq!(h.render(h.eval("bsxfun(@plus, [1, 2], [3; 4])")), "bsxfun(@plus, [1, 2], [3; 4])");
 
     let af = parse_matlab_form("arrayfun(@sin, [0])").unwrap();
     assert_eq!(af.head_name(), Some("arrayfun"));
@@ -693,9 +675,9 @@ fn parse_mldivide_2x2_lowers_to_solve_goal() {
     let request = lower_request(&mut s, &form);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-            athena::domains::DomainRequest::LinearAlgebra(athena::domains::linear_algebra::LinearAlgebraRequest::Solve { .. })
-        ))
+        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
+            athena::domains::linear_algebra::LinearAlgebraRequest::Solve { .. }
+        )))
     ));
     drop(s);
     assert_eq!(h.render(h.eval("[1, 2; 3, 4] \\ [5; 6]")), "[-4; 9/2]");
@@ -954,7 +936,10 @@ fn methods_call_keeps_string_arg() {
     let h = H::new();
     let rendered = h.render(h.eval("methods('double')"));
     assert!(
-        rendered.contains("methods") || rendered.contains("Reject") || rendered.contains("ATHENA") || rendered.contains("unsupported"),
+        rendered.contains("methods")
+            || rendered.contains("Reject")
+            || rendered.contains("ATHENA")
+            || rendered.contains("unsupported"),
         "must not collapse to 'double', got {rendered}"
     );
     assert_ne!(rendered, "'double'");
@@ -964,10 +949,7 @@ fn methods_call_keeps_string_arg() {
 #[test]
 fn global_persistent_declaration_forms() {
     let global = parse_matlab_form("global x y").unwrap();
-    assert_eq!(
-        global,
-        MatlabForm::call("Global", vec![MatlabForm::symbol("x"), MatlabForm::symbol("y")])
-    );
+    assert_eq!(global, MatlabForm::call("Global", vec![MatlabForm::symbol("x"), MatlabForm::symbol("y")]));
     assert_eq!(render_matlab_form(&global), "global x y");
 
     let persistent = parse_matlab_form("persistent z").unwrap();
@@ -987,10 +969,7 @@ fn global_persistent_declaration_forms() {
 fn whitespace_juxtaposed_non_command_still_rejected() {
     // Adjacent assignments with only spaces (not command syntax) still error.
     let err = parse_matlab_form("x=1 y=2").expect_err("juxta");
-    assert!(
-        err.to_string().contains("juxtaposed"),
-        "got {err}"
-    );
+    assert!(err.to_string().contains("juxtaposed"), "got {err}");
     // Semicolon / comma statement separators remain CompoundExpression.
     let form = parse_matlab_form("a; b").unwrap();
     assert_eq!(form.head_name(), Some("CompoundExpression"));
@@ -1063,13 +1042,7 @@ fn parse_matlab_form_if_without_session() {
 #[test]
 fn member_access_keeps_package_path() {
     let form = parse_matlab_form("containers.Map").unwrap();
-    assert_eq!(
-        form,
-        MatlabForm::call(
-            "Member",
-            vec![MatlabForm::symbol("containers"), MatlabForm::symbol("Map")]
-        )
-    );
+    assert_eq!(form, MatlabForm::call("Member", vec![MatlabForm::symbol("containers"), MatlabForm::symbol("Map")]));
     assert_eq!(render_matlab_form(&form), "containers.Map");
 
     let call = parse_matlab_form("containers.Map('a', 1)").unwrap();
@@ -1084,12 +1057,6 @@ fn member_access_keeps_package_path() {
     }
 
     let mut s = Session::new();
-    assert_eq!(
-        lower_request(&mut s, &parse_matlab_form("containers.Map").unwrap()).kind_name(),
-        "Control"
-    );
-    assert_eq!(
-        lower_request(&mut s, &parse_matlab_form("py.list([1, 2])").unwrap()).kind_name(),
-        "Control"
-    );
+    assert_eq!(lower_request(&mut s, &parse_matlab_form("containers.Map").unwrap()).kind_name(), "Control");
+    assert_eq!(lower_request(&mut s, &parse_matlab_form("py.list([1, 2])").unwrap()).kind_name(), "Control");
 }

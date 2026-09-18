@@ -12,10 +12,7 @@ use athena::{
     numeric::{Integer, Rational},
     reasoning::trs::{PatternConstraint, TermPattern},
     runtime::values::{
-        arena::{
-            push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic,
-            push_symbol_name,
-        },
+        arena::{push_bool, push_constant, push_extension, push_int, push_list, push_null, push_semantic, push_symbol_name},
         numeric_clone::{clone_integer, clone_number, clone_rational},
     },
     types::{
@@ -201,11 +198,7 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Function" => lower_function(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name)) if name == "Span" => lower_span_as_range(session, args),
             WolframForm::Atom(WolframAtom::Symbol(name))
-                if name == "Apply"
-                    || name == "Map"
-                    || name == "MapIndexed"
-                    || name == "MapThread"
-                    || name == "Array" =>
+                if name == "Apply" || name == "Map" || name == "MapIndexed" || name == "MapThread" || name == "Array" =>
             {
                 let mut arg_ids = Vec::with_capacity(args.len());
                 for (i, a) in args.iter().enumerate() {
@@ -406,8 +399,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Solve", [equations, unknowns]) => {
-                    let unknown_syms = symbol_list(session, unknowns)
-                        .or_else(|| symbol_of(session, unknowns).map(|s| vec![s]));
+                    let unknown_syms = symbol_list(session, unknowns).or_else(|| symbol_of(session, unknowns).map(|s| vec![s]));
                     if let Some(unknown_syms) = unknown_syms {
                         let eqs = term_list(session, equations).unwrap_or_else(|| vec![lower_wexpr(session, equations)]);
                         if eqs.len() == 1 && unknown_syms.len() == 1 {
@@ -444,7 +436,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                     // `A[[i,j]]=v` → StoreIndex (typed write on Own / MatrixRef).
                     if let WolframForm::Call { head, args: part_args } = lhs {
-                        if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Part") && part_args.len() >= 2 {
+                        if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Part")
+                            && part_args.len() >= 2
+                        {
                             if let Some(axes) = part_args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
                                 let target = lower_wexpr(session, &part_args[0]);
                                 let value = lower_wexpr(session, rhs);
@@ -456,7 +450,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("Times", [a_form, b_form]) => {
                     // Living 16: Mathematica `Times` on matrices is Hadamard, never MatMul.
                     // Matrix product is `Dot` only.
-                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
                         )));
@@ -681,7 +677,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("LinearSolve", [a_form, b_form]) => {
-                    if let (Some(a), Some(b)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    if let (Some(a), Some(b)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                         )));
@@ -731,14 +729,18 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                         )));
                     }
-                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                         )));
                     }
                 }
                 ("Cross", [a_form, b_form]) => {
-                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
                         )));
@@ -747,10 +749,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 ("NullSpace", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace {
-                                matrix,
-                                column_basis: false,
-                            },
+                            athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: false },
                         )));
                     }
                 }
@@ -776,7 +775,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("KroneckerProduct", [a_form, b_form]) => {
-                    if let (Some(lhs), Some(rhs)) = (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form)) {
+                    if let (Some(lhs), Some(rhs)) =
+                        (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
+                    {
                         return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
                             athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
                         )));
@@ -1109,7 +1110,8 @@ fn matrix_from_form(w: &WolframForm) -> Option<MatrixValue> {
             cells.extend_from_slice(row_cells);
         }
         (rows.len() as u64, cols.unwrap_or(0), cells)
-    } else {
+    }
+    else {
         (1u64, rows.len() as u64, rows.to_vec())
     };
     if cells.is_empty() {
@@ -1441,9 +1443,7 @@ fn lower_function(session: &mut Session, args: &[WolframForm]) -> TermId {
                 let binder = push_symbol_name(session, "$slot1");
                 return push_semantic(session, SemanticOperator::Function, vec![binder, body_id]);
             }
-            let binders: Vec<TermId> = (1..=max_slot)
-                .map(|i| push_symbol_name(session, &format!("$slot{i}")))
-                .collect();
+            let binders: Vec<TermId> = (1..=max_slot).map(|i| push_symbol_name(session, &format!("$slot{i}"))).collect();
             let binder_list = push_list(session, binders);
             push_semantic(session, SemanticOperator::Function, vec![binder_list, body_id])
         }
@@ -1494,16 +1494,14 @@ fn max_slot_index(w: &WolframForm) -> Option<i64> {
 
 fn replace_slots(w: &WolframForm) -> WolframForm {
     match w {
-        WolframForm::Call { head, args }
-            if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") =>
+        WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Slot") =>
         {
             let idx = args.first().and_then(exact_i64).unwrap_or(1);
             WolframForm::Atom(WolframAtom::Symbol(format!("$slot{idx}")))
         }
-        WolframForm::Call { head, args } => WolframForm::Call {
-            head: Box::new(replace_slots(head)),
-            args: args.iter().map(replace_slots).collect(),
-        },
+        WolframForm::Call { head, args } => {
+            WolframForm::Call { head: Box::new(replace_slots(head)), args: args.iter().map(replace_slots).collect() }
+        }
         WolframForm::List(items) => WolframForm::List(items.iter().map(replace_slots).collect()),
         other => other.clone(),
     }

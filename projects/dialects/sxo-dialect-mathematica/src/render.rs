@@ -33,10 +33,12 @@ pub fn render(expr: &WolframForm) -> String {
 
 /// `Derivative[1][f]` → `f'`.
 fn try_derivative_prime(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
-    let WolframForm::Call { head: dhead, args: dargs } = head else {
+    let WolframForm::Call { head: dhead, args: dargs } = head
+    else {
         return None;
     };
-    let WolframForm::Atom(WolframAtom::Symbol(name)) = dhead.as_ref() else {
+    let WolframForm::Atom(WolframAtom::Symbol(name)) = dhead.as_ref()
+    else {
         return None;
     };
     if name != "Derivative" || dargs.len() != 1 || args.len() != 1 {
@@ -79,18 +81,12 @@ fn try_infix(head: &WolframForm, args: &[WolframForm]) -> Option<String> {
         }
         "Function" if args.len() == 1 => Some(format!("{} &", maybe_paren(&args[0], Prec::Function))),
         "Part" if args.len() == 2 => Some(format!("{}[[{}]]", maybe_paren(&args[0], Prec::Part), render(&args[1]))),
-        "Composition" if args.len() >= 2 => Some(
-            args.iter()
-                .map(|a| maybe_paren(a, Prec::Composition))
-                .collect::<Vec<_>>()
-                .join("@*"),
-        ),
-        "RightComposition" if args.len() >= 2 => Some(
-            args.iter()
-                .map(|a| maybe_paren(a, Prec::Composition))
-                .collect::<Vec<_>>()
-                .join("/*"),
-        ),
+        "Composition" if args.len() >= 2 => {
+            Some(args.iter().map(|a| maybe_paren(a, Prec::Composition)).collect::<Vec<_>>().join("@*"))
+        }
+        "RightComposition" if args.len() >= 2 => {
+            Some(args.iter().map(|a| maybe_paren(a, Prec::Composition)).collect::<Vec<_>>().join("/*"))
+        }
         "MessageName" if args.len() == 2 => Some(format!("{}::{}", render(&args[0]), render(&args[1]))),
         "Slot" if args.len() == 1 => match exact_slot_index(&args[0]) {
             Some(1) => Some("#".into()),

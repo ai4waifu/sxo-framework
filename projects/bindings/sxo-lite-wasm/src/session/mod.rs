@@ -108,10 +108,7 @@ impl Session {
     /// Project condition summaries for a Session-local [`ResultId`] (empty if missing).
     pub fn project_conditions(&self, result_id: ResultId) -> Vec<String> {
         let ms = self.math_session.borrow();
-        ms.results
-            .get(result_id)
-            .map(|r| r.conditions.iter().map(sxo_types::condition_summary).collect())
-            .unwrap_or_default()
+        ms.results.get(result_id).map(|r| r.conditions.iter().map(sxo_types::condition_summary).collect()).unwrap_or_default()
     }
 
     /// Project provider stamp summary for a Session-local [`ResultId`] (`None` if missing).
@@ -136,9 +133,7 @@ impl Session {
                         ResultEvidence::TrustedKernelSummary { provider, summary } => {
                             sxo_types::trusted_kernel_evidence_summary(provider.name(), summary)
                         }
-                        ResultEvidence::AdmittedRelation { fact } => {
-                            sxo_types::admitted_relation_evidence_summary(fact.0)
-                        }
+                        ResultEvidence::AdmittedRelation { fact } => sxo_types::admitted_relation_evidence_summary(fact.0),
                     })
                     .collect()
             })
