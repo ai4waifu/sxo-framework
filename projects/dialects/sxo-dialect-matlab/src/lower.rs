@@ -443,6 +443,42 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 }
             }
         }
+        MatlabForm::Call { head, args } if head == "IsDiagonalMatrix" || head == "IsDiag" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::IsDiagonal { matrix },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "IsLowerTriangular" || head == "IsTril" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: true },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "IsUpperTriangular" || head == "IsTriu" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: false },
+                    )));
+                }
+            }
+        }
+        MatlabForm::Call { head, args } if head == "IsSymmetricMatrix" || head == "IsSymmetric" => {
+            if let [arg] = args.as_slice() {
+                if let Some(matrix) = matrix_operand_from_form(session, arg) {
+                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        athena::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
+                    )));
+                }
+            }
+        }
         MatlabForm::Call { head, args } if head == "Dot" => {
             if let [a_form, b_form] = args.as_slice() {
                 if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {

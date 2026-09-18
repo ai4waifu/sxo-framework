@@ -407,6 +407,10 @@ fn map_matlab_head(name: &str) -> String {
         "tril" => "LowerTriangularize".to_string(),
         "triu" => "UpperTriangularize".to_string(),
         "kron" => "KroneckerProduct".to_string(),
+        "isdiag" => "IsDiagonalMatrix".to_string(),
+        "istril" => "IsLowerTriangular".to_string(),
+        "istriu" => "IsUpperTriangular".to_string(),
+        "issymmetric" => "IsSymmetricMatrix".to_string(),
         "sum" => "Sum".to_string(),
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
@@ -467,6 +471,14 @@ fn is_known_call_head(name: &str) -> bool {
             | "Triu"
             | "KroneckerProduct"
             | "Kron"
+            | "IsDiagonalMatrix"
+            | "IsDiag"
+            | "IsLowerTriangular"
+            | "IsTril"
+            | "IsUpperTriangular"
+            | "IsTriu"
+            | "IsSymmetricMatrix"
+            | "IsSymmetric"
             | "Norm"
             | "Dot"
             | "Cross"

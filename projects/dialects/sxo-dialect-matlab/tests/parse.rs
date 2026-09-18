@@ -350,6 +350,17 @@ fn tril_triu_and_kron_literal_goals() {
 }
 
 #[test]
+fn matrix_structure_predicates() {
+    let h = H::new();
+    assert_eq!(h.render(h.eval("isdiag(eye(3))")), "1");
+    assert_eq!(h.render(h.eval("issymmetric(eye(3))")), "1");
+    // Nested Goal args are not MatrixOperand at lower time; use literal triangular forms.
+    assert_eq!(h.render(h.eval("istril([1, 0; 3, 4])")), "1");
+    assert_eq!(h.render(h.eval("istriu([1, 2; 0, 4])")), "1");
+    assert_eq!(h.render(h.eval("isdiag([1, 2; 3, 4])")), "0");
+}
+
+#[test]
 fn linsolve_symbol_after_2d_set() {
     let h = H::new();
     // Column `b` is matrix Own; Solve resolves both bindings.
