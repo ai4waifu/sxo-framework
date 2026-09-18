@@ -8,10 +8,20 @@ export const linearAlgebraFeatures = [
         .notes('inv → Inverse Goal; Singular → Inverse[Singular] residual')
         .eval('inv.diag', 'inv([1, 0; 0, 2])', '[1, 0; 0, 1/2]')
         .done(),
-    feature('rank', 'linear_algebra').unsupported().pure().gap('rank.def', 'rank([1, 2; 2, 4])', { expected: '1' }).done(),
+    feature('rank', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('rank → MatrixRank Goal → LinearAlgebraRequest::Rank')
+        .eval('rank.def', 'rank([1, 2; 2, 4])', '1')
+        .done(),
     feature('eig', 'linear_algebra').unsupported().pure().gap('eig.sym', 'eig([1, 2; 2, 1])', { expected: '[3; -1]' }).done(),
     feature('diag', 'linear_algebra').unsupported().pure().gap('diag.vec', 'diag([1, 2])', { expected: '[1, 0; 0, 2]' }).done(),
-    feature('trace', 'linear_algebra').unsupported().pure().gap('trace.2x2', 'trace([1, 2; 3, 4])', { expected: '5' }).done(),
+    feature('trace', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('trace → Tr Goal → LinearAlgebraRequest::Trace')
+        .eval('trace.2x2', 'trace([1, 2; 3, 4])', '5')
+        .done(),
     feature('norm', 'linear_algebra').unsupported().pure().gap('norm.34', 'norm([3, 4])', { expected: '5' }).done(),
     feature('dot', 'linear_algebra').unsupported().pure().gap('dot.2', 'dot([1, 2], [3, 4])', { expected: '11' }).done(),
     feature('cross', 'linear_algebra').unsupported().pure().gap('cross.ijk', 'cross([1, 0, 0], [0, 1, 0])', { expected: '[0, 0, 1]' }).done(),
@@ -24,7 +34,12 @@ export const linearAlgebraFeatures = [
     feature('lu', 'linear_algebra').unsupported().pure().gap('lu.2x2', 'lu([1, 2; 3, 4])', { expected: '...' }).done(),
     feature('chol', 'linear_algebra').unsupported().pure().gap('chol.spd', 'chol([2, 1; 1, 2])', { expected: '...' }).done(),
     feature('expm', 'linear_algebra').unsupported().pure().gap('expm.rot', 'expm([0, 1; -1, 0])', { expected: '...' }).done(),
-    feature('rref', 'linear_algebra').unsupported().pure().gap('rref.basic', 'rref([1, 2, 3; 4, 5, 6])', { expected: '...' }).done(),
+    feature('rref', 'linear_algebra')
+        .supported()
+        .pure()
+        .notes('rref → RowReduce Goal → LinearAlgebraRequest::Rref')
+        .eval('rref.basic', 'rref([1, 2; 2, 4])', '[1, 2; 0, 0]')
+        .done(),
     feature('pcg', 'linear_algebra').unsupported().pure().gap('pcg.eye', 'pcg(speye(3), ones(3, 1))', { expected: '...' }).done(),
     feature('minres', 'linear_algebra').unsupported().pure().gap('minres.eye', 'minres(speye(3), ones(3, 1))', { expected: '...' }).done(),
     feature('cgs', 'linear_algebra').unsupported().pure().gap('cgs.eye', 'cgs(speye(3), ones(3, 1))', { expected: '...' }).done(),
