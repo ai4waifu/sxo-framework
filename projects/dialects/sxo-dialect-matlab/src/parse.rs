@@ -422,7 +422,7 @@ fn map_matlab_head(name: &str) -> String {
     }
 }
 
-fn is_known_call_head(name: &str) -> bool {
+pub(crate) fn is_known_call_head(name: &str) -> bool {
     if crate::surface::surface_to_semantic(name).is_some() {
         return true;
     }
@@ -491,6 +491,14 @@ fn is_known_call_head(name: &str) -> bool {
             | "Function"
             | "FunctionHandle"
             | "feval"
+            | "floor"
+            | "Floor"
+            | "intmin"
+            | "intmax"
+            | "num2str"
+            | "strcmp"
+            | "length"
+            | "Length"
     )
 }
 

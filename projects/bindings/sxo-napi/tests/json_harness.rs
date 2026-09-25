@@ -101,3 +101,53 @@ fn bind_json_then_invoke_two_sum_wolfram() {
     let got = session.term_to_json(&out).expect("json");
     assert_eq!(got, "[0,1]");
 }
+
+#[test]
+fn matlab_two_sum_while_invoke() {
+    let def = r#"function out = twoSum(nums, target)
+    n = length(nums);
+    for i = 1:(n - 1)
+        for j = (i + 1):n
+            if nums(i) + nums(j) == target
+                out = [i - 1, j - 1];
+                return;
+            end
+        end
+    end
+    out = [];
+end"#;
+    let session = HostSession::new(Some("matlab".into())).expect("session");
+    session.evaluate_definition(def.into(), None).expect("definition");
+    session.bind_json("nums".into(), "[3,3]".into()).expect("bind nums");
+    session.bind_json("target".into(), "6".into()).expect("bind target");
+    let out = session.invoke("twoSum".into(), vec!["nums".into(), "target".into()], None).expect("invoke");
+    let got = session.term_to_json(&out).expect("json");
+    assert_eq!(got, "[0,1]");
+}
+
+#[test]
+fn matlab_reverse_integer_floor_invoke() {
+    let def = r#"function y = reverse(x)
+    lo = -214748365;
+    hi = 214748364;
+    n = x;
+    y = 0;
+    while n ~= 0
+        if y < lo + 1 || y > hi
+            y = 0;
+            return;
+        end
+        rem = mod(n, 10);
+        if n < 0 && rem > 0
+            rem = rem - 10;
+        end
+        y = y * 10 + rem;
+        n = floor((n - rem) / 10);
+    end
+end"#;
+    let session = HostSession::new(Some("matlab".into())).expect("session");
+    session.evaluate_definition(def.into(), None).expect("definition");
+    session.bind_json("x".into(), "123".into()).expect("bind");
+    let out = session.invoke("reverse".into(), vec!["x".into()], None).expect("invoke");
+    assert_eq!(session.term_to_json(&out).expect("json"), "321");
+}
