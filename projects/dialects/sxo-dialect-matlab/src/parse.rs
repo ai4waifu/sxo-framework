@@ -417,6 +417,7 @@ fn map_matlab_head(name: &str) -> String {
         "prod" => "Product".to_string(),
         "cumsum" => "Accumulate".to_string(),
         "linsolve" => "LinearSolve".to_string(),
+        "mod" => "Mod".to_string(),
         other => other.to_string(),
     }
 }
