@@ -15,7 +15,7 @@ description: >-
 - **subject 与 body 用英文**；skill / 维护文档正文用中文。
 - subject **必须以真实 gitmoji 开头**；禁止 Conventional Commit、多个 emoji、`?` 乱码。
 - subject **末尾禁止句号**；全文禁止 `;` / `；`。
-- **标识符反引号**：`` `@sxo/mathematica` ``、`` `sxo-dialect-matlab` ``、`` `scripts/change-logs.mjs` `` 等。
+- **标识符反引号**：`` `@sxo/mathematica` ``、`` `sxo-dialect-matlab` ``、`` `git-change-logs` `` 等。
 - **版本号不进 subject**；body 勿枚举 `` `v0.0.x` `` 路径。
 - 指 TypeScript 时写 **TypeScript**，勿写 bare `TS`。
 
@@ -24,7 +24,7 @@ description: >-
 ```text
 📦 Publish `@sxo/*` with Mathematica `SameQ` and `Mod` lowering
 
-📝 Add `scripts/change-logs.mjs` and maintainer release notes under `documentation/maintenance`
+📝 Add maintainer release notes under `documentation/maintenance`
 
 🔖 Bump publishable packages for Trusted Publisher tag release
 ```
