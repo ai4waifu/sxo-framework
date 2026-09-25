@@ -1648,3 +1648,29 @@ f(123)"#,
         "floor((x-rem)/10) in user function",
     );
 }
+
+#[test]
+fn assign_symbol_to_output_in_function() {
+    let h = H::new();
+    assert_eq!(
+        h.render(h.eval("function y = f()\n    q = 8;\n    y = q;\nend;\nf()")),
+        "8",
+        "output from local symbol rhs",
+    );
+}
+
+#[test]
+fn nested_while_compound_in_function() {
+    let h = H::new();
+    let src = r#"function y = f(x)
+    t = 1;
+    k = 1;
+    while x >= t + t
+        t = t + t;
+        k = k + k;
+    end
+    y = k;
+end;
+f(10)"#;
+    assert_eq!(h.render(h.eval(src)), "8", "nested while with two assigns in body");
+}
