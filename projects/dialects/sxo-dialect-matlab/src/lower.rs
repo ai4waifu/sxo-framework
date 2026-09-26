@@ -941,7 +941,7 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
         return Some((q, Rational::zero()));
     }
     match w {
-        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s),
+        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s).or_else(|| bare_imag_unit_symbol(s)),
         MatlabForm::Call { head, args } if head == "Plus" => {
             let mut re = Rational::zero();
             let mut im = Rational::zero();
@@ -953,12 +953,12 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
             Some((re, im))
         }
         MatlabForm::Call { head, args } if head == "Minus" && args.len() == 1 => {
-            let (re, im) = form_scalar_complex_literal_atom(&args[0])?;
+            let (re, im) = form_scalar_complex_component(&args[0])?;
             Some((re.neg(), im.neg()))
         }
         MatlabForm::Call { head, args } if (head == "Minus" || head == "Subtract") && args.len() == 2 => {
-            let (ar, ai) = form_scalar_complex_literal_atom(&args[0])?;
-            let (br, bi) = form_scalar_complex_literal_atom(&args[1])?;
+            let (ar, ai) = form_scalar_complex_component(&args[0])?;
+            let (br, bi) = form_scalar_complex_component(&args[1])?;
             Some((ar.add(&br.neg()), ai.add(&bi.neg())))
         }
         MatlabForm::Call { head, args } if head == "Times" && args.len() == 2 => {
@@ -971,18 +971,7 @@ fn form_scalar_complex(w: &MatlabForm) -> Option<(Rational, Rational)> {
     }
 }
 
-/// Complex literal atom at the top level of `Subtract` — bare `i`/`j` stay variables.
-fn form_scalar_complex_literal_atom(w: &MatlabForm) -> Option<(Rational, Rational)> {
-    if let Some(q) = form_scalar_rational(w) {
-        return Some((q, Rational::zero()));
-    }
-    match w {
-        MatlabForm::Atom(MatlabAtom::Symbol(s)) => matlab_imag_suffix_symbol(s),
-        _ => None,
-    }
-}
-
-/// Complex literal component inside `Plus` / `Times` — bare `i`/`j` are imag units (`1+i`).
+/// Complex literal component inside `Plus` / `Times` / matrix cells — bare `i`/`j` are imag units.
 fn form_scalar_complex_component(w: &MatlabForm) -> Option<(Rational, Rational)> {
     if let Some(q) = form_scalar_rational(w) {
         return Some((q, Rational::zero()));
@@ -1492,5 +1481,42 @@ fn wrap_function_body_request(session: &mut Session, body_req: AthenaRequest, ou
             AthenaRequest::Control(ControlPlan::Sequence { steps: steps.into_iter().chain([ret]).collect() })
         }
         other => AthenaRequest::Control(ControlPlan::Sequence { steps: vec![other, ret] }),
+    }
+}
+
+#[cfg(test)]
+mod complex_matrix_literal_tests {
+    use super::*;
+    use crate::MatlabForm;
+
+    #[test]
+    fn matrix_from_form_accepts_bare_i_and_subtract_cells() {
+        let m = matrix_from_form(&MatlabForm::List(vec![
+            MatlabForm::List(vec![
+                MatlabForm::call("Plus", vec![MatlabForm::int(1), MatlabForm::symbol("i")]),
+                MatlabForm::int(0),
+            ]),
+            MatlabForm::List(vec![
+                MatlabForm::int(0),
+                MatlabForm::call("Subtract", vec![MatlabForm::int(1), MatlabForm::symbol("i")]),
+            ]),
+        ]))
+        .expect("complex matrix literal");
+        assert_eq!(m.shape().rows, 2);
+        assert_eq!(m.shape().cols, 2);
+    }
+
+    #[test]
+    fn matrix_from_form_accepts_i_and_neg_i_cells() {
+        let m = matrix_from_form(&MatlabForm::List(vec![
+            MatlabForm::List(vec![MatlabForm::int(1), MatlabForm::symbol("i")]),
+            MatlabForm::List(vec![
+                MatlabForm::call("Minus", vec![MatlabForm::symbol("i")]),
+                MatlabForm::int(1),
+            ]),
+        ]))
+        .expect("complex matrix with bare i cells");
+        assert_eq!(m.shape().rows, 2);
+        assert_eq!(m.shape().cols, 2);
     }
 }

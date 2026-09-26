@@ -15,6 +15,7 @@ export const arithmeticFeatures = [
         .pure()
         .eval('mtimes.scalar', '2 * 3', '6')
         .eval('mtimes.2x2', '[1, 2; 3, 4]*[5, 6; 7, 8]', '[19, 22; 43, 50]')
+        .eval('mtimes.complex', '[1+i, 0; 0, 1-i]*[1, i; -i, 1]', '[1 + i, -1 + i; -1 - i, 1 - i]')
         .done(),
     feature('times', 'arithmetic')
         .partial('scalar `.*` and typed numeric Hadamard only')
