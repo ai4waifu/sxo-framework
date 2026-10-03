@@ -21,6 +21,7 @@ athena = { workspace = true }
 sxo-types = { workspace = true }
 sxo-dialect-mathematica = { workspace = true }
 sxo-dialect-matlab = { workspace = true }
+sxo-dialect-maple = { workspace = true }
 napi.workspace = true
 napi-derive.workspace = true
 zeromq = { workspace = true }

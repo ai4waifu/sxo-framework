@@ -21,6 +21,7 @@ athena = { workspace = true }
 sxo-types = { workspace = true }
 sxo-dialect-mathematica = { workspace = true }
 sxo-dialect-matlab = { workspace = true }
+sxo-dialect-maple = { workspace = true }
 wasm-bindgen = { workspace = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

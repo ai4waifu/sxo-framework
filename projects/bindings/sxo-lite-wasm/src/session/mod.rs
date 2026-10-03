@@ -2,6 +2,9 @@
 
 use std::cell::RefCell;
 
+#[cfg(test)]
+mod maple_tests;
+
 use athena::{
     AthenaEngine, Session as AthenaSession,
     api::{AthenaRequest, DomainGoal},
@@ -60,6 +63,36 @@ impl Session {
         let mut ms = self.math_session.borrow_mut();
         let request = mathematica::lower_request(&mut ms, form);
         self.execute_lowered(&mut ms, request)
+    }
+
+    /// Evaluate an independent Maple expression through the existing Athena result path.
+    pub fn evaluate_maple_form(&self, form: &sxo_dialect_maple::MapleForm) -> Result<EvalOutcome, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        let request = sxo_dialect_maple::lower_request(&mut ms, form).map_err(|error| SxoError::new(error.to_string()))?;
+        self.execute_lowered(&mut ms, request)
+    }
+
+    /// Evaluate an ordered Maple program without collapsing it into a term.
+    pub fn evaluate_maple_program(&self, program: &sxo_dialect_maple::MapleProgram) -> Result<EvalOutcome, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        let request =
+            sxo_dialect_maple::lower_program_request(&mut ms, program).map_err(|error| SxoError::new(error.to_string()))?;
+        self.execute_lowered(&mut ms, request)
+    }
+
+    /// Materialize a single Maple expression for term-only host operations.
+    pub fn lower_maple_form(&self, form: &sxo_dialect_maple::MapleForm) -> Result<TermId, SxoError> {
+        let mut ms = self.math_session.borrow_mut();
+        match sxo_dialect_maple::lower_request(&mut ms, form).map_err(|error| SxoError::new(error.to_string()))? {
+            AthenaRequest::Term(term) => Ok(term),
+            _ => Err(SxoError::new("Maple expression did not lower to a term request")),
+        }
+    }
+
+    /// Display a Maple result projection without changing its computation metadata.
+    pub fn render_maple_result(&self, result_id: ResultId) -> Result<String, SxoError> {
+        sxo_dialect_maple::render_maple_result_projection(&self.math_session.borrow(), result_id)
+            .map_err(|error| SxoError::new(error.to_string()))
     }
 
     /// Re-evaluate an arena term already owned by this session.
