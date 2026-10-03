@@ -1056,6 +1056,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sxo-dialect-maple"
+version = "0.0.10"
+dependencies = [
+ "athena",
+]
+
+[[package]]
 name = "sxo-dialect-mathematica"
 version = "0.0.10"
 dependencies = [
