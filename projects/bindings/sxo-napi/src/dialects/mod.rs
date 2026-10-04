@@ -1,6 +1,7 @@
 //! Explicit dialect tags for the N-API surface (no auto detection).
 
 use napi::bindgen_prelude::*;
+use sxo_dialect_maple::MapleProgram;
 use sxo_dialect_mathematica::WolframForm;
 use sxo_dialect_matlab::MatlabForm;
 use sxo_types::{Dialect, SxoError};
@@ -15,6 +16,8 @@ pub(crate) enum HeldForm {
     Matlab(MatlabForm),
     /// Mathematica / Wolfram surface Form.
     Wolfram(WolframForm),
+    /// Maple syntax program retained before Athena lowering.
+    Maple(MapleProgram),
 }
 
 pub(crate) fn map_err(err: SxoError) -> Error {
@@ -23,11 +26,12 @@ pub(crate) fn map_err(err: SxoError) -> Error {
 
 pub(crate) fn dialect_from_str(s: Option<String>) -> Result<Dialect> {
     match s.as_deref() {
-        None => Err(Error::from_reason("dialect is required (mathematica | matlab | simple-math)")),
+        None => Err(Error::from_reason("dialect is required (mathematica | matlab | maple | simple-math)")),
         Some("auto") => Err(Error::from_reason("dialect auto is removed. pass an explicit dialect")),
         Some("simple-math") | Some("sm") => Ok(Dialect::SimpleMath),
         Some("mathematica") => Ok(Dialect::Mathematica),
         Some("matlab") => Ok(Dialect::Matlab),
+        Some("maple") => Ok(Dialect::Maple),
         Some(other) => Err(Error::from_reason(format!("unknown dialect: {other}"))),
     }
 }
@@ -37,6 +41,7 @@ pub(crate) fn dialect_to_str(d: Dialect) -> &'static str {
         Dialect::SimpleMath => "simple-math",
         Dialect::Mathematica => "mathematica",
         Dialect::Matlab => "matlab",
+        Dialect::Maple => "maple",
     }
 }
 
@@ -51,6 +56,11 @@ pub(crate) fn parse_held(session: &Session, input: &str, dialect: Dialect) -> Re
             let form = session.parse_matlab_form(input).map_err(map_err)?;
             Ok((HeldForm::Matlab(form), dialect))
         }
+        Dialect::Maple => {
+            let program =
+                sxo_dialect_maple::parse::parse_maple_program(input).map_err(|error| Error::from_reason(error.to_string()))?;
+            Ok((HeldForm::Maple(program), dialect))
+        }
         Dialect::SimpleMath => Err(Error::from_reason("simple-math dialect is off the current delivery route")),
     }
 }
@@ -61,6 +71,10 @@ pub(crate) fn parse_to_term(session: &Session, input: &str, dialect: Dialect) ->
     let term = match &form {
         HeldForm::Matlab(f) => session.lower_matlab(f),
         HeldForm::Wolfram(w) => session.lower_mathematica(w),
+        HeldForm::Maple(program) if program.expressions.len() == 1 => {
+            session.lower_maple_form(&program.expressions[0]).map_err(map_err)?
+        }
+        HeldForm::Maple(_) => return Err(Error::from_reason("Maple source sequence cannot be materialized as one term")),
     };
     Ok((term, resolved))
 }
@@ -70,5 +84,8 @@ pub(crate) fn render_held(form: &HeldForm) -> String {
     match form {
         HeldForm::Matlab(f) => sxo_dialect_matlab::render_matlab_form(f),
         HeldForm::Wolfram(w) => sxo_dialect_mathematica::render(w),
+        HeldForm::Maple(program) => {
+            program.expressions.iter().map(sxo_dialect_maple::render_maple_form).collect::<Vec<_>>().join("; ")
+        }
     }
 }

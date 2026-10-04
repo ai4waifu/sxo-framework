@@ -12,6 +12,9 @@ use crate::{
 };
 use athena::types::{ResultId, TermId};
 
+#[cfg(test)]
+mod maple_tests;
+
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
 /// Parse objects retain a dialect Form and do not materialize arena terms until
@@ -84,6 +87,10 @@ impl Expression {
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
             Some(HeldForm::Wolfram(form)) => Ok(self.session.lower_mathematica(form)),
+            Some(HeldForm::Maple(program)) if program.expressions.len() == 1 => {
+                self.session.lower_maple_form(&program.expressions[0]).map_err(map_err)
+            }
+            Some(HeldForm::Maple(_)) => Err(JsValue::from_str("Maple sequence cannot be materialized as one term")),
             None => Err(JsValue::from_str("expression has neither Form, ResultId, nor Term root")),
         }
     }
@@ -113,10 +120,14 @@ impl Expression {
     /// Parse objects wrap retained Form as dialect `D` / `diff` and run `lower_request`.
     /// Result objects go through `differentiate_result`: one outcome, `derived_from` recorded there.
     pub fn d(&self, var: &str) -> Result<Expression, JsValue> {
+        if self.dialect == Dialect::Maple {
+            return Err(JsValue::from_str("unsupported Maple derivative"));
+        }
         let parent = self.result_id;
         let outcome = match &self.form {
             Some(HeldForm::Wolfram(form)) => self.session.differentiate_wolfram_form(form, var),
             Some(HeldForm::Matlab(form)) => self.session.differentiate_matlab_form(form, var),
+            Some(HeldForm::Maple(_)) => return Err(JsValue::from_str("unsupported Maple derivative")),
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.differentiate_result(parent, var)
@@ -142,10 +153,14 @@ impl Expression {
     /// Parse objects wrap retained Form as dialect `Simplify` and run `lower_request`.
     /// Result objects go through `simplify_result`: one outcome, `derived_from` recorded there.
     pub fn simplify(&self) -> Result<Expression, JsValue> {
+        if self.dialect == Dialect::Maple {
+            return Err(JsValue::from_str("unsupported Maple simplify"));
+        }
         let parent = self.result_id;
         let outcome = match &self.form {
             Some(HeldForm::Wolfram(form)) => self.session.simplify_wolfram_form(form),
             Some(HeldForm::Matlab(form)) => self.session.simplify_matlab_form(form),
+            Some(HeldForm::Maple(_)) => return Err(JsValue::from_str("unsupported Maple simplify")),
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.simplify_result(parent)
@@ -171,9 +186,13 @@ impl Expression {
     /// `strategy`: `"none"` (default) or `"simplify"` — applied in this crossing.
     pub fn evaluate(&self, strategy: Option<String>) -> Result<Expression, JsValue> {
         let strategy = parse_strategy(strategy.as_deref())?;
+        if self.dialect == Dialect::Maple && strategy == EvalStrategy::Simplify {
+            return Err(JsValue::from_str("unsupported Maple simplify strategy"));
+        }
         let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
+            Some(HeldForm::Maple(program)) => self.session.evaluate_maple_program(program),
             None => {
                 let root = self.materialize_root()?;
                 self.session.evaluate_term_outcome(root)
@@ -193,6 +212,18 @@ impl Expression {
     #[wasm_bindgen(getter)]
     pub fn coverage(&self) -> String {
         self.coverage.clone()
+    }
+
+    /// Dialect tag used when this expression was created.
+    #[wasm_bindgen(getter)]
+    pub fn dialect(&self) -> String {
+        match self.dialect {
+            Dialect::SimpleMath => "simple-math",
+            Dialect::Mathematica => "mathematica",
+            Dialect::Matlab => "matlab",
+            Dialect::Maple => "maple",
+        }
+        .to_owned()
     }
 
     /// Diagnostic summaries from the last evaluate (empty if none / not evaluated).
@@ -244,6 +275,12 @@ impl Expression {
         }
         let root = self.materialize_root()?;
         Ok(match self.dialect {
+            Dialect::Maple => {
+                return self
+                    .session
+                    .render_maple_result(self.result_id.ok_or_else(|| JsValue::from_str("Maple handle has no result"))?)
+                    .map_err(map_err);
+            }
             Dialect::Matlab => self.session.render_as_matlab(root),
             _ => self.session.render_as_wolfram(root),
         })
@@ -252,6 +289,9 @@ impl Expression {
     /// Render as Mathematica / Wolfram text.
     #[wasm_bindgen(js_name = toWolfram)]
     pub fn to_wolfram(&self) -> Result<String, JsValue> {
+        if self.dialect == Dialect::Maple {
+            return Err(JsValue::from_str("Maple toWolfram conversion is unsupported"));
+        }
         if let Some(HeldForm::Wolfram(w)) = &self.form {
             return Ok(sxo_dialect_mathematica::render(w));
         }
@@ -262,6 +302,9 @@ impl Expression {
     /// Render as MATLAB text.
     #[wasm_bindgen(js_name = toMatlab)]
     pub fn to_matlab(&self) -> Result<String, JsValue> {
+        if self.dialect == Dialect::Maple {
+            return Err(JsValue::from_str("Maple toMatlab conversion is unsupported"));
+        }
         if let Some(HeldForm::Matlab(f)) = &self.form {
             return Ok(sxo_dialect_matlab::render_matlab_form(f));
         }
@@ -272,9 +315,16 @@ impl Expression {
     /// Structural equality (Form compare when both held; else Term via Mathematica projection).
     #[wasm_bindgen(js_name = isEqual)]
     pub fn is_equal(&self, other: &Expression) -> Result<bool, JsValue> {
+        if self.dialect == Dialect::Maple || other.dialect == Dialect::Maple {
+            return match (&self.form, &other.form) {
+                (Some(HeldForm::Maple(left)), Some(HeldForm::Maple(right))) => Ok(left == right),
+                _ => Err(JsValue::from_str("Maple result structural equality is unsupported")),
+            };
+        }
         match (&self.form, &other.form) {
             (Some(HeldForm::Matlab(a)), Some(HeldForm::Matlab(b))) => Ok(a == b),
             (Some(HeldForm::Wolfram(a)), Some(HeldForm::Wolfram(b))) => Ok(a == b),
+            (Some(HeldForm::Maple(a)), Some(HeldForm::Maple(b))) => Ok(a == b),
             _ => {
                 let a = self.materialize_root()?;
                 let b = other.materialize_root()?;

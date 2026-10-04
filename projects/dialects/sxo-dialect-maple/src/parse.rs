@@ -12,7 +12,7 @@ use crate::{MapleError, MapleForm, MapleOperator, MapleProgram, MapleSpan, Maple
 ///
 /// Empty syntax roots are retained; execution rejects them explicitly.
 pub fn parse_maple_program(input: &str) -> Result<MapleProgram, MapleError> {
-    let language = MapleLanguage::default();
+    let language = MapleLanguage;
     let source = SourceText::new(input);
     let mut cache = ParseSession::<MapleLanguage>::default();
     let output = MapleBuilder::new(&language).build(&source, &[], &mut cache);

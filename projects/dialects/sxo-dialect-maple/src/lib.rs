@@ -1,5 +1,6 @@
 //! Independent Maple surface objects and neutral Athena requests.
 
+pub mod parse;
 mod render;
 
 pub use render::{MapleRenderError, render_maple_result_projection};

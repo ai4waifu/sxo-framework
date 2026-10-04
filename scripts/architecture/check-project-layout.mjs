@@ -131,9 +131,10 @@ function scanDialectCrateCrossDeps(findings) {
     const dialectDirs = [
         'projects/dialects/sxo-dialect-mathematica',
         'projects/dialects/sxo-dialect-matlab',
+        'projects/dialects/sxo-dialect-maple',
         'projects/dialects/sxo-dialect-simple-math',
     ];
-    const dialectCrates = new Set(['sxo-dialect-mathematica', 'sxo-dialect-matlab', 'sxo-dialect-simple-math']);
+    const dialectCrates = new Set(['sxo-dialect-mathematica', 'sxo-dialect-matlab', 'sxo-dialect-maple', 'sxo-dialect-simple-math']);
     for (const dir of dialectDirs) {
         const cargoRel = path.join(dir, 'Cargo.toml');
         if (!exists(cargoRel)) continue;

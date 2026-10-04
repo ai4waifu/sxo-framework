@@ -13,6 +13,9 @@ use crate::{
 };
 use athena::types::{ResultId, TermId};
 
+#[cfg(test)]
+mod maple_tests;
+
 /// Opaque expression handle backed by a shared host [`Session`].
 ///
 /// Parse objects retain a dialect [`HeldForm`] and do not materialize arena terms until
@@ -107,6 +110,10 @@ impl Expression {
         match &self.form {
             Some(HeldForm::Matlab(form)) => Ok(self.session.lower_matlab(form)),
             Some(HeldForm::Wolfram(form)) => Ok(self.session.lower_mathematica(form)),
+            Some(HeldForm::Maple(program)) if program.expressions.len() == 1 => {
+                self.session.lower_maple_form(&program.expressions[0]).map_err(map_err)
+            }
+            Some(HeldForm::Maple(_)) => Err(Error::from_reason("Maple sequence cannot be materialized as one term")),
             None => Err(Error::from_reason("expression has neither Form, ResultId, nor Term root")),
         }
     }
@@ -129,10 +136,14 @@ impl Expression {
     /// Result objects go through `differentiate_result`: one outcome, `derived_from` recorded there.
     #[napi]
     pub fn d(&self, var: String) -> Result<Expression> {
+        if self.dialect == Dialect::Maple {
+            return Err(Error::from_reason("unsupported Maple derivative"));
+        }
         let parent = self.result_id;
         let outcome = match &self.form {
             Some(HeldForm::Wolfram(form)) => self.session.differentiate_wolfram_form(form, &var),
             Some(HeldForm::Matlab(form)) => self.session.differentiate_matlab_form(form, &var),
+            Some(HeldForm::Maple(_)) => return Err(Error::from_reason("unsupported Maple derivative")),
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.differentiate_result(parent, &var)
@@ -159,10 +170,14 @@ impl Expression {
     /// Result objects go through `simplify_result`: one outcome, `derived_from` recorded there.
     #[napi]
     pub fn simplify(&self) -> Result<Expression> {
+        if self.dialect == Dialect::Maple {
+            return Err(Error::from_reason("unsupported Maple simplify"));
+        }
         let parent = self.result_id;
         let outcome = match &self.form {
             Some(HeldForm::Wolfram(form)) => self.session.simplify_wolfram_form(form),
             Some(HeldForm::Matlab(form)) => self.session.simplify_matlab_form(form),
+            Some(HeldForm::Maple(_)) => return Err(Error::from_reason("unsupported Maple simplify")),
             None => {
                 if let Some(parent) = self.result_id {
                     self.session.simplify_result(parent)
@@ -189,9 +204,13 @@ impl Expression {
     #[napi]
     pub fn evaluate(&self, options: Option<EvaluateOptions>) -> Result<Expression> {
         let strategy = parse_strategy(&options)?;
+        if self.dialect == Dialect::Maple && strategy == EvalStrategy::Simplify {
+            return Err(Error::from_reason("unsupported Maple simplify strategy"));
+        }
         let outcome = match &self.form {
             Some(HeldForm::Matlab(form)) => self.session.evaluate_matlab_form(form),
             Some(HeldForm::Wolfram(form)) => self.session.evaluate_wolfram_form(form),
+            Some(HeldForm::Maple(program)) => self.session.evaluate_maple_program(program),
             None => {
                 let root = self.materialize_root()?;
                 self.session.evaluate_term_outcome(root)
@@ -268,6 +287,12 @@ impl Expression {
         }
         let root = self.materialize_root()?;
         Ok(match self.dialect {
+            Dialect::Maple => {
+                return self
+                    .session
+                    .render_maple_result(self.result_id.ok_or_else(|| Error::from_reason("Maple handle has no result"))?)
+                    .map_err(map_err);
+            }
             Dialect::Matlab => self.session.render_as_matlab(root),
             _ => self.session.render_as_wolfram(root),
         })
@@ -276,6 +301,9 @@ impl Expression {
     /// Render as Mathematica / Wolfram text.
     #[napi(js_name = "toWolfram")]
     pub fn to_wolfram(&self) -> Result<String> {
+        if self.dialect == Dialect::Maple {
+            return Err(Error::from_reason("Maple toWolfram conversion is unsupported"));
+        }
         if let Some(HeldForm::Wolfram(w)) = &self.form {
             return Ok(sxo_dialect_mathematica::render(w));
         }
@@ -286,6 +314,9 @@ impl Expression {
     /// Render as MATLAB text.
     #[napi(js_name = "toMatlab")]
     pub fn to_matlab(&self) -> Result<String> {
+        if self.dialect == Dialect::Maple {
+            return Err(Error::from_reason("Maple toMatlab conversion is unsupported"));
+        }
         if let Some(HeldForm::Matlab(f)) = &self.form {
             return Ok(sxo_dialect_matlab::render_matlab_form(f));
         }
@@ -296,9 +327,16 @@ impl Expression {
     /// Structural equality (Form compare when both held; else Term via Mathematica projection).
     #[napi(js_name = "isEqual")]
     pub fn is_equal(&self, other: &Expression) -> Result<bool> {
+        if self.dialect == Dialect::Maple || other.dialect == Dialect::Maple {
+            return match (&self.form, &other.form) {
+                (Some(HeldForm::Maple(left)), Some(HeldForm::Maple(right))) => Ok(left == right),
+                _ => Err(Error::from_reason("Maple result structural equality is unsupported")),
+            };
+        }
         match (&self.form, &other.form) {
             (Some(HeldForm::Matlab(a)), Some(HeldForm::Matlab(b))) => Ok(a == b),
             (Some(HeldForm::Wolfram(a)), Some(HeldForm::Wolfram(b))) => Ok(a == b),
+            (Some(HeldForm::Maple(a)), Some(HeldForm::Maple(b))) => Ok(a == b),
             _ => {
                 let a = self.materialize_root()?;
                 let b = other.materialize_root()?;

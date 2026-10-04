@@ -14,3 +14,5 @@ workspace = true
 
 [dependencies]
 athena.workspace = true
+oak-core.workspace = true
+oak-maple.workspace = true

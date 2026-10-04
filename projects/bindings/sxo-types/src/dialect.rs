@@ -13,4 +13,6 @@ pub enum Dialect {
     Mathematica,
     /// MATLAB forms.
     Matlab,
+    /// Maple forms.
+    Maple,
 }

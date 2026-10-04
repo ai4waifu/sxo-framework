@@ -33,6 +33,14 @@ fn invoke_source(dialect: Dialect, symbol: &str, arg_names: &[String]) -> String
                 format!("{symbol}({})", arg_names.join(", "))
             }
         }
+        Dialect::Maple => {
+            if arg_names.is_empty() {
+                format!("{symbol}()")
+            }
+            else {
+                format!("{symbol}({})", arg_names.join(", "))
+            }
+        }
         Dialect::SimpleMath => format!("{symbol}"),
     }
 }
@@ -46,7 +54,7 @@ pub struct HostSession {
 
 #[napi]
 impl HostSession {
-    /// `dialect`: `mathematica` | `matlab` | `simple-math`.
+    /// `dialect`: `mathematica` | `matlab` | `maple` | `simple-math`.
     #[napi(constructor)]
     pub fn new(dialect: Option<String>) -> Result<Self> {
         Ok(Self { inner: Rc::new(Session::new()), dialect: dialect_from_str(dialect)? })

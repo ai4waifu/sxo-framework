@@ -284,6 +284,11 @@ impl Session {
         match dialect {
             Dialect::Matlab => self.evaluate_matlab(input),
             Dialect::Mathematica => self.evaluate_mathematica(input),
+            Dialect::Maple => {
+                let program =
+                    sxo_dialect_maple::parse::parse_maple_program(input).map_err(|error| SxoError::new(error.to_string()))?;
+                self.evaluate_maple_program(&program)
+            }
             Dialect::SimpleMath => {
                 Err(SxoError::new("simple-math dialect is off the current delivery route (lowercase Form, not Mathematica)"))
             }
@@ -310,6 +315,7 @@ impl Session {
         match dialect {
             Dialect::Mathematica => mathematica::try_plot_svg(&mut ms, id),
             Dialect::Matlab => matlab::try_plot_svg(&mut ms, id),
+            Dialect::Maple => None,
             Dialect::SimpleMath => None,
         }
     }

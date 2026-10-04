@@ -715,6 +715,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "oak-maple"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
+dependencies = [
+ "oak-core",
+]
+
+[[package]]
 name = "oak-matlab"
 version = "0.0.12"
 dependencies = [
@@ -1060,6 +1068,8 @@ name = "sxo-dialect-maple"
 version = "0.0.10"
 dependencies = [
  "athena",
+ "oak-core",
+ "oak-maple",
 ]
 
 [[package]]

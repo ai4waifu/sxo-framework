@@ -30,6 +30,9 @@ pub fn version() -> String {
 pub fn evaluate(input: &str, dialect: Option<String>, strategy: Option<String>) -> Result<Expression, JsValue> {
     let d = dialect_from_str(dialect)?;
     let strategy = parse_strategy(strategy.as_deref())?;
+    if d == sxo_types::Dialect::Maple && strategy == options::EvalStrategy::Simplify {
+        return Err(JsValue::from_str("unsupported Maple simplify strategy"));
+    }
     let session = Rc::new(Session::new());
     let outcome = session.evaluate_input(input, d).map_err(map_err)?;
     from_outcome(session, d, outcome, strategy)
@@ -44,6 +47,7 @@ pub fn d(input: &str, var: &str, dialect: Option<String>) -> Result<Expression, 
     let outcome = match &form {
         HeldForm::Wolfram(f) => session.differentiate_wolfram_form(f, var),
         HeldForm::Matlab(f) => session.differentiate_matlab_form(f, var),
+        HeldForm::Maple(_) => return Err(JsValue::from_str("unsupported Maple derivative")),
     }
     .map_err(map_err)?;
     Ok(from_eval_outcome(session, resolved, outcome))

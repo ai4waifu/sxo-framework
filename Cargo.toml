@@ -35,10 +35,11 @@ napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
 # CI-facing oak git pins (Parfor/Spmd/Cell tip on origin).
-oak-core = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
-oak-wolfram = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
-oak-matlab = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
-oak-testing = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "ac97f16c894b9e3c7ffc3d4cfdb35fb5e27701bb", default-features = false }
+oak-core = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
+oak-wolfram = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
+oak-matlab = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
+oak-maple = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
+oak-testing = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
 # Pinned for reproducible CI/release. Local path overlay is gitignored `.cargo/config.local.toml`.
 athena = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "510220a094180da82d66ececcb907342923bb46a", package = "athena" }
 athena-types = { git = "https://github.com/ai4waifu/athena.rs.git", rev = "510220a094180da82d66ececcb907342923bb46a", package = "athena-types" }
