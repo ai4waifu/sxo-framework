@@ -1,100 +1,572 @@
 <template>
-  <div class="sxo-home">
-    <main>
-      <section class="sxo-home__hero" aria-labelledby="sxo-hero-title">
-        <Badge tone="brand">Scientific computing · Symbolic by design</Badge>
-        <h1 id="sxo-hero-title">Make mathematics executable.</h1>
-        <p class="sxo-home__lede">
-          A Rust-native computer algebra system with TypeScript adapters for equations, transformations, and domain-specific mathematics.
-        </p>
-        <div class="sxo-home__actions">
-          <Link href="/playground"><Button type="button" variant="primary">Explore the workbench</Button></Link>
-          <Link href="/lite"><Button type="button" variant="secondary">Read the engine</Button></Link>
+  <main class="page-home">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="hero__overline">Symbolic Computation Engine</p>
+        <h1 class="hero__title" id="hero-title">输入表达式，<br>输出等价的表达式。</h1>
+        <p class="hero__lede">SXO 是符号计算引擎：按规则重写数学表达式，每一步标注所用规则，结果可以代回原式验证。</p>
+        <div class="hero__actions">
+          <a class="button button--primary" href="/d">阅读文档</a>
+          <a class="button button--secondary" href="/playground">打开演练场</a>
         </div>
-      </section>
+        <p class="hero__meta">Example · 平方差约分<br>规则：平方差 · 约分 · 回代验证<br>条件：<span class="hero__condition">x ≠ 1</span></p>
+      </div>
+      <div class="proof" role="img" :aria-label="proofAriaLabel">
+        <div class="proof__head"><b>Proof</b><span>Simplification · condition x ≠ 1</span></div>
+        <div class="proof__row">
+          <span class="proof__num">1</span>
+          <span class="proof__rule">前提</span>
+          <p class="proof__step">
+            <span class="frac"><span class="frac__num">x<sup>2</sup> <span class="op">−</span> 1</span><span class="frac__den">x <span class="op">−</span> 1</span></span>
+          </p>
+        </div>
+        <div class="proof__row">
+          <span class="proof__num">2</span>
+          <span class="proof__rule">平方差</span>
+          <p class="proof__step">
+            <span class="frac"><span class="frac__num">(x <span class="op">−</span> 1)(x <span class="op">+</span> 1)</span><span class="frac__den">x <span class="op">−</span> 1</span></span>
+          </p>
+        </div>
+        <div class="proof__row">
+          <span class="proof__num">3</span>
+          <span class="proof__rule">约分</span>
+          <div>
+            <p class="proof__step">x <span class="op">+</span> 1<span class="proof__cond">x ≠ 1</span></p>
+            <p class="proof__note"><span class="proof__note-arrow" aria-hidden="true">↳</span> 约分前先写明 x ≠ 1</p>
+          </div>
+        </div>
+        <div class="proof__row proof__row--last">
+          <span class="proof__num">4</span>
+          <span class="proof__rule">验证</span>
+          <p class="proof__step">
+            x <span class="op">=</span> 2: <span class="frac"><span class="frac__num">4 <span class="op">−</span> 1</span><span class="frac__den">2 <span class="op">−</span> 1</span></span> <span class="op">=</span> 3<span class="proof__qed">∎</span>
+          </p>
+        </div>
+      </div>
+    </section>
 
-      <section class="sxo-home__grid" aria-label="Scientific computing surfaces">
-        <Card title="One expression, many dialects" description="Parse, simplify, differentiate, and render through a shared symbolic core.">
-          <CodeBlock
-            :code="installSample"
-            caption="shell"
-            copy-label="Copy"
-            @copy="() => this.copyInstall()"
-          />
-        </Card>
-        <Card title="A native mathematical engine" description="Athena provides exact symbolic semantics; SXO connects them to tools people already use.">
-          <dl class="sxo-home__probe">
-            <div><dt>version</dt><dd>{{ liteVersion }}</dd></div>
-            <div><dt>backend</dt><dd>{{ liteBackend }}</dd></div>
+    <section class="section" aria-labelledby="dialects-title">
+      <div class="section__head">
+        <h2 id="dialects-title">一种表达式模型，多种方言</h2>
+        <p>各方言包把熟悉的源码解析进同一个表达式模型，再经 lowering 交给执行后端；渲染方向把结果写回方言记法。</p>
+      </div>
+      <ul class="dialect-list">
+        <li><code>@sxo/mathematica</code><span>Wolfram 风格源码：parse、Form、lower、render</span></li>
+        <li><code>@sxo/matlab</code><span>MATLAB 风格源码：矩阵记法与函数调用</span></li>
+        <li><code>@sxo/pari-gp</code><span>PARI/GP 风格源码：数论函数与精度记号</span></li>
+        <li><code>Maple</code><span>经宿主边界接入，Maple 表单进入 native 与 WASM 宿主会话</span></li>
+        <li><code>@sxo/simple-math</code><span>小型可预测语法，用于示例、教学与测试</span></li>
+      </ul>
+      <p class="section__limit"><span class="section__limit-tag">边界 — </span>方言里熟悉的名字不等于完整覆盖：一个名字今天可能只完成解析，尚未可执行。覆盖度以各方言包的特性矩阵与结构化诊断为准。</p>
+    </section>
+
+    <section class="install" aria-labelledby="install-title">
+      <div class="install__inner">
+        <div class="install__head">
+          <h2 id="install-title">安装与验证</h2>
+          <p>三条真实命令：TypeScript 集成、代理技能、命令行。</p>
+        </div>
+        <div class="install__panel">
+          <div class="install__line"><span class="install__prompt">$</span> pnpm add @sxo/core</div>
+          <div class="install__line"><span class="install__prompt">$</span> npx @sxo/skills</div>
+          <div class="install__line"><span class="install__prompt">$</span> npm install --global @sxo/sxo</div>
+        </div>
+        <p class="install__note">计算结果保持符号结构，不自动降级为 JavaScript <code>number</code>；需要机器数时显式转换。</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="packages-title">
+      <div class="section__head">
+        <h2 id="packages-title">包一览</h2>
+        <p>按目标选包：原生 TypeScript、浏览器 WASM、命令行，或一门你已经熟悉的方言。</p>
+      </div>
+      <div class="section__columns">
+        <table class="package-table">
+          <thead>
+            <tr><th scope="col">包</th><th scope="col">用途</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>@sxo/core</code></td><td>TypeScript 集成，面向库与应用作者</td></tr>
+            <tr><td><code>@sxo/lite</code></td><td>浏览器与 Worker，WASM 内核</td></tr>
+            <tr><td><code>@sxo/sxo</code></td><td>命令行，面向 shell 与 CI 自动化</td></tr>
+            <tr><td><code>@sxo/mathematica</code></td><td>熟悉 Wolfram 语法时的可选入口</td></tr>
+            <tr><td><code>@sxo/matlab</code></td><td>熟悉 MATLAB 语法时的可选入口</td></tr>
+            <tr><td><code>@sxo/simple-math</code></td><td>教学、示例与测试语法</td></tr>
+          </tbody>
+        </table>
+        <div class="probe" aria-labelledby="probe-title">
+          <h3 id="probe-title">在本页回代验证</h3>
+          <p>页面加载时在浏览器里真实执行一次 <code>A · I</code> 的 matmul 回代，探测 <code>@dxo/lite</code> 运行时能力。</p>
+          <dl class="probe__list">
+            <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
+            <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
             <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
             <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
-            <div><dt>matmul</dt><dd>{{ liteMatmul }}</dd></div>
+            <div><dt>matmul A·I = A</dt><dd>{{ liteMatmul }}</dd></div>
           </dl>
-          <Callout tone="info">
-            Mathematica, MATLAB, and simple-math surfaces can share one expression model without flattening their differences.
-          </Callout>
-        </Card>
-      </section>
-    </main>
-  </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </template>
 
 <style>
-  .sxo-home {
-    max-width: 56rem;
+  .page-home {
+    flex: 1;
+  }
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--vmz-radius-md);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out;
+  }
+  .button--primary {
+    background: var(--vmz-action-primary-background);
+    color: var(--vmz-action-primary-foreground);
+  }
+  .button--primary:hover {
+    background: var(--vmz-action-primary-hover);
+  }
+  .button--primary:active {
+    background: var(--vmz-action-primary-active);
+  }
+  .button--secondary {
+    background: var(--vmz-action-secondary-background);
+    color: var(--vmz-action-secondary-foreground);
+    border-color: var(--vmz-action-secondary-border);
+  }
+  .button--secondary:hover {
+    background: var(--vmz-action-secondary-hover);
+  }
+  .button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--vmz-focus-ring);
+  }
+
+  /* ===== hero: statement left, proof right ===== */
+  .hero {
+    max-width: var(--vmz-layout-max-width, 73.75rem);
     margin: 0 auto;
-    padding: 0 1.25rem 3rem;
+    padding: 56px 24px 64px;
+    display: grid;
+    grid-template-columns: minmax(340px, 42%) 1fr;
+    gap: 48px;
+    align-items: center;
   }
-  .sxo-home__hero {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.85rem;
-    padding: 1.5rem 0 2rem;
-  }
-  .sxo-home__hero h1 {
+  .hero__overline {
     margin: 0;
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
-    line-height: 1.15;
-    color: var(--vmz-text-ink, #0f172a);
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-brand-primary);
   }
-  .sxo-home__lede {
-    margin: 0;
-    max-width: 40rem;
-    color: var(--vmz-text-steel, #475569);
-    line-height: 1.55;
+  .hero__title {
+    margin: 14px 0 0;
+    font-size: clamp(32px, 3.4vw, 44px);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: 0;
   }
-  .sxo-home__actions {
+  .hero__lede {
+    margin: 16px 0 0;
+    max-width: 24em;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .hero__actions {
+    margin-top: 26px;
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
+    gap: 12px;
   }
-  .sxo-home__grid {
+  .hero__meta {
+    margin: 28px 0 0;
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.9;
+    color: var(--vmz-text-faint);
+  }
+  .hero__condition {
+    color: var(--vmz-brand-counterpoint);
+  }
+
+  /* ===== proof block ===== */
+  .proof {
+    border-top: 1px solid var(--vmz-line-strong);
+    padding-top: 14px;
+  }
+  .proof__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-bottom: 4px;
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-text-faint);
+  }
+  .proof__head b {
+    color: var(--vmz-brand-primary);
+    font-weight: 600;
+  }
+  .proof__row {
     display: grid;
-    gap: 1.25rem;
+    grid-template-columns: 2.2em 96px 1fr;
+    gap: 18px;
+    align-items: start;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--vmz-line-default);
   }
-  .sxo-home__probe {
-    margin: 0 0 0.75rem;
-    display: grid;
-    gap: 0.35rem;
+  .proof__row--last {
+    border-bottom: 0;
   }
-  .sxo-home__probe div {
-    display: grid;
-    grid-template-columns: 7rem 1fr;
-    gap: 0.5rem;
-    font-family: var(--vmz-font-mono, ui-monospace, monospace);
-    font-size: 0.85rem;
+  .proof__num {
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.9;
+    color: var(--vmz-text-faint);
   }
-  .sxo-home__probe dt {
-    color: var(--vmz-text-steel, #475569);
+  .proof__rule {
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.9;
+    color: var(--vmz-brand-primary);
   }
-  .sxo-home__probe dd {
+  .proof__step {
     margin: 0;
+    font-family: var(--sxo-font-math);
+    font-style: italic;
+    font-size: clamp(20px, 2.1vw, 30px);
+    line-height: 1.5;
   }
-  @media (min-width: 720px) {
-    .sxo-home__grid {
-      grid-template-columns: 1fr 1fr;
-      align-items: start;
+  .proof__step sup {
+    font-size: 0.62em;
+  }
+  .proof__step .op {
+    color: var(--vmz-brand-primary);
+  }
+  .proof__cond {
+    font-style: normal;
+    font-size: 0.48em;
+    color: var(--vmz-brand-counterpoint);
+    margin-left: 1em;
+    letter-spacing: 0.02em;
+  }
+  .proof__qed {
+    font-style: normal;
+    color: var(--vmz-text-faint);
+    padding-left: 0.6em;
+  }
+  .proof__note {
+    margin: 10px 0 0;
+    display: inline-block;
+    font-family: var(--sxo-font-hand);
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--vmz-text-ink);
+    transform: rotate(-1.6deg);
+  }
+  .proof__note-arrow {
+    color: var(--vmz-brand-primary);
+    font-family: var(--vmz-font-sans);
+  }
+  .frac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+    margin: 0 0.14em;
+    font-size: 0.8em;
+    line-height: 1.3;
+  }
+  .frac__num {
+    border-bottom: 1.2px solid currentColor;
+    padding: 0 0.28em;
+  }
+  .frac__den {
+    padding: 0 0.28em;
+  }
+
+  /* ===== white sections ===== */
+  .section {
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    margin: 0 auto;
+    padding: 56px 24px 64px;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .section__head h2 {
+    margin: 0;
+    font-size: clamp(24px, 2.4vw, 32px);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .section__head p {
+    margin: 12px 0 0;
+    max-width: 40em;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .dialect-list {
+    margin: 32px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .dialect-list li {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    gap: 8px 24px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+  }
+  .dialect-list code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    color: var(--vmz-text-ink);
+  }
+  .dialect-list span {
+    font-size: 15px;
+    color: var(--vmz-text-steel);
+    line-height: 1.6;
+  }
+  .section__limit {
+    margin: 24px 0 0;
+    max-width: 44em;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--vmz-text-faint);
+  }
+  .section__limit-tag {
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    color: var(--vmz-brand-counterpoint);
+  }
+
+  /* ===== dark install band ===== */
+  .install {
+    background: var(--vmz-surface-ink);
+    color: var(--vmz-text-on-ink);
+  }
+  .install__inner {
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    margin: 0 auto;
+    padding: 64px 24px;
+    display: grid;
+    grid-template-columns: minmax(260px, 34%) 1fr;
+    gap: 20px 56px;
+    align-items: start;
+  }
+  .install__head h2 {
+    margin: 0;
+    font-size: clamp(24px, 2.4vw, 32px);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .install__head p {
+    margin: 12px 0 0;
+    color: rgba(242, 244, 246, 0.66);
+    line-height: 1.7;
+  }
+  .install__panel {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--vmz-radius-md);
+    padding: 20px 22px;
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    line-height: 2.1;
+  }
+  .install__prompt {
+    color: var(--vmz-brand-signal);
+    user-select: none;
+  }
+  .install__note {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: rgba(242, 244, 246, 0.66);
+    line-height: 1.7;
+  }
+  .install__note code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+    color: var(--vmz-text-on-ink);
+  }
+
+  /* ===== packages + live probe ===== */
+  .section__columns {
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .package-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid var(--vmz-line-strong);
+  }
+  .package-table th {
+    padding: 12px 16px 12px 0;
+    text-align: left;
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-text-faint);
+    border-bottom: 1px solid var(--vmz-line-default);
+  }
+  .package-table td {
+    padding: 13px 16px 13px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--vmz-text-steel);
+    vertical-align: baseline;
+  }
+  .package-table td:first-child {
+    color: var(--vmz-text-ink);
+  }
+  .package-table code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+  }
+  .probe h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .probe p {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .probe p code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+  }
+  .probe__list {
+    margin: 18px 0 0;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .probe__list div {
+    display: grid;
+    grid-template-columns: minmax(150px, 11rem) 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .probe__list dt {
+    color: var(--vmz-text-faint);
+  }
+  .probe__list dd {
+    margin: 0;
+    color: var(--vmz-text-ink);
+    overflow-wrap: anywhere;
+  }
+
+  /* ===== entrance motion (information-complete without it) ===== */
+  @keyframes sxo-rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .hero__copy,
+  .proof__row,
+  .proof__head {
+    animation: sxo-rise 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .proof__row:nth-child(3) {
+    animation-delay: 70ms;
+  }
+  .proof__row:nth-child(4) {
+    animation-delay: 140ms;
+  }
+  .proof__row:nth-child(5) {
+    animation-delay: 210ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__copy,
+    .proof__row,
+    .proof__head {
+      animation: none;
+    }
+  }
+
+  /* ===== mobile ===== */
+  @media (max-width: 759.98px) {
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 36px;
+      padding: 40px 20px 48px;
+    }
+    .hero__title {
+      font-size: 34px;
+    }
+    .hero__lede {
+      max-width: none;
+    }
+    .hero__actions .button {
+      flex: 1 1 140px;
+    }
+    .proof__row {
+      grid-template-columns: 1.6em 64px 1fr;
+      gap: 10px;
+    }
+    .proof__step {
+      font-size: 19px;
+    }
+    .proof__note {
+      font-size: 16px;
+    }
+    .proof__head span {
+      display: none;
+    }
+    .section {
+      padding: 40px 20px 48px;
+    }
+    .dialect-list li {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .install__inner {
+      grid-template-columns: 1fr;
+      padding: 48px 20px;
+      gap: 24px;
+    }
+    .section__columns {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+    .package-table th,
+    .package-table td {
+      font-size: 13px;
+      padding-right: 8px;
+    }
+    .package-table code {
+      font-size: 13px;
     }
   }
 </style>
@@ -103,7 +575,7 @@
 import { probeLite } from '../lib/lite-probe.ts';
 
 export default class IndexPage {
-    installSample = 'pnpm add @dxo/lite@0.0.10';
+    proofAriaLabel = '证明示例：平方差约分。前提 (x² − 1)/(x − 1)，依平方差规则改写为 ((x − 1)(x + 1))/(x − 1)，在 x ≠ 1 的条件下约分得 x + 1，代入 x = 2 验证两侧都等于 3。';
     liteVersion = '…';
     liteBackend = '…';
     liteWasm = '…';
@@ -118,16 +590,5 @@ export default class IndexPage {
         this.liteTensorClass = probe.tensorClass;
         this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
     }
-
-    async copyInstall() {
-        const text = String(this.installSample || '');
-        if (!text || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
-        try {
-            await navigator.clipboard.writeText(text);
-        } catch {
-            /* ignore */
-        }
-    }
 }
 </script>
-

@@ -5,9 +5,16 @@
         <span class="site-header__word">S<em>x</em>O</span>
         <span class="site-header__tag">Symbolic Computation</span>
       </a>
+      <nav class="site-header__nav" aria-label="站点导航">
+        <a href="/" :aria-current="homeCurrent">首页</a>
+        <a href="/d" :aria-current="docsCurrent">文档</a>
+        <a href="/lite" :aria-current="liteCurrent">Lite 探针</a>
+        <a href="/playground" :aria-current="playgroundCurrent">演练场</a>
+        <a href="https://github.com/ai4waifu/sxo-framework" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
       <details class="site-header__menu">
         <summary>菜单</summary>
-        <nav class="site-header__nav" aria-label="站点导航">
+        <nav class="site-header__drawer" aria-label="站点导航">
           <a href="/" :aria-current="homeCurrent">首页</a>
           <a href="/d" :aria-current="docsCurrent">文档</a>
           <a href="/lite" :aria-current="liteCurrent">Lite 探针</a>
@@ -63,9 +70,6 @@
     letter-spacing: 0.02em;
   }
   .site-header__menu {
-    display: flex;
-  }
-  .site-header__menu > summary {
     display: none;
   }
   .site-header__nav {
@@ -97,7 +101,11 @@
     .site-header__tag {
       display: none;
     }
+    .site-header__nav {
+      display: none;
+    }
     .site-header__menu {
+      display: block;
       position: relative;
     }
     .site-header__menu > summary {
@@ -122,14 +130,13 @@
       color: var(--vmz-text-ink);
       border-color: var(--vmz-line-strong);
     }
-    .site-header__nav {
-      display: none;
+    .site-header__drawer {
       position: absolute;
       right: 0;
       top: 52px;
+      display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 0;
       min-width: 200px;
       padding: 6px;
       background: var(--vmz-surface-page);
@@ -137,19 +144,22 @@
       border-radius: var(--vmz-radius-md);
       z-index: 30;
     }
-    .site-header__menu[open] .site-header__nav {
-      display: flex;
-    }
-    .site-header__nav a {
+    .site-header__drawer a {
       display: flex;
       align-items: center;
       min-height: 44px;
       padding: 0 12px;
       font-size: 15px;
-    }
-    .site-header__nav a:hover {
+      color: var(--vmz-text-steel);
       text-decoration: none;
+    }
+    .site-header__drawer a:hover {
       background: var(--vmz-surface-mist);
+      color: var(--vmz-text-ink);
+    }
+    .site-header__drawer a[aria-current="page"] {
+      color: var(--vmz-brand-primary);
+      font-weight: 600;
     }
   }
 </style>
