@@ -1,0 +1,230 @@
+<template>
+  <main class="page-docs">
+    <section class="page-head" aria-labelledby="docs-title">
+      <p class="page-head__overline">Documentation</p>
+      <h1 id="docs-title">文档</h1>
+      <p class="page-head__lede">
+        SXO 的公开文档正在迁入新的文档渲染层，完成后挂载在本路径下。当前以本页为入口：安装命令、包一览与方言覆盖均给出可复核的来源。
+      </p>
+    </section>
+
+    <section class="panel" id="install" aria-labelledby="install-title">
+      <h2 id="install-title">安装与验证</h2>
+      <p class="panel__note">按宿主选一条命令；结果保持符号结构，不自动降级为 JavaScript <code>number</code>。</p>
+      <div class="install-table" role="list">
+        <div role="listitem" class="install-row">
+          <span class="install-row__goal">TypeScript 集成</span>
+          <code>pnpm add @sxo/core</code>
+        </div>
+        <div role="listitem" class="install-row">
+          <span class="install-row__goal">浏览器与 Worker</span>
+          <code>pnpm add @sxo/lite</code>
+        </div>
+        <div role="listitem" class="install-row">
+          <span class="install-row__goal">命令行与 CI</span>
+          <code>npm install --global @sxo/sxo</code>
+        </div>
+        <div role="listitem" class="install-row">
+          <span class="install-row__goal">AI 代理技能</span>
+          <code>npx @sxo/skills</code>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="packages" aria-labelledby="packages-title">
+      <h2 id="packages-title">包一览</h2>
+      <p class="panel__note">公开包与各自职责；方言包是可选入口，不是唯一入口。</p>
+      <table class="package-table">
+        <thead>
+          <tr><th scope="col">包</th><th scope="col">职责</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>@sxo/core</code></td><td>TypeScript 符号计算 API，面向库与应用作者</td></tr>
+          <tr><td><code>@sxo/lite</code></td><td>浏览器与 Worker 执行，WASM 内核</td></tr>
+          <tr><td><code>@sxo/sxo</code></td><td>命令行，面向 shell 与 CI 自动化</td></tr>
+          <tr><td><code>@sxo/mathematica</code></td><td>Wolfram 风格方言入口</td></tr>
+          <tr><td><code>@sxo/matlab</code></td><td>MATLAB 风格方言入口</td></tr>
+          <tr><td><code>@sxo/simple-math</code></td><td>教学、示例与测试语法</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel" id="dialects" aria-labelledby="dialects-title">
+      <h2 id="dialects-title">方言与覆盖</h2>
+      <p>
+        方言包把熟悉的源码解析进同一个表达式模型。覆盖度按各包的特性矩阵公开：一个熟悉的名字今天可能只完成解析，尚未可执行。
+        结构化诊断会区分「已解析」「已支持」「可执行」三档。
+      </p>
+      <p>
+        执行后端分层：符号数学由 Athena 执行，张量与神经计算经 Titan，绘图经 Apollo；宿主适配层是
+        <code>sxo-napi</code> 与 <code>sxo-lite-wasm</code>。
+      </p>
+    </section>
+
+    <section class="panel" aria-labelledby="repo-title">
+      <h2 id="repo-title">仓库内文档</h2>
+      <p class="panel__note">以下资源在仓库中维护，链接到 GitHub。</p>
+      <ul class="repo-list">
+        <li><a href="https://github.com/ai4waifu/sxo-framework#readme" target="_blank" rel="noopener noreferrer">仓库 README：入门、架构图、包选择</a></li>
+        <li><a href="https://github.com/ai4waifu/sxo-framework/blob/dev/License.md" target="_blank" rel="noopener noreferrer">许可证：Apache-2.0</a></li>
+        <li><a href="https://github.com/ai4waifu/sxo-framework/issues" target="_blank" rel="noopener noreferrer">问题反馈与讨论</a></li>
+      </ul>
+    </section>
+  </main>
+</template>
+
+<style>
+  .page-docs {
+    flex: 1;
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    width: 100%;
+    margin: 0 auto;
+    padding: 56px 24px 72px;
+  }
+  .page-head {
+    max-width: 44em;
+  }
+  .page-head__overline {
+    margin: 0;
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-brand-primary);
+  }
+  .page-head h1 {
+    margin: 12px 0 0;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .page-head__lede {
+    margin: 14px 0 0;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .panel {
+    margin-top: 44px;
+    padding-top: 28px;
+    border-top: 1px solid var(--vmz-line-strong);
+    max-width: 52rem;
+    scroll-margin-top: 24px;
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 700;
+  }
+  .panel p {
+    margin: 12px 0 0;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .panel p code,
+  .panel__note code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+  }
+  .panel__note {
+    font-size: 14px;
+    color: var(--vmz-text-faint);
+  }
+  .install-table {
+    margin-top: 20px;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .install-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) 1fr;
+    gap: 8px 24px;
+    align-items: baseline;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+  }
+  .install-row__goal {
+    font-size: 15px;
+    color: var(--vmz-text-steel);
+  }
+  .install-row code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    color: var(--vmz-text-ink);
+  }
+  .package-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    border-top: 1px solid var(--vmz-line-strong);
+  }
+  .package-table th {
+    padding: 12px 16px 12px 0;
+    text-align: left;
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-text-faint);
+    border-bottom: 1px solid var(--vmz-line-default);
+  }
+  .package-table td {
+    padding: 13px 16px 13px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--vmz-text-steel);
+    vertical-align: baseline;
+  }
+  .package-table td:first-child {
+    color: var(--vmz-text-ink);
+  }
+  .package-table code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+  }
+  .repo-list {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .repo-list li {
+    border-bottom: 1px solid var(--vmz-line-default);
+  }
+  .repo-list a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 15px;
+    color: var(--vmz-brand-primary);
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+  .repo-list a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  @media (max-width: 759.98px) {
+    .page-docs {
+      padding: 40px 20px 56px;
+    }
+    .page-head h1 {
+      font-size: 28px;
+    }
+    .install-row {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .package-table th,
+    .package-table td {
+      font-size: 13px;
+      padding-right: 8px;
+    }
+    .package-table code {
+      font-size: 13px;
+    }
+  }
+</style>
+
+<script client>
+export default class DocsIndexPage {}
+</script>
