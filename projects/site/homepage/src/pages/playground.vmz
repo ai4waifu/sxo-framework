@@ -1,13 +1,5 @@
 <template>
   <div class="sxo-play">
-    <header class="sxo-site-header">
-      <Link class="sxo-site-header__brand" href="/"><strong>SXO</strong></Link>
-      <nav class="sxo-site-header__nav" aria-label="Primary">
-        <Link href="/">Home</Link>
-        <Link href="/lite">@dxo/lite</Link>
-        <Link href="/playground">Playground</Link>
-      </nav>
-    </header>
     <main>
       <h1>@dxo/lite playground</h1>
       <p class="sxo-play__lede">
@@ -52,26 +44,6 @@
 </template>
 
 <style>
-  .sxo-site-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 0;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--vmz-line-default, #e2e8f0);
-  }
-  .sxo-site-header__brand {
-    font-size: 1.15rem;
-    letter-spacing: 0.04em;
-    text-decoration: none;
-    color: var(--vmz-text-ink, #0f172a);
-  }
-  .sxo-site-header__nav {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
   .sxo-play {
     max-width: 48rem;
     margin: 0 auto;

@@ -1,0 +1,145 @@
+<template>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__grid">
+        <div class="site-footer__brand">
+          <p class="site-footer__word">S<em>x</em>O</p>
+          <p class="site-footer__line">符号计算引擎：按规则重写数学表达式，每一步标注所用规则。</p>
+        </div>
+        <nav class="site-footer__group" aria-label="产品">
+          <h2>产品</h2>
+          <ul>
+            <li><a href="/">首页</a></li>
+            <li><a href="/playground">演练场</a></li>
+            <li><a href="/lite">Lite 探针</a></li>
+          </ul>
+        </nav>
+        <nav class="site-footer__group" aria-label="文档">
+          <h2>文档</h2>
+          <ul>
+            <li><a href="/d">文档入口</a></li>
+            <li><a href="/d#install">安装与验证</a></li>
+            <li><a href="/d#packages">包一览</a></li>
+            <li><a href="/d#dialects">方言与覆盖</a></li>
+          </ul>
+        </nav>
+        <nav class="site-footer__group" aria-label="资源">
+          <h2>资源</h2>
+          <ul>
+            <li><a href="https://github.com/ai4waifu/sxo-framework" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+            <li><a href="https://github.com/ai4waifu/sxo-framework/issues" target="_blank" rel="noopener noreferrer">问题反馈</a></li>
+            <li><a href="https://github.com/ai4waifu/sxo-framework/blob/dev/License.md" target="_blank" rel="noopener noreferrer">许可证</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="site-footer__bar">
+        <p>© 2026 SXO Contributors · Apache-2.0 · Node.js ≥ 20</p>
+        <p class="site-footer__mono">Set in PingFang SC · Cambria Math · ui-monospace</p>
+      </div>
+    </div>
+  </footer>
+</template>
+
+<style>
+  .site-footer {
+    background: var(--vmz-surface-ink);
+    color: var(--vmz-text-on-ink);
+  }
+  .site-footer__inner {
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    margin: 0 auto;
+    padding: 56px 24px 28px;
+  }
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(120px, 1fr));
+    gap: 36px;
+  }
+  .site-footer__word {
+    margin: 0;
+    font-family: var(--sxo-font-math);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .site-footer__word em {
+    font-style: italic;
+    color: var(--vmz-brand-signal);
+  }
+  .site-footer__line {
+    margin: 12px 0 0;
+    max-width: 26em;
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(242, 244, 246, 0.66);
+  }
+  .site-footer__group h2 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(242, 244, 246, 0.55);
+  }
+  .site-footer__group ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .site-footer__group a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    font-size: 14px;
+    color: rgba(242, 244, 246, 0.82);
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+  .site-footer__group a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  .site-footer__bar {
+    margin-top: 44px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
+    font-size: 12px;
+    color: rgba(242, 244, 246, 0.55);
+  }
+  .site-footer__bar p {
+    margin: 0;
+  }
+  .site-footer__mono {
+    font-family: var(--vmz-font-mono);
+    letter-spacing: 0.02em;
+  }
+  @media (max-width: 759.98px) {
+    .site-footer__inner {
+      padding: 44px 20px 24px calc(20px + env(safe-area-inset-left, 0px));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+    .site-footer__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 28px 20px;
+    }
+    .site-footer__brand {
+      grid-column: 1 / -1;
+    }
+    .site-footer__group a {
+      min-height: 44px;
+    }
+    .site-footer__bar {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+</style>
+
+<script client>
+export default class SiteFooter {}
+</script>

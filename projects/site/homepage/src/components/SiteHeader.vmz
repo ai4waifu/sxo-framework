@@ -1,0 +1,172 @@
+<template>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-header__brand" href="/" aria-label="SXO 首页">
+        <span class="site-header__word">S<em>x</em>O</span>
+        <span class="site-header__tag">Symbolic Computation</span>
+      </a>
+      <details class="site-header__menu">
+        <summary>菜单</summary>
+        <nav class="site-header__nav" aria-label="站点导航">
+          <a href="/" :aria-current="homeCurrent">首页</a>
+          <a href="/d" :aria-current="docsCurrent">文档</a>
+          <a href="/lite" :aria-current="liteCurrent">Lite 探针</a>
+          <a href="/playground" :aria-current="playgroundCurrent">演练场</a>
+          <a href="https://github.com/ai4waifu/sxo-framework" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+</template>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--vmz-line-default);
+    background: var(--vmz-surface-page);
+  }
+  .site-header__inner {
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    margin: 0 auto;
+    height: 64px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .site-header__brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--vmz-text-ink);
+    min-height: 44px;
+  }
+  .site-header__brand:hover .site-header__word em {
+    color: var(--vmz-action-primary-hover);
+  }
+  .site-header__word {
+    font-family: var(--sxo-font-math);
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    align-self: center;
+  }
+  .site-header__word em {
+    font-style: italic;
+    color: var(--vmz-brand-primary);
+  }
+  .site-header__tag {
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    color: var(--vmz-text-faint);
+    letter-spacing: 0.02em;
+  }
+  .site-header__menu {
+    display: flex;
+  }
+  .site-header__menu > summary {
+    display: none;
+  }
+  .site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+  .site-header__nav a {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--vmz-text-steel);
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+  .site-header__nav a:hover {
+    color: var(--vmz-text-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  .site-header__nav a[aria-current="page"] {
+    color: var(--vmz-brand-primary);
+    font-weight: 600;
+  }
+  @media (max-width: 759.98px) {
+    .site-header__inner {
+      height: 56px;
+      padding: 0 20px;
+    }
+    .site-header__tag {
+      display: none;
+    }
+    .site-header__menu {
+      position: relative;
+    }
+    .site-header__menu > summary {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--vmz-text-steel);
+      list-style: none;
+      cursor: pointer;
+      border: 1px solid var(--vmz-line-default);
+      border-radius: var(--vmz-radius-md);
+      user-select: none;
+    }
+    .site-header__menu > summary::-webkit-details-marker {
+      display: none;
+    }
+    .site-header__menu > summary:hover {
+      color: var(--vmz-text-ink);
+      border-color: var(--vmz-line-strong);
+    }
+    .site-header__nav {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 52px;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      min-width: 200px;
+      padding: 6px;
+      background: var(--vmz-surface-page);
+      border: 1px solid var(--vmz-line-default);
+      border-radius: var(--vmz-radius-md);
+      z-index: 30;
+    }
+    .site-header__menu[open] .site-header__nav {
+      display: flex;
+    }
+    .site-header__nav a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 12px;
+      font-size: 15px;
+    }
+    .site-header__nav a:hover {
+      text-decoration: none;
+      background: var(--vmz-surface-mist);
+    }
+  }
+</style>
+
+<script client>
+export default class SiteHeader {
+    homeCurrent = null;
+    docsCurrent = null;
+    liteCurrent = null;
+    playgroundCurrent = null;
+
+    onMount() {
+        const path = typeof location !== "undefined" ? location.pathname : "/";
+        this.homeCurrent = path === "/" || path === "" ? "page" : null;
+        this.docsCurrent = path.indexOf("/d") === 0 ? "page" : null;
+        this.liteCurrent = path.indexOf("/lite") === 0 ? "page" : null;
+        this.playgroundCurrent = path.indexOf("/playground") === 0 ? "page" : null;
+    }
+}
+</script>

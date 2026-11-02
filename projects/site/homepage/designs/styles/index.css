@@ -1,10 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
-
-/* Site chrome on top of Style Theme --vmz-* tokens */
+/* SXO site chrome on top of Style Theme --vmz-* tokens.
+   Pure white + near-black bone; hierarchy by hairline, spacing, size, weight. */
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+}
+
+:root {
+    --sxo-font-math: "Cambria Math", "Latin Modern Math", Georgia, "Times New Roman", serif;
+    --sxo-font-hand: "Kaiti SC", "KaiTi", "STKaiti", "DFKai-SB", serif;
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 html,
@@ -15,15 +24,25 @@ body {
 
 body {
     min-height: 100vh;
-    font-family: var(--vmz-font-sans, "IBM Plex Sans", "Segoe UI", sans-serif);
-    color: var(--vmz-text-ink, #0f172a);
-    background:
-        radial-gradient(circle at 12% -8%, color-mix(in srgb, var(--vmz-brand-primary, #0d9488) 18%, transparent), transparent 42rem),
-        linear-gradient(180deg, var(--vmz-surface-mist, #f8fafc) 0%, var(--vmz-surface-page, #f1f5f9) 36rem);
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    font-family: var(--vmz-font-sans, system-ui, sans-serif);
+    font-size: 16px;
+    line-height: 1.7;
+    font-synthesis: none;
+    color: var(--vmz-text-ink, #15181d);
+    background: var(--vmz-surface-page, #ffffff);
 }
 
 ::selection {
-    background: color-mix(in srgb, var(--vmz-brand-primary, #0d9488) 28%, transparent);
+    background: color-mix(in srgb, var(--vmz-brand-primary, #1d4fd7) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

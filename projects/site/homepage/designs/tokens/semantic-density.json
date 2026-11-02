@@ -2,11 +2,11 @@
     "entries": [
         {
             "key": { "path": ["density", "control", "padding-y"] },
-            "value": "0.25rem"
+            "value": "0.375rem"
         },
         {
             "key": { "path": ["density", "control", "padding-x"] },
-            "value": "0.75rem"
+            "value": "0.875rem"
         },
         {
             "key": { "path": ["density", "control", "gap"] },
@@ -38,15 +38,15 @@
         },
         {
             "key": { "path": ["control", "height"] },
-            "value": "2rem"
+            "value": "2.5rem"
         },
         {
             "key": { "path": ["control", "height", "sm"] },
-            "value": "1.5rem"
+            "value": "2rem"
         },
         {
             "key": { "path": ["control", "height", "lg"] },
-            "value": "2.5rem"
+            "value": "3rem"
         },
         {
             "key": { "path": ["radius", "sm"] },
@@ -54,11 +54,11 @@
         },
         {
             "key": { "path": ["radius", "md"] },
-            "value": "6px"
+            "value": "4px"
         },
         {
             "key": { "path": ["radius", "lg"] },
-            "value": "8px"
+            "value": "6px"
         },
         {
             "key": { "path": ["shadow", "card"] },
@@ -66,23 +66,15 @@
         },
         {
             "key": { "path": ["shadow", "card", "hover"] },
-            "value": "0 1px 2px -2px rgba(0,0,0,.08), 0 3px 6px 0 rgba(0,0,0,.06), 0 5px 12px 4px rgba(0,0,0,.04)"
+            "value": "none"
         },
         {
             "key": { "path": ["shadow", "popup"] },
-            "value": "0 6px 16px 0 rgba(0,0,0,.08), 0 3px 6px -4px rgba(0,0,0,.12), 0 9px 28px 8px rgba(0,0,0,.05)"
+            "value": "none"
         },
         {
             "key": { "path": ["layout", "max", "width"] },
-            "value": "75rem"
-        },
-        {
-            "key": { "path": ["surface", "page"] },
-            "value": "#f1f5f9"
-        },
-        {
-            "key": { "path": ["line", "subtle"] },
-            "value": "#f1f5f9"
+            "value": "73.75rem"
         }
     ]
 }

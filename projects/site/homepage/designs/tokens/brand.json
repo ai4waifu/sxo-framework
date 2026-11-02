@@ -1,49 +1,29 @@
 {
     "brand": {
-        "primary": "#6D28D9",
-        "energy": "#2563EB"
-    },
-    "scale": {
-        "50": "#f0fdfa",
-        "100": "#ccfbf1",
-        "200": "#99f6e4",
-        "300": "#5eead4",
-        "400": "#2dd4bf",
-        "500": "#14b8a6",
-        "600": "#6D28D9",
-        "700": "#0f766e",
-        "800": "#115e59",
-        "900": "#134e4a",
-        "950": "#042f2e"
+        "primary": "#1D4FD7",
+        "signal": "#93C5FD",
+        "counterpoint": "#EA580C"
     },
     "surface": {
-        "paper": "#ffffff",
-        "mist": "#f8fafc",
-        "page": "#F7F7FB",
-        "ink": "#171329",
-        "graphite": "#475569"
+        "paper": "#FFFFFF",
+        "mist": "rgba(21, 24, 29, 0.045)",
+        "page": "#FFFFFF",
+        "ink": "#15181D"
     },
     "text": {
-        "ink": "#171329",
-        "steel": "#5B5870",
-        "on-brand": "#f0fdfa",
-        "on-ink": "#f8fafc"
+        "ink": "#15181D",
+        "steel": "#4E5560",
+        "faint": "#6B7280",
+        "on-ink": "#F2F4F6"
     },
     "line": {
-        "default": "#e2e8f0",
-        "subtle": "#f1f5f9",
-        "strong": "#6D28D9"
-    },
-    "status": {
-        "success": "#059669",
-        "warning": "#d97706",
-        "error": "#dc2626",
-        "analysis": "#0D9488",
-        "runtime": "#0f766e"
+        "default": "rgba(21, 24, 29, 0.14)",
+        "subtle": "rgba(21, 24, 29, 0.08)",
+        "strong": "rgba(21, 24, 29, 0.4)"
     },
     "font": {
-        "sans": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif",
-        "mono": "\"IBM Plex Mono\", ui-monospace, Consolas, monospace",
-        "display": "\"IBM Plex Sans\", \"Segoe UI\", sans-serif"
+        "sans": "\"PingFang SC\", \"Microsoft YaHei UI\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif",
+        "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        "display": "\"PingFang SC\", \"Microsoft YaHei UI\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif"
     }
 }

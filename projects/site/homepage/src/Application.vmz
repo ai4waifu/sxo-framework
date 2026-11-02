@@ -1,6 +1,23 @@
 <template>
-  <slot />
+  <div class="sxo-site">
+    <SiteHeader />
+    <slot />
+    <SiteFooter />
+  </div>
 </template>
+
+<style>
+  .sxo-site {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .sxo-site > main,
+  .sxo-site > [data-vmz] {
+    flex: 1;
+  }
+</style>
 
 <script client>
 export default class Application {}
