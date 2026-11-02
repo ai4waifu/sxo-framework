@@ -1,107 +1,259 @@
 <template>
-  <div class="sxo-play">
-    <main>
-      <h1>@dxo/lite playground</h1>
-      <p class="sxo-play__lede">
-        Interactive browser demo via createRuntime. Kernels come from @dxo/lite-unknown-wasm32 when /dxo_lite_bg.wasm is
-        staged under public/ (CF copies public/** into the CDN root).
+  <main class="page-play">
+    <section class="page-head" aria-labelledby="play-title">
+      <p class="page-head__overline">Playground</p>
+      <h1 id="play-title">演练场</h1>
+      <p class="page-head__lede">
+        浏览器内的 <code>@dxo/lite</code> 实演：输入两个 2×2 f32 矩阵（行主序，各四个数），执行 matmul 或
+        add。WASM 内核来自 <code>@dxo/lite-unknown-wasm32</code>，经 <code>public/dxo_lite_bg.wasm</code> 装载。
       </p>
+    </section>
 
-      <Card title="Runtime" :description="status">
-        <dl class="sxo-play__probe">
-          <div><dt>lite</dt><dd>{{ liteVersion }}</dd></div>
-          <div><dt>backend</dt><dd>{{ backend }}</dd></div>
-          <div><dt>wasm</dt><dd>{{ wasmVersion }}</dd></div>
-          <div><dt>interimHostF32</dt><dd>{{ wasmInterim }}</dd></div>
-          <div><dt>webgpu probe</dt><dd>{{ webgpu }}</dd></div>
-        </dl>
-      </Card>
+    <section class="panel" aria-labelledby="runtime-title">
+      <h2 id="runtime-title">运行时</h2>
+      <p class="panel__note">{{ status }}</p>
+      <dl class="probe__list">
+        <div><dt>lite</dt><dd>{{ liteVersion }}</dd></div>
+        <div><dt>backend</dt><dd>{{ backend }}</dd></div>
+        <div><dt>wasm</dt><dd>{{ wasmVersion }}</dd></div>
+        <div><dt>interimHostF32</dt><dd>{{ wasmInterim }}</dd></div>
+        <div><dt>webgpu probe</dt><dd>{{ webgpu }}</dd></div>
+      </dl>
+    </section>
 
-      <Card title="2×2 f32 ops" description="Row-major matrices · four numbers each.">
-        <label class="sxo-play__field">
+    <section class="panel" aria-labelledby="ops-title">
+      <h2 id="ops-title">2×2 f32 运算</h2>
+      <p class="panel__note">行主序矩阵，每个四个数，空格或逗号分隔。</p>
+      <div class="ops">
+        <label class="ops__field">
           <span>A</span>
           <input type="text" :value="aText" @input="onA" spellcheck="false" autocomplete="off" />
         </label>
-        <label class="sxo-play__field">
+        <label class="ops__field">
           <span>B</span>
           <input type="text" :value="bText" @input="onB" spellcheck="false" autocomplete="off" />
         </label>
-        <div class="sxo-play__actions">
-          <Button type="button" variant="primary" @click="() => this.runMatmul()">matmul</Button>
-          <Button type="button" variant="secondary" @click="() => this.runAdd()">add</Button>
-          <Button type="button" variant="ghost" @click="() => this.loadIdentity()">A·I demo</Button>
-          <Button type="button" variant="ghost" @click="() => this.loadOnes()">ones</Button>
+        <div class="ops__actions">
+          <button type="button" class="ops__button ops__button--primary" @click="() => this.runMatmul()">matmul</button>
+          <button type="button" class="ops__button" @click="() => this.runAdd()">add</button>
+          <button type="button" class="ops__button" @click="() => this.loadIdentity()">A·I 演示</button>
+          <button type="button" class="ops__button" @click="() => this.loadOnes()">全一矩阵</button>
         </div>
-        <CodeBlock
-          :code="result"
-          caption="output"
-          copy-label="Copy"
-          @copy="() => this.copyResult()"
-        />
-      </Card>
-    </main>
-  </div>
+        <div class="code-panel">
+          <div class="code-panel__bar"><span>输出</span><button type="button" class="code-panel__copy" @click="() => this.copyResult()">复制</button></div>
+          <pre class="code-panel__pre"><code>{{ result }}</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
 </template>
 
 <style>
-  .sxo-play {
-    max-width: 48rem;
+  .page-play {
+    flex: 1;
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    width: 100%;
     margin: 0 auto;
-    padding: 0 1.25rem 3rem;
+    padding: 56px 24px 72px;
+  }
+  .page-head {
+    max-width: 44em;
+  }
+  .page-head__overline {
+    margin: 0;
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-brand-primary);
+  }
+  .page-head h1 {
+    margin: 12px 0 0;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .page-head__lede {
+    margin: 14px 0 0;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .page-head__lede code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+  }
+  .panel {
+    margin-top: 44px;
+    padding-top: 28px;
+    border-top: 1px solid var(--vmz-line-strong);
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 700;
+  }
+  .panel__note {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: var(--vmz-text-faint);
+    line-height: 1.7;
+  }
+  .probe__list {
+    margin: 20px 0 0;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .probe__list div {
+    display: grid;
+    grid-template-columns: minmax(170px, 15rem) 1fr;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .probe__list dt {
+    color: var(--vmz-text-faint);
+  }
+  .probe__list dd {
+    margin: 0;
+    color: var(--vmz-text-ink);
+    overflow-wrap: anywhere;
+  }
+  .ops {
+    margin-top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 16px;
+    max-width: 40rem;
   }
-  .sxo-play h1 {
-    margin: 0;
-  }
-  .sxo-play__lede {
-    margin: 0;
-    color: var(--vmz-text-steel, #475569);
-    line-height: 1.55;
-  }
-  .sxo-play__probe {
-    margin: 0;
-    display: grid;
-    gap: 0.35rem;
-  }
-  .sxo-play__probe div {
-    display: grid;
-    grid-template-columns: 9rem 1fr;
-    gap: 0.5rem;
-    font-family: var(--vmz-font-mono, ui-monospace, monospace);
-    font-size: 0.85rem;
-  }
-  .sxo-play__probe dt {
-    color: var(--vmz-text-steel, #475569);
-  }
-  .sxo-play__probe dd {
-    margin: 0;
-  }
-  .sxo-play__field {
+  .ops__field {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    margin-bottom: 0.75rem;
-    font-size: 0.9rem;
+    gap: 6px;
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    color: var(--vmz-text-faint);
   }
-  .sxo-play__field input {
-    font-family: var(--vmz-font-mono, ui-monospace, monospace);
-    padding: 0.45rem 0.65rem;
-    border: 1px solid var(--vmz-line-default, #e2e8f0);
-    border-radius: var(--vmz-radius-md, 6px);
-    background: var(--vmz-surface-paper, #fff);
+  .ops__field input {
+    min-height: 44px;
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    padding: 0 12px;
+    border: 1px solid var(--vmz-line-default);
+    border-radius: var(--vmz-radius-md);
+    background: var(--vmz-surface-paper);
+    color: var(--vmz-text-ink);
   }
-  .sxo-play__actions {
+  .ops__field input:focus-visible {
+    outline: none;
+    border-color: var(--vmz-brand-primary);
+    box-shadow: 0 0 0 2px var(--vmz-focus-ring);
+  }
+  .ops__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.85rem;
+    gap: 10px;
+  }
+  .ops__button {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--vmz-action-secondary-border);
+    border-radius: var(--vmz-radius-md);
+    background: var(--vmz-action-secondary-background);
+    color: var(--vmz-action-secondary-foreground);
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out;
+  }
+  .ops__button:hover {
+    background: var(--vmz-action-secondary-hover);
+  }
+  .ops__button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--vmz-focus-ring);
+  }
+  .ops__button--primary {
+    background: var(--vmz-action-primary-background);
+    color: var(--vmz-action-primary-foreground);
+    border-color: transparent;
+  }
+  .ops__button--primary:hover {
+    background: var(--vmz-action-primary-hover);
+  }
+  .code-panel {
+    border: 1px solid var(--vmz-line-default);
+    border-radius: var(--vmz-radius-md);
+    overflow: hidden;
+  }
+  .code-panel__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 6px 6px 14px;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    color: var(--vmz-text-faint);
+  }
+  .code-panel__copy {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--vmz-line-default);
+    border-radius: var(--vmz-radius-sm);
+    background: var(--vmz-surface-page);
+    color: var(--vmz-text-steel);
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
+  }
+  .code-panel__copy:hover {
+    color: var(--vmz-text-ink);
+    background: var(--vmz-surface-mist);
+  }
+  .code-panel__copy:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--vmz-focus-ring);
+  }
+  .code-panel__pre {
+    margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
+    min-height: 3.5em;
+  }
+  .code-panel__pre code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--vmz-text-ink);
+    white-space: pre;
+  }
+  @media (max-width: 759.98px) {
+    .page-play {
+      padding: 40px 20px 56px;
+    }
+    .page-head h1 {
+      font-size: 28px;
+    }
+    .probe__list div {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .ops__actions .ops__button {
+      flex: 1 1 44%;
+    }
+    .code-panel__copy {
+      min-height: 44px;
+      padding: 0 16px;
+    }
   }
 </style>
 
 <script client>
-import { openHomepageRuntime, version } from '../lib/lite-probe.ts';
+import { openHomepageRuntime } from '../lib/lite-probe.ts';
 
 function parseNums(text) {
     return text
@@ -116,7 +268,7 @@ function formatMatrix(out) {
 }
 
 export default class PlaygroundPage {
-    status = 'booting…';
+    status = '正在启动运行时…';
     liteVersion = '';
     backend = '';
     wasmVersion = '';
@@ -124,7 +276,7 @@ export default class PlaygroundPage {
     webgpu = '';
     aText = '1, 2, 3, 4';
     bText = '1, 0, 0, 1';
-    result = 'Run matmul or add after the runtime is ready.';
+    result = '运行时就绪后点击 matmul 或 add。';
     #rt = null;
 
     onA(e) {
@@ -137,18 +289,19 @@ export default class PlaygroundPage {
 
     async onMount() {
         try {
-            this.#rt = await openHomepageRuntime();
-            this.liteVersion = version();
+            const opened = await openHomepageRuntime();
+            this.#rt = opened.runtime;
+            this.liteVersion = opened.version;
             this.backend = this.#rt.capabilities.backend;
             this.webgpu = String(this.#rt.capabilities.webgpu);
             const wasm = this.#rt.capabilities.wasm;
-            this.wasmVersion = wasm?.version ?? '(not loaded — stage public/dxo_lite_bg.wasm)';
+            this.wasmVersion = wasm?.version ?? '(未装载 — 缺少 public/dxo_lite_bg.wasm)';
             this.wasmInterim = String(wasm?.interimHostF32 ?? false);
-            this.status = wasm ? 'ready · WASM f32 kernels' : 'ready · JS host kernels (WASM missing)';
-            this.result = 'Runtime ready. Click matmul or add.';
+            this.status = wasm ? '就绪 · WASM f32 内核' : '就绪 · JS 宿主内核（缺 WASM）';
+            this.result = '运行时就绪。点击 matmul 或 add。';
         } catch (err) {
             this.status = err instanceof Error ? err.message : String(err);
-            this.result = 'createRuntime failed — check console / wasm staging.';
+            this.result = 'createRuntime 失败 — 检查控制台与 WASM 装载。';
         }
     }
 
@@ -187,7 +340,7 @@ export default class PlaygroundPage {
         if (!this.#rt) return;
         const pair = this.#parsePair();
         if (!pair) {
-            this.result = 'need 4 finite numbers for each of A and B (2×2)';
+            this.result = 'A 与 B 各需要 4 个有限数（2×2）';
             return;
         }
         try {
@@ -206,7 +359,7 @@ export default class PlaygroundPage {
         if (!this.#rt) return;
         const pair = this.#parsePair();
         if (!pair) {
-            this.result = 'need 4 finite numbers for each of A and B';
+            this.result = 'A 与 B 各需要 4 个有限数';
             return;
         }
         try {

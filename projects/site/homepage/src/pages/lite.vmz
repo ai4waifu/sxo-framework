@@ -1,71 +1,179 @@
 <template>
-  <div class="sxo-lite-page">
-    <main>
-      <h1>@dxo/lite test surface</h1>
-      <p class="sxo-lite-page__lede">
-        Async runtime facade; host f32 until the GPU WASM facade is linked. TS never retains GPUDevice. WebGL is not a
-        tensor backend.
+  <main class="page-lite">
+    <section class="page-head" aria-labelledby="lite-title">
+      <p class="page-head__overline">Runtime Probe</p>
+      <h1 id="lite-title">@dxo/lite 探针</h1>
+      <p class="page-head__lede">
+        浏览器内的真实运行时：异步门面 <code>createRuntime</code>，GPU WASM 门面未链接时回退到宿主 f32。TypeScript
+        不持有 GPUDevice，WebGL 不是张量后端。
       </p>
+    </section>
 
-      <Card title="Probe results" description="Live createRuntime capabilities.">
-        <dl class="sxo-lite-page__probe">
-          <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
-          <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
-          <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
-          <div><dt>webgpu</dt><dd>{{ liteWebgpu }}</dd></div>
-          <div><dt>gpuBackendReady</dt><dd>{{ liteGpuReady }}</dd></div>
-          <div><dt>webglTensorBackend</dt><dd>{{ liteWebgl }}</dd></div>
-          <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
-          <div><dt>matmul identity</dt><dd>{{ liteMatmul }}</dd></div>
-        </dl>
-      </Card>
+    <section class="panel" aria-labelledby="probe-title">
+      <h2 id="probe-title">探测结果</h2>
+      <p class="panel__note">以下数值来自本页加载时真实执行的 <code>createRuntime</code> 能力查询与一次 matmul 回代。</p>
+      <dl class="probe__list">
+        <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
+        <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
+        <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
+        <div><dt>webgpu</dt><dd>{{ liteWebgpu }}</dd></div>
+        <div><dt>gpuBackendReady</dt><dd>{{ liteGpuReady }}</dd></div>
+        <div><dt>webglTensorBackend</dt><dd>{{ liteWebgl }}</dd></div>
+        <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
+        <div><dt>matmul A·I = A</dt><dd>{{ liteMatmul }}</dd></div>
+      </dl>
+    </section>
 
-      <Card title="Node self-test" description="CI / local verify without a browser.">
-        <CodeBlock
-          :code="selfTestSample"
-          caption="shell"
-          copy-label="Copy"
-          @copy="() => this.copySelfTest()"
-        />
-      </Card>
-    </main>
-  </div>
+    <section class="panel" aria-labelledby="selftest-title">
+      <h2 id="selftest-title">Node 自测</h2>
+      <p class="panel__note">无浏览器环境下的本地与 CI 验证命令。</p>
+      <div class="code-panel">
+        <div class="code-panel__bar"><span>shell</span><button type="button" class="code-panel__copy" @click="() => this.copySelfTest()">复制</button></div>
+        <pre class="code-panel__pre"><code>{{ selfTestSample }}</code></pre>
+      </div>
+    </section>
+  </main>
 </template>
 
 <style>
-  .sxo-lite-page {
-    max-width: 48rem;
+  .page-lite {
+    flex: 1;
+    max-width: var(--vmz-layout-max-width, 73.75rem);
+    width: 100%;
     margin: 0 auto;
-    padding: 0 1.25rem 3rem;
+    padding: 56px 24px 72px;
+  }
+  .page-head {
+    max-width: 44em;
+  }
+  .page-head__overline {
+    margin: 0;
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--vmz-brand-primary);
+  }
+  .page-head h1 {
+    margin: 12px 0 0;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .page-head__lede {
+    margin: 14px 0 0;
+    color: var(--vmz-text-steel);
+    line-height: 1.7;
+  }
+  .page-head__lede code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+  }
+  .panel {
+    margin-top: 44px;
+    padding-top: 28px;
+    border-top: 1px solid var(--vmz-line-strong);
+  }
+  .panel h2 {
+    margin: 0;
+    font-size: clamp(22px, 2.2vw, 28px);
+    font-weight: 700;
+  }
+  .panel__note {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: var(--vmz-text-faint);
+    line-height: 1.7;
+  }
+  .panel__note code {
+    font-family: var(--vmz-font-mono);
+    font-size: 0.92em;
+  }
+  .probe__list {
+    margin: 20px 0 0;
+    border-top: 1px solid var(--vmz-line-default);
+  }
+  .probe__list div {
+    display: grid;
+    grid-template-columns: minmax(170px, 15rem) 1fr;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-family: var(--vmz-font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .probe__list dt {
+    color: var(--vmz-text-faint);
+  }
+  .probe__list dd {
+    margin: 0;
+    color: var(--vmz-text-ink);
+    overflow-wrap: anywhere;
+  }
+  .code-panel {
+    margin-top: 20px;
+    border: 1px solid var(--vmz-line-default);
+    border-radius: var(--vmz-radius-md);
+    overflow: hidden;
+  }
+  .code-panel__bar {
     display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 6px 6px 14px;
+    border-bottom: 1px solid var(--vmz-line-default);
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    color: var(--vmz-text-faint);
   }
-  .sxo-lite-page h1 {
+  .code-panel__copy {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--vmz-line-default);
+    border-radius: var(--vmz-radius-sm);
+    background: var(--vmz-surface-page);
+    color: var(--vmz-text-steel);
+    font-family: var(--vmz-font-mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
+  }
+  .code-panel__copy:hover {
+    color: var(--vmz-text-ink);
+    background: var(--vmz-surface-mist);
+  }
+  .code-panel__copy:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--vmz-focus-ring);
+  }
+  .code-panel__pre {
     margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
   }
-  .sxo-lite-page__lede {
-    margin: 0;
-    color: var(--vmz-text-steel, #475569);
-    line-height: 1.55;
+  .code-panel__pre code {
+    font-family: var(--vmz-font-mono);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--vmz-text-ink);
+    white-space: pre;
   }
-  .sxo-lite-page__probe {
-    margin: 0;
-    display: grid;
-    gap: 0.35rem;
-  }
-  .sxo-lite-page__probe div {
-    display: grid;
-    grid-template-columns: 11rem 1fr;
-    gap: 0.5rem;
-    font-family: var(--vmz-font-mono, ui-monospace, monospace);
-    font-size: 0.85rem;
-  }
-  .sxo-lite-page__probe dt {
-    color: var(--vmz-text-steel, #475569);
-  }
-  .sxo-lite-page__probe dd {
-    margin: 0;
+  @media (max-width: 759.98px) {
+    .page-lite {
+      padding: 40px 20px 56px;
+    }
+    .page-head h1 {
+      font-size: 28px;
+    }
+    .probe__list div {
+      grid-template-columns: 1fr;
+      gap: 2px;
+    }
+    .code-panel__copy {
+      min-height: 44px;
+      padding: 0 16px;
+    }
   }
 </style>
 
@@ -74,14 +182,14 @@ import { probeLite } from '../lib/lite-probe.ts';
 
 export default class LiteTestPage {
     selfTestSample = 'pnpm --filter @sxo/homepage test:lite\npnpm verify -- lite-webgpu-smoke';
-    liteVersion = '';
-    liteBackend = '';
-    liteWasm = '';
-    liteWebgpu = '';
-    liteGpuReady = '';
-    liteWebgl = '';
-    liteTensorClass = '';
-    liteMatmul = '';
+    liteVersion = '…';
+    liteBackend = '…';
+    liteWasm = '…';
+    liteWebgpu = '…';
+    liteGpuReady = '…';
+    liteWebgl = '…';
+    liteTensorClass = '…';
+    liteMatmul = '…';
 
     async onMount() {
         const probe = await probeLite();
