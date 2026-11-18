@@ -3,8 +3,8 @@ use crate::{
     MapleError, MapleForm, MapleOperator, MapleProgram, MapleSpan, lower_program_request, lower_request,
     render_maple_result_projection,
 };
-use science::{CasEngine, Session, numeric::number_to_wire, runtime::values::arena::number_from_id};
 use oak_maple::ast::{MapleExpression, MapleExpressionKind, MapleOperator as OakOperator, MapleRoot, MapleSpan as OakSpan};
+use science::{CasEngine, Session, numeric::number_to_wire, runtime::values::arena::number_from_id};
 
 fn ast_integer() -> MapleExpression {
     MapleExpression { kind: MapleExpressionKind::Integer("0007".to_owned()), span: OakSpan { start: 2, end: 6 } }

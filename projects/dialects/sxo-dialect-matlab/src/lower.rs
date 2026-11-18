@@ -408,7 +408,9 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> CasRequest {
                     if shape.rows >= 1 && shape.cols >= 1 {
                         let matrix = session.matrix_objects.intern(mat);
                         return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose { matrix: matrix.into() },
+                            science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                                matrix: matrix.into(),
+                            },
                         )));
                     }
                 }
@@ -779,12 +781,7 @@ fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {
     }
 }
 
-fn lower_dynamic_for(
-    session: &mut Session,
-    variable: TermId,
-    iterator: TermId,
-    body_req: CasRequest,
-) -> Option<CasRequest> {
+fn lower_dynamic_for(session: &mut Session, variable: TermId, iterator: TermId, body_req: CasRequest) -> Option<CasRequest> {
     let symbol = symbol_atom(session, variable)?;
     let head = application_surface_name(session, iterator)?;
     if head != "Range" && head != "Span" {
@@ -812,9 +809,7 @@ fn lower_dynamic_for(
     });
     let loop_body = CasRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
     let while_loop = CasRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
-    Some(CasRequest::Control(ControlPlan::Sequence {
-        steps: vec![init, while_loop, CasRequest::Term(push_null(session))],
-    }))
+    Some(CasRequest::Control(ControlPlan::Sequence { steps: vec![init, while_loop, CasRequest::Term(push_null(session))] }))
 }
 
 fn push_int(session: &mut Session, n: i64) -> TermId {

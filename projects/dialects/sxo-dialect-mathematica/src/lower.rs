@@ -1146,11 +1146,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> CasRequest {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
                         let body_req = lower_request(session, body);
                         if is_static_counted_iterator(session, iterator) {
-                            let counted = CasRequest::Control(ControlPlan::CountedLoop {
-                                variable,
-                                iterator,
-                                body: Box::new(body_req),
-                            });
+                            let counted =
+                                CasRequest::Control(ControlPlan::CountedLoop { variable, iterator, body: Box::new(body_req) });
                             return CasRequest::Control(ControlPlan::Sequence {
                                 steps: vec![counted, CasRequest::Term(push_null(session))],
                             });
@@ -1333,14 +1330,20 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> CasRequest {
                 ("Eigenvalues", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: false },
+                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues {
+                                matrix,
+                                column_vector: false,
+                            },
                         )));
                     }
                 }
                 ("Eigenvectors", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
                         return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors { matrix, column_basis: false },
+                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors {
+                                matrix,
+                                column_basis: false,
+                            },
                         )));
                     }
                 }
@@ -1483,10 +1486,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return CasRequest::Term(lower_wexpr(
-                session,
-                &WolframForm::call("Module", vec![bindings.clone(), body.clone()]),
-            ));
+            return CasRequest::Term(lower_wexpr(session, &WolframForm::call("Module", vec![bindings.clone(), body.clone()])));
         }
     };
 
@@ -1541,10 +1541,7 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return CasRequest::Term(lower_wexpr(
-                session,
-                &WolframForm::call("Block", vec![bindings.clone(), body.clone()]),
-            ));
+            return CasRequest::Term(lower_wexpr(session, &WolframForm::call("Block", vec![bindings.clone(), body.clone()])));
         }
     };
 
@@ -1578,9 +1575,7 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
         }
     }
     steps.push(lower_request(session, body));
-    CasRequest::Control(ControlPlan::DynamicScope {
-        body: Box::new(CasRequest::Control(ControlPlan::Sequence { steps })),
-    })
+    CasRequest::Control(ControlPlan::DynamicScope { body: Box::new(CasRequest::Control(ControlPlan::Sequence { steps })) })
 }
 
 /// Mathematica `With`: simultaneous lexical replacement of locals by RHS forms.
@@ -2101,12 +2096,7 @@ fn is_static_counted_iterator(session: &Session, iterator: TermId) -> bool {
     }
 }
 
-fn lower_dynamic_do(
-    session: &mut Session,
-    variable: TermId,
-    iterator: TermId,
-    body_req: CasRequest,
-) -> Option<CasRequest> {
+fn lower_dynamic_do(session: &mut Session, variable: TermId, iterator: TermId, body_req: CasRequest) -> Option<CasRequest> {
     let elements = match session.arena.get(iterator) {
         Some(TermNode::Collection { elements, .. }) => elements.clone(),
         _ => return None,
@@ -2137,9 +2127,7 @@ fn lower_dynamic_do(
     });
     let loop_body = CasRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
     let while_loop = CasRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
-    Some(CasRequest::Control(ControlPlan::Sequence {
-        steps: vec![init, while_loop, CasRequest::Term(push_null(session))],
-    }))
+    Some(CasRequest::Control(ControlPlan::Sequence { steps: vec![init, while_loop, CasRequest::Term(push_null(session))] }))
 }
 
 fn do_loop_parts(session: &mut Session, iter: &WolframForm) -> Option<(TermId, TermId)> {
