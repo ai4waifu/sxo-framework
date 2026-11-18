@@ -41,9 +41,9 @@ oak-matlab = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "
 oak-maple = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
 oak-testing = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
 # Pinned for reproducible CI/release. Local path overlay is gitignored `.cargo/config.local.toml`.
-science = { git = "https://github.com/oovm/rust-boost.git", rev = "8fcae98ab600029ec55991fd4aa03b3cfd30a063", package = "science" }
-science-types = { git = "https://github.com/oovm/rust-boost.git", rev = "8fcae98ab600029ec55991fd4aa03b3cfd30a063", package = "science-types" }
-plotter = { git = "https://github.com/oovm/rust-boost.git", rev = "8fcae98ab600029ec55991fd4aa03b3cfd30a063", package = "plotter", default-features = true }
+science = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "science" }
+science-types = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "science-types" }
+plotter = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "plotter", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 serde = { version = "1", features = ["derive"] }
