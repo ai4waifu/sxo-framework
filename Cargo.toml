@@ -8,7 +8,6 @@ members = [
     "projects/dialects/sxo-dialect-matrix-literal",
     "projects/dialects/sxo-dialect-simple-math",
     "projects/dialects/sxo-dialect-pari-gp",
-    "projects/adapters/sxo-adapter-apollo",
     "projects/bindings/sxo-napi",
     "projects/bindings/sxo-lite-wasm",
 ]
@@ -30,7 +29,6 @@ sxo-dialect-maple = { path = "projects/dialects/sxo-dialect-maple" }
 sxo-dialect-matrix-literal = { path = "projects/dialects/sxo-dialect-matrix-literal" }
 sxo-dialect-simple-math = { path = "projects/dialects/sxo-dialect-simple-math" }
 sxo-dialect-pari-gp = { path = "projects/dialects/sxo-dialect-pari-gp" }
-sxo-adapter-apollo = { path = "projects/adapters/sxo-adapter-apollo" }
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 wasm-bindgen = "0.2"
@@ -41,9 +39,9 @@ oak-matlab = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "
 oak-maple = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
 oak-testing = { git = "https://github.com/yggdrasil-language/oak.rs.git", rev = "1e7aea298906719a3668f64df13a545d6233475c", default-features = false }
 # Pinned for reproducible CI/release. Local path overlay is gitignored `.cargo/config.local.toml`.
-science = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "science" }
-science-types = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "science-types" }
-plotter = { git = "https://github.com/oovm/rust-boost.git", rev = "65c9db59833ad9f8e3297cd1bb02fbc4f4f2e093", package = "plotter", default-features = true }
+science = { git = "https://github.com/oovm/rust-boost.git", rev = "be1e07ccf7f6a0c3f999d1ccd5d12b1959bf6675", package = "science" }
+science-types = { git = "https://github.com/oovm/rust-boost.git", rev = "be1e07ccf7f6a0c3f999d1ccd5d12b1959bf6675", package = "science-types" }
+plotter = { git = "https://github.com/oovm/rust-boost.git", rev = "be1e07ccf7f6a0c3f999d1ccd5d12b1959bf6675", package = "plotter", default-features = true }
 zeromq = { version = "0.6.0", default-features = false, features = ["tokio-runtime", "tcp-transport"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 serde = { version = "1", features = ["derive"] }

@@ -1,4 +1,4 @@
-//! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
+//! `plot(f,x,a,b)` lowering → science sampling → plotter SVG rendering.
 
 use crate::surface::application_surface_name;
 use science::{
@@ -8,7 +8,7 @@ use science::{
     runtime::values::arena::{application_arguments, number_from_id, symbol_name},
     types::TermId,
 };
-use sxo_adapter_apollo::{AdapterError, plot_1d_svg};
+use science::plot::{PlotRenderError, plot_1d_svg};
 use sxo_types::SxoError;
 
 const DEFAULT_SAMPLES: u32 = 128;
@@ -34,13 +34,13 @@ fn render_plot_1d(session: &mut Session, spec: Plot1dSpec) -> Result<String, Sxo
         SampleDomain::new(spec.start, spec.end),
         SamplingPolicy::samples(DEFAULT_SAMPLES),
     )
-    .map_err(adapter_to_sxo)
+    .map_err(render_error_to_sxo)
 }
 
-fn adapter_to_sxo(err: AdapterError) -> SxoError {
+fn render_error_to_sxo(err: PlotRenderError) -> SxoError {
     match err {
-        AdapterError::Athena(d) => SxoError::from_diagnostic(d),
-        AdapterError::Apollo { code } => SxoError::new(code),
+        PlotRenderError::Sampling(d) => SxoError::from_diagnostic(d),
+        PlotRenderError::Plotter { code } => SxoError::new(code),
     }
 }
 

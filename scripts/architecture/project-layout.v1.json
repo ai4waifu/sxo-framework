@@ -39,12 +39,6 @@
             "required": true
         },
         {
-            "from": "projects/compilers/sxo-adapter-apollo",
-            "to": "projects/adapters/sxo-adapter-apollo",
-            "kind": "directory",
-            "required": true
-        },
-        {
             "from": "projects/runtimes/sxo-core",
             "to": "projects/packages/sxo-core",
             "kind": "directory",

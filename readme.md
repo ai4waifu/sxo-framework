@@ -121,8 +121,6 @@ flowchart TB
         Napi[sxo-napi]
         Wasm[sxo-lite-wasm]
         DialectRust["sxo-dialect-*<br/>parse / Form / lower / render"]
-        TitanBridge[sxo-titan]
-        ApolloBridge[sxo-adapter-apollo]
     end
 
     subgraph Backends[Execution backends]
@@ -143,10 +141,7 @@ flowchart TB
     Napi --> Athena
     Wasm --> Athena
     DialectRust --> Athena
-    Napi --> TitanBridge
-    TitanBridge --> Titan
-    Napi --> ApolloBridge
-    ApolloBridge --> Apollo
+    DialectRust --> Apollo
 ```
 
 SXO is the product and host orchestration layer. It owns TypeScript APIs, optional dialects, Session lifetime, opaque
@@ -156,7 +151,6 @@ or plot engines.
 - **`@sxo/core` / `@sxo/lite`** — isomorphic TypeScript CAS surfaces for native and WASM
 - **Optional dialects** — familiar language syntax only when you already know them
 - **`sxo-napi` / `sxo-lite-wasm`** — host bindings, Session bridge, diagnostic wire
-- **`sxo-titan` / `sxo-adapter-apollo`** — thin adapters into Titan and Apollo
 - **Athena / Titan / Apollo** — opaque execution backends behind stable contracts
 
 There is no `sxo-engine`. Dialects do not own evaluation. Backends do not define the TypeScript product object model.
@@ -169,7 +163,6 @@ sequenceDiagram
     participant Surface as Dialect or @sxo/core/@sxo/lite
     participant Host as sxo-napi / sxo-lite-wasm
     participant Session as SXO Session
-    participant Bridge as sxo-titan / sxo-adapter-apollo
     participant Math as Athena
     participant Tensor as Titan
     participant Plot as Apollo
@@ -187,15 +180,11 @@ sequenceDiagram
         Session->>Math: Lowered math request
         Math-->>Session: Value or diagnostic
     else Tensor or neural
-        Session->>Bridge: Neural / tensor request
-        Bridge->>Tensor: Titan execution contract
-        Tensor-->>Bridge: Opaque tensor or model handle
-        Bridge-->>Session: SXO handle or diagnostic
+        Session->>Tensor: Neural / tensor request
+        Tensor-->>Session: Opaque tensor or model handle or diagnostic
     else Plot
-        Session->>Bridge: Sampled data or plot request
-        Bridge->>Plot: PlotSpec / Scene
-        Plot-->>Bridge: Rendered output or diagnostic
-        Bridge-->>Session: Plot result or diagnostic
+        Session->>Plot: Sampled data or plot request (PlotSpec / Scene)
+        Plot-->>Session: Rendered output or diagnostic
     end
 
     Session->>Session: Update feature status and diagnostics
