@@ -1,11 +1,11 @@
-//! MATLAB Form → session terms / neutral [`AthenaRequest`] (Living `14`).
+//! MATLAB Form → session terms / neutral [`CasRequest`] (Living `14`).
 //!
 //! Formal entry: [`lower_request`] on [`MatlabForm`]. Hosts must keep Form on
 //! parse objects; do not reconstruct Form from arena [`TermId`]s.
 
-use athena::{
+use science::{
     Session,
-    api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
+    api::{CasRequest, ControlPlan, DomainGoal, SessionCommand},
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder},
@@ -124,11 +124,11 @@ pub fn form_to_term(session: &mut Session, form: &MatlabForm) -> TermId {
     }
 }
 
-/// Lift a [`MatlabForm`] into a neutral [`AthenaRequest`].
+/// Lift a [`MatlabForm`] into a neutral [`CasRequest`].
 ///
 /// Request-shaped heads match on Form. Ordinary expressions become
-/// [`AthenaRequest::Term`] via [`form_to_term`].
-pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest {
+/// [`CasRequest::Term`] via [`form_to_term`].
+pub fn lower_request(session: &mut Session, form: &MatlabForm) -> CasRequest {
     match form {
         MatlabForm::Call { head, args } if head == "Set" => {
             if let [lhs, rhs] = args.as_slice() {
@@ -140,10 +140,10 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         .or_else(|| matrix_from_linspace_or_logspace_form(rhs))
                     {
                         let matrix = session.matrix_objects.intern(mat);
-                        return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
+                        return CasRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                     }
                     let value = form_to_eval_term(session, rhs);
-                    return AthenaRequest::Command(SessionCommand::Define {
+                    return CasRequest::Command(SessionCommand::Define {
                         symbol,
                         value,
                         kind: BindingKind::Session,
@@ -164,12 +164,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                                 .collect::<Option<Vec<_>>>()
                             {
                                 let value = form_to_term(session, rhs);
-                                return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                                return CasRequest::Control(ControlPlan::StoreIndex { target, axes, value });
                             }
                         }
                     }
                 }
-                return AthenaRequest::Control(ControlPlan::Reject);
+                return CasRequest::Control(ControlPlan::Reject);
             }
         }
         MatlabForm::Call { head, args } if head == "Times" => {
@@ -178,8 +178,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
                     )));
                 }
             }
@@ -190,8 +190,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
                     )));
                 }
             }
@@ -202,8 +202,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
                     )));
                 }
             }
@@ -214,8 +214,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(a), Some(b)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { a, b },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::RightSolve { a, b },
                     )));
                 }
             }
@@ -227,24 +227,24 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                     )));
                 }
                 if let (Some(lhs_mat), Some(exp)) = (matrix_from_form(a_form), form_scalar_rational(b_form)) {
                     if let Some(rhs_mat) = broadcast_scalar_exponent_matrix(&lhs_mat, &exp) {
                         let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs_mat));
                         let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs_mat));
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                         )));
                     }
                 }
             }
         }
         MatlabForm::Call { head, args } if head == "CompoundExpression" => {
-            let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
-            return AthenaRequest::Control(ControlPlan::Sequence { steps });
+            let steps: Vec<CasRequest> = args.iter().map(|a| lower_request(session, a)).collect();
+            return CasRequest::Control(ControlPlan::Sequence { steps });
         }
         MatlabForm::Call { head, args } if head == "FunctionDef" => {
             if let [header, body] = args.as_slice() {
@@ -253,23 +253,23 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "Return" => match args.as_slice() {
             [value] => {
-                return AthenaRequest::Control(ControlPlan::EarlyReturn { value: form_to_term(session, value) });
+                return CasRequest::Control(ControlPlan::EarlyReturn { value: form_to_term(session, value) });
             }
             [] => {
-                return AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
+                return CasRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
             }
             _ => {}
         },
         MatlabForm::Call { head, args } if head == "If" || head == "Branch" => match args.as_slice() {
             [cond, then_branch] => {
-                return AthenaRequest::Control(ControlPlan::Branch {
+                return CasRequest::Control(ControlPlan::Branch {
                     condition: form_to_eval_term(session, cond),
                     then_branch: Box::new(lower_request(session, then_branch)),
                     else_branch: None,
                 });
             }
             [cond, then_branch, else_branch] => {
-                return AthenaRequest::Control(ControlPlan::Branch {
+                return CasRequest::Control(ControlPlan::Branch {
                     condition: form_to_eval_term(session, cond),
                     then_branch: Box::new(lower_request(session, then_branch)),
                     else_branch: Some(Box::new(lower_request(session, else_branch))),
@@ -285,7 +285,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "While" || head == "LoopWhile" => {
             if let [cond, body] = args.as_slice() {
-                return AthenaRequest::Control(ControlPlan::LoopWhile {
+                return CasRequest::Control(ControlPlan::LoopWhile {
                     condition: form_to_eval_term(session, cond),
                     body: Box::new(lower_request(session, body)),
                 });
@@ -293,7 +293,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "Try" || head == "Recover" => {
             if let [body, handler] = args.as_slice() {
-                return AthenaRequest::Control(ControlPlan::Recover {
+                return CasRequest::Control(ControlPlan::Recover {
                     body: Box::new(lower_request(session, body)),
                     handler: Box::new(lower_request(session, handler)),
                 });
@@ -304,8 +304,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 let variable_t = form_to_term(session, variable);
                 let iterator_t = form_to_term(session, iterator);
                 let body_req = lower_request(session, body);
-                if matches!(body_req, AthenaRequest::Term(_)) {
-                    return AthenaRequest::Control(ControlPlan::CountedLoop {
+                if matches!(body_req, CasRequest::Term(_)) {
+                    return CasRequest::Control(ControlPlan::CountedLoop {
                         variable: variable_t,
                         iterator: iterator_t,
                         body: Box::new(body_req),
@@ -316,7 +316,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 {
                     let mut steps = Vec::with_capacity(items.len().saturating_mul(2));
                     for item in items {
-                        steps.push(AthenaRequest::Command(SessionCommand::Define {
+                        steps.push(CasRequest::Command(SessionCommand::Define {
                             symbol,
                             value: item,
                             kind: BindingKind::Session,
@@ -324,12 +324,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                         }));
                         steps.push(lower_request(session, body));
                     }
-                    return AthenaRequest::Control(ControlPlan::Sequence { steps });
+                    return CasRequest::Control(ControlPlan::Sequence { steps });
                 }
                 if let Some(dynamic) = lower_dynamic_for(session, variable_t, iterator_t, body_req.owning_copy()) {
                     return dynamic;
                 }
-                return AthenaRequest::Control(ControlPlan::CountedLoop {
+                return CasRequest::Control(ControlPlan::CountedLoop {
                     variable: variable_t,
                     iterator: iterator_t,
                     body: Box::new(body_req),
@@ -338,7 +338,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         }
         MatlabForm::Call { head, args } if head == "error" || head == "Error" || head == "Reject" => {
             let _ = args;
-            return AthenaRequest::Control(ControlPlan::Reject);
+            return CasRequest::Control(ControlPlan::Reject);
         }
         MatlabForm::Call { head, args }
             if head == "Global"
@@ -350,12 +350,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         {
             // Typed declarations / command / member / parallel Forms — no silent strip.
             let _ = args;
-            return AthenaRequest::Control(ControlPlan::Reject);
+            return CasRequest::Control(ControlPlan::Reject);
         }
         MatlabForm::Call { head, args } if head == "Application" => {
             // Package / member calls `containers.Map(...)` — refuse until runtime exists.
             if args.first().is_some_and(|a| a.head_name() == Some("Member")) {
-                return AthenaRequest::Control(ControlPlan::Reject);
+                return CasRequest::Control(ControlPlan::Reject);
             }
         }
         MatlabForm::Call { head, args } if head == "Part" => {
@@ -364,7 +364,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     let op = session.extensions.intern(name);
                     if session.defs.extension_request_dispatch_rules(op).is_some_and(|rules| !rules.is_empty()) {
                         let arg_terms: Vec<TermId> = args[1..].iter().map(|a| form_to_term(session, a)).collect();
-                        return AthenaRequest::Term(push_matlab_call(session, name, arg_terms));
+                        return CasRequest::Term(push_matlab_call(session, name, arg_terms));
                     }
                 }
                 let target = form_to_term(session, &args[0]);
@@ -376,7 +376,7 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     .map(|(i, a)| index_spec_of(session, a, axis_terms.len() == 1 && i == 0))
                     .collect::<Option<Vec<_>>>()
                 {
-                    return AthenaRequest::Control(ControlPlan::Index { target, axes });
+                    return CasRequest::Control(ControlPlan::Index { target, axes });
                 }
             }
         }
@@ -386,15 +386,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     let shape = mat.shape();
                     if shape.rows >= 1 && shape.cols >= 1 {
                         let matrix = session.matrix_objects.intern(mat);
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
                         )));
                     }
                 }
                 if let Some(name) = form_symbol_name(arg) {
                     let symbol = session.arena.symbols_mut().intern(name);
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Transpose {
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Transpose {
                             matrix: MatrixOperand::binding(symbol),
                         },
                     )));
@@ -407,15 +407,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                     let shape = mat.shape();
                     if shape.rows >= 1 && shape.cols >= 1 {
                         let matrix = session.matrix_objects.intern(mat);
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose { matrix: matrix.into() },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose { matrix: matrix.into() },
                         )));
                     }
                 }
                 if let Some(name) = form_symbol_name(arg) {
                     let symbol = session.arena.symbols_mut().intern(name);
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
                             matrix: MatrixOperand::binding(symbol),
                         },
                     )));
@@ -425,8 +425,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Det" || head == "Determinant" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Det { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Det { matrix },
                     )));
                 }
             }
@@ -434,8 +434,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Inverse" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
                     )));
                 }
             }
@@ -443,8 +443,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "MatrixRank" || head == "Rank" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
                     )));
                 }
             }
@@ -452,8 +452,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Tr" || head == "Trace" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
                     )));
                 }
             }
@@ -461,8 +461,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "RowReduce" || head == "Rref" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
                     )));
                 }
             }
@@ -470,8 +470,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Norm" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
                     )));
                 }
             }
@@ -479,8 +479,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Eig" || head == "Eigenvalues" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: true },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: true },
                     )));
                 }
             }
@@ -488,8 +488,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "Eigenvectors" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors { matrix, column_basis: true },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors { matrix, column_basis: true },
                     )));
                 }
             }
@@ -497,8 +497,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "MatrixExp" || head == "Expm" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
                     )));
                 }
             }
@@ -507,8 +507,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
             // Living 16: MATLAB `null` → column basis; Mathematica `NullSpace` stays row basis.
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: true },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: true },
                     )));
                 }
             }
@@ -516,8 +516,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "ConditionNumber" || head == "Cond" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::ConditionNumber { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::ConditionNumber { matrix },
                     )));
                 }
             }
@@ -525,8 +525,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "LowerTriangularize" || head == "Tril" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
                     )));
                 }
             }
@@ -534,8 +534,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "UpperTriangularize" || head == "Triu" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
                     )));
                 }
             }
@@ -545,8 +545,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
                     )));
                 }
             }
@@ -554,8 +554,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "IsDiagonalMatrix" || head == "IsDiag" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::IsDiagonal { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::IsDiagonal { matrix },
                     )));
                 }
             }
@@ -563,8 +563,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "IsLowerTriangular" || head == "IsTril" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: true },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: true },
                     )));
                 }
             }
@@ -572,8 +572,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "IsUpperTriangular" || head == "IsTriu" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: false },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::IsTriangular { matrix, lower: false },
                     )));
                 }
             }
@@ -581,8 +581,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "IsSymmetricMatrix" || head == "IsSymmetric" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
                     )));
                 }
             }
@@ -592,12 +592,12 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 let rows = form_scalar_i64(rows_form).filter(|&n| n >= 0).map(|n| n as u64);
                 let cols = form_scalar_i64(cols_form).filter(|&n| n >= 0).map(|n| n as u64);
                 if let (Some(matrix), Some(rows), Some(cols)) = (matrix_operand_from_form(session, mat_form), rows, cols) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Reshape {
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Reshape {
                             matrix,
                             rows,
                             cols,
-                            order: athena::domains::linear_algebra::StorageOrder::ColumnMajor,
+                            order: science::domains::linear_algebra::StorageOrder::ColumnMajor,
                         },
                     )));
                 }
@@ -606,8 +606,8 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
         MatlabForm::Call { head, args } if head == "NumElements" || head == "Numel" => {
             if let [arg] = args.as_slice() {
                 if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::NumElements { matrix },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::NumElements { matrix },
                     )));
                 }
             }
@@ -617,15 +617,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
                     let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
                     let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                     )));
                 }
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                     )));
                 }
             }
@@ -635,15 +635,15 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(lhs), Some(rhs)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
                     )));
                 }
             }
         }
         MatlabForm::Call { head, args } if head == "Span" => {
             let rewritten = form_to_term(session, &MatlabForm::call("Range", args.clone()));
-            return AthenaRequest::Term(rewritten);
+            return CasRequest::Term(rewritten);
         }
         MatlabForm::Call { head, args }
             if matches!(head.as_str(), "diff" | "Diff" | "D" | "int" | "Int" | "integral" | "Integrate") =>
@@ -695,60 +695,60 @@ pub fn lower_request(session: &mut Session, form: &MatlabForm) -> AthenaRequest 
                 if let (Some(a), Some(b)) =
                     (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                 {
-                    return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
+                    return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                     )));
                 }
             }
         }
         MatlabForm::Call { head, args } if matches!(head.as_str(), "intmin" | "intmax") => {
             if let Some(bound) = eval_matlab_int_bound(session, head, args) {
-                return AthenaRequest::Term(bound);
+                return CasRequest::Term(bound);
             }
         }
         MatlabForm::Call { head, args } if matches!(head.as_str(), "floor" | "Floor") && args.len() == 1 => {
-            return AthenaRequest::Term(eval_matlab_floor(session, &args[0]));
+            return CasRequest::Term(eval_matlab_floor(session, &args[0]));
         }
         _ => {}
     }
     // Ordinary expression Forms materialize once. Request-shaped heads above already returned.
-    AthenaRequest::Term(form_to_term(session, form))
+    CasRequest::Term(form_to_term(session, form))
 }
 
 /// Short-circuit `&&` (`And`): later arms run only when earlier conditions are true.
 ///
 /// Scalar MATLAB `&&` yields a logical. Pure last arms are coerced via nested
 /// `Branch`. Assignment / compound last arms keep `lower_request` so side effects run.
-fn lower_short_circuit_and(session: &mut Session, args: &[MatlabForm]) -> AthenaRequest {
+fn lower_short_circuit_and(session: &mut Session, args: &[MatlabForm]) -> CasRequest {
     match args {
-        [] => AthenaRequest::Term(push_bool(session, true)),
+        [] => CasRequest::Term(push_bool(session, true)),
         [only] if form_is_effectful_arm(only) => lower_request(session, only),
-        [only] => AthenaRequest::Control(ControlPlan::Branch {
+        [only] => CasRequest::Control(ControlPlan::Branch {
             condition: form_to_term(session, only),
-            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
-            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+            then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
         }),
-        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+        [first, rest @ ..] => CasRequest::Control(ControlPlan::Branch {
             condition: form_to_term(session, first),
             then_branch: Box::new(lower_short_circuit_and(session, rest)),
-            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
         }),
     }
 }
 
 /// Short-circuit `||` (`Or`): later arms run only when earlier conditions are false.
-fn lower_short_circuit_or(session: &mut Session, args: &[MatlabForm]) -> AthenaRequest {
+fn lower_short_circuit_or(session: &mut Session, args: &[MatlabForm]) -> CasRequest {
     match args {
-        [] => AthenaRequest::Term(push_bool(session, false)),
+        [] => CasRequest::Term(push_bool(session, false)),
         [only] if form_is_effectful_arm(only) => lower_request(session, only),
-        [only] => AthenaRequest::Control(ControlPlan::Branch {
+        [only] => CasRequest::Control(ControlPlan::Branch {
             condition: form_to_term(session, only),
-            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
-            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+            then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
+            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
         }),
-        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+        [first, rest @ ..] => CasRequest::Control(ControlPlan::Branch {
             condition: form_to_term(session, first),
-            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
             else_branch: Some(Box::new(lower_short_circuit_or(session, rest))),
         }),
     }
@@ -768,8 +768,8 @@ fn form_symbol_name(form: &MatlabForm) -> Option<&str> {
     }
 }
 
-fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
-    AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
+fn calculus_goal(request: CalculusRequest) -> CasRequest {
+    CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
 }
 
 fn symbol_atom(session: &Session, term: TermId) -> Option<SymbolId> {
@@ -783,8 +783,8 @@ fn lower_dynamic_for(
     session: &mut Session,
     variable: TermId,
     iterator: TermId,
-    body_req: AthenaRequest,
-) -> Option<AthenaRequest> {
+    body_req: CasRequest,
+) -> Option<CasRequest> {
     let symbol = symbol_atom(session, variable)?;
     let head = application_surface_name(session, iterator)?;
     if head != "Range" && head != "Span" {
@@ -796,7 +796,7 @@ fn lower_dynamic_for(
         [a, b, s] => (*a, *b, *s),
         _ => return None,
     };
-    let init = AthenaRequest::Command(SessionCommand::Define {
+    let init = CasRequest::Command(SessionCommand::Define {
         symbol,
         value: start,
         kind: BindingKind::Session,
@@ -804,16 +804,16 @@ fn lower_dynamic_for(
     });
     let cond = push_semantic(session, SemanticOperator::LessEqual, vec![variable, end]);
     let next = push_semantic(session, SemanticOperator::Add, vec![variable, step]);
-    let increment = AthenaRequest::Command(SessionCommand::Define {
+    let increment = CasRequest::Command(SessionCommand::Define {
         symbol,
         value: next,
         kind: BindingKind::Session,
         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
     });
-    let loop_body = AthenaRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
-    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
-    Some(AthenaRequest::Control(ControlPlan::Sequence {
-        steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
+    let loop_body = CasRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
+    let while_loop = CasRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
+    Some(CasRequest::Control(ControlPlan::Sequence {
+        steps: vec![init, while_loop, CasRequest::Term(push_null(session))],
     }))
 }
 
@@ -1149,7 +1149,7 @@ fn matrix_operand_from_form(session: &mut Session, w: &MatlabForm) -> Option<Mat
 
 /// MATLAB `[]` / empty List → `0×0` integer matrix (Living 16 empty shape).
 fn matrix_from_empty_form(w: &MatlabForm) -> Option<MatrixValue> {
-    use athena::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
+    use science::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
     match w {
         MatlabForm::List(items) if items.is_empty() => {
             MatrixValue::zeros(MatrixParent::integers(), MatrixShape::new(0, 0), StorageOrder::RowMajor).ok()
@@ -1163,7 +1163,7 @@ fn matrix_from_empty_form(w: &MatlabForm) -> Option<MatrixValue> {
 
 /// `eye(n)` / `zeros(m,n)` / `ones(m,n)` Form → dense exact `MatrixValue` (Living 16).
 fn matrix_from_constructor_form(w: &MatlabForm) -> Option<MatrixValue> {
-    use athena::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
+    use science::domains::linear_algebra::{MatrixParent, MatrixShape, MatrixValue, StorageOrder};
 
     let MatlabForm::Call { head, args } = w
     else {
@@ -1267,7 +1267,7 @@ fn is_flat_list_vector_form(w: &MatlabForm) -> bool {
 
 /// Orient flat vector Forms for `dot` so `dot([1,2],[3,4])` is an inner product.
 fn dot_matrices_from_forms(a_form: &MatlabForm, b_form: &MatlabForm) -> Option<(MatrixValue, MatrixValue)> {
-    use athena::domains::linear_algebra::transpose;
+    use science::domains::linear_algebra::transpose;
 
     let a_flat = is_flat_list_vector_form(a_form);
     let b_flat = is_flat_list_vector_form(b_form);
@@ -1296,7 +1296,7 @@ fn dot_matrices_from_forms(a_form: &MatlabForm, b_form: &MatlabForm) -> Option<(
 
 /// Broadcast a rational scalar exponent into a dense matrix matching `template` parent/shape.
 fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> Option<MatrixValue> {
-    use athena::domains::linear_algebra::ElementParentKind;
+    use science::domains::linear_algebra::ElementParentKind;
     let rows = template.shape().rows;
     let cols = template.shape().cols;
     let n = (rows * cols) as usize;
@@ -1318,7 +1318,7 @@ fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> O
             MatrixValue::from_integers_row_major(rows, cols, cells).ok()
         }
         ElementParentKind::MachineReal => {
-            let x = athena::numeric::to_f64_lossy(&athena::numeric::Number::rational(clone_rational(exp)))?;
+            let x = science::numeric::to_f64_lossy(&science::numeric::Number::rational(clone_rational(exp)))?;
             let cells = vec![x; n];
             MatrixValue::from_f64_row_major(rows, cols, cells).ok()
         }
@@ -1530,10 +1530,10 @@ struct MatlabFunctionHeader {
     params: Vec<String>,
 }
 
-fn lower_matlab_function_def(session: &mut Session, header: &MatlabForm, body: &MatlabForm) -> AthenaRequest {
+fn lower_matlab_function_def(session: &mut Session, header: &MatlabForm, body: &MatlabForm) -> CasRequest {
     let parsed = match parse_matlab_function_header(header) {
         Some(parsed) => parsed,
-        None => return AthenaRequest::Control(ControlPlan::Reject),
+        None => return CasRequest::Control(ControlPlan::Reject),
     };
     let body_form = rewrite_bare_function_returns(body, &parsed.outputs);
     let body_req = lower_request(session, &body_form);
@@ -1549,7 +1549,7 @@ fn lower_matlab_function_def(session: &mut Session, header: &MatlabForm, body: &
         .collect();
     let pattern = TermPattern::Application { operator: ApplicationHead::Extension(f_op), arguments: pat_args };
     session.defs.register_extension_request_rule(f_op, pattern, body_req);
-    AthenaRequest::Term(push_null(session))
+    CasRequest::Term(push_null(session))
 }
 
 fn parse_matlab_function_header(header: &MatlabForm) -> Option<MatlabFunctionHeader> {
@@ -1643,16 +1643,16 @@ fn rewrite_returns_in_form(form: &MatlabForm, out: &MatlabForm) -> MatlabForm {
     }
 }
 
-fn wrap_function_body_request(session: &mut Session, body_req: AthenaRequest, outputs: &[String]) -> AthenaRequest {
+fn wrap_function_body_request(session: &mut Session, body_req: CasRequest, outputs: &[String]) -> CasRequest {
     if outputs.len() != 1 {
         return body_req;
     }
-    let ret = AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_symbol_name(session, &outputs[0]) });
+    let ret = CasRequest::Control(ControlPlan::EarlyReturn { value: push_symbol_name(session, &outputs[0]) });
     match body_req {
-        AthenaRequest::Control(ControlPlan::Sequence { steps }) => {
-            AthenaRequest::Control(ControlPlan::Sequence { steps: steps.into_iter().chain([ret]).collect() })
+        CasRequest::Control(ControlPlan::Sequence { steps }) => {
+            CasRequest::Control(ControlPlan::Sequence { steps: steps.into_iter().chain([ret]).collect() })
         }
-        other => AthenaRequest::Control(ControlPlan::Sequence { steps: vec![other, ret] }),
+        other => CasRequest::Control(ControlPlan::Sequence { steps: vec![other, ret] }),
     }
 }
 
@@ -1705,7 +1705,7 @@ mod complex_matrix_literal_tests {
             vec![MatlabForm::symbol("i"), MatlabForm::call("Plus", vec![MatlabForm::symbol("i"), MatlabForm::int(1)])],
         );
         match lower_request(&mut session, &assign) {
-            AthenaRequest::Command(SessionCommand::Define { .. }) => {}
+            CasRequest::Command(SessionCommand::Define { .. }) => {}
             other => panic!("expected Define for i = i + 1, got {other:?}"),
         }
     }

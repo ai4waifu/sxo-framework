@@ -1,7 +1,7 @@
 //! Host integration tests across dialect crates and Athena.
 
-use athena::{
-    api::{AthenaRequest, DomainGoal},
+use science::{
+    api::{CasRequest, DomainGoal},
     diagnostics::term_summary::term_debug,
     domains::{DomainRequest, calculus::CalculusRequest},
     ir::{Atom, TermNode},
@@ -38,8 +38,8 @@ fn big_integer_arithmetic() {
     let expected_n = parse_number_literal("100000000000000000000").unwrap();
     let expected = session.with_math_mut(|s| {
         s.arena.push(
-            TermNode::Atom(Atom::Number(athena::runtime::values::numeric_clone::clone_number(&expected_n))),
-            athena::types::SourceSpan::default(),
+            TermNode::Atom(Atom::Number(science::runtime::values::numeric_clone::clone_number(&expected_n))),
+            science::types::SourceSpan::default(),
         )
     });
     assert!(session.structural_eq(session.project_result(e.result_id).unwrap(), expected));
@@ -62,7 +62,7 @@ fn dialect_d_limit_series_lower_to_domain() {
     let request = session.with_math_mut(|s| sxo_dialect_mathematica::lower_request(s, &w));
     assert!(matches!(
         request,
-        AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative { .. })))
+        CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative { .. })))
     ));
     let d_out = session.evaluate_mathematica("D[x^3, x]").unwrap();
     let d_s = session.render_as_wolfram(session.project_result(d_out.result_id).unwrap());
@@ -133,7 +133,7 @@ fn result_transforms_record_derived_from_on_the_same_outcome() {
 
 #[test]
 fn project_conditions_exposes_result_predicates() {
-    use athena::{
+    use science::{
         runtime::results::{ComputationResult, CoverageStatus},
         types::{ComputationStatus, Condition, Predicate},
     };
@@ -155,7 +155,7 @@ fn project_conditions_exposes_result_predicates() {
 
 #[test]
 fn project_provider_exposes_result_stamp() {
-    use athena::{
+    use science::{
         runtime::results::{ComputationResult, CoverageStatus, ResultProviderId},
         types::ComputationStatus,
     };
@@ -173,7 +173,7 @@ fn project_provider_exposes_result_stamp() {
 
 #[test]
 fn project_evidence_exposes_trusted_kernel_summary() {
-    use athena::{
+    use science::{
         runtime::results::{ComputationResult, CoverageStatus, ResultEvidence, ResultProviderId},
         types::ComputationStatus,
     };

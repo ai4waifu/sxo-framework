@@ -2,7 +2,7 @@
 //!
 //! Strings here are **dialect display / parse maps only** — never Athena core dispatch.
 
-use athena::{
+use science::{
     Session,
     ir::{ApplicationHead, SemanticOperator, TermNode, UnaryFunction},
     runtime::values::arena::{push_extension, push_semantic},

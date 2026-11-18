@@ -5,9 +5,9 @@ mod render;
 
 pub use render::{MapleRenderError, render_maple_result_projection};
 
-use athena::{
+use science::{
     Session,
-    api::{AthenaRequest, ControlPlan},
+    api::{CasRequest, ControlPlan},
     ir::{SemanticOperator, TermBuilder},
     numeric::number_from_wire,
     types::{SourceSpan, TermId, WireNumber},
@@ -244,9 +244,9 @@ fn materialize(session: &mut Session, form: &MapleForm, span: SourceSpan) -> Res
 /// Validate the entire form before allocating terms, then lower once into Athena.
 ///
 /// This does not evaluate, render, reparse, or introduce frontend mathematical storage.
-pub fn lower_request(session: &mut Session, form: &MapleForm) -> Result<AthenaRequest, MapleError> {
+pub fn lower_request(session: &mut Session, form: &MapleForm) -> Result<CasRequest, MapleError> {
     validate_lowering(form)?;
-    materialize(session, form, SourceSpan::default()).map(AthenaRequest::Term)
+    materialize(session, form, SourceSpan::default()).map(CasRequest::Term)
 }
 
 /// Validate every expression before allocation and lower the source sequence.
@@ -254,7 +254,7 @@ pub fn lower_request(session: &mut Session, form: &MapleForm) -> Result<AthenaRe
 /// A single expression remains a term request. Multiple expressions use Athena
 /// control flow, whose observed result is the last expression. This is not a
 /// transcript of the outputs that an interactive Maple console would print.
-pub fn lower_program_request(session: &mut Session, program: &MapleProgram) -> Result<AthenaRequest, MapleError> {
+pub fn lower_program_request(session: &mut Session, program: &MapleProgram) -> Result<CasRequest, MapleError> {
     let span = program.span.map(MapleSpan::to_source_span).transpose()?.unwrap_or_default();
     if program.expressions.is_empty() {
         return Err(MapleError::EmptyProgram);
@@ -263,9 +263,9 @@ pub fn lower_program_request(session: &mut Session, program: &MapleProgram) -> R
     let mut steps = program
         .expressions
         .iter()
-        .map(|form| materialize(session, form, span).map(AthenaRequest::Term))
+        .map(|form| materialize(session, form, span).map(CasRequest::Term))
         .collect::<Result<Vec<_>, _>>()?;
-    if steps.len() == 1 { Ok(steps.remove(0)) } else { Ok(AthenaRequest::Control(ControlPlan::Sequence { steps })) }
+    if steps.len() == 1 { Ok(steps.remove(0)) } else { Ok(CasRequest::Control(ControlPlan::Sequence { steps })) }
 }
 
 /// Render an owned source form with explicit arithmetic grouping.

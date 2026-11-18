@@ -1,7 +1,7 @@
 //! `plot(f,x,a,b)` lowering → Athena sampling → Apollo SVG.
 
 use crate::surface::application_surface_name;
-use athena::{
+use science::{
     Session,
     numeric::to_f64_lossy,
     plot::{SampleDomain, SamplingPolicy},

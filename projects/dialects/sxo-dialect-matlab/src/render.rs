@@ -1,6 +1,6 @@
 //! Render MATLAB Form or session arena [`TermId`] as MATLAB text (no `WExpr`).
 
-use athena::{
+use science::{
     Session,
     ir::{Atom, MathematicalConstant, TermNode},
     numeric::Number,

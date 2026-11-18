@@ -1,6 +1,6 @@
 //! Direct Maple Form to Athena execution boundary tests.
 
-use athena::{AthenaEngine, Session, api::AthenaRequest, runtime::values::arena::number_from_id};
+use science::{CasEngine, Session, api::CasRequest, runtime::values::arena::number_from_id};
 use sxo_dialect_maple::{MapleError, MapleForm, MapleOperator, lower_request, render_maple_form};
 
 fn integer(text: &str) -> MapleForm {
@@ -14,14 +14,14 @@ fn binary(operator: MapleOperator, left: MapleForm, right: MapleForm) -> MapleFo
 fn execute_number(form: &MapleForm) -> String {
     let mut session = Session::new();
     let request = lower_request(&mut session, form).expect("valid lowering");
-    let result_id = AthenaEngine::new().execute_request(&mut session, request).expect("Athena execution");
+    let result_id = CasEngine::new().execute_request(&mut session, request).expect("Athena execution");
     let result = session.results.get(result_id).expect("owned result");
     assert_eq!(result.status.name(), "Exact");
     assert_eq!(result.coverage.name(), "Full");
     assert!(result.conditions.is_empty());
     assert!(result.diagnostics.is_empty());
     let term = result.symbolic_term.expect("result-owned numeric projection");
-    athena::numeric::number_to_wire(number_from_id(&session, term).expect("numeric result")).to_render_string()
+    science::numeric::number_to_wire(number_from_id(&session, term).expect("numeric result")).to_render_string()
 }
 
 #[test]
@@ -80,18 +80,18 @@ fn malformed_direct_literals_and_reserved_names_are_rejected() {
 fn lists_lower_as_lists_not_inferred_matrices() {
     let mut session = Session::new();
     let form = MapleForm::List(vec![MapleForm::List(vec![integer("1"), integer("2")])]);
-    let AthenaRequest::Term(term) = lower_request(&mut session, &form).unwrap()
+    let CasRequest::Term(term) = lower_request(&mut session, &form).unwrap()
     else {
         panic!("term request")
     };
-    let Some(athena::ir::TermNode::Collection { kind, elements }) = session.arena.get(term)
+    let Some(science::ir::TermNode::Collection { kind, elements }) = session.arena.get(term)
     else {
         panic!("outer list")
     };
-    assert_eq!(*kind, athena::types::CollectionKind::OrderedCollection);
+    assert_eq!(*kind, science::types::CollectionKind::OrderedCollection);
     assert_eq!(elements.len(), 1);
     assert!(matches!(
         session.arena.get(elements[0]),
-        Some(athena::ir::TermNode::Collection { kind: athena::types::CollectionKind::OrderedCollection, .. })
+        Some(science::ir::TermNode::Collection { kind: science::types::CollectionKind::OrderedCollection, .. })
     ));
 }

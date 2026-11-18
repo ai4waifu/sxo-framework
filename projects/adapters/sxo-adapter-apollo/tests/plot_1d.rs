@@ -1,6 +1,6 @@
 //! Integration tests for plot_1d.
 
-use athena::{
+use science::{
     Session,
     ir::SemanticOperator,
     plot::{SampleDomain, SamplingPolicy},

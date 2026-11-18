@@ -6,15 +6,15 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "SXO host adapter: Athena SampledCurve → Apollo PlotSpec / SVG"
+description = "SXO host adapter: science SampledCurve → plotter PlotSpec / SVG"
 publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
-athena = { workspace = true }
-apollo = { workspace = true }
+science = { workspace = true }
+plotter = { workspace = true }
 
 [dev-dependencies]
-athena = { workspace = true }
+science = { workspace = true }

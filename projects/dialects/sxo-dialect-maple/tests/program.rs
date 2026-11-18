@@ -1,8 +1,8 @@
 //! Ordered Maple source programs lower into neutral Athena control flow.
 
-use athena::{
-    AthenaEngine, Session,
-    api::{AthenaRequest, ControlPlan},
+use science::{
+    CasEngine, Session,
+    api::{CasRequest, ControlPlan},
     numeric::number_to_wire,
     runtime::values::arena::number_from_id,
 };
@@ -16,7 +16,7 @@ fn program(expressions: Vec<MapleForm>) -> MapleProgram {
 fn one_expression_preserves_the_scalar_request_boundary() {
     let mut session = Session::new();
     let request = lower_program_request(&mut session, &program(vec![MapleForm::Integer("7".to_owned())])).unwrap();
-    assert!(matches!(request, AthenaRequest::Term(_)));
+    assert!(matches!(request, CasRequest::Term(_)));
 }
 
 #[test]
@@ -24,8 +24,8 @@ fn ordered_sequence_uses_athena_and_observes_last_result() {
     let mut session = Session::new();
     let form = program(vec![MapleForm::Integer("7".to_owned()), MapleForm::Integer("11".to_owned())]);
     let request = lower_program_request(&mut session, &form).unwrap();
-    assert!(matches!(&request, AthenaRequest::Control(ControlPlan::Sequence { steps }) if steps.len() == 2));
-    let result_id = AthenaEngine::new().execute_request(&mut session, request).unwrap();
+    assert!(matches!(&request, CasRequest::Control(ControlPlan::Sequence { steps }) if steps.len() == 2));
+    let result_id = CasEngine::new().execute_request(&mut session, request).unwrap();
     let result = session.results.get(result_id).expect("owned sequence result");
     assert_eq!(result.status.name(), "Exact");
     assert_eq!(result.coverage.name(), "Full");

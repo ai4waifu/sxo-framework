@@ -1,11 +1,15 @@
-//! Athena `SampledCurve` → Apollo `PlotSpec` / SVG 宿主适配。
+//! science `SampledCurve` → plotter `PlotSpec` / SVG 宿主适配。
 //!
-//! Apollo 不依赖 Athena；采样在 Athena，构图与渲染在 Apollo。
+//! plotter 不依赖 science；采样在 science，构图与渲染在 plotter。
 
 #![deny(missing_docs)]
 
-use apollo::{ColumnTable, CompileOptions, LayerSpec, Mapping, PlotSpec, compile_plot, render_svg};
-use athena::{
+use plotter::{
+    data::ColumnTable,
+    grammar::{CompileOptions, LayerSpec, Mapping, PlotSpec, compile_plot},
+    renderer::svg::render_svg,
+};
+use science::{
     Session,
     plot::{SampleDomain, SampledCurve, SamplingPolicy, sample_1d},
     types::{Diagnostic as AthenaDiagnostic, TermId},
@@ -16,9 +20,9 @@ use athena::{
 pub enum AdapterError {
     /// Athena 采样失败。
     Athena(AthenaDiagnostic),
-    /// Apollo 数据 / 编译 / 渲染失败（稳定 code）。
+    /// plotter 数据 / 编译 / 渲染失败（稳定 code）。
     Apollo {
-        /// `APOLLO_*` wire code。
+        /// `plotter_*` wire code（上游）或 `APOLLO_*`（适配层自产）。
         code: String,
     },
 }

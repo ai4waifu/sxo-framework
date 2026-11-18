@@ -1,6 +1,6 @@
 //! Summaries for Athena result conditions (host product surface).
 
-use athena_types::{Condition, Predicate};
+use science_types::{Condition, Predicate};
 
 /// Stable machine-oriented summary for one [Condition] (no Term pretty-print).
 pub fn condition_summary(condition: &Condition) -> String {
@@ -30,7 +30,7 @@ fn predicate_kind(predicate: &Predicate) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use athena_types::{Condition, Predicate, SymbolId};
+    use science_types::{Condition, Predicate, SymbolId};
 
     #[test]
     fn condition_summary_names_predicate_kind() {

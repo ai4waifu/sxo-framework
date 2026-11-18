@@ -21,86 +21,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "apollo"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-backend-svg",
- "apollo-data",
- "apollo-grammar",
- "apollo-layout",
- "apollo-render",
- "apollo-scene",
- "apollo-types",
-]
-
-[[package]]
-name = "apollo-backend-svg"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-render",
- "apollo-scene",
- "apollo-types",
-]
-
-[[package]]
-name = "apollo-data"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-types",
- "serde",
-]
-
-[[package]]
-name = "apollo-grammar"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-data",
- "apollo-layout",
- "apollo-scene",
- "apollo-types",
- "serde",
-]
-
-[[package]]
-name = "apollo-layout"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-data",
- "apollo-types",
-]
-
-[[package]]
-name = "apollo-render"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-scene",
- "apollo-types",
-]
-
-[[package]]
-name = "apollo-scene"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "apollo-types",
- "serde",
-]
-
-[[package]]
-name = "apollo-types"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/apollo.rs.git?rev=6af6f73ae6289d69d076004d34b432eef052e1c0#6af6f73ae6289d69d076004d34b432eef052e1c0"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "async-trait"
 version = "0.1.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -108,7 +28,7 @@ checksum = "82f6aeea286b8eb4dd3431a1be1b59d290ace00f5bfd8e2a159bc2a05e2c1667"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.6",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -122,100 +42,6 @@ dependencies = [
  "futures-util",
  "memchr",
  "pin-project-lite",
-]
-
-[[package]]
-name = "athena"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-engine",
- "athena-ir",
- "athena-numeric",
- "athena-rewriter",
- "athena-types",
-]
-
-[[package]]
-name = "athena-engine"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-gc",
- "athena-graph",
- "athena-ir",
- "athena-ndarray",
- "athena-numeric",
- "athena-rewriter",
- "athena-types",
- "athena-vm",
-]
-
-[[package]]
-name = "athena-gc"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-types",
-]
-
-[[package]]
-name = "athena-graph"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-gc",
- "athena-ndarray",
-]
-
-[[package]]
-name = "athena-ir"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-numeric",
- "athena-types",
-]
-
-[[package]]
-name = "athena-ndarray"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-gc",
-]
-
-[[package]]
-name = "athena-numeric"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-gc",
- "athena-types",
-]
-
-[[package]]
-name = "athena-rewriter"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-ir",
- "athena-numeric",
- "athena-types",
-]
-
-[[package]]
-name = "athena-types"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-
-[[package]]
-name = "athena-vm"
-version = "0.1.0"
-source = "git+https://github.com/ai4waifu/athena.rs.git?rev=510220a094180da82d66ececcb907342923bb46a#510220a094180da82d66ececcb907342923bb46a"
-dependencies = [
- "athena-gc",
- "athena-types",
 ]
 
 [[package]]
@@ -237,6 +63,66 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2f6c7dbe95a6ed67ad9f18e57daf93a2f034c524b99fd2b76d18fdfeb6660aa"
 dependencies = [
  "hybrid-array",
+]
+
+[[package]]
+name = "boost-collection"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-collection-macro",
+]
+
+[[package]]
+name = "boost-collection-macro"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.10",
+]
+
+[[package]]
+name = "boost-console"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+
+[[package]]
+name = "boost-harness"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-console",
+ "boost-harness-macro",
+ "boost-source",
+ "serde",
+]
+
+[[package]]
+name = "boost-harness-macro"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.10",
+]
+
+[[package]]
+name = "boost-math"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-collection",
+]
+
+[[package]]
+name = "boost-source"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -458,7 +344,7 @@ checksum = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.6",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -705,8 +591,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "oak-abc"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "serde",
+]
+
+[[package]]
 name = "oak-core"
 version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
 dependencies = [
  "serde",
  "smallvec",
@@ -715,35 +611,104 @@ dependencies = [
 ]
 
 [[package]]
+name = "oak-core"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "serde",
+ "smallvec",
+ "triomphe",
+ "twox-hash",
+]
+
+[[package]]
+name = "oak-dot"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "serde",
+]
+
+[[package]]
 name = "oak-maple"
 version = "0.0.12"
 source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
 dependencies = [
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
 ]
 
 [[package]]
 name = "oak-matlab"
 version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
 dependencies = [
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
+ "serde",
+]
+
+[[package]]
+name = "oak-mdl"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "serde",
+]
+
+[[package]]
+name = "oak-mermaid"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-uml",
+ "serde",
+]
+
+[[package]]
+name = "oak-plantuml"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "serde",
+]
+
+[[package]]
+name = "oak-smiles"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
  "serde",
 ]
 
 [[package]]
 name = "oak-testing"
 version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
 dependencies = [
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
  "triomphe",
  "walkdir",
 ]
 
 [[package]]
+name = "oak-uml"
+version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a#d1337eb4d289505c85d988cd8f80b96023f1e63a"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "serde",
+]
+
+[[package]]
 name = "oak-wolfram"
 version = "0.0.12"
+source = "git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c#1e7aea298906719a3668f64df13a545d6233475c"
 dependencies = [
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
  "serde",
 ]
 
@@ -781,6 +746,245 @@ name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+
+[[package]]
+name = "plotter"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-chart",
+ "plotter-data",
+ "plotter-depiction",
+ "plotter-diagram",
+ "plotter-engraving",
+ "plotter-grammar",
+ "plotter-input-abc",
+ "plotter-input-dot",
+ "plotter-input-mdl",
+ "plotter-input-mermaid",
+ "plotter-input-plantuml",
+ "plotter-input-smiles",
+ "plotter-input-tikz",
+ "plotter-layout",
+ "plotter-motion",
+ "plotter-renderer",
+ "plotter-renderer-svg",
+ "plotter-runtime",
+ "plotter-scene",
+ "plotter-types",
+ "plotter-view",
+]
+
+[[package]]
+name = "plotter-chart"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-data"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-types",
+ "serde",
+]
+
+[[package]]
+name = "plotter-depiction"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-diagram"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-engraving"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-grammar"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-data",
+ "plotter-layout",
+ "plotter-types",
+ "plotter-view",
+ "serde",
+]
+
+[[package]]
+name = "plotter-input-abc"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-abc",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "plotter-engraving",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-dot"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-dot",
+ "plotter-diagram",
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-mdl"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-mdl",
+ "plotter-depiction",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-mermaid"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-mermaid",
+ "oak-uml",
+ "plotter-diagram",
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-plantuml"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-plantuml",
+ "plotter-diagram",
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-smiles"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oaks.git?rev=d1337eb4d289505c85d988cd8f80b96023f1e63a)",
+ "oak-smiles",
+ "plotter-depiction",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-input-tikz"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-diagram",
+ "plotter-scene",
+]
+
+[[package]]
+name = "plotter-layout"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-collection",
+ "plotter-data",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-motion"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-renderer"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-types",
+ "plotter-view",
+]
+
+[[package]]
+name = "plotter-renderer-svg"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-renderer",
+ "plotter-types",
+ "plotter-view",
+]
+
+[[package]]
+name = "plotter-runtime"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-scene",
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-scene"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-types",
+]
+
+[[package]]
+name = "plotter-types"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-harness",
+ "boost-math",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "plotter-view"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "plotter-types",
+ "serde",
+]
 
 [[package]]
 name = "ppv-lite86"
@@ -943,6 +1147,101 @@ dependencies = [
 ]
 
 [[package]]
+name = "science"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-cas",
+ "science-ir",
+ "science-numeric",
+ "science-rewrite",
+ "science-types",
+]
+
+[[package]]
+name = "science-cas"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-gc",
+ "science-graph",
+ "science-ir",
+ "science-ndarray",
+ "science-numeric",
+ "science-rewrite",
+ "science-types",
+ "science-vm",
+]
+
+[[package]]
+name = "science-gc"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-types",
+]
+
+[[package]]
+name = "science-graph"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-gc",
+ "science-ndarray",
+]
+
+[[package]]
+name = "science-ir"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-numeric",
+ "science-types",
+]
+
+[[package]]
+name = "science-ndarray"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-gc",
+]
+
+[[package]]
+name = "science-numeric"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "boost-math",
+ "science-gc",
+ "science-types",
+]
+
+[[package]]
+name = "science-rewrite"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-ir",
+ "science-numeric",
+ "science-types",
+]
+
+[[package]]
+name = "science-types"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+
+[[package]]
+name = "science-vm"
+version = "0.1.0"
+source = "git+https://github.com/oovm/rust-boost.git?rev=8fcae98ab600029ec55991fd4aa03b3cfd30a063#8fcae98ab600029ec55991fd4aa03b3cfd30a063"
+dependencies = [
+ "science-gc",
+ "science-types",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -990,14 +1289,14 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.6",
+ "syn 3.0.10",
 ]
 
 [[package]]
 name = "serde_json"
-version = "1.0.151"
+version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
+checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
  "itoa",
  "memchr",
@@ -1059,27 +1358,27 @@ dependencies = [
 name = "sxo-adapter-apollo"
 version = "0.0.10"
 dependencies = [
- "apollo",
- "athena",
+ "plotter",
+ "science",
 ]
 
 [[package]]
 name = "sxo-dialect-maple"
 version = "0.0.10"
 dependencies = [
- "athena",
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
  "oak-maple",
+ "science",
 ]
 
 [[package]]
 name = "sxo-dialect-mathematica"
 version = "0.0.10"
 dependencies = [
- "athena",
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
  "oak-testing",
  "oak-wolfram",
+ "science",
  "serde_json",
  "sxo-adapter-apollo",
  "sxo-dialect-matrix-literal",
@@ -1090,10 +1389,10 @@ dependencies = [
 name = "sxo-dialect-matlab"
 version = "0.0.10"
 dependencies = [
- "athena",
- "oak-core",
+ "oak-core 0.0.12 (git+https://github.com/yggdrasil-language/oak.rs.git?rev=1e7aea298906719a3668f64df13a545d6233475c)",
  "oak-matlab",
  "oak-testing",
+ "science",
  "sxo-adapter-apollo",
  "sxo-dialect-matrix-literal",
  "sxo-types",
@@ -1103,7 +1402,7 @@ dependencies = [
 name = "sxo-dialect-matrix-literal"
 version = "0.0.10"
 dependencies = [
- "athena",
+ "science",
 ]
 
 [[package]]
@@ -1117,7 +1416,7 @@ dependencies = [
 name = "sxo-dialect-simple-math"
 version = "0.0.10"
 dependencies = [
- "athena",
+ "science",
  "sxo-types",
 ]
 
@@ -1125,10 +1424,10 @@ dependencies = [
 name = "sxo-lite-wasm"
 version = "0.0.10"
 dependencies = [
- "athena",
  "console_error_panic_hook",
  "getrandom 0.3.4",
  "getrandom 0.4.3",
+ "science",
  "sxo-dialect-maple",
  "sxo-dialect-mathematica",
  "sxo-dialect-matlab",
@@ -1140,7 +1439,6 @@ dependencies = [
 name = "sxo-napi"
 version = "0.0.10"
 dependencies = [
- "athena",
  "bytes",
  "chrono",
  "futures-util",
@@ -1149,6 +1447,7 @@ dependencies = [
  "napi",
  "napi-build",
  "napi-derive",
+ "science",
  "serde",
  "serde_json",
  "sha2",
@@ -1165,7 +1464,7 @@ dependencies = [
 name = "sxo-types"
 version = "0.0.10"
 dependencies = [
- "athena-types",
+ "science-types",
 ]
 
 [[package]]
@@ -1181,9 +1480,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.6"
+version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8593e8e72159ed2257d083c7a454a85cbf854f37a0966d8d483aff8c8a3ebcee"
+checksum = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1235,7 +1534,7 @@ checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.6",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -1356,7 +1655,7 @@ dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 3.0.6",
+ "syn 3.0.10",
  "wasm-bindgen-shared",
 ]
 

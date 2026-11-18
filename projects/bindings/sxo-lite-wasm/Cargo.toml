@@ -17,7 +17,7 @@ name = "sxo_lite"
 workspace = true
 
 [dependencies]
-athena = { workspace = true }
+science = { workspace = true }
 sxo-types = { workspace = true }
 sxo-dialect-mathematica = { workspace = true }
 sxo-dialect-matlab = { workspace = true }

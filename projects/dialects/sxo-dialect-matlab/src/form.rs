@@ -3,7 +3,7 @@
 //! Living `14`: `typed AST → MatlabForm → Athena request`. Term arena materialization is a
 //! transitional bridge in [`crate::lower`], not the long-term Form identity.
 
-use athena::{
+use science::{
     numeric::{Number, to_f64_lossy},
     runtime::values::numeric_clone::clone_number,
 };

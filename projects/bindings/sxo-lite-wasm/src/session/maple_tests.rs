@@ -68,7 +68,7 @@ fn maple_host_render_is_read_only_and_missing_results_are_errors() {
     assert_eq!(session.render_maple_result(outcome.result_id).unwrap(), "1/3");
     assert_eq!(session.math_session.borrow().arena.len(), terms);
     assert_eq!(format!("{:?}", session.math_session.borrow().results.get(outcome.result_id).unwrap()), before);
-    let unknown = session.render_maple_result(athena::types::ResultId(u32::MAX)).unwrap_err();
+    let unknown = session.render_maple_result(science::types::ResultId(u32::MAX)).unwrap_err();
     assert_eq!(unknown.athena_code, None);
     let fresh = Session::new();
     assert!(fresh.render_maple_result(outcome.result_id).is_err());
@@ -80,15 +80,15 @@ fn maple_host_nested_lists_do_not_materialize_matrices() {
     let form = MapleForm::List(vec![MapleForm::List(vec![MapleForm::Integer("1".to_owned())]), MapleForm::List(vec![])]);
     let term = session.lower_maple_form(&form).unwrap();
     let ms = session.math_session.borrow();
-    let Some(athena::ir::TermNode::Collection { kind, elements }) = ms.arena.get(term)
+    let Some(science::ir::TermNode::Collection { kind, elements }) = ms.arena.get(term)
     else {
         panic!("explicit list")
     };
-    assert_eq!(*kind, athena::types::CollectionKind::OrderedCollection);
+    assert_eq!(*kind, science::types::CollectionKind::OrderedCollection);
     for child in elements {
         assert!(matches!(
             ms.arena.get(*child),
-            Some(athena::ir::TermNode::Collection { kind: athena::types::CollectionKind::OrderedCollection, .. })
+            Some(science::ir::TermNode::Collection { kind: science::types::CollectionKind::OrderedCollection, .. })
         ));
     }
 }

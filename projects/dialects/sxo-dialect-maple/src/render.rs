@@ -1,6 +1,6 @@
 //! Read-only Maple display of Athena result projections.
 
-use athena::{
+use science::{
     Session,
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode},
     numeric::number_to_wire,

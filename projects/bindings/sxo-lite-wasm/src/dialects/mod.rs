@@ -7,7 +7,7 @@ use sxo_types::{Dialect, SxoError};
 use wasm_bindgen::prelude::*;
 
 use crate::session::Session;
-use athena::types::TermId;
+use science::types::TermId;
 
 /// Dialect Form retained on parse objects (Living 17 / R-2.11).
 #[derive(Debug, Clone)]

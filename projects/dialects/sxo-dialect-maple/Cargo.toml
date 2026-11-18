@@ -6,13 +6,13 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Independent Maple surface forms and neutral Athena lowering"
+description = "Independent Maple surface forms and neutral science lowering"
 publish = false
 
 [lints]
 workspace = true
 
 [dependencies]
-athena.workspace = true
+science.workspace = true
 oak-core.workspace = true
 oak-maple.workspace = true

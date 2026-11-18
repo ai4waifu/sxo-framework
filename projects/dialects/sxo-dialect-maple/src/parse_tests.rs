@@ -3,7 +3,7 @@ use crate::{
     MapleError, MapleForm, MapleOperator, MapleProgram, MapleSpan, lower_program_request, lower_request,
     render_maple_result_projection,
 };
-use athena::{AthenaEngine, Session, numeric::number_to_wire, runtime::values::arena::number_from_id};
+use science::{CasEngine, Session, numeric::number_to_wire, runtime::values::arena::number_from_id};
 use oak_maple::ast::{MapleExpression, MapleExpressionKind, MapleOperator as OakOperator, MapleRoot, MapleSpan as OakSpan};
 
 fn ast_integer() -> MapleExpression {
@@ -101,7 +101,7 @@ fn converted_program_is_owned_and_does_not_normalize_integer_spelling() {
 fn execute_program(program: &MapleProgram) -> String {
     let mut session = Session::new();
     let request = lower_program_request(&mut session, program).expect("program lowering");
-    let result_id = AthenaEngine::new().execute_request(&mut session, request).expect("execution");
+    let result_id = CasEngine::new().execute_request(&mut session, request).expect("execution");
     let result = session.results.get(result_id).expect("owned result");
     assert_eq!(result.status.name(), "Exact");
     assert_eq!(result.coverage.name(), "Full");
@@ -232,14 +232,14 @@ fn empty_root_and_multiple_expressions_are_not_silently_collapsed() {
 fn parsed_nested_lists_remain_owned_lists() {
     let form = parse_maple_form("[[1,2],[3,4]]").unwrap();
     let mut session = Session::new();
-    let athena::api::AthenaRequest::Term(term) = lower_request(&mut session, &form).unwrap()
+    let science::api::CasRequest::Term(term) = lower_request(&mut session, &form).unwrap()
     else {
         panic!("term")
     };
-    let Some(athena::ir::TermNode::Collection { kind, elements }) = session.arena.get(term)
+    let Some(science::ir::TermNode::Collection { kind, elements }) = session.arena.get(term)
     else {
         panic!("list")
     };
-    assert_eq!(*kind, athena::types::CollectionKind::OrderedCollection);
+    assert_eq!(*kind, science::types::CollectionKind::OrderedCollection);
     assert_eq!(elements.len(), 2);
 }

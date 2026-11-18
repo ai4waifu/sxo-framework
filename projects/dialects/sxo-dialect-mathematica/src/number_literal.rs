@@ -1,6 +1,6 @@
 //! Frontend number literal parse/render (SXO-owned; Athena holds [`Number`] only).
 
-use athena::{
+use science::{
     numeric::{Number, Real, number_from_wire},
     types::WireNumber,
 };

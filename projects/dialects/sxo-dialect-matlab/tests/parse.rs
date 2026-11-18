@@ -2,9 +2,9 @@
 
 use std::cell::RefCell;
 
-use athena::{
-    AthenaEngine, Session,
-    api::{AthenaRequest, ControlPlan, SessionCommand},
+use science::{
+    CasEngine, Session,
+    api::{CasRequest, ControlPlan, SessionCommand},
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode},
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::{BindingEvaluationPolicy, BindingKind, TermId},
@@ -35,7 +35,7 @@ impl H {
         let form = parse_matlab_form(input).unwrap();
         let mut s = self.s.borrow_mut();
         let request = lower_request(&mut s, &form);
-        let engine = AthenaEngine::new();
+        let engine = CasEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => {
                 let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval: {input}"));
@@ -54,7 +54,7 @@ impl H {
     fn eval_form(&self, form: &MatlabForm) -> Tid {
         let mut s = self.s.borrow_mut();
         let request = lower_request(&mut s, form);
-        let engine = AthenaEngine::new();
+        let engine = CasEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => {
                 let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval_form"));
@@ -261,8 +261,8 @@ fn set_2d_matrix_binds_domain_object() {
     let form = parse_matlab_form("A = [1, 2; 3, 4]").unwrap();
     let mut s = h.s.borrow_mut();
     let request = lower_request(&mut s, &form);
-    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
-    AthenaEngine::new().execute_request(&mut s, request).expect("define matrix");
+    assert!(matches!(request, science::api::CasRequest::Command(science::api::SessionCommand::DefineMatrix { .. })));
+    CasEngine::new().execute_request(&mut s, request).expect("define matrix");
     let symbol = s.arena.symbols_mut().intern("A");
     assert!(s.matrix_binding(symbol).is_some());
     assert!(s.defs.binding(symbol).is_none());
@@ -490,15 +490,15 @@ fn times_symbols_after_2d_set() {
 
 #[test]
 fn parse_mrdivide_2x2_lowers_to_right_solve_goal() {
-    use athena::api::{AthenaRequest, DomainGoal};
+    use science::api::{CasRequest, DomainGoal};
 
     let form = parse_matlab_form("[1, 2] / [1, 2; 3, 4]").unwrap();
-    let mut session = athena::runtime::Session::new();
+    let mut session = science::runtime::Session::new();
     let request = lower_request(&mut session, &form);
     assert!(matches!(
         request,
-        AthenaRequest::Goal(DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
-            athena::domains::linear_algebra::LinearAlgebraRequest::RightSolve { .. }
+        CasRequest::Goal(DomainGoal::Dispatch(science::domains::DomainRequest::LinearAlgebra(
+            science::domains::linear_algebra::LinearAlgebraRequest::RightSolve { .. }
         )))
     ));
 }
@@ -509,8 +509,8 @@ fn set_row_vector_binds_matrix_own() {
     let form = parse_matlab_form("A = [10, 20]").unwrap();
     let mut s = h.s.borrow_mut();
     let request = lower_request(&mut s, &form);
-    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
-    AthenaEngine::new().execute_request(&mut s, request).expect("define row");
+    assert!(matches!(request, science::api::CasRequest::Command(science::api::SessionCommand::DefineMatrix { .. })));
+    CasEngine::new().execute_request(&mut s, request).expect("define row");
     let symbol = s.arena.symbols_mut().intern("A");
     assert!(s.matrix_binding(symbol).is_some());
     drop(s);
@@ -650,8 +650,8 @@ fn set_integer_range_binds_matrix_own() {
     let form = parse_matlab_form("B = 1:4").unwrap();
     let mut s = h.s.borrow_mut();
     let request = lower_request(&mut s, &form);
-    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
-    AthenaEngine::new().execute_request(&mut s, request).expect("define range");
+    assert!(matches!(request, science::api::CasRequest::Command(science::api::SessionCommand::DefineMatrix { .. })));
+    CasEngine::new().execute_request(&mut s, request).expect("define range");
     let symbol = s.arena.symbols_mut().intern("B");
     assert!(s.matrix_binding(symbol).is_some());
     drop(s);
@@ -792,8 +792,8 @@ fn parse_mldivide_2x2_lowers_to_solve_goal() {
     let request = lower_request(&mut s, &form);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
-            athena::domains::linear_algebra::LinearAlgebraRequest::Solve { .. }
+        science::api::CasRequest::Goal(science::api::DomainGoal::Dispatch(science::domains::DomainRequest::LinearAlgebra(
+            science::domains::linear_algebra::LinearAlgebraRequest::Solve { .. }
         )))
     ));
     drop(s);
@@ -1342,24 +1342,24 @@ fn athena_direct_extract_symbol_index_anchor() {
         Default::default(),
     );
     let term = {
-        let result_id = AthenaEngine::new()
+        let result_id = CasEngine::new()
             .execute_request(
                 &mut s,
-                AthenaRequest::Control(ControlPlan::Sequence {
+                CasRequest::Control(ControlPlan::Sequence {
                     steps: vec![
-                        AthenaRequest::Command(SessionCommand::Define {
+                        CasRequest::Command(SessionCommand::Define {
                             symbol: nums,
                             value: list,
                             kind: BindingKind::Session,
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         }),
-                        AthenaRequest::Command(SessionCommand::Define {
+                        CasRequest::Command(SessionCommand::Define {
                             symbol: i,
                             value: one,
                             kind: BindingKind::Session,
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         }),
-                        AthenaRequest::Term(extract),
+                        CasRequest::Term(extract),
                     ],
                 }),
             )
@@ -1371,8 +1371,8 @@ fn athena_direct_extract_symbol_index_anchor() {
 
 #[test]
 fn athena_direct_subtract_symbol_index_anchor() {
-    use athena::{
-        api::request::{AthenaRequest, ControlPlan, SessionCommand},
+    use science::{
+        api::request::{CasRequest, ControlPlan, SessionCommand},
         ir::{ApplicationHead, TermNode},
     };
 
@@ -1387,18 +1387,18 @@ fn athena_direct_subtract_symbol_index_anchor() {
     let subtract =
         s.builder().application(ApplicationHead::Semantic(SemanticOperator::Subtract), vec![i_term, one], Default::default());
     let term = {
-        let result_id = AthenaEngine::new()
+        let result_id = CasEngine::new()
             .execute_request(
                 &mut s,
-                AthenaRequest::Control(ControlPlan::Sequence {
+                CasRequest::Control(ControlPlan::Sequence {
                     steps: vec![
-                        AthenaRequest::Command(SessionCommand::Define {
+                        CasRequest::Command(SessionCommand::Define {
                             symbol: i,
                             value: one,
                             kind: BindingKind::Session,
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         }),
-                        AthenaRequest::Term(subtract),
+                        CasRequest::Term(subtract),
                     ],
                 }),
             )
@@ -1413,24 +1413,24 @@ fn athena_direct_subtract_symbol_index_anchor() {
         other => panic!("expected out symbol, got {other:?}"),
     };
     let term = {
-        let result_id = AthenaEngine::new()
+        let result_id = CasEngine::new()
             .execute_request(
                 &mut s,
-                AthenaRequest::Control(ControlPlan::Sequence {
+                CasRequest::Control(ControlPlan::Sequence {
                     steps: vec![
-                        AthenaRequest::Command(SessionCommand::Define {
+                        CasRequest::Command(SessionCommand::Define {
                             symbol: i,
                             value: one,
                             kind: BindingKind::Session,
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         }),
-                        AthenaRequest::Command(SessionCommand::Define {
+                        CasRequest::Command(SessionCommand::Define {
                             symbol: out,
                             value: subtract,
                             kind: BindingKind::Session,
                             evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                         }),
-                        AthenaRequest::Term(out_term),
+                        CasRequest::Term(out_term),
                     ],
                 }),
             )
@@ -1452,10 +1452,10 @@ fn parse_part_vs_application_forms() {
 fn set_rhs_part_symbol_index_lowers_to_extract() {
     let h = H::new();
     h.with_mut(|s| {
-        use athena::ir::{ApplicationHead, TermNode};
+        use science::ir::{ApplicationHead, TermNode};
         let form = parse_matlab_form("out = nums(i)").unwrap();
         let req = lower_request(s, &form);
-        let AthenaRequest::Command(SessionCommand::Define { value, .. }) = req
+        let CasRequest::Command(SessionCommand::Define { value, .. }) = req
         else {
             panic!("expected Define, got {req:?}");
         };
@@ -1539,7 +1539,7 @@ fn lowered_script_scalar_subtract_symbol_index_anchor() {
     install_session_conventions(&mut s);
     let form = parse_matlab_form("i = 1; out = i - 1; out").unwrap();
     let request = lower_request(&mut s, &form);
-    let result_id = AthenaEngine::new().execute_request(&mut s, request).expect("lowered script subtract");
+    let result_id = CasEngine::new().execute_request(&mut s, request).expect("lowered script subtract");
     let term = s.results.get(result_id).unwrap().symbolic_term.unwrap();
     assert_eq!(render_matlab(&s, term), "0");
 }

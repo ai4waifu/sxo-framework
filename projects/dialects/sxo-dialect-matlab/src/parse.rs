@@ -11,7 +11,7 @@ use oak_matlab::{
     lexer::token_type::MatlabTokenType,
 };
 
-use athena::{Session, types::TermId};
+use science::{Session, types::TermId};
 use sxo_types::SxoError;
 
 use crate::{

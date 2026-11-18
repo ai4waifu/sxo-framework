@@ -1,8 +1,8 @@
 //! Lower Mathematica Form ([`WolframForm`]) into Athena session terms / requests (Living `14`).
 
-use athena::{
+use science::{
     Session,
-    api::{AthenaRequest, ControlPlan, DomainGoal, SessionCommand},
+    api::{CasRequest, ControlPlan, DomainGoal, SessionCommand},
     domains::{
         DomainRequest,
         calculus::{CalculusRequest, DerivativeOrder, LimitApproach, LimitDirection, TransformKind},
@@ -261,7 +261,7 @@ fn lower_inequality_call(session: &mut Session, args: &[WolframForm]) -> TermId 
 /// Bare `I` and part/domain ops need a machine-complex atom.
 fn push_imaginary_unit(session: &mut Session) -> TermId {
     let unit = Complex::try_new(Real::machine(0.0), Real::machine(1.0), BranchPolicy::Principal).expect("imaginary unit");
-    session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), athena::types::SourceSpan::default())
+    session.arena.push(TermNode::Atom(Atom::Number(Number::complex(unit))), science::types::SourceSpan::default())
 }
 
 /// Symbol `I` inside exact `re ± im I` semantic terms.
@@ -270,7 +270,7 @@ fn push_imaginary_unit_symbol(session: &mut Session) -> TermId {
 }
 
 fn push_rational_term(session: &mut Session, q: &Rational) -> TermId {
-    session.arena.push(TermNode::Atom(Atom::Number(Number::rational(clone_rational(q)))), athena::types::SourceSpan::default())
+    session.arena.push(TermNode::Atom(Atom::Number(Number::rational(clone_rational(q)))), science::types::SourceSpan::default())
 }
 
 /// Exact Gaussian scalar Form → `re ± im I` semantic terms (not machine-complex atoms).
@@ -313,9 +313,9 @@ fn push_exact_complex_from_form(session: &mut Session, w: &WolframForm) -> Optio
 }
 
 fn push_exact_rational_term(session: &mut Session, num: i64, den: i64) -> TermId {
-    use athena::numeric::Number;
+    use science::numeric::Number;
     let rat = Number::rational_i64(num, den).expect("exact rational literal");
-    session.arena.push(TermNode::Atom(Atom::Number(clone_number(&rat))), athena::types::SourceSpan::default())
+    session.arena.push(TermNode::Atom(Atom::Number(clone_number(&rat))), science::types::SourceSpan::default())
 }
 
 /// `CubeRoot[x]` → `Power[x, 1/3]` on tested exact forms.
@@ -589,11 +589,11 @@ pub fn lower_wexpr(session: &mut Session, w: &WolframForm) -> TermId {
     match w {
         WolframForm::Atom(a) => match a {
             WolframAtom::Number(n) => {
-                let span = athena::types::SourceSpan::default();
+                let span = science::types::SourceSpan::default();
                 session.arena.push(TermNode::Atom(Atom::Number(clone_number(n))), span)
             }
             WolframAtom::String(s) => {
-                let span = athena::types::SourceSpan::default();
+                let span = science::types::SourceSpan::default();
                 session.arena.push(TermNode::Atom(Atom::String(s.clone())), span)
             }
             WolframAtom::Symbol(s) if s == "True" => push_bool(session, true),
@@ -706,12 +706,12 @@ fn lower_operator_value(session: &mut Session, w: &WolframForm) -> TermId {
     }
 }
 
-/// Dialect Form → neutral [`AthenaRequest`].
+/// Dialect Form → neutral [`CasRequest`].
 ///
 /// Maps Mathematica surface assignment / iteration into Session / Control contracts,
-/// and calculus surface (`D` / `Integrate` / `Limit`) into [`AthenaRequest::Goal`].
-/// Other forms lower to [`AthenaRequest::Term`].
-pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
+/// and calculus surface (`D` / `Integrate` / `Limit`) into [`CasRequest::Goal`].
+/// Other forms lower to [`CasRequest::Term`].
+pub fn lower_request(session: &mut Session, w: &WolframForm) -> CasRequest {
     if let WolframForm::Call { head, args } = w {
         if let WolframForm::Atom(WolframAtom::Symbol(name)) = head.as_ref() {
             match (name.as_str(), args.as_slice()) {
@@ -865,16 +865,16 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let Some(unknown_syms) = unknown_syms {
                         let eqs = term_list(session, equations).unwrap_or_else(|| vec![lower_wexpr(session, equations)]);
                         if eqs.len() == 1 && unknown_syms.len() == 1 {
-                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
-                                athena::domains::solve::SolveRequest::UnivariateEquation {
+                            return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
+                                science::domains::solve::SolveRequest::UnivariateEquation {
                                     equation: eqs[0],
                                     unknown: unknown_syms[0],
                                 },
                             )));
                         }
                         if !eqs.is_empty() && !unknown_syms.is_empty() {
-                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
-                                athena::domains::solve::SolveRequest::LinearEquations {
+                            return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Solve(
+                                science::domains::solve::SolveRequest::LinearEquations {
                                     equations: eqs,
                                     unknowns: unknown_syms,
                                 },
@@ -886,7 +886,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         if let Some(mat) = matrix_binding_from_form(rhs) {
                             let matrix = session.matrix_objects.intern(mat);
-                            return AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
+                            return CasRequest::Command(SessionCommand::DefineMatrix { symbol, matrix });
                         }
                         return lower_define_initializer(session, symbol, rhs, BindingKind::Session);
                     }
@@ -898,7 +898,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             if let Some(axes) = part_args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
                                 let target = lower_wexpr(session, &part_args[0]);
                                 let value = lower_wexpr(session, rhs);
-                                return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                                return CasRequest::Control(ControlPlan::StoreIndex { target, axes, value });
                             }
                         }
                     }
@@ -912,7 +912,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         {
                             (&args[0], &args[1])
                         }
-                        _ => return AthenaRequest::Control(ControlPlan::Reject),
+                        _ => return CasRequest::Control(ControlPlan::Reject),
                     };
                     let axes = match axes_form {
                         WolframForm::List(items) => items.iter().map(index_spec_of).collect::<Option<Vec<_>>>(),
@@ -925,9 +925,9 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         Some(axes) => {
                             let target = lower_wexpr(session, target_form);
                             let value = lower_wexpr(session, value_form);
-                            return AthenaRequest::Control(ControlPlan::StoreIndex { target, axes, value });
+                            return CasRequest::Control(ControlPlan::StoreIndex { target, axes, value });
                         }
-                        None => return AthenaRequest::Control(ControlPlan::Reject),
+                        None => return CasRequest::Control(ControlPlan::Reject),
                     }
                 }
                 ("Times", [a_form, b_form]) => {
@@ -936,8 +936,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Hadamard { lhs, rhs },
                         )));
                     }
                 }
@@ -946,8 +946,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::ElementwiseDivide { lhs, rhs },
                         )));
                     }
                 }
@@ -956,8 +956,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                         )));
                     }
                     if let Some(lhs_mat) = matrix_from_form(a_form) {
@@ -965,8 +965,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             if let Some(rhs_mat) = broadcast_scalar_exponent_matrix(&lhs_mat, &exp) {
                                 let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs_mat));
                                 let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs_mat));
-                                return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                                    athena::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
+                                return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                    science::domains::linear_algebra::LinearAlgebraRequest::ElementwisePower { lhs, rhs },
                                 )));
                             }
                         }
@@ -977,7 +977,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     let mut ok = true;
                     for a in args {
                         match symbol_of(session, a) {
-                            Some(symbol) => steps.push(AthenaRequest::Command(SessionCommand::ClearDefinition { symbol })),
+                            Some(symbol) => steps.push(CasRequest::Command(SessionCommand::ClearDefinition { symbol })),
                             None => {
                                 ok = false;
                                 break;
@@ -989,7 +989,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                             steps.remove(0)
                         }
                         else {
-                            AthenaRequest::Control(ControlPlan::Sequence { steps })
+                            CasRequest::Control(ControlPlan::Sequence { steps })
                         };
                     }
                 }
@@ -997,7 +997,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if matches!(lhs, WolframForm::Atom(WolframAtom::Symbol(_))) {
                         if let Some(symbol) = symbol_of(session, lhs) {
                             let value = lower_wexpr(session, rhs);
-                            return AthenaRequest::Command(SessionCommand::Define {
+                            return CasRequest::Command(SessionCommand::Define {
                                 symbol,
                                 value,
                                 kind: BindingKind::Session,
@@ -1027,7 +1027,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                                 };
                                 let value = lower_request(session, rhs);
                                 session.defs.register_extension_request_rule(f_op, pattern, value);
-                                return AthenaRequest::Term(push_null(session));
+                                return CasRequest::Term(push_null(session));
                             }
                         }
                     }
@@ -1036,26 +1036,26 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     let body_term = lower_wexpr(session, body);
                     let binder = extract_table_binder(session, iter).unwrap_or(body_term);
                     let range = normalize_table_range(session, iter);
-                    return AthenaRequest::Control(ControlPlan::Iterate {
+                    return CasRequest::Control(ControlPlan::Iterate {
                         binder,
                         range,
-                        body: Box::new(AthenaRequest::Term(body_term)),
+                        body: Box::new(CasRequest::Term(body_term)),
                         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
                     });
                 }
                 ("CompoundExpression", args) => {
-                    let steps: Vec<AthenaRequest> = args.iter().map(|a| lower_request(session, a)).collect();
-                    return AthenaRequest::Control(ControlPlan::Sequence { steps });
+                    let steps: Vec<CasRequest> = args.iter().map(|a| lower_request(session, a)).collect();
+                    return CasRequest::Control(ControlPlan::Sequence { steps });
                 }
                 ("If", [cond, then_branch]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
                         then_branch: Box::new(lower_request(session, then_branch)),
                         else_branch: None,
                     });
                 }
                 ("If", [cond, then_branch, else_branch]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
                         then_branch: Box::new(lower_request(session, then_branch)),
                         else_branch: Some(Box::new(lower_request(session, else_branch))),
@@ -1074,10 +1074,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if i < args.len() {
                         otherwise = Some(Box::new(lower_request(session, &args[i])));
                     }
-                    return AthenaRequest::Control(ControlPlan::Cond { arms, otherwise });
+                    return CasRequest::Control(ControlPlan::Cond { arms, otherwise });
                 }
                 ("While", [cond, body]) => {
-                    return AthenaRequest::Control(ControlPlan::LoopWhile {
+                    return CasRequest::Control(ControlPlan::LoopWhile {
                         condition: lower_wexpr(session, cond),
                         body: Box::new(lower_request(session, body)),
                     });
@@ -1093,31 +1093,31 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Assert", [cond]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
-                        then_branch: Box::new(AthenaRequest::Term(push_null(session))),
-                        else_branch: Some(Box::new(AthenaRequest::Control(ControlPlan::Reject))),
+                        then_branch: Box::new(CasRequest::Term(push_null(session))),
+                        else_branch: Some(Box::new(CasRequest::Control(ControlPlan::Reject))),
                     });
                 }
                 ("TrueQ", [cond]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
-                        then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
-                        else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+                        then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
+                        else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
                     });
                 }
                 ("Boole", [cond]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
-                        then_branch: Box::new(AthenaRequest::Term(push_int(session, 1))),
-                        else_branch: Some(Box::new(AthenaRequest::Term(push_int(session, 0)))),
+                        then_branch: Box::new(CasRequest::Term(push_int(session, 1))),
+                        else_branch: Some(Box::new(CasRequest::Term(push_int(session, 0)))),
                     });
                 }
                 ("Implies", [antecedent, consequent]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, antecedent),
                         then_branch: Box::new(lower_request(session, consequent)),
-                        else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, true)))),
+                        else_branch: Some(Box::new(CasRequest::Term(push_bool(session, true)))),
                     });
                 }
                 ("And", args) => {
@@ -1128,17 +1128,17 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Xor", [left, right]) => {
                     let right_term = lower_wexpr(session, right);
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, left),
-                        then_branch: Box::new(AthenaRequest::Control(ControlPlan::Branch {
+                        then_branch: Box::new(CasRequest::Control(ControlPlan::Branch {
                             condition: right_term,
-                            then_branch: Box::new(AthenaRequest::Term(push_bool(session, false))),
-                            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, true)))),
+                            then_branch: Box::new(CasRequest::Term(push_bool(session, false))),
+                            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, true)))),
                         })),
-                        else_branch: Some(Box::new(AthenaRequest::Control(ControlPlan::Branch {
+                        else_branch: Some(Box::new(CasRequest::Control(ControlPlan::Branch {
                             condition: right_term,
-                            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
-                            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+                            then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
+                            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
                         }))),
                     });
                 }
@@ -1146,13 +1146,13 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let Some((variable, iterator)) = do_loop_parts(session, iter) {
                         let body_req = lower_request(session, body);
                         if is_static_counted_iterator(session, iterator) {
-                            let counted = AthenaRequest::Control(ControlPlan::CountedLoop {
+                            let counted = CasRequest::Control(ControlPlan::CountedLoop {
                                 variable,
                                 iterator,
                                 body: Box::new(body_req),
                             });
-                            return AthenaRequest::Control(ControlPlan::Sequence {
-                                steps: vec![counted, AthenaRequest::Term(push_null(session))],
+                            return CasRequest::Control(ControlPlan::Sequence {
+                                steps: vec![counted, CasRequest::Term(push_null(session))],
                             });
                         }
                         if let Some(dynamic) = lower_dynamic_do(session, variable, iterator, body_req) {
@@ -1161,10 +1161,10 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     }
                 }
                 ("Return", [value]) => {
-                    return AthenaRequest::Control(ControlPlan::EarlyReturn { value: lower_wexpr(session, value) });
+                    return CasRequest::Control(ControlPlan::EarlyReturn { value: lower_wexpr(session, value) });
                 }
                 ("Return", []) => {
-                    return AthenaRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
+                    return CasRequest::Control(ControlPlan::EarlyReturn { value: push_null(session) });
                 }
                 ("Module", [bindings, body]) => {
                     return lower_module(session, bindings, body);
@@ -1177,7 +1177,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("Part", args) if args.len() >= 2 => {
                     if let Some(axes) = args[1..].iter().map(index_spec_of).collect::<Option<Vec<_>>>() {
-                        return AthenaRequest::Control(ControlPlan::Index { target: lower_wexpr(session, &args[0]), axes });
+                        return CasRequest::Control(ControlPlan::Index { target: lower_wexpr(session, &args[0]), axes });
                     }
                 }
                 ("Transpose", [arg]) => {
@@ -1187,14 +1187,14 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         let shape = mat.shape();
                         if shape.rows >= 1 && shape.cols >= 1 {
                             let matrix = session.matrix_objects.intern(mat);
-                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                                athena::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
+                            return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                science::domains::linear_algebra::LinearAlgebraRequest::Transpose { matrix: matrix.into() },
                             )));
                         }
                     }
                     if let Some(symbol) = symbol_of(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Transpose {
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Transpose {
                                 matrix: MatrixOperand::binding(symbol),
                             },
                         )));
@@ -1205,12 +1205,12 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(matrix), Some((rows, cols))) =
                         (matrix_operand_from_form(session, mat_form), array_reshape_dims(dims_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Reshape {
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Reshape {
                                 matrix,
                                 rows,
                                 cols,
-                                order: athena::domains::linear_algebra::StorageOrder::RowMajor,
+                                order: science::domains::linear_algebra::StorageOrder::RowMajor,
                             },
                         )));
                     }
@@ -1223,7 +1223,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         changed = true;
                     }
                     if changed {
-                        return AthenaRequest::Term(lower_wexpr(session, &current));
+                        return CasRequest::Term(lower_wexpr(session, &current));
                     }
                 }
                 ("ConjugateTranspose", [arg]) => {
@@ -1231,16 +1231,16 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                         let shape = mat.shape();
                         if shape.rows >= 1 && shape.cols >= 1 {
                             let matrix = session.matrix_objects.intern(mat);
-                            return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                                athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                            return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                                science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
                                     matrix: matrix.into(),
                                 },
                             )));
                         }
                     }
                     if let Some(symbol) = symbol_of(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::ConjugateTranspose {
                                 matrix: MatrixOperand::binding(symbol),
                             },
                         )));
@@ -1248,8 +1248,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("SymmetricMatrixQ", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::IsSymmetric { matrix },
                         )));
                     }
                 }
@@ -1257,43 +1257,43 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(a), Some(b)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Solve { a, b },
                         )));
                     }
                 }
                 ("MatrixRank", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Rank { matrix },
                         )));
                     }
                 }
                 ("RowReduce", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Rref { matrix },
                         )));
                     }
                 }
                 ("Inverse", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Inverse { matrix },
                         )));
                     }
                 }
                 ("Det" | "Determinant", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Det { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Det { matrix },
                         )));
                     }
                 }
                 ("Tr", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Trace { matrix },
                         )));
                     }
                 }
@@ -1302,15 +1302,15 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let Some((a_mat, b_mat)) = dot_matrices_from_forms(a_form, b_form) {
                         let lhs = MatrixOperand::object(session.matrix_objects.intern(a_mat));
                         let rhs = MatrixOperand::object(session.matrix_objects.intern(b_mat));
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                         )));
                     }
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Dot { lhs, rhs },
                         )));
                     }
                 }
@@ -1318,57 +1318,57 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Cross { lhs, rhs },
                         )));
                     }
                 }
                 ("NullSpace", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: false },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::NullSpace { matrix, column_basis: false },
                         )));
                     }
                 }
                 ("Eigenvalues", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: false },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvalues { matrix, column_vector: false },
                         )));
                     }
                 }
                 ("Eigenvectors", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors { matrix, column_basis: false },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Eigenvectors { matrix, column_basis: false },
                         )));
                     }
                 }
                 ("MatrixExp", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::MatrixExp { matrix },
                         )));
                     }
                 }
                 ("Norm", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Norm { matrix },
                         )));
                     }
                 }
                 ("LowerTriangularize", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Tril { matrix },
                         )));
                     }
                 }
                 ("UpperTriangularize", [arg]) => {
                     if let Some(matrix) = matrix_operand_from_form(session, arg) {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Triu { matrix },
                         )));
                     }
                 }
@@ -1377,8 +1377,8 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let Some((lhs, rhs)) = tensor_product_matrices_from_forms(a_form, b_form) {
                         let lhs = MatrixOperand::object(session.matrix_objects.intern(lhs));
                         let rhs = MatrixOperand::object(session.matrix_objects.intern(rhs));
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::MatMul { lhs, rhs },
                         )));
                     }
                 }
@@ -1386,19 +1386,19 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                     if let (Some(lhs), Some(rhs)) =
                         (matrix_operand_from_form(session, a_form), matrix_operand_from_form(session, b_form))
                     {
-                        return AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
-                            athena::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
+                        return CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::LinearAlgebra(
+                            science::domains::linear_algebra::LinearAlgebraRequest::Kronecker { lhs, rhs },
                         )));
                     }
                 }
                 ("MatchQ", [expr, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
-                        return AthenaRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
+                        return CasRequest::Control(ControlPlan::Match { target: lower_wexpr(session, expr), pattern });
                     }
                 }
                 ("Cases", [source, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
-                        return AthenaRequest::Control(ControlPlan::CollectMatches {
+                        return CasRequest::Control(ControlPlan::CollectMatches {
                             source: lower_wexpr(session, source),
                             pattern,
                         });
@@ -1406,7 +1406,7 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
                 }
                 ("DeleteCases", [source, pat]) => {
                     if let Some(pattern) = wexpr_to_term_pattern(session, pat) {
-                        return AthenaRequest::Control(ControlPlan::CollectRejects {
+                        return CasRequest::Control(ControlPlan::CollectRejects {
                             source: lower_wexpr(session, source),
                             pattern,
                         });
@@ -1416,49 +1416,49 @@ pub fn lower_request(session: &mut Session, w: &WolframForm) -> AthenaRequest {
             }
         }
     }
-    AthenaRequest::Term(lower_wexpr(session, w))
+    CasRequest::Term(lower_wexpr(session, w))
 }
 
 /// `And` as CFG short-circuit: later arms run only when earlier conditions are true.
-fn lower_short_circuit_and(session: &mut Session, args: &[WolframForm]) -> AthenaRequest {
+fn lower_short_circuit_and(session: &mut Session, args: &[WolframForm]) -> CasRequest {
     match args {
-        [] => AthenaRequest::Term(push_bool(session, true)),
+        [] => CasRequest::Term(push_bool(session, true)),
         [only] => lower_request(session, only),
-        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+        [first, rest @ ..] => CasRequest::Control(ControlPlan::Branch {
             condition: lower_wexpr(session, first),
             then_branch: Box::new(lower_short_circuit_and(session, rest)),
-            else_branch: Some(Box::new(AthenaRequest::Term(push_bool(session, false)))),
+            else_branch: Some(Box::new(CasRequest::Term(push_bool(session, false)))),
         }),
     }
 }
 
 /// `Or` as CFG short-circuit: later arms run only when earlier conditions are false.
-fn lower_short_circuit_or(session: &mut Session, args: &[WolframForm]) -> AthenaRequest {
+fn lower_short_circuit_or(session: &mut Session, args: &[WolframForm]) -> CasRequest {
     match args {
-        [] => AthenaRequest::Term(push_bool(session, false)),
+        [] => CasRequest::Term(push_bool(session, false)),
         [only] => lower_request(session, only),
-        [first, rest @ ..] => AthenaRequest::Control(ControlPlan::Branch {
+        [first, rest @ ..] => CasRequest::Control(ControlPlan::Branch {
             condition: lower_wexpr(session, first),
-            then_branch: Box::new(AthenaRequest::Term(push_bool(session, true))),
+            then_branch: Box::new(CasRequest::Term(push_bool(session, true))),
             else_branch: Some(Box::new(lower_short_circuit_or(session, rest))),
         }),
     }
 }
 
 /// Local/session initializer: surface `If` must become CFG branches, not residual `If[…]`.
-fn lower_define_initializer(session: &mut Session, symbol: SymbolId, rhs: &WolframForm, kind: BindingKind) -> AthenaRequest {
+fn lower_define_initializer(session: &mut Session, symbol: SymbolId, rhs: &WolframForm, kind: BindingKind) -> CasRequest {
     if let WolframForm::Call { head, args } = rhs {
         if let WolframForm::Atom(WolframAtom::Symbol(op)) = head.as_ref() {
             match (op.as_str(), args.as_slice()) {
                 ("If", [cond, then_b]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
                         then_branch: Box::new(lower_define_initializer(session, symbol, then_b, kind)),
                         else_branch: None,
                     });
                 }
                 ("If", [cond, then_b, else_b]) => {
-                    return AthenaRequest::Control(ControlPlan::Branch {
+                    return CasRequest::Control(ControlPlan::Branch {
                         condition: lower_wexpr(session, cond),
                         then_branch: Box::new(lower_define_initializer(session, symbol, then_b, kind)),
                         else_branch: Some(Box::new(lower_define_initializer(session, symbol, else_b, kind))),
@@ -1468,7 +1468,7 @@ fn lower_define_initializer(session: &mut Session, symbol: SymbolId, rhs: &Wolfr
             }
         }
     }
-    AthenaRequest::Command(SessionCommand::Define {
+    CasRequest::Command(SessionCommand::Define {
         symbol,
         value: lower_wexpr(session, rhs),
         kind,
@@ -1479,11 +1479,11 @@ fn lower_define_initializer(session: &mut Session, symbol: SymbolId, rhs: &Wolfr
 /// Mathematica `Module`: rename locals to fresh `name$n`, then LocalScope.
 ///
 /// Bare `Module[{x}, x]` must not read session OwnValues of `x`.
-fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> CasRequest {
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return AthenaRequest::Term(lower_wexpr(
+            return CasRequest::Term(lower_wexpr(
                 session,
                 &WolframForm::call("Module", vec![bindings.clone(), body.clone()]),
             ));
@@ -1517,7 +1517,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
         let symbol = session.arena.symbols_mut().intern(fresh);
         if let Some(mat) = matrix_binding_from_form(&rhs_r) {
             let matrix = session.matrix_objects.intern(mat);
-            steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
+            steps.push(CasRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
         }
         else {
             steps.push(lower_define_initializer(session, symbol, &rhs_r, BindingKind::Lexical));
@@ -1525,7 +1525,7 @@ fn lower_module(session: &mut Session, bindings: &WolframForm, body: &WolframFor
     }
     let body_r = rename_symbols(body, &renames);
     steps.push(lower_request(session, &body_r));
-    AthenaRequest::Control(ControlPlan::LocalScope { body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })) })
+    CasRequest::Control(ControlPlan::LocalScope { body: Box::new(CasRequest::Control(ControlPlan::Sequence { steps })) })
 }
 
 fn alloc_module_local(session: &mut Session, base: &str) -> String {
@@ -1537,11 +1537,11 @@ fn alloc_module_local(session: &mut Session, base: &str) -> String {
 ///
 /// Bare `Block[{x}, x]` clears Own for `x` inside the scope (restored on exit).
 /// `Block[{x = v}, …]` defines dynamically and restores the prior Own.
-fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> CasRequest {
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return AthenaRequest::Term(lower_wexpr(
+            return CasRequest::Term(lower_wexpr(
                 session,
                 &WolframForm::call("Block", vec![bindings.clone(), body.clone()]),
             ));
@@ -1553,18 +1553,18 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
         match item {
             WolframForm::Atom(WolframAtom::Symbol(name)) => {
                 let symbol = session.arena.symbols_mut().intern(name);
-                steps.push(AthenaRequest::Command(SessionCommand::ClearDefinition { symbol }));
+                steps.push(CasRequest::Command(SessionCommand::ClearDefinition { symbol }));
             }
             WolframForm::Call { head, args } if matches!(head.as_ref(), WolframForm::Atom(WolframAtom::Symbol(s)) if s == "Set") => {
                 if let [lhs, rhs] = args.as_slice() {
                     if let Some(symbol) = symbol_of(session, lhs) {
                         if let Some(mat) = matrix_binding_from_form(rhs) {
                             let matrix = session.matrix_objects.intern(mat);
-                            steps.push(AthenaRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
+                            steps.push(CasRequest::Command(SessionCommand::DefineMatrix { symbol, matrix }));
                         }
                         else {
                             let value = lower_wexpr(session, rhs);
-                            steps.push(AthenaRequest::Command(SessionCommand::Define {
+                            steps.push(CasRequest::Command(SessionCommand::Define {
                                 symbol,
                                 value,
                                 kind: BindingKind::Dynamic,
@@ -1578,8 +1578,8 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
         }
     }
     steps.push(lower_request(session, body));
-    AthenaRequest::Control(ControlPlan::DynamicScope {
-        body: Box::new(AthenaRequest::Control(ControlPlan::Sequence { steps })),
+    CasRequest::Control(ControlPlan::DynamicScope {
+        body: Box::new(CasRequest::Control(ControlPlan::Sequence { steps })),
     })
 }
 
@@ -1587,11 +1587,11 @@ fn lower_block(session: &mut Session, bindings: &WolframForm, body: &WolframForm
 ///
 /// RHS are not bound into the session. `With[{x=1,y=x},y]` substitutes `y` → `x`
 /// using the outer `x` (not the With local), matching simultaneous semantics.
-fn lower_with(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> AthenaRequest {
+fn lower_with(session: &mut Session, bindings: &WolframForm, body: &WolframForm) -> CasRequest {
     let items = match list_items(bindings) {
         Some(items) => items,
         None => {
-            return AthenaRequest::Term(lower_wexpr(session, &WolframForm::call("With", vec![bindings.clone(), body.clone()])));
+            return CasRequest::Term(lower_wexpr(session, &WolframForm::call("With", vec![bindings.clone(), body.clone()])));
         }
     };
 
@@ -1654,8 +1654,8 @@ fn symbol_of(session: &mut Session, w: &WolframForm) -> Option<SymbolId> {
     }
 }
 
-fn calculus_goal(request: CalculusRequest) -> AthenaRequest {
-    AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
+fn calculus_goal(request: CalculusRequest) -> CasRequest {
+    CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(request)))
 }
 
 fn form_scalar_rational(w: &WolframForm) -> Option<Rational> {
@@ -1758,7 +1758,7 @@ fn matrix_operand_from_form(session: &mut Session, w: &WolframForm) -> Option<Ma
 /// Living 16: keep dialect orientation / Form wrappers here. Do not scan arena
 /// Collections. Bare symbols stay as [`MatrixOperand::Binding`].
 fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
-    use athena::domains::linear_algebra::transpose;
+    use science::domains::linear_algebra::transpose;
 
     if let Some(mat) = matrix_from_form(w) {
         return Some(mat);
@@ -1773,7 +1773,7 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
                 // Living 18: Form-tree wrappers keep Transpose / ConjugateTranspose distinct.
                 ("Transpose", [arg]) => Some(transpose(&matrix_value_from_form_tree(arg)?)),
                 ("ConjugateTranspose", [arg]) => {
-                    Some(athena::domains::linear_algebra::conjugate_transpose(&matrix_value_from_form_tree(arg)?))
+                    Some(science::domains::linear_algebra::conjugate_transpose(&matrix_value_from_form_tree(arg)?))
                 }
                 ("IdentityMatrix" | "Eye", [n]) => {
                     let n = match n {
@@ -1783,7 +1783,7 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
                     if n < 0 {
                         return None;
                     }
-                    MatrixValue::identity(athena::domains::linear_algebra::MatrixParent::integers(), n as u64).ok()
+                    MatrixValue::identity(science::domains::linear_algebra::MatrixParent::integers(), n as u64).ok()
                 }
                 _ => None,
             }
@@ -1793,7 +1793,7 @@ fn matrix_value_from_form_tree(w: &WolframForm) -> Option<MatrixValue> {
 }
 
 fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> Option<MatrixValue> {
-    use athena::domains::linear_algebra::ElementParentKind;
+    use science::domains::linear_algebra::ElementParentKind;
     let rows = template.shape().rows;
     let cols = template.shape().cols;
     let n = (rows * cols) as usize;
@@ -1815,7 +1815,7 @@ fn broadcast_scalar_exponent_matrix(template: &MatrixValue, exp: &Rational) -> O
             MatrixValue::from_integers_row_major(rows, cols, cells).ok()
         }
         ElementParentKind::MachineReal => {
-            let x = athena::numeric::to_f64_lossy(&athena::numeric::Number::rational(clone_rational(exp)))?;
+            let x = science::numeric::to_f64_lossy(&science::numeric::Number::rational(clone_rational(exp)))?;
             let cells = vec![x; n];
             MatrixValue::from_f64_row_major(rows, cols, cells).ok()
         }
@@ -1870,7 +1870,7 @@ fn matrix_binding_from_form(w: &WolframForm) -> Option<MatrixValue> {
 ///
 /// Kernel `Dot` is plain matrix multiplication and must not guess `1×n` vs `n×1`.
 fn dot_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option<(MatrixValue, MatrixValue)> {
-    use athena::domains::linear_algebra::transpose;
+    use science::domains::linear_algebra::transpose;
 
     let a_flat = is_flat_list_vector_form(a_form);
     let b_flat = is_flat_list_vector_form(b_form);
@@ -1899,7 +1899,7 @@ fn dot_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option
 
 /// Flat-list `TensorProduct` → `MatMul(Transpose[row], row)` outer product.
 fn tensor_product_matrices_from_forms(a_form: &WolframForm, b_form: &WolframForm) -> Option<(MatrixValue, MatrixValue)> {
-    use athena::domains::linear_algebra::transpose;
+    use science::domains::linear_algebra::transpose;
 
     if !is_flat_list_vector_form(a_form) || !is_flat_list_vector_form(b_form) {
         return None;
@@ -2105,8 +2105,8 @@ fn lower_dynamic_do(
     session: &mut Session,
     variable: TermId,
     iterator: TermId,
-    body_req: AthenaRequest,
-) -> Option<AthenaRequest> {
+    body_req: CasRequest,
+) -> Option<CasRequest> {
     let elements = match session.arena.get(iterator) {
         Some(TermNode::Collection { elements, .. }) => elements.clone(),
         _ => return None,
@@ -2121,7 +2121,7 @@ fn lower_dynamic_do(
         [_, start, end, step] => (*start, *end, *step),
         _ => return None,
     };
-    let init = AthenaRequest::Command(SessionCommand::Define {
+    let init = CasRequest::Command(SessionCommand::Define {
         symbol,
         value: start,
         kind: BindingKind::Session,
@@ -2129,16 +2129,16 @@ fn lower_dynamic_do(
     });
     let cond = push_semantic(session, SemanticOperator::LessEqual, vec![variable, end]);
     let next = push_semantic(session, SemanticOperator::Add, vec![variable, step]);
-    let increment = AthenaRequest::Command(SessionCommand::Define {
+    let increment = CasRequest::Command(SessionCommand::Define {
         symbol,
         value: next,
         kind: BindingKind::Session,
         evaluation: BindingEvaluationPolicy::EvaluateBeforeStore,
     });
-    let loop_body = AthenaRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
-    let while_loop = AthenaRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
-    Some(AthenaRequest::Control(ControlPlan::Sequence {
-        steps: vec![init, while_loop, AthenaRequest::Term(push_null(session))],
+    let loop_body = CasRequest::Control(ControlPlan::Sequence { steps: vec![body_req, increment] });
+    let while_loop = CasRequest::Control(ControlPlan::LoopWhile { condition: cond, body: Box::new(loop_body) });
+    Some(CasRequest::Control(ControlPlan::Sequence {
+        steps: vec![init, while_loop, CasRequest::Term(push_null(session))],
     }))
 }
 

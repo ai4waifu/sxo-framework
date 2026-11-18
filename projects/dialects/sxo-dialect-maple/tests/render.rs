@@ -1,8 +1,8 @@
 //! Result display never substitutes source text for an Athena projection.
 
-use athena::{
-    AthenaEngine, Session,
-    api::AthenaRequest,
+use science::{
+    CasEngine, Session,
+    api::CasRequest,
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode},
     numeric::number_from_wire,
     runtime::results::{ComputationResult, CoverageStatus},
@@ -28,7 +28,7 @@ fn exact_result_display_reads_computed_value_without_mutation() {
             right: Box::new(MapleForm::Integer(denominator.to_owned())),
         };
         let request = lower_request(&mut session, &form).unwrap();
-        let result_id = AthenaEngine::new().execute_request(&mut session, request).unwrap();
+        let result_id = CasEngine::new().execute_request(&mut session, request).unwrap();
         let before_terms = session.arena.len();
         let before_result = format!("{:?}", session.results.get(result_id).unwrap());
         assert_eq!(render_maple_result_projection(&session, result_id).unwrap(), expected);
@@ -58,7 +58,7 @@ fn missing_results_and_projections_never_render_null() {
 fn nested_lists_display_without_matrix_inference_or_status_promotion() {
     let mut session = Session::new();
     let form = MapleForm::List(vec![MapleForm::List(vec![MapleForm::Integer("1".to_owned())]), MapleForm::List(vec![])]);
-    let AthenaRequest::Term(term) = lower_request(&mut session, &form).unwrap()
+    let CasRequest::Term(term) = lower_request(&mut session, &form).unwrap()
     else {
         panic!("list term")
     };
@@ -84,7 +84,7 @@ fn projected_typed_arithmetic_is_display_only() {
             left: Box::new(MapleForm::Symbol("x".to_owned())),
             right: Box::new(MapleForm::Integer("2".to_owned())),
         };
-        let AthenaRequest::Term(term) = lower_request(&mut session, &form).unwrap()
+        let CasRequest::Term(term) = lower_request(&mut session, &form).unwrap()
         else {
             panic!("arithmetic term")
         };

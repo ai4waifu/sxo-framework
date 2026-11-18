@@ -5,9 +5,9 @@ use std::cell::RefCell;
 #[cfg(test)]
 mod maple_tests;
 
-use athena::{
-    AthenaEngine, Session as AthenaSession,
-    api::{AthenaRequest, DomainGoal},
+use science::{
+    CasEngine, Session as AthenaSession,
+    api::{CasRequest, DomainGoal},
     domains::{
         DomainRequest, DomainResult,
         calculus::{CalculusRequest, CalculusResult, CalculusValue, DerivativeOrder},
@@ -40,8 +40,8 @@ impl Session {
         Self { math_session: RefCell::new(AthenaSession::new()) }
     }
 
-    fn math_engine(&self) -> AthenaEngine {
-        AthenaEngine::new()
+    fn math_engine(&self) -> CasEngine {
+        CasEngine::new()
     }
 
     /// Borrow the underlying Athena session mutably.
@@ -97,7 +97,7 @@ impl Session {
     pub fn lower_maple_form(&self, form: &sxo_dialect_maple::MapleForm) -> Result<TermId, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         match sxo_dialect_maple::lower_request(&mut ms, form).map_err(|error| SxoError::new(error.to_string()))? {
-            AthenaRequest::Term(term) => Ok(term),
+            CasRequest::Term(term) => Ok(term),
             _ => Err(SxoError::new("Maple expression did not lower to a term request")),
         }
     }
@@ -111,10 +111,10 @@ impl Session {
     /// Re-evaluate an arena term already owned by this session (result objects without Form).
     pub fn evaluate_term_outcome(&self, root: TermId) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
-        self.execute_lowered(&mut ms, AthenaRequest::Term(root))
+        self.execute_lowered(&mut ms, CasRequest::Term(root))
     }
 
-    fn execute_lowered(&self, ms: &mut AthenaSession, request: AthenaRequest) -> Result<EvalOutcome, SxoError> {
+    fn execute_lowered(&self, ms: &mut AthenaSession, request: CasRequest) -> Result<EvalOutcome, SxoError> {
         // Unify Goal / Term / Control through `execute_request` so status / coverage / diagnostics survive.
         match self.math_engine().execute_request(ms, request) {
             Ok(result_id) => Ok(outcome_from_result(ms, result_id)),
@@ -127,14 +127,14 @@ impl Session {
         self.math_session.borrow_mut().clear_definitions();
     }
 
-    /// Differentiate via [`AthenaRequest::Goal`] and return the full Session result.
+    /// Differentiate via [`CasRequest::Goal`] and return the full Session result.
     ///
     /// Prefer [`Self::differentiate_wolfram_form`] / [`Self::differentiate_matlab_form`] for
     /// retained dialect Forms. This path remains for result objects that only hold a projected term.
     pub fn differentiate_outcome(&self, expr: TermId, var: &str) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
         let variable = ms.arena.symbols_mut().intern(var);
-        let request = AthenaRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative {
+        let request = CasRequest::Goal(DomainGoal::Dispatch(DomainRequest::Calculus(CalculusRequest::Derivative {
             expression: expr,
             variable,
             order: DerivativeOrder::First,
@@ -166,13 +166,13 @@ impl Session {
         self.math_engine().execute_domain(&mut self.math_session.borrow_mut(), request)
     }
 
-    /// `Simplify` via [`AthenaRequest::Term`] and return the full Session result.
+    /// `Simplify` via [`CasRequest::Term`] and return the full Session result.
     ///
     /// Prefer [`Self::simplify_wolfram_form`] / [`Self::simplify_matlab_form`] for retained Forms.
     pub fn simplify_outcome(&self, expr: TermId) -> Result<EvalOutcome, SxoError> {
         let mut ms = self.math_session.borrow_mut();
-        let wrapped = athena::execution::push_semantic(&mut ms, SemanticOperator::Simplify, vec![expr]);
-        self.execute_lowered(&mut ms, AthenaRequest::Term(wrapped))
+        let wrapped = science::execution::push_semantic(&mut ms, SemanticOperator::Simplify, vec![expr]);
+        self.execute_lowered(&mut ms, CasRequest::Term(wrapped))
     }
 
     /// Simplify a retained Wolfram Form via `Simplify[expr]` → dialect `lower_request`.
@@ -395,7 +395,7 @@ impl Session {
 
     /// Project evidence summaries for a Session-local [`ResultId`] (empty if missing).
     pub fn project_evidence(&self, result_id: ResultId) -> Vec<String> {
-        use athena::runtime::results::ResultEvidence;
+        use science::runtime::results::ResultEvidence;
         let ms = self.math_session.borrow();
         ms.results
             .get(result_id)

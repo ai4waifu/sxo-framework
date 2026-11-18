@@ -1,6 +1,6 @@
 //! Source provenance and failure atomicity for Maple lowering.
 
-use athena::{Session, api::AthenaRequest, ir::TermNode, types::SourceSpan};
+use science::{Session, api::CasRequest, ir::TermNode, types::SourceSpan};
 use sxo_dialect_maple::{MapleError, MapleForm, MapleOperator, MapleSpan, lower_request, render_maple_form};
 
 fn located(span: MapleSpan, expression: MapleForm) -> MapleForm {
@@ -18,7 +18,7 @@ fn distinct_source_ranges_reach_the_neutral_term_boundary() {
             right: Box::new(located(MapleSpan { start: 9, end: 11 }, MapleForm::Integer("23".to_owned()))),
         },
     );
-    let AthenaRequest::Term(root) = lower_request(&mut session, &form).unwrap()
+    let CasRequest::Term(root) = lower_request(&mut session, &form).unwrap()
     else {
         panic!("term request")
     };
@@ -69,11 +69,11 @@ fn canonical_terms_do_not_replace_source_occurrence_spans() {
     let mut session = Session::new();
     let first = located(MapleSpan { start: 0, end: 2 }, MapleForm::Integer("11".to_owned()));
     let second = located(MapleSpan { start: 10, end: 12 }, MapleForm::Integer("11".to_owned()));
-    let AthenaRequest::Term(first_id) = lower_request(&mut session, &first).unwrap()
+    let CasRequest::Term(first_id) = lower_request(&mut session, &first).unwrap()
     else {
         panic!("first term")
     };
-    let AthenaRequest::Term(second_id) = lower_request(&mut session, &second).unwrap()
+    let CasRequest::Term(second_id) = lower_request(&mut session, &second).unwrap()
     else {
         panic!("second term")
     };

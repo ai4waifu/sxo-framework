@@ -2,8 +2,8 @@
 
 use std::cell::RefCell;
 
-use athena::{
-    AthenaEngine, Session,
+use science::{
+    CasEngine, Session,
     runtime::values::arena::{push_bool, push_int, push_list, push_null, push_symbol_name},
     types::TermId,
 };
@@ -35,7 +35,7 @@ impl H {
         let w = self.parse_w(input);
         let mut s = self.s.borrow_mut();
         let request = lower_request(&mut s, &w);
-        let engine = AthenaEngine::new();
+        let engine = CasEngine::new();
         match engine.execute_request(&mut s, request) {
             Ok(result_id) => {
                 let result = s.results.get(result_id).unwrap_or_else(|| panic!("missing ResultId after eval: {input}"));
@@ -730,8 +730,8 @@ fn set_nested_list_binds_matrix_domain_object() {
     let w = h.parse_w("A={{1, 2}, {3, 4}}");
     let mut s = h.s.borrow_mut();
     let request = lower_request(&mut s, &w);
-    assert!(matches!(request, athena::api::AthenaRequest::Command(athena::api::SessionCommand::DefineMatrix { .. })));
-    AthenaEngine::new().execute_request(&mut s, request).expect("define matrix");
+    assert!(matches!(request, science::api::CasRequest::Command(science::api::SessionCommand::DefineMatrix { .. })));
+    CasEngine::new().execute_request(&mut s, request).expect("define matrix");
     let symbol = s.arena.symbols_mut().intern("A");
     assert!(s.matrix_binding(symbol).is_some());
     assert!(s.defs.binding(symbol).is_none());
@@ -850,8 +850,8 @@ fn nested_form_transpose_feeds_inverse_matrix_operand() {
     let request = lower_request(&mut s, &w);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
-            athena::domains::linear_algebra::LinearAlgebraRequest::Inverse { .. }
+        science::api::CasRequest::Goal(science::api::DomainGoal::Dispatch(science::domains::DomainRequest::LinearAlgebra(
+            science::domains::linear_algebra::LinearAlgebraRequest::Inverse { .. }
         )))
     ));
 }
@@ -864,8 +864,8 @@ fn times_form_matrices_lower_to_hadamard_goal() {
     let request = lower_request(&mut s, &w);
     assert!(matches!(
         request,
-        athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(athena::domains::DomainRequest::LinearAlgebra(
-            athena::domains::linear_algebra::LinearAlgebraRequest::Hadamard { .. }
+        science::api::CasRequest::Goal(science::api::DomainGoal::Dispatch(science::domains::DomainRequest::LinearAlgebra(
+            science::domains::linear_algebra::LinearAlgebraRequest::Hadamard { .. }
         )))
     ));
     drop(s);
@@ -881,13 +881,13 @@ fn det_goal_uses_matrix_operand_binding() {
     let request = lower_request(&mut s, &w);
     // CompoundExpression: last step must be LinearAlgebra Det goal (not Semantic Determinant Term).
     match &request {
-        athena::api::AthenaRequest::Control(athena::api::ControlPlan::Sequence { steps }) => {
+        science::api::CasRequest::Control(science::api::ControlPlan::Sequence { steps }) => {
             let last = steps.last().expect("steps");
             assert!(matches!(
                 last,
-                athena::api::AthenaRequest::Goal(athena::api::DomainGoal::Dispatch(
-                    athena::domains::DomainRequest::LinearAlgebra(
-                        athena::domains::linear_algebra::LinearAlgebraRequest::Det { .. }
+                science::api::CasRequest::Goal(science::api::DomainGoal::Dispatch(
+                    science::domains::DomainRequest::LinearAlgebra(
+                        science::domains::linear_algebra::LinearAlgebraRequest::Det { .. }
                     )
                 ))
             ));

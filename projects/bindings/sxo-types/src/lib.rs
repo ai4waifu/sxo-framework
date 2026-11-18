@@ -1,6 +1,6 @@
 //! SXO product types — `Dialect`, `SxoError`; no IR or Number.
 //!
-//! Kernel wire types come from `athena-types` (re-exported below).
+//! Kernel wire types come from `science-types` (re-exported below).
 
 #![deny(missing_docs)]
 
@@ -10,7 +10,7 @@ mod error;
 mod eval_outcome;
 mod evidence_summary;
 
-pub use athena_types::{Diagnostic, DiagnosticCode, ResultId, Severity, SourceSpan, TermId};
+pub use science_types::{Diagnostic, DiagnosticCode, ResultId, Severity, SourceSpan, TermId};
 pub use condition_summary::condition_summary;
 pub use dialect::Dialect;
 pub use error::SxoError;

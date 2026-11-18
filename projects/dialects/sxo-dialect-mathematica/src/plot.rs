@@ -1,6 +1,6 @@
 //! `Plot[f,{x,a,b}]` lowering → Athena sampling → Apollo SVG.
 
-use athena::{
+use science::{
     Session,
     ir::TermNode,
     numeric::to_f64_lossy,

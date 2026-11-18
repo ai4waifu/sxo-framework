@@ -8,9 +8,9 @@ const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const oakRoot = resolve(process.argv[2] ?? join(workspaceRoot, '..', 'oaks'));
 const dialectSource = join(workspaceRoot, 'projects/dialects/sxo-dialect-maple/src');
 const manifest = await readFile(join(workspaceRoot, 'Cargo.toml'), 'utf8');
-const athenaDependency = manifest.match(/^athena = \{[^\r\n]+\}$/m)?.[0];
+const athenaDependency = manifest.match(/^science = \{[^\r\n]+\}$/m)?.[0];
 if (!athenaDependency || !athenaDependency.includes('rev =')) {
-    throw new Error("Expected the product's pinned Athena dependency");
+    throw new Error("Expected the product's pinned science dependency");
 }
 for (const path of [
     join(oakRoot, 'projects/oak-core/Cargo.toml'),

@@ -10,7 +10,7 @@ use crate::{
     options::{EvalStrategy, parse_strategy},
     session::Session,
 };
-use athena::types::{ResultId, TermId};
+use science::types::{ResultId, TermId};
 
 #[cfg(test)]
 mod maple_tests;

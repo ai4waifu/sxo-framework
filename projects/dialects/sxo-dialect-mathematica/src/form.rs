@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use athena::{
+use science::{
     numeric::{Number, to_f64_lossy},
     runtime::values::numeric_clone::clone_number,
 };

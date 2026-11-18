@@ -1,13 +1,13 @@
 //! Product-layer error; wraps Athena diagnostics when present.
 
-use athena_types::Diagnostic;
+use science_types::Diagnostic;
 
 /// Error from parse, lowering, or host operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SxoError {
     /// Localized or contextual message for the host.
     pub message: String,
-    /// Stable Athena code (`ATHENA_*`) when the failure originated in the kernel.
+    /// Stable science code (`SCIENCE_*`) when the failure originated in the kernel.
     pub athena_code: Option<String>,
 }
 

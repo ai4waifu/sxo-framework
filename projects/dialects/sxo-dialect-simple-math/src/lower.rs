@@ -8,7 +8,7 @@
 
 #![allow(dead_code)]
 
-use athena::{
+use science::{
     Session,
     ir::{ApplicationHead, Atom, SemanticOperator, TermNode, UnaryFunction},
     numeric::{Number, to_f64_lossy},
