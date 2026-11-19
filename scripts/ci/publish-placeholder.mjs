@@ -8,20 +8,19 @@
  * - Prefer npm view; on miss, treat matching cache as published
  * - --refresh: ignore cache and re-check registry / reconfigure trust
  * - --otp <code>: npm OTP for trust write; refreshes list and updates cache
- * - Also reads uncommitted `.env.placeholder.local` (repo root) or env:
- *     NPM_TOTP_SECRET / TOTP_SECRET  → RFC6238 TOTP (recomputed each npm call)
- *     NPM_OTP / OTP                  → 6-digit code, OR raw base32 secret if not 6 digits
- *     NPM_TOKEN / TOKEN              → access token for auth
- *   CLI flags win over env file / process.env.
+ * - Also reads uncommitted `.secrets/nifty.json` (repo root, same contract as nifty):
+ *     npmTotpSecret  → RFC6238 TOTP (recomputed each npm call)
+ *     npmOtp         → 6-digit code, OR raw base32 secret if not 6 digits
+ *     npmToken       → access token for auth
+ *   CLI flags win over the secrets file. Process env is never consulted.
  *
  * Usage:
  *   node scripts/ci/publish-placeholder.mjs
  *   node scripts/ci/publish-placeholder.mjs --refresh
  *   node scripts/ci/publish-placeholder.mjs publish --only @sxo/core
  *   node scripts/ci/publish-placeholder.mjs trust --only @sxo/lite
- *   # or in .env.placeholder.local:
- *   #   NPM_TOTP_SECRET=<authenticator base32>
- *   #   NPM_TOKEN=npm_xxx
+ *   # or in .secrets/nifty.json:
+ *   #   { "npmTotpSecret": "<authenticator base32>", "npmToken": "npm_xxx" }
  *   pnpm placeholder:trust
  */
 
@@ -40,32 +39,25 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = path.resolve(ROOT, '..');
 const CACHE_PATH = path.join(ROOT, '.placeholder-npm-cache.json');
-const ENV_PATH = path.join(REPO_ROOT, '.env.placeholder.local');
+const SECRETS_PATH = path.join(REPO_ROOT, '.secrets', 'nifty.json');
 
-/** Load KEY=VALUE from gitignored local env (no export, no quotes required). */
-function loadLocalEnv(filePath) {
-    /** @type {Record<string, string>} */
-    const out = {};
+/** Load `.secrets/nifty.json` (gitignored). Missing file is fine; malformed JSON fails. */
+function loadSecretsFile(filePath) {
+    let text;
     try {
-        const text = fs.readFileSync(filePath, 'utf8');
-        for (const raw of text.split(/\r?\n/)) {
-            const line = raw.trim();
-            if (!line || line.startsWith('#')) continue;
-            const m = line.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-            if (!m) continue;
-            let v = m[2].trim();
-            if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-                v = v.slice(1, -1);
-            }
-            out[m[1]] = v;
-        }
-    } catch {
-        /* optional */
+        text = fs.readFileSync(filePath, 'utf8');
+    } catch (err) {
+        if (err.code === 'ENOENT') return {};
+        fail(`cannot read ${filePath}: ${err.message}`);
     }
-    return out;
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        fail(`invalid ${filePath}: ${err.message}`);
+    }
 }
 
-const localEnv = loadLocalEnv(ENV_PATH);
+const secrets = loadSecretsFile(SECRETS_PATH);
 
 /** Real-release set lives in publish-npm.mjs; placeholders may include reserved names not yet in that set. */
 const JS_STUBS = [
@@ -115,15 +107,13 @@ function takeFlag(args, flag) {
 const dryRun = rest.includes('--dry-run');
 const refresh = rest.includes('--refresh');
 const onlyFlag = takeFlag(rest, '--only');
-const token = takeFlag(rest, '--token') ?? process.env.NPM_TOKEN ?? localEnv.NPM_TOKEN ?? localEnv.TOKEN;
+const token = takeFlag(rest, '--token') ?? secrets.npmToken;
 
-const otpFlag = takeFlag(rest, '--otp') ?? process.env.NPM_OTP ?? localEnv.NPM_OTP ?? localEnv.OTP;
+const otpFlag = takeFlag(rest, '--otp') ?? secrets.npmOtp;
 const totpSecretRaw =
     takeFlag(rest, '--totp-secret') ??
-    process.env.NPM_TOTP_SECRET ??
-    localEnv.NPM_TOTP_SECRET ??
-    localEnv.TOTP_SECRET ??
-    // Convenience: if NPM_OTP holds a base32 secret (not a 6-digit code), treat as secret.
+    secrets.npmTotpSecret ??
+    // Convenience: if npmOtp holds a base32 secret (not a 6-digit code), treat as secret.
     (otpFlag && !/^\d{6}$/.test(otpFlag.trim()) ? otpFlag : undefined);
 const otpStatic = otpFlag && /^\d{6}$/.test(otpFlag.trim()) ? otpFlag.trim() : undefined;
 
@@ -430,7 +420,7 @@ function resolveTrust(cache, name, opts = {}) {
             return {
                 source: cached ? 'cache' : 'none',
                 trust: cached,
-                error: '--refresh needs NPM_TOTP_SECRET or --otp to re-list',
+                error: '--refresh needs npmTotpSecret in .secrets/nifty.json or --otp to re-list',
             };
         }
         if (!hasOtp) {
@@ -457,7 +447,7 @@ function checkStatus() {
     console.log(`  Trusted Publisher expect: ${TRUST.repo}  ${TRUST.file}  env=${TRUST.env}  [publish + stage]`);
     console.log(`  cache: ${CACHE_PATH}`);
     if (!totpSecretRaw && !otpStatic) {
-        console.log('  tip: put NPM_TOTP_SECRET=<base32> in .env.placeholder.local (gitignored), then pnpm placeholder:trust\n');
+        console.log('  tip: put {"npmTotpSecret":"<base32>"} in .secrets/nifty.json (gitignored), then pnpm placeholder:trust\n');
     } else {
         console.log('  mode: live trust list + write cache\n');
     }
@@ -488,12 +478,12 @@ function checkStatus() {
         });
 
         if (resolved.authRequired && !resolved.trust) {
-            console.log(`  ? ${spec.name}@${verMark}  trust unknown (EOTP; set NPM_TOTP_SECRET) [${verSrc}]`);
+            console.log(`  ? ${spec.name}@${verMark}  trust unknown (EOTP; set npmTotpSecret in .secrets/nifty.json) [${verSrc}]`);
             unknownTrust += 1;
             continue;
         }
         if (!resolved.trust) {
-            console.log(`  ? ${spec.name}@${verMark}  trust unknown (no cache; run trust with NPM_TOTP_SECRET) [${verSrc}]`);
+            console.log(`  ? ${spec.name}@${verMark}  trust unknown (no cache; run trust with npmTotpSecret) [${verSrc}]`);
             unknownTrust += 1;
             continue;
         }
@@ -514,7 +504,7 @@ function checkStatus() {
 
     saveCache(cache);
     console.log(`\nplaceholder: ${ok} ok, ${missingPkg} package missing, ${badTrust} trust missing/mismatch, ${unknownTrust} trust unknown`);
-    console.log('  next: pnpm placeholder:publish   or   put NPM_TOTP_SECRET in .env.placeholder.local && pnpm placeholder:trust');
+    console.log('  next: pnpm placeholder:publish   or   put npmTotpSecret in .secrets/nifty.json && pnpm placeholder:trust');
     process.exit(missingPkg + badTrust > 0 ? 1 : 0);
 }
 
@@ -647,7 +637,7 @@ function cmdTrust() {
     console.log('  permissions: npm publish + npm stage publish');
     console.log(`  cache: ${CACHE_PATH}`);
     console.log(
-        `  secrets: totp=${totpSecretRaw ? 'yes' : 'no'} otp6=${otpStatic ? 'yes' : 'no'} token=${token ? 'yes' : 'no'} (flag/env/.env.placeholder.local)`,
+        `  secrets: totp=${totpSecretRaw ? 'yes' : 'no'} otp6=${otpStatic ? 'yes' : 'no'} token=${token ? 'yes' : 'no'} (flag/.secrets/nifty.json)`,
     );
     console.log('  rule: skip only when trust list (or cache from a prior list) says already matches\n');
 
@@ -688,7 +678,7 @@ function cmdTrust() {
         if (!totpSecretRaw && !otpStatic) {
             saveCache(cache);
             fail(
-                `need NPM_TOTP_SECRET (or 6-digit NPM_OTP) to list ${spec.name}. Put secret in .env.placeholder.local then: pnpm placeholder:trust`,
+                `need npmTotpSecret (or 6-digit npmOtp) to list ${spec.name}. Put it in .secrets/nifty.json then: pnpm placeholder:trust`,
             );
         }
 
